@@ -22,51 +22,74 @@ BLENDER_PATH = Path(
     "set BRAVEN_RUN_BLENDER_INTEGRATION=1 to run Blender/MPFB integration",
 )
 class BlenderReferenceConfigIntegrationTest(unittest.TestCase):
-    def test_generator_uses_the_supplied_config_for_the_receipt(self):
-        self.assertTrue(BLENDER_PATH.is_file(), f"Blender not found: {BLENDER_PATH}")
+    @classmethod
+    def setUpClass(cls):
+        if not BLENDER_PATH.is_file():
+            raise AssertionError(f"Blender not found: {BLENDER_PATH}")
         data = json.loads(DEFAULT_CONFIG_PATH.read_text(encoding="utf-8"))
         data["movementId"] = "portable_config_probe"
+        cls.temporary_directory = tempfile.TemporaryDirectory()
+        cls.temporary = Path(cls.temporary_directory.name)
+        config_path = cls.temporary / "reference.json"
+        output_path = cls.temporary / "output"
+        config_path.write_text(json.dumps(data), encoding="utf-8")
+        cls.expected_config_sha256 = _sha256(config_path)
+        completed = subprocess.run(
+            [
+                str(BLENDER_PATH),
+                "-b",
+                "--python-exit-code",
+                "9",
+                "-P",
+                str(GENERATOR_PATH),
+                "--",
+                "--config",
+                str(config_path),
+                "--output",
+                str(output_path),
+            ],
+            cwd=cls.temporary,
+            text=True,
+            capture_output=True,
+            timeout=180,
+            check=False,
+        )
+        if completed.returncode != 0:
+            raise AssertionError(
+                f"stdout:\n{completed.stdout}\nstderr:\n{completed.stderr}"
+            )
+        cls.receipt = json.loads(
+            (output_path / "braven_mpfb_reference_catch.json").read_text(
+                encoding="utf-8"
+            )
+        )
 
-        with tempfile.TemporaryDirectory() as directory:
-            temporary = Path(directory)
-            config_path = temporary / "reference.json"
-            output_path = temporary / "output"
-            config_path.write_text(json.dumps(data), encoding="utf-8")
-            expected_config_sha256 = _sha256(config_path)
-            completed = subprocess.run(
-                [
-                    str(BLENDER_PATH),
-                    "-b",
-                    "--python-exit-code",
-                    "9",
-                    "-P",
-                    str(GENERATOR_PATH),
-                    "--",
-                    "--config",
-                    str(config_path),
-                    "--output",
-                    str(output_path),
-                ],
-                cwd=temporary,
-                text=True,
-                capture_output=True,
-                timeout=180,
-                check=False,
-            )
-            self.assertEqual(
-                completed.returncode,
-                0,
-                f"stdout:\n{completed.stdout}\nstderr:\n{completed.stderr}",
-            )
-            receipt = json.loads(
-                (output_path / "braven_mpfb_reference_catch.json").read_text(
-                    encoding="utf-8"
+    @classmethod
+    def tearDownClass(cls):
+        cls.temporary_directory.cleanup()
+
+    def test_generator_uses_the_supplied_config_for_the_receipt(self):
+        self.assertEqual(self.receipt["movementId"], "portable_config_probe")
+        self.assertEqual(self.receipt["configuration"]["schemaVersion"], 1)
+        self.assertEqual(
+            self.receipt["configuration"]["sha256"],
+            self.expected_config_sha256,
+        )
+
+    def test_render_preserves_the_approved_thumb_orientation(self):
+        actual = self.receipt["calibration"]["actualPx"]
+        for side in ("left", "right"):
+            with self.subTest(side=side):
+                self.assertGreater(
+                    actual[f"{side}_thumb_tip"][0],
+                    actual[f"{side}_palm"][0] + 20.0,
+                    f"{side} thumb must remain on the approved side of its hand",
                 )
-            )
-
-        self.assertEqual(receipt["movementId"], "portable_config_probe")
-        self.assertEqual(receipt["configuration"]["schemaVersion"], 1)
-        self.assertEqual(receipt["configuration"]["sha256"], expected_config_sha256)
+                self.assertLessEqual(
+                    self.receipt["anatomy"][f"{side}PalmNormalErrorDegrees"],
+                    5.0,
+                    f"{side} hand must retain its approved reference plane",
+                )
 
 
 def _sha256(path: Path) -> str:

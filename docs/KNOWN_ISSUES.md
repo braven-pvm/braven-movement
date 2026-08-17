@@ -1,11 +1,14 @@
 # Known issues
 
-## Reference catch is not accepted
+## Reference catch is not yet a final coaching sample
 
-The current MPFB catch render is an intermediate calibration artifact, not an approved coaching
-sample. Ball, elbow, and wrist landmarks were matched closely, but the upper/right hand still
-reads visually like a second left hand. Its local index-to-pinky basis and thumb-side convention
-must be corrected before further visual matching.
+The current MPFB catch render remains an intermediate calibration artifact. Its hand orientation
+in the locked reference view was visually approved on 2026-08-17, but presentation and final
+coaching-sample acceptance are still pending.
+
+The MPFB hands deliberately retain the signed local index-to-pinky cross product from the rig.
+Normalising that sign across left and right hands produces the rejected two-left-hands projection.
+The Blender integration test locks the approved thumb side and hand-plane error for both hands.
 
 Do not set `--reference-compared` or publish the current generated pose.
 
