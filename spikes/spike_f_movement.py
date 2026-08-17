@@ -30,6 +30,7 @@ sys.path.insert(0, str(SPIKE_DIR))
 
 from segment_measures import (  # noqa: E402
     elbow_flexion_degrees,
+    knee_flexion_degrees,
     shoulder_elevation_degrees,
 )
 from isb_angles import AAOS_LIMITS  # noqa: E402
@@ -44,6 +45,8 @@ FRAME_COUNT = 24
 FRAMES_PER_SECOND = 24.0
 
 # Pose parameters only. Shape stays locked so the athlete keeps their body.
+# The legs are included because the manual coaches this drill from a wide base
+# power position, which the knees have to produce.
 WANTED = (
     "root",
     "spine",
@@ -54,13 +57,22 @@ WANTED = (
     "wrist",
     "neck",
     "head",
+    "upleg",
+    "lowleg",
+    "knee",
+    "foot",
+    "ankle",
 )
 # Shape parameters must never move, or the solver stretches the athlete.
-# Root translation must not move either, because the manual coaches this drill
-# with the feet static: "Worker is static with feet, in power position ready to
-# move but use hands & arms to pull in ball." Leaving it free lets the athlete
-# walk to the ball, and the arm never extends.
-FORBIDDEN = ("scale", "flexible", "root_t")
+FORBIDDEN = ("scale", "flexible")
+
+# The manual keeps the feet static: "Worker is static with feet, in power
+# position ready to move but use hands & arms to pull in ball." That is enforced
+# by pinning the feet, not by locking the root. Pinning the feet and lowering the
+# hips is what produces a power position; locking the root instead leaves the
+# athlete standing straight-legged and lets the torso lean to reach the ball.
+POWER_POSITION_DROP_CM = 9.0
+FOOT_WEIGHT = 12.0
 
 
 def joint_positions(character: geometry.Character, parameters: np.ndarray) -> np.ndarray:
@@ -146,6 +158,7 @@ def main() -> int:
     rest_left = rest_positions[index["l_wrist"]].copy()
     rest_right = rest_positions[index["r_wrist"]].copy()
     rest_chest = rest_positions[index["c_spine3"]].copy()
+    rest_root = rest_positions[index["root"]].copy()
 
     options = solver2.GaussNewtonSolverOptions()
     options.do_line_search = True
@@ -173,6 +186,24 @@ def main() -> int:
                 offset=np.zeros(3, dtype=np.float32),
                 weight=1.0,
             )
+        # Feet stay where they started, and the hips sit lower than standing.
+        # Together these two facts are the power position.
+        for foot in ("l_foot", "r_foot"):
+            position_error.add_constraint(
+                index[foot],
+                target=np.asarray(rest_positions[index[foot]], dtype=np.float32),
+                offset=np.zeros(3, dtype=np.float32),
+                weight=FOOT_WEIGHT,
+            )
+        position_error.add_constraint(
+            index["root"],
+            target=np.asarray(
+                rest_root - np.array([0.0, POWER_POSITION_DROP_CM, 0.0]),
+                dtype=np.float32,
+            ),
+            offset=np.zeros(3, dtype=np.float32),
+            weight=3.0,
+        )
         limit_error = solver2.LimitErrorFunction(character, weight=5.0)
         # Continuity: pull toward the previous frame so the movement does not
         # jump between two equally valid solutions of the same target.
@@ -215,8 +246,14 @@ def main() -> int:
                 shoulder=point(f"{side}_uparm"),
                 elbow=point(f"{side}_lowarm"),
             )
+            knee = knee_flexion_degrees(
+                hip=point(f"{side}_upleg"),
+                knee=point(f"{side}_lowleg"),
+                ankle=point(f"{side}_foot"),
+            )
             frame_measure[f"{prefix}ElbowFlexionDegrees"] = round(elbow, 2)
             frame_measure[f"{prefix}ShoulderElevationDegrees"] = round(elevation, 2)
+            frame_measure[f"{prefix}KneeFlexionDegrees"] = round(knee, 2)
             for value, key in (
                 (elbow, "elbow.flexion"),
                 (elevation, "shoulder.elevation"),

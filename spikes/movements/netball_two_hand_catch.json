@@ -21,6 +21,13 @@
           "maximumDegrees": 70.0,
           "cue": "Show the passer your arm span, the range your hands can reach.",
           "why": "The passer may put the ball anywhere inside that span, so the span must be presented honestly."
+        },
+        {
+          "measure": "leftKneeFlexionDegrees",
+          "minimumDegrees": 25.0,
+          "maximumDegrees": 75.0,
+          "cue": "Wide base power position. Sit into your legs, ready to move.",
+          "why": "The manual lists a wide base power position as the technique for this drill. Straight legs cannot move quickly in any direction."
         }
       ]
     },
@@ -88,6 +95,13 @@
           "maximumDegrees": 60.0,
           "cue": "Ball in to the chest, ready to release again.",
           "why": "The manual wants a quick catch and release, so the finish must already be a passing position."
+        },
+        {
+          "measure": "leftKneeFlexionDegrees",
+          "minimumDegrees": 25.0,
+          "maximumDegrees": 75.0,
+          "cue": "Stay in your power position. The feet do not move, the arms do the work.",
+          "why": "The manual keeps the worker static with the feet and uses hands and arms to pull the ball in. Standing up out of the base loses the next movement."
         }
       ]
     }
