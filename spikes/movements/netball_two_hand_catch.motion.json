@@ -1,0 +1,52 @@
+{
+  "movementId": "netball_two_hand_snatch_pull_in",
+  "frames": 24,
+  "framesPerSecond": 24,
+  "notes": "Hand positions are given relative to the chest and scaled by the athlete's own arm length, so the same movement retargets to any body without rewriting numbers. Units are fractions of arm length. across is the distance out to the side, up is above the chest, ahead is in front of the chest. A value of 1.0 ahead means a fully straight arm reaching forward.",
+  "stance": {
+    "hipDropFraction": 0.18,
+    "note": "How far the hips sit below standing, as a fraction of arm length. This is what produces the wide base power position the manual asks for. Feet stay planted."
+  },
+  "keys": [
+    {
+      "atPhase": 0.0,
+      "name": "ready",
+      "across": 0.26,
+      "up": -0.02,
+      "ahead": 0.3,
+      "note": "Hands up and in front, showing the passer the arm span."
+    },
+    {
+      "atPhase": 0.3,
+      "name": "react",
+      "across": 0.27,
+      "up": 0.2,
+      "ahead": 0.6,
+      "note": "Reacting to the front, hands rising toward the ball."
+    },
+    {
+      "atPhase": 0.55,
+      "name": "contact",
+      "across": 0.26,
+      "up": 0.42,
+      "ahead": 0.88,
+      "note": "Contact, in front of the shoulder, near full reach."
+    },
+    {
+      "atPhase": 0.78,
+      "name": "absorb",
+      "across": 0.22,
+      "up": 0.16,
+      "ahead": 0.44,
+      "note": "Giving with the ball as it comes in."
+    },
+    {
+      "atPhase": 1.0,
+      "name": "pull_in",
+      "across": 0.2,
+      "up": -0.06,
+      "ahead": 0.18,
+      "note": "Ball secured at the chest, ready to release."
+    }
+  ]
+}

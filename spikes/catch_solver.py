@@ -13,17 +13,24 @@ import numpy as np
 import pymomentum.geometry as geometry
 import pymomentum.solver2 as solver2
 
+from motion_track import arm_length, hand_targets_from_track, load_motion
 from segment_measures import (
     elbow_flexion_degrees,
     knee_flexion_degrees,
     shoulder_elevation_degrees,
 )
 
-ASSET_FOLDER = Path(__file__).resolve().parent / "mhr-assets" / "assets"
+SPIKE_DIR = Path(__file__).resolve().parent
+ASSET_FOLDER = SPIKE_DIR / "mhr-assets" / "assets"
+MOTION_PATH = SPIKE_DIR / "movements" / "netball_two_hand_catch.motion.json"
 LEVEL_OF_DETAIL = 3
-FRAME_COUNT = 24
-FRAMES_PER_SECOND = 24.0
-CONTACT_PHASE = 0.55
+
+# The movement is data now. These read from the motion file so that editing the
+# keys is the only thing needed to change the movement.
+_TRACK = load_motion(MOTION_PATH)
+FRAME_COUNT = _TRACK.frames
+FRAMES_PER_SECOND = _TRACK.frames_per_second
+CONTACT_PHASE = _TRACK.contact_phase()
 
 # Pose parameters only. The legs are included because the manual coaches this
 # drill from a wide base power position, which the knees have to produce.
@@ -38,7 +45,6 @@ FORBIDDEN = ("scale", "flexible")
 # position ready to move but use hands & arms to pull in ball." Pinning the feet
 # and lowering the hips is what produces a power position. Locking the root
 # instead leaves the athlete standing straight-legged and lets the torso lean.
-POWER_POSITION_DROP_CM = 9.0
 FOOT_WEIGHT = 12.0
 
 
@@ -68,38 +74,13 @@ def enabled_parameters(character: geometry.Character) -> np.ndarray:
 
 
 def hand_targets(
-    rest_left: np.ndarray,
-    rest_right: np.ndarray,
+    track,
     phase: float,
     chest: np.ndarray,
+    arm_length_cm: float,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Return where both hands should be at this phase of the catch.
-
-    The shape comes from the manual: react to the front, in front of the
-    shoulder, snatch with two hands, then pull the ball in to the chest. The
-    arms extend to nearly full reach at contact and only then fold.
-    """
-    if phase <= CONTACT_PHASE:
-        reach = 0.5 - 0.5 * math.cos(math.pi * phase / CONTACT_PHASE)
-        pull_in = 0.0
-    else:
-        reach = 1.0
-        pull_in = 0.5 - 0.5 * math.cos(
-            math.pi * (phase - CONTACT_PHASE) / (1.0 - CONTACT_PHASE)
-        )
-
-    extension = np.array([0.0, 30.0, 52.0], dtype=np.float32)
-    left = rest_left + extension * reach
-    right = rest_right + extension * reach
-    left[0] -= 22.0 * reach
-    right[0] += 22.0 * reach
-
-    if pull_in > 0.0:
-        chest_left = chest + np.array([-11.0, -6.0, 9.0], dtype=np.float32)
-        chest_right = chest + np.array([11.0, -6.0, 9.0], dtype=np.float32)
-        left = left + (chest_left - left) * pull_in
-        right = right + (chest_right - right) * pull_in
-    return left, right
+    """Return both hand targets at this phase, read from the motion keys."""
+    return hand_targets_from_track(track, phase, chest, arm_length_cm)
 
 
 def measure_frame(points: np.ndarray, index: dict[str, int], phase: float) -> dict:
@@ -154,10 +135,10 @@ def solve_catch(character: geometry.Character) -> dict:
 
     rest = np.zeros(count, dtype=np.float32)
     rest_positions = joint_positions(character, rest)
-    rest_left = rest_positions[index["l_wrist"]].copy()
-    rest_right = rest_positions[index["r_wrist"]].copy()
     rest_chest = rest_positions[index["c_spine3"]].copy()
     rest_root = rest_positions[index["root"]].copy()
+    reach_cm = arm_length(rest_positions, index)
+    track = _TRACK
 
     motion = np.zeros((FRAME_COUNT, count), dtype=np.float32)
     points_per_frame: list[np.ndarray] = []
@@ -168,7 +149,7 @@ def solve_catch(character: geometry.Character) -> dict:
     for frame in range(FRAME_COUNT):
         phase = frame / (FRAME_COUNT - 1)
         left_target, right_target = hand_targets(
-            rest_left, rest_right, phase, rest_chest
+            track, phase, rest_chest, reach_cm
         )
 
         position_error = solver2.PositionErrorFunction(character, weight=1.0)
@@ -191,7 +172,8 @@ def solve_catch(character: geometry.Character) -> dict:
         position_error.add_constraint(
             index["root"],
             target=np.asarray(
-                rest_root - np.array([0.0, POWER_POSITION_DROP_CM, 0.0]),
+                rest_root
+                - np.array([0.0, track.hip_drop_fraction * reach_cm, 0.0]),
                 dtype=np.float32,
             ),
             offset=np.zeros(3, dtype=np.float32),
@@ -224,6 +206,7 @@ def solve_catch(character: geometry.Character) -> dict:
         misses.append(float(np.linalg.norm(points[index["l_wrist"]] - left_target)))
 
     return {
+        "track": track,
         "index": index,
         "enabled": enabled,
         "motion": motion,
