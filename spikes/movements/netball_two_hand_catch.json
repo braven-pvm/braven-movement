@@ -1,0 +1,88 @@
+{
+  "movementId": "netball_two_hand_catch",
+  "sport": "netball",
+  "skill": "Two-hand catch, reach and pull-in",
+  "source": "PROVISIONAL. The phase names and cues follow the two-hand catch as commonly coached. The numeric bands are placeholders chosen to be wider than the 5 degree measurement threshold. They are NOT coaching-approved. Replace them from the Netball Skills and Conditioning Manual and a coach review before any of this is shown to an athlete.",
+  "phases": [
+    {
+      "name": "ready",
+      "atPhase": 0.0,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 20.0,
+          "maximumDegrees": 60.0,
+          "cue": "Start with soft elbows, hands in front of the chest.",
+          "why": "A locked arm cannot absorb the ball and transmits the impact to the shoulder."
+        },
+        {
+          "measure": "leftShoulderElevationDegrees",
+          "minimumDegrees": 25.0,
+          "maximumDegrees": 60.0,
+          "cue": "Hands up and ready, not hanging at your sides.",
+          "why": "A low starting position costs time that the reach cannot recover."
+        }
+      ]
+    },
+    {
+      "name": "reach",
+      "atPhase": 0.3,
+      "checkpoints": [
+        {
+          "measure": "leftShoulderElevationDegrees",
+          "minimumDegrees": 40.0,
+          "maximumDegrees": 80.0,
+          "cue": "Reach to the ball early. Meet it, do not wait for it.",
+          "why": "Catching early wins the contest and protects possession."
+        }
+      ]
+    },
+    {
+      "name": "contact",
+      "atPhase": 0.55,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 30.0,
+          "maximumDegrees": 75.0,
+          "cue": "Take the ball with bent elbows so you can give with it.",
+          "why": "Bent elbows at contact give the range needed to absorb the ball."
+        },
+        {
+          "measure": "rightElbowFlexionDegrees",
+          "minimumDegrees": 30.0,
+          "maximumDegrees": 75.0,
+          "cue": "Both hands work together. Match your hands.",
+          "why": "One dominant hand turns a two-hand catch into a one-hand catch."
+        },
+        {
+          "measure": "leftShoulderElevationDegrees",
+          "minimumDegrees": 45.0,
+          "maximumDegrees": 95.0,
+          "cue": "Meet the ball out in front, at chest height or above.",
+          "why": "Contact close to the body removes the room needed to absorb the ball."
+        }
+      ]
+    },
+    {
+      "name": "pull_in",
+      "atPhase": 1.0,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 25.0,
+          "maximumDegrees": 70.0,
+          "cue": "Draw the ball in to your chest and secure it.",
+          "why": "Pulling the ball in absorbs the momentum and protects it from a defender."
+        },
+        {
+          "measure": "leftShoulderElevationDegrees",
+          "minimumDegrees": 20.0,
+          "maximumDegrees": 60.0,
+          "cue": "Bring your hands back down to a strong, balanced position.",
+          "why": "Finishing high leaves the ball exposed and the next pass slow."
+        }
+      ]
+    }
+  ]
+}

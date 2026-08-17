@@ -1,9 +1,13 @@
 __pycache__/
 *.py[cod]
 .venv/
+.pixi/
 .pytest_cache/
 /artifacts/
 /output/
 /outputs/
 /references/*
 !/references/README.md
+/spikes/mhr-assets/
+/spikes/pixi.lock
+/spikes/poc-output/
