@@ -122,8 +122,11 @@ def hand_targets_from_track(
     lateral = across * arm_length_cm
     vertical = up * arm_length_cm
     forward = ahead * arm_length_cm
-    left = chest + np.array([-lateral, vertical, forward], dtype=np.float32)
-    right = chest + np.array([lateral, vertical, forward], dtype=np.float32)
+    # MHR places the left side at positive X. Its l_uparm sits at x plus 17.6 and
+    # r_uparm at x minus 17.6. Sending the left hand to negative X makes both
+    # arms reach across the body, which crosses them and twists the hips.
+    left = chest + np.array([lateral, vertical, forward], dtype=np.float32)
+    right = chest + np.array([-lateral, vertical, forward], dtype=np.float32)
     return left, right
 
 

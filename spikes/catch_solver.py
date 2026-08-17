@@ -48,6 +48,10 @@ FORBIDDEN = ("scale", "flexible")
 FOOT_WEIGHT = 12.0
 
 
+class SolveError(RuntimeError):
+    pass
+
+
 def load_character() -> geometry.Character:
     return geometry.Character.load_fbx(
         str(ASSET_FOLDER / f"lod{LEVEL_OF_DETAIL}.fbx"),
@@ -201,6 +205,18 @@ def solve_catch(character: geometry.Character) -> dict:
         previous = solved
 
         points = joint_positions(character, solved)
+        # A left hand that has travelled to the right of the right hand means a
+        # left and right mix-up upstream, not a pose worth measuring. This
+        # repository has produced that class of defect twice, so it is checked
+        # rather than trusted.
+        separation = float(
+            points[index["l_wrist"]][0] - points[index["r_wrist"]][0]
+        )
+        if separation <= 0.0:
+            raise SolveError(
+                f"frame {frame}: the hands have crossed, left minus right is "
+                f"{separation:.1f} cm. MHR places the left side at positive X."
+            )
         points_per_frame.append(points)
         measurements.append(measure_frame(points, index, phase))
         misses.append(float(np.linalg.norm(points[index["l_wrist"]] - left_target)))
