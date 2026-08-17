@@ -53,7 +53,7 @@ print(json.dumps({
                 "schemaVersion": 1,
                 "movementId": "drill_double_hand_snatches_first_contact",
                 "framePx": [769, 665],
-                "ballRadiusM": 0.1,
+                "ballRadiusM": 0.111,
                 "rightThumbPx": [318.0, 216.0],
                 "maxWristBendDegrees": 45.0,
             },
@@ -121,6 +121,22 @@ print(json.dumps({
             getattr(config, "views", None)["fullBody"].lens_mm,
             82.0,
         )
+
+    def test_exposes_the_portable_coaching_studio_presentation(self):
+        config = load_reference_catch_config()
+
+        presentation = getattr(config, "presentation", None)
+        self.assertIsNotNone(presentation)
+        self.assertEqual(presentation.style, "premium_coaching_studio")
+        self.assertEqual(presentation.ball.seam_loop_count, 6)
+        self.assertEqual(presentation.ball.grip_scale, 180.0)
+        self.assertEqual(
+            presentation.ball.accent_color,
+            (0.94, 0.92, 0.82, 1.0),
+        )
+        self.assertEqual(presentation.kit.base_color, (0.018, 0.024, 0.036, 1.0))
+        self.assertEqual(len(presentation.lights), 4)
+        self.assertEqual(presentation.lights[0].name, "BRAVEN_Key")
 
     def test_rejects_a_pose_vector_with_the_wrong_dimension(self):
         data = json.loads(DEFAULT_CONFIG_PATH.read_text(encoding="utf-8"))

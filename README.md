@@ -7,8 +7,9 @@ renders reference views, exports FBX/GLB/Blend files, and writes a hash-backed J
 ## Current status
 
 This repository is an **authoring/calibration tool under active development**. The pipeline and
-portable configuration boundary are working. The hand orientation is visually approved, while the
-camera, arm geometry, and complete catch pose still require final coaching approval. See
+portable configuration boundary are working. The hand orientation is visually approved and the
+camera/arm geometry has reached review quality, while the complete coaching sample still requires
+final visual acceptance. See
 [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) before using any generated pose.
 
 ## Repository boundary
@@ -77,8 +78,11 @@ render to the named reference and the pose is anatomically credible.
 
 [`config/reference_catch.v1.json`](config/reference_catch.v1.json) is the single source of truth
 for the current movement ID, reference provenance, pixel landmarks, anatomy limits, 3D pose
-targets, ball size, and camera views. `reference_pose_config.py` validates and loads it relative to
-this repository, independent of the current working directory.
+targets, regulation-scale netball, camera views, training kit treatment, studio background, and
+lighting rig. `reference_pose_config.py` validates and loads it relative to this repository,
+independent of the current working directory. The generator uses MPFB's bundled shorts-and-shirt
+outfit, sports trainers, ponytail, skin, eye, eyebrow, and eyelash assets and records each source
+asset hash in the receipt.
 
 The reference image itself is not committed. Place an authorised local copy at the configured
 `reference.assetFile` path when visual comparison is required. The configured SHA-256 and image

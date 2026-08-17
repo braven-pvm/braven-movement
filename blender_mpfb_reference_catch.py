@@ -25,7 +25,9 @@ from reference_pose_calibration import (  # noqa: E402
     validate_pixel_calibration,
 )
 from reference_pose_config import (  # noqa: E402
+    BallPresentation,
     DEFAULT_CONFIG_PATH,
+    PresentationConfig,
     ReferenceCatchConfig,
     ViewConfig,
     load_reference_catch_config,
@@ -535,6 +537,140 @@ def make_material(
     return material
 
 
+def make_fabric_material(
+    presentation: PresentationConfig,
+) -> bpy.types.Material:
+    material = bpy.data.materials.new("BRAVEN_Graphite_Training_Kit")
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    shader = nodes.get("Principled BSDF")
+    shader.inputs["Base Color"].default_value = presentation.kit.base_color
+    shader.inputs["Roughness"].default_value = presentation.kit.roughness
+    sheen = shader.inputs.get("Sheen Weight")
+    if sheen is not None:
+        sheen.default_value = 0.08
+
+    coordinates = nodes.new("ShaderNodeTexCoord")
+    weave = nodes.new("ShaderNodeTexNoise")
+    weave.inputs["Scale"].default_value = 150.0
+    weave.inputs["Detail"].default_value = 2.0
+    weave.inputs["Roughness"].default_value = 0.42
+    bump = nodes.new("ShaderNodeBump")
+    bump.inputs["Strength"].default_value = 0.045
+    bump.inputs["Distance"].default_value = 0.0007
+    links.new(coordinates.outputs["Generated"], weave.inputs["Vector"])
+    links.new(weave.outputs["Fac"], bump.inputs["Height"])
+    links.new(bump.outputs["Normal"], shader.inputs["Normal"])
+    return material
+
+
+def make_netball_material(ball_style: BallPresentation) -> bpy.types.Material:
+    material = bpy.data.materials.new("BRAVEN_Netball_Panel_Surface")
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    shader = nodes.get("Principled BSDF")
+    shader.inputs["Roughness"].default_value = ball_style.roughness
+
+    coordinates = nodes.new("ShaderNodeTexCoord")
+    graphic = nodes.new("ShaderNodeTexWave")
+    graphic.wave_type = "BANDS"
+    graphic.bands_direction = "X"
+    graphic.inputs["Scale"].default_value = 0.72
+    graphic.inputs["Distortion"].default_value = 3.0
+    graphic.inputs["Detail"].default_value = 2.5
+    graphic.inputs["Detail Scale"].default_value = 1.8
+    graphic.inputs["Detail Roughness"].default_value = 0.48
+    colours = nodes.new("ShaderNodeValToRGB")
+    colours.color_ramp.interpolation = "CONSTANT"
+    colours.color_ramp.elements[0].position = 0.0
+    colours.color_ramp.elements[0].color = ball_style.primary_color
+    accent = colours.color_ramp.elements.new(0.38)
+    accent.color = ball_style.accent_color
+    secondary = colours.color_ramp.elements.new(0.52)
+    secondary.color = ball_style.secondary_color
+    colours.color_ramp.elements[1].position = 0.74
+    colours.color_ramp.elements[1].color = ball_style.primary_color
+
+    grip = nodes.new("ShaderNodeTexNoise")
+    grip.inputs["Scale"].default_value = ball_style.grip_scale
+    grip.inputs["Detail"].default_value = 1.6
+    grip.inputs["Roughness"].default_value = 0.62
+    bump = nodes.new("ShaderNodeBump")
+    bump.inputs["Strength"].default_value = 0.2
+    bump.inputs["Distance"].default_value = 0.0014
+
+    links.new(coordinates.outputs["Generated"], graphic.inputs["Vector"])
+    links.new(graphic.outputs["Fac"], colours.inputs["Fac"])
+    links.new(colours.outputs["Color"], shader.inputs["Base Color"])
+    links.new(coordinates.outputs["Generated"], grip.inputs["Vector"])
+    links.new(grip.outputs["Fac"], bump.inputs["Height"])
+    links.new(bump.outputs["Normal"], shader.inputs["Normal"])
+    return material
+
+
+def create_panelled_netball(
+    centre: Vector,
+    radius: float,
+    presentation: PresentationConfig,
+) -> tuple[bpy.types.Object, list[bpy.types.Object]]:
+    bpy.ops.mesh.primitive_uv_sphere_add(
+        segments=96,
+        ring_count=64,
+        radius=radius,
+        location=centre,
+    )
+    ball = bpy.context.active_object
+    ball.name = "BRAVEN_Netball"
+    ball.data.materials.append(make_netball_material(presentation.ball))
+    for polygon in ball.data.polygons:
+        polygon.use_smooth = True
+
+    seam_material = make_material(
+        "BRAVEN_Netball_Embossed_Seams",
+        presentation.ball.seam_color,
+        0.64,
+    )
+    seam_normals = (
+        Vector((0.0, 0.0, 1.0)),
+        Vector((1.0, 0.0, 0.0)),
+        Vector((0.5, 0.8660254, 0.0)),
+        Vector((-0.5, 0.8660254, 0.0)),
+        Vector((0.24, -0.16, 1.0)).normalized(),
+        Vector((-0.2, 0.3, 1.0)).normalized(),
+    )
+    seams: list[bpy.types.Object] = []
+    for index, normal in enumerate(
+        seam_normals[: presentation.ball.seam_loop_count],
+        start=1,
+    ):
+        bpy.ops.mesh.primitive_torus_add(
+            align="WORLD",
+            major_segments=128,
+            minor_segments=12,
+            location=centre,
+            major_radius=radius * 1.0005,
+            minor_radius=0.00155,
+        )
+        seam = bpy.context.active_object
+        seam.name = f"BRAVEN_Netball_Seam_{index:02d}"
+        seam.rotation_mode = "QUATERNION"
+        seam.rotation_quaternion = Vector((0.0, 0.0, 1.0)).rotation_difference(
+            normal
+        )
+        seam.data.materials.append(seam_material)
+        for polygon in seam.data.polygons:
+            polygon.use_smooth = True
+        world_matrix = seam.matrix_world.copy()
+        seam.parent = ball
+        seam.matrix_world = world_matrix
+        seams.append(seam)
+    ball.rotation_mode = "XYZ"
+    ball.rotation_euler = tuple(math.radians(value) for value in (18.0, -14.0, 24.0))
+    return ball, seams
+
+
 def asset_path(*parts: str) -> Path:
     path = ASSET_DATA.joinpath(*parts)
     if not path.is_file():
@@ -542,7 +678,9 @@ def asset_path(*parts: str) -> Path:
     return path
 
 
-def create_athlete() -> tuple[bpy.types.Object, bpy.types.Object, list[bpy.types.Object], list[Path]]:
+def create_athlete(
+    presentation: PresentationConfig,
+) -> tuple[bpy.types.Object, bpy.types.Object, list[bpy.types.Object], list[Path]]:
     bpy.ops.wm.read_factory_settings(use_empty=True)
     macro = {
         "age": 0.32,
@@ -569,11 +707,12 @@ def create_athlete() -> tuple[bpy.types.Object, bpy.types.Object, list[bpy.types
 
     skin = asset_path("skins", "young_caucasian_female", "young_caucasian_female.mhmat")
     suit = asset_path("clothes", "female_casualsuit02", "female_casualsuit02.mhclo")
+    trainers = asset_path("clothes", "shoes05", "shoes05.mhclo")
     hair = asset_path("hair", "ponytail01", "ponytail01.mhclo")
     eyes = asset_path("eyes", "high-poly", "high-poly.mhclo")
     brows = asset_path("eyebrows", "eyebrow006", "eyebrow006.mhclo")
     lashes = asset_path("eyelashes", "eyelashes01", "eyelashes01.mhclo")
-    source_assets = [skin, suit, hair, eyes, brows, lashes]
+    source_assets = [skin, suit, trainers, hair, eyes, brows, lashes]
 
     HumanService.set_character_skin(
         str(skin),
@@ -591,6 +730,7 @@ def create_athlete() -> tuple[bpy.types.Object, bpy.types.Object, list[bpy.types
         )
         for path, asset_type in (
             (suit, "Clothes"),
+            (trainers, "Clothes"),
             (hair, "Hair"),
             (eyes, "Eyes"),
             (brows, "Eyebrows"),
@@ -599,9 +739,7 @@ def create_athlete() -> tuple[bpy.types.Object, bpy.types.Object, list[bpy.types
     ]
     sportswear = assets[0]
     sportswear.data.materials.clear()
-    sportswear.data.materials.append(
-        make_material("BRAVEN_Black_Training_Kit", (0.018, 0.022, 0.032, 1.0), 0.72)
-    )
+    sportswear.data.materials.append(make_fabric_material(presentation))
     return human, rig, assets, source_assets
 
 
@@ -631,30 +769,75 @@ def point_at(camera: bpy.types.Object, target: Vector) -> None:
     camera.rotation_euler = (target - camera.location).to_track_quat("-Z", "Y").to_euler()
 
 
-def add_camera_and_lights() -> bpy.types.Object:
+def add_camera_and_lights(
+    presentation: PresentationConfig,
+) -> tuple[bpy.types.Object, list[bpy.types.Object]]:
     bpy.ops.object.camera_add()
     camera = bpy.context.active_object
     camera.name = "BRAVEN_Reference_Camera"
     bpy.context.scene.camera = camera
 
-    for name, light_type, location, energy, size, colour in (
-        ("BRAVEN_Key", "AREA", (3.0, -3.8, 4.5), 900.0, 3.2, (1.0, 0.91, 0.82)),
-        ("BRAVEN_Fill", "AREA", (-3.2, -2.2, 2.8), 520.0, 3.8, (0.72, 0.86, 1.0)),
-        ("BRAVEN_Rim", "AREA", (0.3, 2.6, 3.6), 760.0, 2.4, (0.72, 0.82, 1.0)),
-    ):
-        data = bpy.data.lights.new(name, type=light_type)
-        data.energy = energy
+    lights: list[bpy.types.Object] = []
+    target = Vector(presentation.studio.light_target_m)
+    for light in presentation.lights:
+        data = bpy.data.lights.new(light.name, type="AREA")
+        data.energy = light.energy
         data.shape = "DISK"
-        data.size = size
-        data.color = colour
-        item = bpy.data.objects.new(name, data)
+        data.size = light.size_m
+        data.color = light.color
+        item = bpy.data.objects.new(light.name, data)
         bpy.context.collection.objects.link(item)
-        item.location = location
-        item.rotation_euler = (Vector((0.0, -0.15, 1.1)) - item.location).to_track_quat("-Z", "Y").to_euler()
-    return camera
+        item.location = light.location_m
+        item.rotation_euler = (target - item.location).to_track_quat(
+            "-Z", "Y"
+        ).to_euler()
+        lights.append(item)
+    return camera, lights
 
 
-def configure_render(path: Path, resolution: tuple[int, int]) -> None:
+def add_studio_environment(
+    presentation: PresentationConfig,
+) -> bpy.types.Object:
+    profile = [(-3.2, 0.0), (1.0, 0.0)]
+    profile.extend(
+        (
+            1.0 + math.cos(math.radians(angle)),
+            1.0 + math.sin(math.radians(angle)),
+        )
+        for angle in (-75, -60, -45, -30, -15, 0)
+    )
+    profile.append((2.0, 4.2))
+    vertices = [
+        (x, y, z)
+        for y, z in profile
+        for x in (-10.0, 10.0)
+    ]
+    faces = [
+        (index * 2, index * 2 + 1, index * 2 + 3, index * 2 + 2)
+        for index in range(len(profile) - 1)
+    ]
+    mesh = bpy.data.meshes.new("BRAVEN_Studio_Cyclorama_Mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update()
+    cyclorama = bpy.data.objects.new("BRAVEN_Studio_Cyclorama", mesh)
+    bpy.context.collection.objects.link(cyclorama)
+    cyclorama.data.materials.append(
+        make_material(
+            "BRAVEN_Studio_Navy",
+            presentation.studio.cyclorama_color,
+            presentation.studio.cyclorama_roughness,
+        )
+    )
+    for polygon in cyclorama.data.polygons:
+        polygon.use_smooth = True
+    return cyclorama
+
+
+def configure_render(
+    path: Path,
+    resolution: tuple[int, int],
+    world_colour: tuple[float, float, float],
+) -> None:
     scene = bpy.context.scene
     scene.render.engine = "BLENDER_EEVEE_NEXT"
     scene.render.resolution_x, scene.render.resolution_y = resolution
@@ -666,7 +849,10 @@ def configure_render(path: Path, resolution: tuple[int, int]) -> None:
     scene.render.use_file_extension = True
     if scene.world is None:
         scene.world = bpy.data.worlds.new("BRAVEN_Reference_World")
-    scene.world.color = (0.012, 0.016, 0.024)
+    scene.world.use_nodes = True
+    background = scene.world.node_tree.nodes.get("Background")
+    background.inputs["Color"].default_value = (*world_colour, 1.0)
+    background.inputs["Strength"].default_value = 0.22
 
 
 def render_view(
@@ -678,17 +864,33 @@ def render_view(
     target: Vector,
     lens: float,
     sensor_width: float,
+    world_colour: tuple[float, float, float],
 ) -> dict[str, object]:
     camera.data.type = "PERSP"
     camera.data.lens = lens
     camera.data.sensor_width = sensor_width
     camera.location = location
     point_at(camera, target)
-    configure_render(path, resolution)
+    configure_render(path, resolution, world_colour)
     path.unlink(missing_ok=True)
     bpy.ops.render.render(write_still=True)
     image = bpy.data.images.load(str(path), check_existing=False)
     maximum_alpha = max_rgba_alpha(image.pixels)
+    width, height = (int(value) for value in image.size)
+
+    def corner_rgb(x: int, y: int) -> list[float]:
+        offset = (y * width + x) * 4
+        return [
+            round(float(image.pixels[offset + channel]), 4)
+            for channel in range(3)
+        ]
+
+    corners = {
+        "bottomLeft": corner_rgb(0, 0),
+        "bottomRight": corner_rgb(width - 1, 0),
+        "topLeft": corner_rgb(0, height - 1),
+        "topRight": corner_rgb(width - 1, height - 1),
+    }
     bpy.data.images.remove(image)
     return {
         "path": str(path),
@@ -699,6 +901,7 @@ def render_view(
         "cameraType": "PERSP",
         "lens": lens,
         "maxAlpha": maximum_alpha,
+        "cornerRgb": corners,
     }
 
 
@@ -730,7 +933,7 @@ def main() -> None:
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
 
-    human, rig, assets, source_assets = create_athlete()
+    human, rig, assets, source_assets = create_athlete(config.presentation)
     character_objects = [rig, human, *assets]
     neutral_fbx = output / "braven_mpfb_athlete_neutral.fbx"
     export_fbx(neutral_fbx, character_objects, animation=False)
@@ -805,17 +1008,12 @@ def main() -> None:
             2,
         )
 
-    bpy.ops.mesh.primitive_uv_sphere_add(
-        segments=64,
-        ring_count=32,
-        radius=config.ball_radius_m,
-        location=ball_centre,
+    ball, ball_seams = create_panelled_netball(
+        ball_centre,
+        config.ball_radius_m,
+        config.presentation,
     )
-    ball = bpy.context.active_object
-    ball.name = "BRAVEN_Netball"
-    ball.data.materials.append(
-        make_material("BRAVEN_Netball_Coral", (0.88, 0.16, 0.11, 1.0), 0.48)
-    )
+    ball_objects = [ball, *ball_seams]
     keyframe_pose(rig, ball)
 
     finger_names = [
@@ -862,7 +1060,9 @@ def main() -> None:
         "rearHandFrontDepthM": round(rear_hand_front_depth, 5),
     }
 
-    camera = add_camera_and_lights()
+    studio = add_studio_environment(config.presentation)
+    camera, lights = add_camera_and_lights(config.presentation)
+    world_colour = config.presentation.studio.world_color
     crop_view: ViewConfig = config.views["referenceCrop"]
     crop = render_view(
         camera,
@@ -872,6 +1072,7 @@ def main() -> None:
         target=Vector(crop_view.target_m),
         lens=crop_view.lens_mm,
         sensor_width=crop_view.sensor_width_mm,
+        world_colour=world_colour,
     )
     calibration_view = render_view(
         camera,
@@ -881,6 +1082,7 @@ def main() -> None:
         target=Vector(reference_view.target_m),
         lens=reference_view.lens_mm,
         sensor_width=reference_view.sensor_width_mm,
+        world_colour=world_colour,
     )
     projected_landmarks = project_pose_landmarks(
         rig,
@@ -922,12 +1124,13 @@ def main() -> None:
         target=Vector(full_view.target_m),
         lens=full_view.lens_mm,
         sensor_width=full_view.sensor_width_mm,
+        world_colour=world_colour,
     )
 
     posed_fbx = output / "braven_mpfb_reference_catch.fbx"
-    export_fbx(posed_fbx, [*character_objects, ball], animation=True)
+    export_fbx(posed_fbx, [*character_objects, *ball_objects], animation=True)
     posed_glb = output / "braven_mpfb_reference_catch.glb"
-    select_only([*character_objects, ball])
+    select_only([*character_objects, *ball_objects])
     bpy.ops.export_scene.gltf(
         filepath=str(posed_glb),
         export_format="GLB",
@@ -977,6 +1180,25 @@ def main() -> None:
             "type": "PERSP",
             "width": crop_view.resolution_px[0],
             "height": crop_view.resolution_px[1],
+        },
+        "presentation": {
+            "style": config.presentation.style,
+            "kit": {
+                "material": "procedural_fabric",
+                "roughness": config.presentation.kit.roughness,
+                "footwear": "sports_trainers",
+            },
+            "ball": {
+                "type": "panelled_netball",
+                "diameterM": round(config.ball_radius_m * 2.0, 3),
+                "seamLoops": len(ball_seams),
+                "surface": "procedural_dimple_grip",
+                "graphic": "clean_three_colour_panel_graphic",
+            },
+            "studio": {
+                "cyclorama": studio.name == "BRAVEN_Studio_Cyclorama",
+                "lightCount": len(lights),
+            },
         },
         "visualQa": {"referenceCompared": bool(args.reference_compared)},
         "calibration": {

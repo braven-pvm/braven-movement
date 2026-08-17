@@ -77,6 +77,52 @@ class BlenderReferenceConfigIntegrationTest(unittest.TestCase):
             self.expected_config_sha256,
         )
 
+    def test_receipt_proves_the_panelled_netball_and_studio_presentation(self):
+        presentation = self.receipt.get("presentation")
+        self.assertIsNotNone(
+            presentation,
+            "receipt must identify the deterministic presentation treatment",
+        )
+        self.assertEqual(presentation["style"], "premium_coaching_studio")
+        self.assertEqual(presentation["ball"]["type"], "panelled_netball")
+        self.assertGreaterEqual(presentation["ball"]["seamLoops"], 6)
+        self.assertEqual(
+            presentation["ball"]["surface"],
+            "procedural_dimple_grip",
+        )
+        self.assertEqual(
+            presentation["ball"]["graphic"],
+            "clean_three_colour_panel_graphic",
+        )
+        self.assertGreaterEqual(presentation["ball"]["diameterM"], 0.218)
+        self.assertLessEqual(presentation["ball"]["diameterM"], 0.224)
+        self.assertTrue(presentation["studio"]["cyclorama"])
+        self.assertGreaterEqual(presentation["studio"]["lightCount"], 4)
+        self.assertEqual(presentation["kit"]["footwear"], "sports_trainers")
+        self.assertTrue(
+            any(
+                Path(asset["path"]).name == "shoes05.mhclo"
+                for asset in self.receipt["source"]["assets"]
+            ),
+            "the presentation receipt must retain the trainer source asset",
+        )
+
+    def test_studio_background_covers_every_render_corner(self):
+        for view_name in ("referenceCrop", "referenceMatch", "fullBody"):
+            with self.subTest(view=view_name):
+                corners = self.receipt["views"][view_name].get("cornerRgb")
+                self.assertIsNotNone(
+                    corners,
+                    "render receipt must expose studio edge coverage",
+                )
+                for corner_name, rgb in corners.items():
+                    with self.subTest(view=view_name, corner=corner_name):
+                        self.assertGreater(
+                            sum(rgb),
+                            0.12,
+                            "camera must not see past the cyclorama into black world",
+                        )
+
     def test_render_preserves_the_approved_thumb_orientation(self):
         actual = self.receipt["calibration"]["actualPx"]
         for side in ("left", "right"):

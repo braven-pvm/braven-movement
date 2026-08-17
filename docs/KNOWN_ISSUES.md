@@ -2,9 +2,9 @@
 
 ## Reference catch is not yet a final coaching sample
 
-The current MPFB catch render remains an intermediate calibration artifact. Its hand orientation
-in the locked reference view was visually approved on 2026-08-17, but presentation and final
-coaching-sample acceptance are still pending.
+The current MPFB catch render remains a review artifact. Its hand orientation in the locked
+reference view was visually approved on 2026-08-17 and the first premium coaching-studio
+presentation pass is complete, but final coaching-sample acceptance is still pending.
 
 The MPFB hands deliberately retain the signed local index-to-pinky cross product from the rig.
 Normalising that sign across left and right hands produces the rejected two-left-hands projection.
@@ -18,10 +18,13 @@ The supplied photograph is blurred and fingers overlap. Earlier hard per-pixel f
 produced anatomically painful joints even while reporting low pixel error. Finger targets now guide
 comparison, but joint limits and visual anatomy take priority over exact fingertip pixels.
 
-## Presentation is deferred
+## Presentation is ready for review, not final publication
 
-Clothing, materials, lighting, background, and final rendering style are intentionally deferred
-until pose meaning and anatomy are accepted.
+The deterministic presentation now includes a graphite training kit, sports trainers, a curved
+blue-grey studio background, a four-light rig, and a regulation-scale three-colour panelled
+netball with embossed seams and procedural grip. The athlete identity, final branded kit, ball
+artwork, and production colour grade remain intentionally replaceable through the versioned
+configuration after coaching acceptance.
 
 ## Reference media is local-only
 

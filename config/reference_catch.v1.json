@@ -37,7 +37,7 @@
     }
   },
   "pose": {
-    "ballRadiusM": 0.1,
+    "ballRadiusM": 0.111,
     "ballCentreM": [0.01131759, -0.58264951, 1.58630682],
     "wristTargetsM": {
       "l": [0.17887096, -0.4450906, 1.4323828],
@@ -74,6 +74,58 @@
       "fingerJointBend": 25.0,
       "fingerBaseDeviation": 40.0
     }
+  },
+  "presentation": {
+    "style": "premium_coaching_studio",
+    "kit": {
+      "baseColor": [0.018, 0.024, 0.036, 1.0],
+      "roughness": 0.74
+    },
+    "ball": {
+      "primaryColor": [0.82, 0.045, 0.065, 1.0],
+      "secondaryColor": [0.015, 0.36, 0.42, 1.0],
+      "accentColor": [0.94, 0.92, 0.82, 1.0],
+      "seamColor": [0.01, 0.016, 0.024, 1.0],
+      "roughness": 0.5,
+      "gripScale": 180.0,
+      "seamLoopCount": 6
+    },
+    "studio": {
+      "worldColor": [0.004, 0.008, 0.014],
+      "cycloramaColor": [0.007, 0.016, 0.029, 1.0],
+      "cycloramaRoughness": 0.93,
+      "lightTargetM": [-0.05, -0.2, 1.35]
+    },
+    "lights": [
+      {
+        "name": "BRAVEN_Key",
+        "locationM": [3.0, -3.8, 4.5],
+        "energy": 820.0,
+        "sizeM": 3.8,
+        "color": [1.0, 0.9, 0.8]
+      },
+      {
+        "name": "BRAVEN_Fill",
+        "locationM": [-3.1, -2.25, 2.8],
+        "energy": 370.0,
+        "sizeM": 4.2,
+        "color": [0.68, 0.84, 1.0]
+      },
+      {
+        "name": "BRAVEN_Rim",
+        "locationM": [0.4, 2.7, 3.7],
+        "energy": 620.0,
+        "sizeM": 2.6,
+        "color": [0.65, 0.8, 1.0]
+      },
+      {
+        "name": "BRAVEN_BallKicker",
+        "locationM": [-1.8, -1.9, 2.35],
+        "energy": 260.0,
+        "sizeM": 1.5,
+        "color": [1.0, 0.86, 0.76]
+      }
+    ]
   },
   "views": {
     "referenceCrop": {

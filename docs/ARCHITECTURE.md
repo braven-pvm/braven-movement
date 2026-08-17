@@ -12,11 +12,12 @@ must not need Blender, Cascadeur, MPFB, pose logic, or reference landmarks at ru
 authorised reference image
         +
 versioned JSON movement config
+  (pose + presentation)
         |
         v
 Blender + MPFB pose generator
         |
-        +--> diagnostic PNG views
+        +--> deterministic studio PNG views
         +--> neutral and posed FBX
         +--> animated GLB
         +--> JSON receipt with hashes and anatomy/calibration evidence
@@ -46,8 +47,11 @@ Blender renderer consumes that job without knowing the source scene.
 4. Input media is supplied explicitly or resolved beneath `references/`; it is not silently copied
    from temporary attachment locations.
 5. Generated artifacts go to a caller-supplied directory and are never treated as source.
-6. A generated receipt records the configuration hash and the hashes of exported artifacts.
-7. Anatomical and visual acceptance are separate gates. Passing numeric limits does not make a
+6. Pose, camera, material colours, ball construction, studio colours, and lighting remain
+   versioned configuration or deterministic generator code; they are not manual `.blend` edits.
+7. A generated receipt records the configuration hash, source-asset hashes, presentation facts,
+   and the hashes of exported artifacts.
+8. Anatomical and visual acceptance are separate gates. Passing numeric limits does not make a
    pose coaching-approved.
 
 ## Testing layers

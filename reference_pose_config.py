@@ -51,6 +51,49 @@ class ViewConfig:
 
 
 @dataclass(frozen=True)
+class MaterialPresentation:
+    base_color: tuple[float, float, float, float]
+    roughness: float
+
+
+@dataclass(frozen=True)
+class BallPresentation:
+    primary_color: tuple[float, float, float, float]
+    secondary_color: tuple[float, float, float, float]
+    accent_color: tuple[float, float, float, float]
+    seam_color: tuple[float, float, float, float]
+    roughness: float
+    grip_scale: float
+    seam_loop_count: int
+
+
+@dataclass(frozen=True)
+class StudioPresentation:
+    world_color: tuple[float, float, float]
+    cyclorama_color: tuple[float, float, float, float]
+    cyclorama_roughness: float
+    light_target_m: tuple[float, float, float]
+
+
+@dataclass(frozen=True)
+class LightPresentation:
+    name: str
+    location_m: tuple[float, float, float]
+    energy: float
+    size_m: float
+    color: tuple[float, float, float]
+
+
+@dataclass(frozen=True)
+class PresentationConfig:
+    style: str
+    kit: MaterialPresentation
+    ball: BallPresentation
+    studio: StudioPresentation
+    lights: tuple[LightPresentation, ...]
+
+
+@dataclass(frozen=True)
 class ReferenceCatchConfig:
     source_path: Path
     schema_version: int
@@ -70,6 +113,7 @@ class ReferenceCatchConfig:
     hand_targets: dict[str, HandTarget]
     finger_curl_degrees: dict[str, tuple[float, float]]
     anatomy_limits_degrees: dict[str, float]
+    presentation: PresentationConfig
     views: dict[str, ViewConfig]
 
 
@@ -79,6 +123,7 @@ def load_reference_catch_config(path: Path | None = None) -> ReferenceCatchConfi
         data: dict[str, Any] = json.loads(config_path.read_text(encoding="utf-8"))
         reference = data["reference"]
         pose = data["pose"]
+        presentation = data["presentation"]
         views = data["views"]
         schema_version = int(data["schemaVersion"])
         if schema_version != 1:
@@ -112,6 +157,39 @@ def load_reference_catch_config(path: Path | None = None) -> ReferenceCatchConfi
             views,
             {"referenceCrop", "referenceMatch", "fullBody"},
             "views",
+        )
+        _require_keys(
+            presentation,
+            {"style", "kit", "ball", "studio", "lights"},
+            "presentation",
+        )
+        _require_keys(
+            presentation["kit"],
+            {"baseColor", "roughness"},
+            "presentation.kit",
+        )
+        _require_keys(
+            presentation["ball"],
+            {
+                "primaryColor",
+                "secondaryColor",
+                "accentColor",
+                "seamColor",
+                "roughness",
+                "gripScale",
+                "seamLoopCount",
+            },
+            "presentation.ball",
+        )
+        _require_keys(
+            presentation["studio"],
+            {
+                "worldColor",
+                "cycloramaColor",
+                "cycloramaRoughness",
+                "lightTargetM",
+            },
+            "presentation.studio",
         )
         return ReferenceCatchConfig(
             source_path=config_path,
@@ -171,6 +249,80 @@ def load_reference_catch_config(path: Path | None = None) -> ReferenceCatchConfi
                 name: float(value)
                 for name, value in pose["anatomyLimitsDegrees"].items()
             },
+            presentation=PresentationConfig(
+                style=str(presentation["style"]),
+                kit=MaterialPresentation(
+                    base_color=_float_tuple(
+                        presentation["kit"]["baseColor"],
+                        4,
+                        "presentation.kit.baseColor",
+                    ),
+                    roughness=float(presentation["kit"]["roughness"]),
+                ),
+                ball=BallPresentation(
+                    primary_color=_float_tuple(
+                        presentation["ball"]["primaryColor"],
+                        4,
+                        "presentation.ball.primaryColor",
+                    ),
+                    secondary_color=_float_tuple(
+                        presentation["ball"]["secondaryColor"],
+                        4,
+                        "presentation.ball.secondaryColor",
+                    ),
+                    accent_color=_float_tuple(
+                        presentation["ball"]["accentColor"],
+                        4,
+                        "presentation.ball.accentColor",
+                    ),
+                    seam_color=_float_tuple(
+                        presentation["ball"]["seamColor"],
+                        4,
+                        "presentation.ball.seamColor",
+                    ),
+                    roughness=float(presentation["ball"]["roughness"]),
+                    grip_scale=float(presentation["ball"]["gripScale"]),
+                    seam_loop_count=int(presentation["ball"]["seamLoopCount"]),
+                ),
+                studio=StudioPresentation(
+                    world_color=_float_tuple(
+                        presentation["studio"]["worldColor"],
+                        3,
+                        "presentation.studio.worldColor",
+                    ),
+                    cyclorama_color=_float_tuple(
+                        presentation["studio"]["cycloramaColor"],
+                        4,
+                        "presentation.studio.cycloramaColor",
+                    ),
+                    cyclorama_roughness=float(
+                        presentation["studio"]["cycloramaRoughness"]
+                    ),
+                    light_target_m=_float_tuple(
+                        presentation["studio"]["lightTargetM"],
+                        3,
+                        "presentation.studio.lightTargetM",
+                    ),
+                ),
+                lights=tuple(
+                    LightPresentation(
+                        name=str(light["name"]),
+                        location_m=_float_tuple(
+                            light["locationM"],
+                            3,
+                            f"presentation.lights.{index}.locationM",
+                        ),
+                        energy=float(light["energy"]),
+                        size_m=float(light["sizeM"]),
+                        color=_float_tuple(
+                            light["color"],
+                            3,
+                            f"presentation.lights.{index}.color",
+                        ),
+                    )
+                    for index, light in enumerate(presentation["lights"])
+                ),
+            ),
             views={
                 name: ViewConfig(
                     resolution_px=_int_tuple(
