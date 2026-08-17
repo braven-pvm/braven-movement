@@ -219,6 +219,9 @@ def hand_basis(
     )
     lateral -= finger * lateral.dot(finger)
     lateral.normalize()
+    # The signed cross product is part of the mirrored MPFB rig convention.
+    # Do not force both hands to the same sign: the approved reference view
+    # depends on this exact projection of the two thumbs.
     return finger, lateral, finger.cross(lateral).normalized()
 
 
