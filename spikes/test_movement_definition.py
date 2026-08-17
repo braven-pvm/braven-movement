@@ -130,9 +130,10 @@ class ShippedDefinitionTest(unittest.TestCase):
         definition = load(path)
 
         self.assertEqual(definition.sport, "netball")
+        # The phase names follow the manual's own description of the drill.
         self.assertEqual(
             [phase.name for phase in definition.phases],
-            ["ready", "reach", "contact", "pull_in"],
+            ["ready", "react", "contact", "pull_in"],
         )
         # Every shipped band must survive the noise rule.
         for phase in definition.phases:

@@ -55,7 +55,12 @@ WANTED = (
     "neck",
     "head",
 )
-FORBIDDEN = ("scale", "flexible")
+# Shape parameters must never move, or the solver stretches the athlete.
+# Root translation must not move either, because the manual coaches this drill
+# with the feet static: "Worker is static with feet, in power position ready to
+# move but use hands & arms to pull in ball." Leaving it free lets the athlete
+# walk to the ball, and the arm never extends.
+FORBIDDEN = ("scale", "flexible", "root_t")
 
 
 def joint_positions(character: geometry.Character, parameters: np.ndarray) -> np.ndarray:
@@ -69,29 +74,49 @@ def catch_trajectory(rest: np.ndarray, frame: int) -> float:
 
 
 def hand_targets(
-    rest_left: np.ndarray, rest_right: np.ndarray, phase: float
+    rest_left: np.ndarray,
+    rest_right: np.ndarray,
+    phase: float,
+    chest: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Return where both hands should be at this phase of the catch.
 
-    The reach rises and extends, peaks at contact, then draws back toward the
-    chest. A raised cosine keeps the speed smooth at both ends, which is what a
-    coached movement looks like.
+    The shape of this trajectory comes from the coaches manual, not from
+    guesswork. The manual coaches the two-hand snatch and pull-in as: react to
+    the front, in front of the shoulder, take the ball with the arms almost
+    straight, then pull the ball in to the chest.
+
+    That means the arms extend to nearly full reach at contact, and only then
+    fold. An earlier version of this function bent the elbows at contact and
+    straightened them at the finish, which is the opposite of the coached
+    technique.
     """
-    # Reach peaks at contact, which sits at 55 percent of the movement.
     contact = 0.55
     if phase <= contact:
+        # Rise smoothly to full extension at contact.
         reach = 0.5 - 0.5 * math.cos(math.pi * phase / contact)
+        pull_in = 0.0
     else:
-        reach = 0.5 + 0.5 * math.cos(math.pi * (phase - contact) / (1.0 - contact))
-    pull_in = max(0.0, (phase - contact) / (1.0 - contact))
+        reach = 1.0
+        # After contact the hands travel in to the chest.
+        pull_in = 0.5 - 0.5 * math.cos(math.pi * (phase - contact) / (1.0 - contact))
 
     # Centimetres, because MHR works in centimetres.
-    forward = 26.0 * reach - 14.0 * pull_in
-    rise = 22.0 * reach
-    together = 9.0 * reach
+    # Full extension in front. The reach must approach the arm length, roughly
+    # 50 cm on this athlete, or the elbows never straighten.
+    extension = np.array([0.0, 30.0, 52.0], dtype=np.float32)
+    left = rest_left + extension * reach
+    right = rest_right + extension * reach
+    # The hands come together in front rather than staying out to the side.
+    left[0] -= 22.0 * reach
+    right[0] += 22.0 * reach
 
-    left = rest_left + np.array([-together, rise, forward], dtype=np.float32)
-    right = rest_right + np.array([together, rise, forward], dtype=np.float32)
+    if chest is not None and pull_in > 0.0:
+        # Pull the ball in to the chest. This is what folds the elbows.
+        chest_left = chest + np.array([-11.0, -6.0, 9.0], dtype=np.float32)
+        chest_right = chest + np.array([11.0, -6.0, 9.0], dtype=np.float32)
+        left = left + (chest_left - left) * pull_in
+        right = right + (chest_right - right) * pull_in
     return left, right
 
 
@@ -120,6 +145,7 @@ def main() -> int:
     rest_positions = joint_positions(character, rest)
     rest_left = rest_positions[index["l_wrist"]].copy()
     rest_right = rest_positions[index["r_wrist"]].copy()
+    rest_chest = rest_positions[index["c_spine3"]].copy()
 
     options = solver2.GaussNewtonSolverOptions()
     options.do_line_search = True
@@ -135,7 +161,9 @@ def main() -> int:
     solve_started = time.perf_counter()
     for frame in range(FRAME_COUNT):
         phase = catch_trajectory(rest, frame)
-        left_target, right_target = hand_targets(rest_left, rest_right, phase)
+        left_target, right_target = hand_targets(
+            rest_left, rest_right, phase, chest=rest_chest
+        )
 
         position_error = solver2.PositionErrorFunction(character, weight=1.0)
         for joint, target in (("l_wrist", left_target), ("r_wrist", right_target)):
