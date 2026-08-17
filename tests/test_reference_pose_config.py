@@ -96,13 +96,13 @@ print(json.dumps({
         )
         self.assertEqual(
             getattr(config, "arm_poles", None)["l"],
-            (-0.21203484, -0.34428039, -0.91461045),
+            (0.44466336, -0.3580064, -0.82103953),
         )
         self.assertEqual(
             getattr(config, "shoulder_targets_m", None),
             {
-                "l": (0.14379841, -0.048, 1.2928),
-                "r": (-0.14793558, -0.038, 1.315),
+                "l": (0.19698041, -0.095636, 1.294625),
+                "r": (-0.13873358, -0.045103, 1.314874),
             },
         )
         self.assertEqual(

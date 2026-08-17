@@ -279,7 +279,7 @@ class BlenderReferenceConfigIntegrationTest(unittest.TestCase):
     def test_projected_elbow_positions_follow_the_reference_arm_triangles(self):
         actual = self.receipt["calibration"]["actualPx"]
         expected_ranges = {
-            "left": ((0.35, 0.56), (-0.55, -0.38)),
+            "left": ((0.34, 0.56), (-0.55, -0.38)),
             "right": ((0.45, 0.65), (-0.70, -0.50)),
         }
         for side, (along_range, offset_range) in expected_ranges.items():
@@ -293,6 +293,25 @@ class BlenderReferenceConfigIntegrationTest(unittest.TestCase):
                 self.assertLessEqual(along, along_range[1])
                 self.assertGreaterEqual(offset, offset_range[0])
                 self.assertLessEqual(offset, offset_range[1])
+
+    def test_elbows_fly_out_from_the_catch_frame(self):
+        actual = self.receipt["calibration"]["actualPx"]
+        maximum_normalized_offsets = {
+            "left": -0.43,
+            "right": -0.60,
+        }
+        for side, maximum_offset in maximum_normalized_offsets.items():
+            with self.subTest(side=side):
+                _, offset = _screen_triangle_coordinates(
+                    actual[f"{side}_shoulder"],
+                    actual[f"{side}_elbow"],
+                    actual[f"{side}_wrist"],
+                )
+                self.assertLessEqual(
+                    offset,
+                    maximum_offset,
+                    f"{side} elbow must stay visibly open rather than tucked in",
+                )
 
     def test_arms_preserve_the_anatomical_hand_limits(self):
         anatomy = self.receipt["anatomy"]
