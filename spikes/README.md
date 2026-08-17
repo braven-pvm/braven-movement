@@ -103,6 +103,59 @@ the movement flickers even though every single frame passes its checks.
 
 It writes an animated GLB and a receipt that records every frame's angles.
 
+## Spike H: how many cameras, and how good a detector
+
+**Question.** Entry point A takes an image. How accurate must the 2D detector be?
+
+**Answer. With one camera, no detector is good enough. With two, about 2 pixels.**
+
+[spike_h_roundtrip.py](spike_h_roundtrip.py) removes the unknown that a real
+photograph always carries. It poses the athlete to a known truth, projects the
+15 joints a detector actually reports, adds detector noise of a known size, fits
+from rest using only those pixels, and compares the recovered angles against the
+truth that produced them.
+
+```text
+Recovery with one camera
+ detector noise   mean angle error   worst angle error
+           0 px            3.60 deg             9.71 deg
+           1 px            4.34 deg            16.46 deg
+           2 px            5.72 deg            21.71 deg
+           5 px            8.61 deg            37.81 deg
+
+Recovery with two cameras
+ detector noise   mean angle error   worst angle error
+           0 px            0.00 deg             0.00 deg
+           1 px            0.63 deg             1.98 deg
+           2 px            1.27 deg             3.99 deg
+           5 px            3.16 deg            10.03 deg
+```
+
+### The finding that decides the product
+
+**A perfect detector on one camera still misses by 9.71 degrees.** Zero noise,
+exact pixels, and the recovered pose is still wrong. This is not a detector
+problem and no better model fixes it. Many different 3D poses project to the same
+2D landmarks from one viewpoint, and the solver has no way to choose between
+them. The clinical threshold is 5 degrees, so one camera is already outside it
+before any real-world error is added.
+
+**A second camera removes the ambiguity completely.** At zero noise the recovery
+is exact to 0.00 degrees. The two views constrain the depth that one view leaves
+free.
+
+So the rule is:
+
+| Setup | What it can honestly do |
+|---|---|
+| One camera | Initialise a pose for a coach to correct. Compare shapes. Never measure. |
+| Two cameras, detector within 2 px | Measure. Worst case 3.99 degrees, inside the clinical threshold. |
+| Two cameras, detector at 5 px | Mean is fine at 3.16 degrees, but the worst case reaches 10.03. |
+
+This is the same conclusion the literature reaches and the same design OpenCap
+chose with two smartphones. The difference is that this number came from this
+codebase, so it can be defended.
+
 ## Spike G: the sport layer
 
 **Question.** Can measured angles become something a coach would actually say?
