@@ -128,12 +128,19 @@ class MovementDefinition:
             raise MovementDefinitionError("phases must be ordered by at_phase")
 
     def assess(
-        self, measurements_by_phase: Sequence[Mapping[str, float]]
+        self,
+        measurements_by_phase: Sequence[Mapping[str, float]],
+        measurement_valid: bool = True,
     ) -> "MovementAssessment":
         """Assess a solved movement, one phase at a time.
 
         ``measurements_by_phase`` is the per-frame measurement list a solver
         produced. Each phase reads the frame closest to its anchor.
+
+        Set ``measurement_valid`` to False when the pose came from a source that
+        cannot support a number, such as a single camera. The assessment then
+        still gives the coaching cues, but withholds every figure. Refer to
+        ``CheckpointResult.feedback``.
         """
         if not measurements_by_phase:
             raise MovementDefinitionError("no measurements supplied")
@@ -149,13 +156,16 @@ class MovementDefinition:
                     )
                 phase_results.append(checkpoint.assess(float(frame[checkpoint.measure])))
             results[phase.name] = phase_results
-        return MovementAssessment(definition=self, results=results)
+        return MovementAssessment(
+            definition=self, results=results, measurement_valid=measurement_valid
+        )
 
 
 @dataclass(frozen=True)
 class MovementAssessment:
     definition: MovementDefinition
     results: dict[str, list[CheckpointResult]]
+    measurement_valid: bool = True
 
     @property
     def correct(self) -> bool:
@@ -166,10 +176,19 @@ class MovementAssessment:
         )
 
     def coaching_notes(self) -> list[str]:
+        """Return the coaching notes, with figures withheld when they are unsafe.
+
+        A pose recovered from one camera carries an angle error larger than the
+        clinical threshold, so a figure taken from it would mislead. The cue
+        still helps a coach. The number does not.
+        """
         notes: list[str] = []
         for phase_name, phase_results in self.results.items():
             for result in phase_results:
-                notes.append(f"[{phase_name}] {result.feedback()}")
+                if self.measurement_valid:
+                    notes.append(f"[{phase_name}] {result.feedback()}")
+                else:
+                    notes.append(f"[{phase_name}] {result.checkpoint.cue}")
         return notes
 
     def to_receipt(self) -> dict:
@@ -179,6 +198,7 @@ class MovementAssessment:
             "skill": self.definition.skill,
             "source": self.definition.source,
             "correct": self.correct,
+            "measurementValid": self.measurement_valid,
             "phases": {
                 phase_name: [
                     {
