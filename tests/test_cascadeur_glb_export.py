@@ -1,4 +1,5 @@
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -16,16 +17,15 @@ from cascadeur_glb_export import (  # noqa: E402
 
 class CascadeurGlbExportTest(unittest.TestCase):
     def test_expression_pins_animation_error_selection_and_fps_options(self):
-        expression = build_export_expression(
-            Path(r"C:\braven movement\sample.glb"),
-            fps=60.0,
-        )
+        with tempfile.TemporaryDirectory(prefix="braven movement ") as directory:
+            output = Path(directory) / "sample.glb"
+            expression = build_export_expression(output, fps=60.0)
 
         self.assertIn("setattr(o, 'include_animation', True)", expression)
         self.assertIn("setattr(o, 'throw_exception', True)", expression)
         self.assertIn("setattr(o, 'for_selected_objects', False)", expression)
         self.assertIn("setattr(o, 'fps', 60.0)", expression)
-        self.assertIn("C:/braven movement/sample.glb", expression)
+        self.assertIn(output.as_posix(), expression)
         self.assertIn("csc.glb.process_export(scene", expression)
 
     def test_require_ok_refuses_cascadeur_error_response(self):
