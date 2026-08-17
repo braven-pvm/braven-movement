@@ -4,34 +4,15 @@ import math
 from dataclasses import dataclass
 from typing import Mapping
 
+from reference_pose_config import load_reference_catch_config
+
 
 Point = tuple[float, float]
 Point3 = tuple[float, float, float]
-GROUP_LIMITS_PX = {"ball": 5.0, "joints": 8.0, "fingertips": 10.0}
-REFERENCE_FRAME_PX = (769, 665)
-REFERENCE_TARGETS_PX: dict[str, Point] = {
-    "ball_center": (280.0, 187.0),
-    "head_top": (484.0, 190.0),
-    "head_base": (480.0, 266.0),
-    "left_shoulder": (520.0, 333.0),
-    "left_elbow": (468.0, 375.0),
-    "left_wrist": (420.0, 323.0),
-    "left_palm": (398.0, 288.0),
-    "left_thumb_tip": (431.0, 246.0),
-    "left_index_tip": (414.0, 261.0),
-    "left_middle_tip": (393.0, 280.0),
-    "left_ring_tip": (376.0, 294.0),
-    "left_pinky_tip": (375.0, 319.0),
-    "right_shoulder": (420.0, 330.0),
-    "right_elbow": (350.0, 337.0),
-    "right_wrist": (357.0, 273.0),
-    "right_palm": (361.0, 236.0),
-    "right_thumb_tip": (318.0, 216.0),
-    "right_index_tip": (338.0, 154.0),
-    "right_middle_tip": (352.0, 149.0),
-    "right_ring_tip": (366.0, 161.0),
-    "right_pinky_tip": (382.0, 184.0),
-}
+_DEFAULT_CONFIG = load_reference_catch_config()
+GROUP_LIMITS_PX = dict(_DEFAULT_CONFIG.pixel_limits_px)
+REFERENCE_FRAME_PX = _DEFAULT_CONFIG.reference_frame_px
+REFERENCE_TARGETS_PX: dict[str, Point] = dict(_DEFAULT_CONFIG.reference_targets_px)
 REQUIRED_REFERENCE_LANDMARKS = frozenset(REFERENCE_TARGETS_PX)
 
 
@@ -162,13 +143,15 @@ def landmark_group(name: str) -> str:
 def compare_projected_landmarks(
     targets: Mapping[str, Point],
     actual: Mapping[str, Point],
+    group_limits: Mapping[str, float] | None = None,
 ) -> PixelCalibration:
     missing = sorted(set(targets) - set(actual))
     if missing:
         raise PoseCalibrationError(f"missing projected landmarks: {', '.join(missing)}")
 
     errors: dict[str, float] = {}
-    group_max = {group: 0.0 for group in GROUP_LIMITS_PX}
+    limits = group_limits or GROUP_LIMITS_PX
+    group_max = {group: 0.0 for group in limits}
     for name, target in targets.items():
         point = actual[name]
         error = math.hypot(point[0] - target[0], point[1] - target[1])
@@ -181,8 +164,11 @@ def compare_projected_landmarks(
     )
 
 
-def validate_pixel_calibration(result: PixelCalibration) -> None:
-    for group, limit in GROUP_LIMITS_PX.items():
+def validate_pixel_calibration(
+    result: PixelCalibration,
+    group_limits: Mapping[str, float] | None = None,
+) -> None:
+    for group, limit in (group_limits or GROUP_LIMITS_PX).items():
         actual = result.group_max_px[group]
         if actual > limit:
             raise PoseCalibrationError(

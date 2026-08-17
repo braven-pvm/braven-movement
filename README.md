@@ -1,72 +1,105 @@
-# Movement GLB MVP
+# Braven Movement
 
-This engineering spike proves the internal authoring boundary:
+Standalone authoring and verification tools for anatomically credible sports-movement media.
+The current vertical slice creates an MPFB athlete in Blender, poses a two-handed netball catch,
+renders reference views, exports FBX/GLB/Blend files, and writes a hash-backed JSON receipt.
 
-```text
-Cascadeur GUI -> animated GLB -> versioned job -> headless Blender -> transparent PNG + hash receipt
-```
+## Current status
 
-It does **not** make the bundled Cascadeur sample figure publishable, provide a coaching-approved
-pose, or integrate media into the Braven reader.
+This repository is an **authoring/calibration tool under active development**. The pipeline and
+portable configuration boundary are working; the current catch pose is not coaching-approved.
+In particular, the right-hand basis still visually reads as mirrored. See
+[`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) before using any generated pose.
 
-## Verified on 2026-08-16
+## Repository boundary
 
-- Cascadeur `2026.2`, local script server `0.3.1`.
-- The installed free licence blocks FBX (`is_export_available() == false`) but permits animated GLB.
-- Live `Cascy.casc` export: 2,904,324 bytes, 67 nodes, 1 animation, 198 channels.
-- Blender `4.5.12 LTS` in background mode.
-- Corrected engine probe: Cycles PASS and EEVEE PASS, both RGBA with `max_alpha=1.000`.
-- Real render: 1080 x 1350 EEVEE PNG, 706,229 bytes, 214,946 non-transparent pixels.
-- The job and render receipts independently matched the GLB and PNG SHA-256 hashes.
+Everything required from this project lives in this repository:
 
-The visual result is a complete teal Cascy figure on transparent background. Cascy is a stylised
-cat and is only a mechanism proof, not an athlete, a netball movement, or a distributable asset.
+- Python source and contracts are at the repository root.
+- Versioned movement inputs are in [`config/`](config/).
+- Setup, architecture, known limitations, and licensing notes are in [`docs/`](docs/).
+- Local reference images belong in [`references/`](references/) and are intentionally untracked.
+- Generated files must be written to an explicit output directory outside the source tree.
 
-## Files
+The code does not import the Flutter application, depend on a parent checkout, or contain a
+user-specific path. Copying or cloning this repository is sufficient to move the development
+workspace.
 
-| File | Responsibility |
-|---|---|
-| `movement_contract.py` | Inspect GLB animation bytes, publish/read the job contract, verify image alpha, calculate normalisation. |
-| `cascadeur_glb_export.py` | Ask the live Cascadeur script server for an animated GLB and publish `job.json` only after inspecting it. |
-| `blender_probe.py` | Render a real RGBA cube with Cycles and EEVEE and verify pixels without slicing Blender's `bpy_prop_array`. |
-| `blender_glb_render.py` | Import the job's GLB, normalise the figure to 1.75 m, apply the MVP look, render one frame, and write a hash receipt. |
+## Requirements
 
-## Run
+- Python 3.11 or newer for host-side contracts and tests. There are no PyPI runtime dependencies.
+- Blender 4.5 LTS with MPFB installed and enabled. Verified locally with Blender 4.5.12 LTS and
+  MPFB build 20260722 / reported generator 2.0.17.
+- Cascadeur 2026.2 is optional and only needed for the Cascadeur-to-GLB path.
 
-In Cascadeur, open a **working copy** of the scene and select
-`Scripts -> MCP -> Start script server`. Leave the application idle during export.
+MPFB is loaded from Blender's user extension directory. Do not use `--factory-startup` for the
+MPFB generator because that disables the installed extension preferences.
 
-From the repository worktree:
+## Verify the host-side contracts
 
 ```powershell
-$output = Join-Path $env:TEMP 'braven_movement_glb_mvp'
-
-python tools\movement_glb_mvp\cascadeur_glb_export.py `
-  --movement-id cascy_internal_probe `
-  --fps 30.0 `
-  --output $output
-
-& 'C:\Program Files\Blender Foundation\Blender 4.5\blender.exe' `
-  -b --factory-startup --python-exit-code 9 `
-  -P tools\movement_glb_mvp\blender_glb_render.py -- `
-  --job (Join-Path $output 'job.json') `
-  --output (Join-Path $output 'cascy.png') `
-  --frame 0
+.\scripts\test.ps1
 ```
 
-`30.0` above is an **unconfirmed internal-test assertion**. For authored content, read the scene's
-FPS in Cascadeur's UI and pass that exact value. Cascadeur exposes no FPS getter.
+Equivalent command:
 
-## Next coaching sample
+```powershell
+python -m unittest discover -s tests -v
+```
 
-1. Copy a suitable human sample or licensed athletic figure out of `Program Files`; never author in
-   the installed sample.
-2. Open the copy in Cascadeur and confirm its displayed FPS.
-3. Make one pose only: the first-contact/take frame of the two-handed catch, with a correctly sized
-   ball. Do not attempt the full phase sequence yet.
-4. Have the coaching owner confirm the movement meaning and pose before styling it further.
-5. Re-run the same exporter and renderer with a new movement id and the confirmed FPS.
+The Blender/MPFB integration is deliberately opt-in because it creates a full model and exports
+several files:
 
-The bundled `UE5_Quinn.casc` sample is technically useful because it has articulated hands and
-clavicles, but its commercial publication rights are unresolved. Any Quinn render remains
-internal-only until Braven has a written licence answer or supplies a licensed figure.
+```powershell
+.\scripts\test-blender.ps1
+```
+
+## Generate the reference catch
+
+```powershell
+.\scripts\render-reference.ps1 `
+  -Output (Join-Path $env:TEMP 'braven_movement_reference')
+```
+
+To use another versioned configuration:
+
+```powershell
+.\scripts\render-reference.ps1 `
+  -Config .\config\reference_catch.v1.json `
+  -Output (Join-Path $env:TEMP 'braven_movement_reference')
+```
+
+The generator records the configuration path, schema version, and SHA-256 in its receipt. Passing
+`--reference-compared` is an acceptance assertion: use it only after a human has compared the
+render to the named reference and the pose is anatomically credible.
+
+## Configuration
+
+[`config/reference_catch.v1.json`](config/reference_catch.v1.json) is the single source of truth
+for the current movement ID, reference provenance, pixel landmarks, anatomy limits, 3D pose
+targets, ball size, and camera views. `reference_pose_config.py` validates and loads it relative to
+this repository, independent of the current working directory.
+
+The reference image itself is not committed. Place an authorised local copy at the configured
+`reference.assetFile` path when visual comparison is required. The configured SHA-256 and image
+dimensions identify the exact source used to define the landmarks.
+
+## Other pipeline tools
+
+The original Cascadeur/GLB mechanism remains available:
+
+```text
+Cascadeur GUI -> animated GLB -> job.json -> headless Blender -> PNG + hash receipt
+```
+
+- `cascadeur_glb_export.py` requests an animated GLB from Cascadeur's local script server.
+- `movement_contract.py` inspects GLB animation data and validates receipts.
+- `blender_glb_render.py` normalises and renders a job's GLB.
+- `blender_probe.py` verifies real Cycles and EEVEE RGBA rendering.
+
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the component and extraction contract.
+
+## Licensing
+
+The repository does not yet declare a source-code licence. Model/output licensing and reference
+image rights are separate concerns; see [`docs/LICENSING.md`](docs/LICENSING.md).

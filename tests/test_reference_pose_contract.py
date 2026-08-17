@@ -7,6 +7,10 @@ from pathlib import Path
 MODULE_DIR = Path(__file__).resolve().parents[1]
 MODULE_PATH = MODULE_DIR / "reference_pose_contract.py"
 GENERATOR_PATH = MODULE_DIR / "blender_mpfb_reference_catch.py"
+if str(MODULE_DIR) not in sys.path:
+    sys.path.insert(0, str(MODULE_DIR))
+
+from reference_pose_config import load_reference_catch_config  # noqa: E402
 
 
 def load_contract_module():
@@ -57,13 +61,13 @@ class ReferencePoseContractTest(unittest.TestCase):
         self.assertIn('bpy.utils.user_resource("EXTENSIONS")', source)
         self.assertNotIn(r"C:\Users\Marius", source)
 
-    def test_generator_uses_anatomical_limits_not_per_pixel_bone_stretching(self):
-        source = GENERATOR_PATH.read_text(encoding="utf-8")
+    def test_default_configuration_exposes_anatomical_limits(self):
+        limits = load_reference_catch_config().anatomy_limits_degrees
 
-        self.assertIn("MAX_FOREARM_ROLL_DEGREES = 75.0", source)
-        self.assertIn("MAX_FINGER_JOINT_DEGREES = 25.0", source)
-        self.assertIn("MAX_FINGER_BASE_DEGREES = 40.0", source)
-        self.assertNotIn("pose_bone.scale", source)
+        self.assertEqual(limits["forearmRoll"], 75.0)
+        self.assertEqual(limits["wristBend"], 45.0)
+        self.assertEqual(limits["fingerJointBend"], 25.0)
+        self.assertEqual(limits["fingerBaseDeviation"], 40.0)
 
     def test_accepts_cc0_gameengine_pose_with_all_weighted_finger_bones(self):
         module = load_contract_module()

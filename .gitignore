@@ -1,1 +1,9 @@
 __pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+/artifacts/
+/output/
+/outputs/
+/references/*
+!/references/README.md

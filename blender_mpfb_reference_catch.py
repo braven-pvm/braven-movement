@@ -20,26 +20,21 @@ if str(TOOL_DIR) not in sys.path:
 from movement_contract import inspect_glb, max_rgba_alpha  # noqa: E402
 from reference_pose_calibration import (  # noqa: E402
     PoseCalibrationError,
-    REFERENCE_FRAME_PX,
-    REFERENCE_TARGETS_PX,
     compare_projected_landmarks,
+    validate_reference_target_schema,
     validate_pixel_calibration,
+)
+from reference_pose_config import (  # noqa: E402
+    DEFAULT_CONFIG_PATH,
+    ReferenceCatchConfig,
+    ViewConfig,
+    load_reference_catch_config,
 )
 from reference_pose_contract import validate_reference_catch_receipt  # noqa: E402
 
 from bl_ext.blender_org.mpfb.services.humanservice import HumanService  # noqa: E402
 
 
-MOVEMENT_ID = "drill_double_hand_snatches_first_contact"
-BALL_RADIUS_M = 0.100
-REFERENCE_CAMERA_LOCATION = (2.05, -3.10, 1.77)
-REFERENCE_CAMERA_TARGET = (-0.03, -0.26, 1.30)
-REFERENCE_CAMERA_LENS_MM = 92.0
-REFERENCE_CAMERA_SENSOR_WIDTH_MM = 36.0
-MAX_FOREARM_ROLL_DEGREES = 75.0
-MAX_WRIST_BEND_DEGREES = 45.0
-MAX_FINGER_JOINT_DEGREES = 25.0
-MAX_FINGER_BASE_DEGREES = 40.0
 ASSET_DATA = (
     Path(bpy.utils.user_resource("EXTENSIONS"))
     / ".user"
@@ -52,6 +47,7 @@ ASSET_DATA = (
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     parser.add_argument("--reference-compared", action="store_true")
     values = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     return parser.parse_args(values)
@@ -233,6 +229,7 @@ def orient_hand(
     ball_centre: Vector,
     finger_direction: Vector,
     palm_normal: Vector,
+    max_forearm_roll_degrees: float,
 ) -> dict[str, float]:
     hand_name = f"hand_{side}"
     wrist = world_head(armature, hand_name)
@@ -249,8 +246,8 @@ def orient_hand(
     best_roll_degrees = 0.0
     best_normal_error = math.inf
     for roll_degrees in range(
-        -int(MAX_FOREARM_ROLL_DEGREES),
-        int(MAX_FOREARM_ROLL_DEGREES) + 1,
+        -int(max_forearm_roll_degrees),
+        int(max_forearm_roll_degrees) + 1,
     ):
         roll = Matrix.Rotation(
             math.radians(roll_degrees),
@@ -437,9 +434,9 @@ def project_pose_landmarks(
     armature: bpy.types.Object,
     ball: bpy.types.Object,
     camera: bpy.types.Object,
+    frame: tuple[int, int],
 ) -> dict[str, tuple[float, float]]:
     scene = bpy.context.scene
-    frame = REFERENCE_FRAME_PX
     points: dict[str, Vector] = {
         "ball_center": ball.location.copy(),
         "head_base": world_head(armature, "head"),
@@ -619,9 +616,11 @@ def render_view(
     location: Vector,
     target: Vector,
     lens: float,
+    sensor_width: float,
 ) -> dict[str, object]:
     camera.data.type = "PERSP"
     camera.data.lens = lens
+    camera.data.sensor_width = sensor_width
     camera.location = location
     point_at(camera, target)
     configure_render(path, resolution)
@@ -662,6 +661,11 @@ def keyframe_pose(rig: bpy.types.Object, ball: bpy.types.Object) -> None:
 
 def main() -> None:
     args = parse_args()
+    config: ReferenceCatchConfig = load_reference_catch_config(args.config)
+    validate_reference_target_schema(
+        config.reference_frame_px,
+        config.reference_targets_px,
+    )
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
 
@@ -672,23 +676,22 @@ def main() -> None:
 
     baseline = {bone.name: bone.matrix.copy() for bone in rig.pose.bones}
     knees = pose_power_stance(rig, baseline)
-    ball_centre = Vector((-0.13599849, -0.42538727, 1.56684754))
+    ball_centre = Vector(config.ball_centre_m)
     wrist_targets = {
-        "l": Vector((0.17887096, -0.44509060, 1.35238280)),
-        "r": Vector((0.00722232, -0.39154312, 1.42121658)),
+        side: Vector(point) for side, point in config.wrist_targets_m.items()
     }
     arm_receipt = {
         "l": pose_arm(
             rig,
             side="l",
             wrist_target=wrist_targets["l"],
-            pole=Vector((-0.01757413, -0.97669545, -0.21390920)),
+            pole=Vector(config.arm_poles["l"]),
         ),
         "r": pose_arm(
             rig,
             side="r",
             wrist_target=wrist_targets["r"],
-            pole=Vector((0.14775199, -0.98853802, -0.03101490)),
+            pole=Vector(config.arm_poles["r"]),
         ),
     }
     hand_anatomy = {
@@ -696,15 +699,17 @@ def main() -> None:
             rig,
             side="l",
             ball_centre=ball_centre,
-            finger_direction=Vector((-0.22349623, -0.53006730, 0.81797194)),
-            palm_normal=Vector((-0.55, 0.83, -0.10)),
+            finger_direction=Vector(config.hand_targets["l"].finger_direction),
+            palm_normal=Vector(config.hand_targets["l"].palm_normal),
+            max_forearm_roll_degrees=config.anatomy_limits_degrees["forearmRoll"],
         ),
         "r": orient_hand(
             rig,
             side="r",
             ball_centre=ball_centre,
-            finger_direction=Vector((0.33437862, -0.28832047, 0.89725261)),
-            palm_normal=Vector((-0.55, 0.83, -0.10)),
+            finger_direction=Vector(config.hand_targets["r"].finger_direction),
+            palm_normal=Vector(config.hand_targets["r"].palm_normal),
+            max_forearm_roll_degrees=config.anatomy_limits_degrees["forearmRoll"],
         ),
     }
     finger_directions = {
@@ -728,7 +733,7 @@ def main() -> None:
     bpy.ops.mesh.primitive_uv_sphere_add(
         segments=64,
         ring_count=32,
-        radius=BALL_RADIUS_M,
+        radius=config.ball_radius_m,
         location=ball_centre,
     )
     ball = bpy.context.active_object
@@ -747,55 +752,74 @@ def main() -> None:
         1 for name in finger_names if human.vertex_groups.get(name) is not None
     )
     palm_distances = {
-        side: max((palm_centre(rig, side) - ball_centre).length - BALL_RADIUS_M, 0.0)
+        side: max(
+            (palm_centre(rig, side) - ball_centre).length - config.ball_radius_m,
+            0.0,
+        )
         for side in ("l", "r")
     }
 
     camera = add_camera_and_lights()
+    crop_view: ViewConfig = config.views["referenceCrop"]
     crop = render_view(
         camera,
         path=output / "braven_mpfb_reference_catch_crop.png",
-        resolution=(1080, 933),
-        location=Vector((2.05, -3.10, 1.77)),
-        target=Vector((-0.03, -0.26, 1.30)),
-        lens=92.0,
+        resolution=crop_view.resolution_px,
+        location=Vector(crop_view.location_m),
+        target=Vector(crop_view.target_m),
+        lens=crop_view.lens_mm,
+        sensor_width=crop_view.sensor_width_mm,
     )
+    reference_view: ViewConfig = config.views["referenceMatch"]
     calibration_view = render_view(
         camera,
         path=output / "braven_mpfb_reference_match.png",
-        resolution=REFERENCE_FRAME_PX,
-        location=Vector((2.05, -3.10, 1.77)),
-        target=Vector((-0.03, -0.26, 1.30)),
-        lens=92.0,
+        resolution=reference_view.resolution_px,
+        location=Vector(reference_view.location_m),
+        target=Vector(reference_view.target_m),
+        lens=reference_view.lens_mm,
+        sensor_width=reference_view.sensor_width_mm,
     )
-    projected_landmarks = project_pose_landmarks(rig, ball, camera)
+    projected_landmarks = project_pose_landmarks(
+        rig,
+        ball,
+        camera,
+        config.reference_frame_px,
+    )
     pixel_calibration = compare_projected_landmarks(
-        REFERENCE_TARGETS_PX,
+        config.reference_targets_px,
         projected_landmarks,
+        config.pixel_limits_px,
     )
     try:
-        validate_pixel_calibration(pixel_calibration)
+        validate_pixel_calibration(pixel_calibration, config.pixel_limits_px)
         pixel_calibration_status = "passed"
     except PoseCalibrationError:
         pixel_calibration_status = "failed"
     anatomy_status = (
         "passed"
         if all(
-            values["wristBendDegrees"] <= MAX_WRIST_BEND_DEGREES
-            and values["forearmRollDegrees"] <= MAX_FOREARM_ROLL_DEGREES
+            values["wristBendDegrees"]
+            <= config.anatomy_limits_degrees["wristBend"]
+            and values["forearmRollDegrees"]
+            <= config.anatomy_limits_degrees["forearmRoll"]
             for values in hand_anatomy.values()
         )
-        and max_finger_joint_bend <= MAX_FINGER_JOINT_DEGREES
-        and max_finger_base_deviation <= MAX_FINGER_BASE_DEGREES
+        and max_finger_joint_bend
+        <= config.anatomy_limits_degrees["fingerJointBend"]
+        and max_finger_base_deviation
+        <= config.anatomy_limits_degrees["fingerBaseDeviation"]
         else "failed"
     )
+    full_view: ViewConfig = config.views["fullBody"]
     full = render_view(
         camera,
         path=output / "braven_mpfb_reference_catch_full.png",
-        resolution=(1080, 1350),
-        location=Vector((2.85, -4.15, 1.92)),
-        target=Vector((0.0, -0.16, 0.86)),
-        lens=82.0,
+        resolution=full_view.resolution_px,
+        location=Vector(full_view.location_m),
+        target=Vector(full_view.target_m),
+        lens=full_view.lens_mm,
+        sensor_width=full_view.sensor_width_mm,
     )
 
     posed_fbx = output / "braven_mpfb_reference_catch.fbx"
@@ -814,9 +838,16 @@ def main() -> None:
     posed_blend = output / "braven_mpfb_reference_catch.blend"
     bpy.ops.wm.save_as_mainfile(filepath=str(posed_blend))
     receipt = {
-        "movementId": MOVEMENT_ID,
-        "licence": "CC0",
-        "publishable": True,
+        "movementId": config.movement_id,
+        "licence": config.licence,
+        "publishable": config.publishable,
+        "configuration": {
+            "path": str(config.source_path),
+            "sha256": sha256(config.source_path),
+            "schemaVersion": config.schema_version,
+            "referenceAssetFile": config.reference_asset_file,
+            "referenceSha256": config.reference_sha256,
+        },
         "source": {
             "generator": "MPFB 2.0.17",
             "assets": [
@@ -839,12 +870,16 @@ def main() -> None:
             "armsM": arm_receipt,
             "fingerDirections": finger_directions,
         },
-        "camera": {"type": "PERSP", "width": 1080, "height": 933},
+        "camera": {
+            "type": "PERSP",
+            "width": crop_view.resolution_px[0],
+            "height": crop_view.resolution_px[1],
+        },
         "visualQa": {"referenceCompared": bool(args.reference_compared)},
         "calibration": {
             "status": pixel_calibration_status,
-            "framePx": list(REFERENCE_FRAME_PX),
-            "targetsPx": REFERENCE_TARGETS_PX,
+            "framePx": list(config.reference_frame_px),
+            "targetsPx": config.reference_targets_px,
             "actualPx": projected_landmarks,
             "errorsPx": pixel_calibration.errors_px,
             "groupMaxPx": pixel_calibration.group_max_px,
@@ -878,7 +913,7 @@ def main() -> None:
         },
     }
     if args.reference_compared:
-        validate_pixel_calibration(pixel_calibration)
+        validate_pixel_calibration(pixel_calibration, config.pixel_limits_px)
         validate_reference_catch_receipt(receipt)
         receipt["contractStatus"] = "passed"
     else:
