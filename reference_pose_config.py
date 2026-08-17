@@ -65,8 +65,10 @@ class ReferenceCatchConfig:
     ball_radius_m: float
     ball_centre_m: tuple[float, float, float]
     wrist_targets_m: dict[str, tuple[float, float, float]]
+    shoulder_targets_m: dict[str, tuple[float, float, float]]
     arm_poles: dict[str, tuple[float, float, float]]
     hand_targets: dict[str, HandTarget]
+    finger_curl_degrees: dict[str, tuple[float, float]]
     anatomy_limits_degrees: dict[str, float]
     views: dict[str, ViewConfig]
 
@@ -84,8 +86,18 @@ def load_reference_catch_config(path: Path | None = None) -> ReferenceCatchConfi
                 f"schemaVersion must be 1, got {schema_version}"
             )
         _require_keys(pose["wristTargetsM"], {"l", "r"}, "pose.wristTargetsM")
+        _require_keys(
+            pose["shoulderTargetsM"],
+            {"l", "r"},
+            "pose.shoulderTargetsM",
+        )
         _require_keys(pose["armPoles"], {"l", "r"}, "pose.armPoles")
         _require_keys(pose["handTargets"], {"l", "r"}, "pose.handTargets")
+        _require_keys(
+            pose["fingerCurlDegrees"],
+            {"thumb", "index", "middle", "ring", "pinky"},
+            "pose.fingerCurlDegrees",
+        )
         _require_keys(
             pose["anatomyLimitsDegrees"],
             {"forearmRoll", "wristBend", "fingerJointBend", "fingerBaseDeviation"},
@@ -124,6 +136,10 @@ def load_reference_catch_config(path: Path | None = None) -> ReferenceCatchConfi
                 side: _float_tuple(point, 3, f"pose.wristTargetsM.{side}")
                 for side, point in pose["wristTargetsM"].items()
             },
+            shoulder_targets_m={
+                side: _float_tuple(point, 3, f"pose.shoulderTargetsM.{side}")
+                for side, point in pose["shoulderTargetsM"].items()
+            },
             arm_poles={
                 side: _float_tuple(point, 3, f"pose.armPoles.{side}")
                 for side, point in pose["armPoles"].items()
@@ -142,6 +158,14 @@ def load_reference_catch_config(path: Path | None = None) -> ReferenceCatchConfi
                     ),
                 )
                 for side, target in pose["handTargets"].items()
+            },
+            finger_curl_degrees={
+                digit: _float_tuple(
+                    angles,
+                    2,
+                    f"pose.fingerCurlDegrees.{digit}",
+                )
+                for digit, angles in pose["fingerCurlDegrees"].items()
             },
             anatomy_limits_degrees={
                 name: float(value)

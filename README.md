@@ -7,8 +7,8 @@ renders reference views, exports FBX/GLB/Blend files, and writes a hash-backed J
 ## Current status
 
 This repository is an **authoring/calibration tool under active development**. The pipeline and
-portable configuration boundary are working; the current catch pose is not coaching-approved.
-In particular, the right-hand basis still visually reads as mirrored. See
+portable configuration boundary are working. The hand orientation is visually approved, while the
+camera, arm geometry, and complete catch pose still require final coaching approval. See
 [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) before using any generated pose.
 
 ## Repository boundary

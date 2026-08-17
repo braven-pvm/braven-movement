@@ -178,6 +178,19 @@ def pose_power_stance(
     return result
 
 
+def pose_shoulder_girdle(
+    armature: bpy.types.Object,
+    shoulder_targets: dict[str, Vector],
+) -> None:
+    for side in ("l", "r"):
+        rotate_bone_toward(
+            armature,
+            f"clavicle_{side}",
+            f"upperarm_{side}",
+            shoulder_targets[side],
+        )
+
+
 def pose_arm(
     armature: bpy.types.Object,
     *,
@@ -303,6 +316,7 @@ def pose_articulated_hand(
     *,
     side: str,
     ball_centre: Vector,
+    finger_curl_degrees: dict[str, tuple[float, float]],
 ) -> dict[str, list[list[float]]]:
     result: dict[str, list[list[float]]] = {}
     wrist = world_head(armature, f"hand_{side}")
@@ -316,12 +330,32 @@ def pose_articulated_hand(
     lateral.normalize()
     splay = {"index": 0.28, "middle": 0.08, "ring": -0.08, "pinky": -0.22}
 
+    def curved_directions(
+        base_direction: Vector,
+        digit: str,
+    ) -> list[Vector]:
+        base = base_direction.normalized()
+        bend = toward_ball - base * toward_ball.dot(base)
+        if bend.length < 1e-8:
+            raise RuntimeError(f"cannot establish {side} {digit} curl plane")
+        bend.normalize()
+        first, second = finger_curl_degrees[digit]
+        cumulative = (0.0, first, first + second)
+        return [
+            (
+                base * math.cos(math.radians(angle))
+                + bend * math.sin(math.radians(angle))
+            ).normalized()
+            for angle in cumulative
+        ]
+
     for digit, spread in splay.items():
         chain = [f"{digit}_{index:02d}_{side}" for index in (1, 2, 3)]
-        direction = (
+        base_direction = (
             palm_direction + lateral * spread + toward_ball * 0.04
         ).normalized()
-        for index, name in enumerate(chain):
+        directions = curved_directions(base_direction, digit)
+        for index, (name, direction) in enumerate(zip(chain, directions)):
             if index + 1 < len(chain):
                 rotate_bone_toward(
                     armature,
@@ -341,10 +375,13 @@ def pose_articulated_hand(
         ]
 
     thumb_chain = [f"thumb_{index:02d}_{side}" for index in (1, 2, 3)]
-    thumb_direction = (
+    thumb_base_direction = (
         palm_direction * 0.50 + lateral * 0.72 + toward_ball * 0.12
     ).normalized()
-    for index, name in enumerate(thumb_chain):
+    thumb_directions = curved_directions(thumb_base_direction, "thumb")
+    for index, (name, thumb_direction) in enumerate(
+        zip(thumb_chain, thumb_directions)
+    ):
         if index + 1 < len(thumb_chain):
             rotate_bone_toward(
                 armature,
@@ -365,8 +402,8 @@ def pose_articulated_hand(
     return result
 
 
-def max_finger_joint_bend_degrees(armature: bpy.types.Object) -> float:
-    maximum = 0.0
+def finger_joint_bends_degrees(armature: bpy.types.Object) -> list[float]:
+    bends: list[float] = []
     for side in ("l", "r"):
         for digit in ("thumb", "index", "middle", "ring", "pinky"):
             directions = [
@@ -376,12 +413,11 @@ def max_finger_joint_bend_degrees(armature: bpy.types.Object) -> float:
                 ).normalized()
                 for index in (1, 2, 3)
             ]
-            maximum = max(
-                maximum,
-                *(math.degrees(directions[index].angle(directions[index + 1]))
-                  for index in (0, 1)),
+            bends.extend(
+                math.degrees(directions[index].angle(directions[index + 1]))
+                for index in (0, 1)
             )
-    return round(maximum, 2)
+    return bends
 
 
 def max_finger_base_deviation_degrees(armature: bpy.types.Object) -> float:
@@ -418,6 +454,28 @@ def palm_centre(armature: bpy.types.Object, side: str) -> Vector:
         f"pinky_01_{side}",
     ]
     return sum((world_head(armature, name) for name in names), Vector()) / len(names)
+
+
+def hand_depth_range(
+    armature: bpy.types.Object,
+    side: str,
+    camera_location: Vector,
+    camera_axis: Vector,
+) -> tuple[float, float]:
+    names = [f"hand_{side}"] + [
+        f"{digit}_{index:02d}_{side}"
+        for digit in ("thumb", "index", "middle", "ring", "pinky")
+        for index in (1, 2, 3)
+    ]
+    depths = [
+        (point - camera_location).dot(camera_axis)
+        for name in names
+        for point in (
+            world_head(armature, name),
+            world_tail(armature, name),
+        )
+    ]
+    return min(depths), max(depths)
 
 
 def projected_pixel(
@@ -679,6 +737,13 @@ def main() -> None:
 
     baseline = {bone.name: bone.matrix.copy() for bone in rig.pose.bones}
     knees = pose_power_stance(rig, baseline)
+    pose_shoulder_girdle(
+        rig,
+        {
+            side: Vector(point)
+            for side, point in config.shoulder_targets_m.items()
+        },
+    )
     ball_centre = Vector(config.ball_centre_m)
     wrist_targets = {
         side: Vector(point) for side, point in config.wrist_targets_m.items()
@@ -716,10 +781,17 @@ def main() -> None:
         ),
     }
     finger_directions = {
-        side: pose_articulated_hand(rig, side=side, ball_centre=ball_centre)
+        side: pose_articulated_hand(
+            rig,
+            side=side,
+            ball_centre=ball_centre,
+            finger_curl_degrees=config.finger_curl_degrees,
+        )
         for side in ("l", "r")
     }
-    max_finger_joint_bend = max_finger_joint_bend_degrees(rig)
+    finger_joint_bends = finger_joint_bends_degrees(rig)
+    min_finger_joint_bend = round(min(finger_joint_bends), 2)
+    max_finger_joint_bend = round(max(finger_joint_bends), 2)
     max_finger_base_deviation = max_finger_base_deviation_degrees(rig)
     orient_head_to_ball(rig, ball_centre)
 
@@ -762,6 +834,34 @@ def main() -> None:
         for side in ("l", "r")
     }
 
+    reference_view: ViewConfig = config.views["referenceMatch"]
+    reference_camera_location = Vector(reference_view.location_m)
+    reference_camera_axis = (
+        Vector(reference_view.target_m) - reference_camera_location
+    ).normalized()
+    _, foreground_hand_back_depth = hand_depth_range(
+        rig,
+        "l",
+        reference_camera_location,
+        reference_camera_axis,
+    )
+    rear_hand_front_depth, _ = hand_depth_range(
+        rig,
+        "r",
+        reference_camera_location,
+        reference_camera_axis,
+    )
+    ball_depth_ordering = {
+        "foregroundHandSide": "left",
+        "rearHandSide": "right",
+        "foregroundHandBackDepthM": round(foreground_hand_back_depth, 5),
+        "ballCentreDepthM": round(
+            (ball_centre - reference_camera_location).dot(reference_camera_axis),
+            5,
+        ),
+        "rearHandFrontDepthM": round(rear_hand_front_depth, 5),
+    }
+
     camera = add_camera_and_lights()
     crop_view: ViewConfig = config.views["referenceCrop"]
     crop = render_view(
@@ -773,7 +873,6 @@ def main() -> None:
         lens=crop_view.lens_mm,
         sensor_width=crop_view.sensor_width_mm,
     )
-    reference_view: ViewConfig = config.views["referenceMatch"]
     calibration_view = render_view(
         camera,
         path=output / "braven_mpfb_reference_match.png",
@@ -869,6 +968,7 @@ def main() -> None:
             "leftPalmToBallSurfaceM": round(palm_distances["l"], 5),
             "rightPalmToBallSurfaceM": round(palm_distances["r"], 5),
             "ballCentreM": list(ball_centre),
+            "ballDepthOrdering": ball_depth_ordering,
             "kneesM": knees,
             "armsM": arm_receipt,
             "fingerDirections": finger_directions,
@@ -893,6 +993,7 @@ def main() -> None:
             "rightWristBendDegrees": hand_anatomy["r"]["wristBendDegrees"],
             "leftForearmRollDegrees": hand_anatomy["l"]["forearmRollDegrees"],
             "rightForearmRollDegrees": hand_anatomy["r"]["forearmRollDegrees"],
+            "minimumFingerJointBendDegrees": min_finger_joint_bend,
             "maxFingerJointBendDegrees": max_finger_joint_bend,
             "maxFingerBaseDeviationDegrees": max_finger_base_deviation,
             "leftPalmNormalErrorDegrees": hand_anatomy["l"]["palmNormalErrorDegrees"],

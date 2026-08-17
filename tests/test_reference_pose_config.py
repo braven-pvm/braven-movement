@@ -88,15 +88,22 @@ print(json.dumps({
         )
         self.assertEqual(
             getattr(config, "ball_centre_m", None),
-            (-0.13599849, -0.42538727, 1.56684754),
+            (0.01131759, -0.58264951, 1.58630682),
         )
         self.assertEqual(
             getattr(config, "wrist_targets_m", None)["r"],
-            (0.00722232, -0.39154312, 1.42121658),
+            (0.00722232, -0.39154312, 1.46621658),
         )
         self.assertEqual(
             getattr(config, "arm_poles", None)["l"],
-            (-0.01757413, -0.97669545, -0.2139092),
+            (-0.21203484, -0.34428039, -0.91461045),
+        )
+        self.assertEqual(
+            getattr(config, "shoulder_targets_m", None),
+            {
+                "l": (0.14379841, -0.048, 1.291),
+                "r": (-0.14793558, -0.038, 1.315),
+            },
         )
         self.assertEqual(
             getattr(config, "hand_targets", None)["r"].finger_direction,
@@ -105,6 +112,10 @@ print(json.dumps({
         self.assertEqual(
             getattr(config, "views", None)["referenceMatch"].resolution_px,
             (769, 665),
+        )
+        self.assertEqual(
+            getattr(config, "views", None)["referenceMatch"].location_m,
+            (2.818, -2.329, 1.92),
         )
         self.assertEqual(
             getattr(config, "views", None)["fullBody"].lens_mm,
@@ -129,6 +140,39 @@ print(json.dumps({
             path.write_text(json.dumps(data), encoding="utf-8")
 
             with self.assertRaisesRegex(ReferencePoseConfigError, "handTargets.*r"):
+                load_reference_catch_config(path)
+
+    def test_rejects_pose_configuration_without_both_shoulders(self):
+        data = json.loads(DEFAULT_CONFIG_PATH.read_text(encoding="utf-8"))
+        data["pose"]["shoulderTargetsM"] = {
+            "l": [0.1469, 0.00423, 1.2762],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "reference.json"
+            path.write_text(json.dumps(data), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ReferencePoseConfigError,
+                "shoulderTargetsM.*r",
+            ):
+                load_reference_catch_config(path)
+
+    def test_rejects_an_incomplete_finger_curl_configuration(self):
+        data = json.loads(DEFAULT_CONFIG_PATH.read_text(encoding="utf-8"))
+        data["pose"]["fingerCurlDegrees"] = {
+            "thumb": [6.0, 8.0],
+            "index": [8.0, 12.0],
+            "middle": [8.0, 12.0],
+            "ring": [8.0, 12.0],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "reference.json"
+            path.write_text(json.dumps(data), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ReferencePoseConfigError,
+                "fingerCurlDegrees.*pinky",
+            ):
                 load_reference_catch_config(path)
 
 
