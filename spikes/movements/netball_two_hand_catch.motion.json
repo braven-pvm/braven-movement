@@ -12,16 +12,16 @@
       "atPhase": 0.0,
       "name": "ready",
       "across": 0.26,
-      "up": -0.02,
-      "ahead": 0.3,
+      "up": 0.16,
+      "ahead": 0.82,
       "note": "Hands up and in front, showing the passer the arm span."
     },
     {
       "atPhase": 0.3,
       "name": "react",
       "across": 0.27,
-      "up": 0.2,
-      "ahead": 0.6,
+      "up": 0.24,
+      "ahead": 0.68,
       "note": "Reacting to the front, hands rising toward the ball."
     },
     {
@@ -35,17 +35,17 @@
     {
       "atPhase": 0.78,
       "name": "absorb",
-      "across": 0.22,
-      "up": 0.16,
-      "ahead": 0.44,
+      "across": 0.24,
+      "up": 0.28,
+      "ahead": 0.52,
       "note": "Giving with the ball as it comes in."
     },
     {
       "atPhase": 1.0,
       "name": "pull_in",
-      "across": 0.2,
-      "up": -0.06,
-      "ahead": 0.18,
+      "across": 0.22,
+      "up": 0.04,
+      "ahead": 0.36,
       "note": "Ball secured at the chest, ready to release."
     }
   ]

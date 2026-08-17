@@ -18,7 +18,11 @@ from segment_measures import (
     elbow_flexion_degrees,
     knee_flexion_degrees,
     shoulder_elevation_degrees,
+    trunk_lean_degrees,
 )
+
+# MHR is Y up, so vertical is the second axis.
+WORLD_UP = (0.0, 1.0, 0.0)
 
 SPIKE_DIR = Path(__file__).resolve().parent
 ASSET_FOLDER = SPIKE_DIR / "mhr-assets" / "assets"
@@ -46,6 +50,15 @@ FORBIDDEN = ("scale", "flexible")
 # and lowering the hips is what produces a power position. Locking the root
 # instead leaves the athlete standing straight-legged and lets the torso lean.
 FOOT_WEIGHT = 12.0
+# The trunk is held firmly, because a drifting trunk lets the athlete cheat every
+# hand target by moving her chest instead of her hands.
+TRUNK_WEIGHT = 10.0
+# The elbow pole only has to break the tie, so it is weak enough that it never
+# fights the wrist target. Elbows sit below and slightly outside the line from
+# the shoulder to the hand, which is where a netball catch puts them.
+ELBOW_POLE_WEIGHT = 0.35
+ELBOW_POLE_DOWN_CM = 11.0
+ELBOW_POLE_OUT_CM = 5.0
 
 
 class SolveError(RuntimeError):
@@ -92,6 +105,12 @@ def measure_frame(points: np.ndarray, index: dict[str, int], phase: float) -> di
         return tuple(float(v) for v in points[index[name]])  # type: ignore[return-value]
 
     entry: dict[str, float] = {"phase": round(phase, 4)}
+    # How far the trunk has left upright. A drifting trunk is how an athlete, or
+    # a solver, fakes a hand position without moving the hands.
+    entry["trunkLeanDegrees"] = round(
+        trunk_lean_degrees(pelvis=point("root"), neck=point("c_neck"), up=WORLD_UP),
+        2,
+    )
     for side, prefix in (("l", "left"), ("r", "right")):
         entry[f"{prefix}ElbowFlexionDegrees"] = round(
             elbow_flexion_degrees(
@@ -139,10 +158,22 @@ def solve_catch(character: geometry.Character) -> dict:
 
     rest = np.zeros(count, dtype=np.float32)
     rest_positions = joint_positions(character, rest)
-    rest_chest = rest_positions[index["c_spine3"]].copy()
     rest_root = rest_positions[index["root"]].copy()
     reach_cm = arm_length(rest_positions, index)
     track = _TRACK
+
+    # The power position lowers the whole body, so the trunk landmarks drop with
+    # the hips. These are where the trunk must stay for the whole movement.
+    drop = np.array([0.0, track.hip_drop_fraction * reach_cm, 0.0])
+    root_target = rest_root - drop
+    chest_target = rest_positions[index["c_spine3"]].copy() - drop
+    neck_target = rest_positions[index["c_neck"]].copy() - drop
+
+    # The hand keys are measured from the chest, so they must be measured from
+    # where the chest is held, not from where it started. Anchoring them to the
+    # rest chest let the athlete satisfy a target by leaning her trunk backwards,
+    # which pulled her chest away from the ball instead of the ball to her chest.
+    hand_anchor = chest_target
 
     motion = np.zeros((FRAME_COUNT, count), dtype=np.float32)
     points_per_frame: list[np.ndarray] = []
@@ -153,7 +184,7 @@ def solve_catch(character: geometry.Character) -> dict:
     for frame in range(FRAME_COUNT):
         phase = frame / (FRAME_COUNT - 1)
         left_target, right_target = hand_targets(
-            track, phase, rest_chest, reach_cm
+            track, phase, hand_anchor, reach_cm
         )
 
         position_error = solver2.PositionErrorFunction(character, weight=1.0)
@@ -164,6 +195,27 @@ def solve_catch(character: geometry.Character) -> dict:
                 offset=np.zeros(3, dtype=np.float32),
                 weight=1.0,
             )
+
+        # An elbow pole. A wrist target alone leaves the elbow free to sit
+        # anywhere on a circle around the shoulder-to-wrist axis, so the solver
+        # picks a different answer for each arm and the two elbows disagree even
+        # though the targets are mirrored. The original Blender generator carried
+        # arm_poles in its configuration for exactly this reason.
+        for side, target, sign in (
+            ("l", left_target, 1.0),
+            ("r", right_target, -1.0),
+        ):
+            shoulder = rest_positions[index[f"{side}_uparm"]] - drop
+            midpoint = (shoulder + np.asarray(target)) / 2.0
+            pole = midpoint + np.array(
+                [sign * ELBOW_POLE_OUT_CM, -ELBOW_POLE_DOWN_CM, 0.0]
+            )
+            position_error.add_constraint(
+                index[f"{side}_lowarm"],
+                target=np.asarray(pole, dtype=np.float32),
+                offset=np.zeros(3, dtype=np.float32),
+                weight=ELBOW_POLE_WEIGHT,
+            )
         # Feet stay planted and the hips sit lower than standing. Together those
         # two facts are the power position.
         for foot in ("l_foot", "r_foot"):
@@ -173,16 +225,21 @@ def solve_catch(character: geometry.Character) -> dict:
                 offset=np.zeros(3, dtype=np.float32),
                 weight=FOOT_WEIGHT,
             )
-        position_error.add_constraint(
-            index["root"],
-            target=np.asarray(
-                rest_root
-                - np.array([0.0, track.hip_drop_fraction * reach_cm, 0.0]),
-                dtype=np.float32,
-            ),
-            offset=np.zeros(3, dtype=np.float32),
-            weight=3.0,
-        )
+        # The trunk is held, not just the hips. The manual is explicit that the
+        # hands and arms do the work: "use hands & arms to pull in ball". Holding
+        # the hips alone still let the pelvis tilt back and take the chest with
+        # it, so the ball never actually came to the chest.
+        for joint, target, weight in (
+            ("root", root_target, TRUNK_WEIGHT),
+            ("c_spine3", chest_target, TRUNK_WEIGHT),
+            ("c_neck", neck_target, TRUNK_WEIGHT * 0.6),
+        ):
+            position_error.add_constraint(
+                index[joint],
+                target=np.asarray(target, dtype=np.float32),
+                offset=np.zeros(3, dtype=np.float32),
+                weight=weight,
+            )
         continuity = solver2.ModelParametersErrorFunction(character)
         continuity.weight = 0.02
 
@@ -199,6 +256,13 @@ def solve_catch(character: geometry.Character) -> dict:
         solved = np.asarray(
             solver.solve(previous.reshape(-1, 1)), dtype=np.float32
         ).reshape(-1)
+        if frame == 0:
+            # The first frame starts from the rest pose, which is far from the
+            # answer, and a half-converged first frame biases every frame after
+            # it through the continuity term. Solving it twice settles it.
+            solved = np.asarray(
+                solver.solve(solved.reshape(-1, 1)), dtype=np.float32
+            ).reshape(-1)
         if not np.all(np.isfinite(solved)):
             solved = previous.copy()
         motion[frame] = solved
