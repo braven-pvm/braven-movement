@@ -107,6 +107,36 @@ class BlenderReferenceConfigIntegrationTest(unittest.TestCase):
             "the presentation receipt must retain the trainer source asset",
         )
 
+    def test_receipt_proves_a_loaded_focused_athlete(self):
+        athlete = self.receipt.get("athlete")
+        self.assertIsNotNone(
+            athlete,
+            "receipt must expose the generated phenotype and readiness posture",
+        )
+        self.assertGreaterEqual(athlete["phenotype"]["muscle"], 0.78)
+        self.assertLessEqual(athlete["phenotype"]["weight"], 0.35)
+        self.assertGreaterEqual(athlete["readiness"]["hipHingeDegrees"], 7.0)
+        self.assertGreaterEqual(athlete["readiness"]["torsoLeanDegrees"], 4.0)
+        self.assertLessEqual(athlete["readiness"]["torsoLeanDegrees"], 12.0)
+        self.assertGreaterEqual(
+            min(athlete["readiness"]["kneeFlexionDegrees"].values()),
+            35.0,
+        )
+        expression = athlete["expression"]
+        self.assertEqual(expression["name"], "focused_concentration")
+        self.assertTrue(expression["faceUnitsInstalled"])
+        self.assertGreaterEqual(expression["activeShapeKeys"], 6)
+        self.assertGreater(expression["faceUnits"]["browDownLeft"], 0.0)
+        self.assertGreater(expression["faceUnits"]["mouthPressRight"], 0.0)
+        source_names = {
+            Path(asset["path"]).name for asset in self.receipt["source"]["assets"]
+        }
+        self.assertIn(
+            "faceunits01.json",
+            source_names,
+            "receipt must retain the installed CC0 face-unit pack manifest",
+        )
+
     def test_studio_background_covers_every_render_corner(self):
         for view_name in ("referenceCrop", "referenceMatch", "fullBody"):
             with self.subTest(view=view_name):

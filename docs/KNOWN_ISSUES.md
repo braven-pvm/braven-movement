@@ -6,6 +6,11 @@ The current MPFB catch render remains a review artifact. Its hand orientation in
 reference view was visually approved on 2026-08-17 and the first premium coaching-studio
 presentation pass is complete, but final coaching-sample acceptance is still pending.
 
+The athlete now has a deliberately lean-muscular MPFB phenotype, a loaded lower-body stance,
+forward torso intent, and a restrained concentration expression. These parameters are repeatable
+and receipt-backed, but MPFB's base topology and identity still limit fine facial acting and
+sport-specific muscle definition. The Faceunits 01 pack is a required authoring dependency.
+
 The MPFB hands deliberately retain the signed local index-to-pinky cross product from the rig.
 Normalising that sign across left and right hands produces the rejected two-left-hands projection.
 The Blender integration test locks the approved thumb side and hand-plane error for both hands.

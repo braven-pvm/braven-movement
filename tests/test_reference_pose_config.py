@@ -101,7 +101,7 @@ print(json.dumps({
         self.assertEqual(
             getattr(config, "shoulder_targets_m", None),
             {
-                "l": (0.14379841, -0.048, 1.291),
+                "l": (0.14379841, -0.048, 1.2928),
                 "r": (-0.14793558, -0.038, 1.315),
             },
         )
@@ -137,6 +137,21 @@ print(json.dumps({
         self.assertEqual(presentation.kit.base_color, (0.018, 0.024, 0.036, 1.0))
         self.assertEqual(len(presentation.lights), 4)
         self.assertEqual(presentation.lights[0].name, "BRAVEN_Key")
+
+    def test_exposes_the_focused_pro_athlete_direction(self):
+        config = load_reference_catch_config()
+
+        athlete = getattr(config, "athlete", None)
+        self.assertIsNotNone(athlete)
+        self.assertGreaterEqual(athlete.phenotype.muscle, 0.78)
+        self.assertLessEqual(athlete.phenotype.weight, 0.35)
+        self.assertGreaterEqual(athlete.phenotype.firmness, 0.75)
+        self.assertGreaterEqual(athlete.readiness.hip_hinge_degrees, 7.0)
+        self.assertGreaterEqual(athlete.readiness.chest_lift_degrees, 2.0)
+        self.assertEqual(athlete.expression.name, "focused_concentration")
+        self.assertGreater(athlete.expression.face_units["browDownLeft"], 0.0)
+        self.assertGreater(athlete.expression.face_units["eyeSquintRight"], 0.0)
+        self.assertGreater(athlete.expression.face_units["mouthPressLeft"], 0.0)
 
     def test_rejects_a_pose_vector_with_the_wrong_dimension(self):
         data = json.loads(DEFAULT_CONFIG_PATH.read_text(encoding="utf-8"))

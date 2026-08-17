@@ -25,6 +25,7 @@ from reference_pose_calibration import (  # noqa: E402
     validate_pixel_calibration,
 )
 from reference_pose_config import (  # noqa: E402
+    AthleteConfig,
     BallPresentation,
     DEFAULT_CONFIG_PATH,
     PresentationConfig,
@@ -35,6 +36,8 @@ from reference_pose_config import (  # noqa: E402
 from reference_pose_contract import validate_reference_catch_receipt  # noqa: E402
 
 from bl_ext.blender_org.mpfb.services.humanservice import HumanService  # noqa: E402
+from bl_ext.blender_org.mpfb.services.faceservice import FaceService  # noqa: E402
+from bl_ext.blender_org.mpfb.services.targetservice import TargetService  # noqa: E402
 
 
 ASSET_DATA = (
@@ -151,12 +154,28 @@ def elbow_for_target(
 def pose_power_stance(
     armature: bpy.types.Object,
     baseline: dict[str, Matrix],
+    athlete: AthleteConfig,
 ) -> dict[str, list[float]]:
     ankle_targets = {
         side: world_head(armature, f"foot_{side}").copy()
         for side in ("l", "r")
     }
-    translate_bone_world(armature, "pelvis", Vector((0.0, 0.018, -0.050)))
+    translate_bone_world(
+        armature,
+        "pelvis",
+        Vector(athlete.readiness.pelvis_translation_m),
+    )
+    pelvis_pivot = world_head(armature, "pelvis")
+    apply_world_rotation(
+        armature,
+        "pelvis",
+        pelvis_pivot,
+        Matrix.Rotation(
+            math.radians(athlete.readiness.hip_hinge_degrees),
+            3,
+            "X",
+        ),
+    )
     result: dict[str, list[float]] = {}
     for side in ("l", "r"):
         thigh = f"thigh_{side}"
@@ -178,6 +197,24 @@ def pose_power_stance(
         bpy.context.view_layer.update()
         result[side] = list(world_head(armature, calf))
     return result
+
+
+def pose_athletic_torso(
+    armature: bpy.types.Object,
+    athlete: AthleteConfig,
+) -> None:
+    for bone_name, share in (("spine_02", 0.44), ("spine_03", 0.56)):
+        pivot = world_head(armature, bone_name)
+        apply_world_rotation(
+            armature,
+            bone_name,
+            pivot,
+            Matrix.Rotation(
+                math.radians(-athlete.readiness.chest_lift_degrees * share),
+                3,
+                "X",
+            ),
+        )
 
 
 def pose_shoulder_girdle(
@@ -679,19 +716,20 @@ def asset_path(*parts: str) -> Path:
 
 
 def create_athlete(
+    athlete: AthleteConfig,
     presentation: PresentationConfig,
 ) -> tuple[bpy.types.Object, bpy.types.Object, list[bpy.types.Object], list[Path]]:
     bpy.ops.wm.read_factory_settings(use_empty=True)
     macro = {
-        "age": 0.32,
-        "cupsize": 0.30,
-        "firmness": 0.65,
-        "gender": 0.0,
-        "height": 0.72,
-        "muscle": 0.66,
-        "proportions": 0.52,
-        "race": {"african": 0.0, "asian": 0.0, "caucasian": 1.0},
-        "weight": 0.38,
+        "age": athlete.phenotype.age,
+        "cupsize": athlete.phenotype.cupsize,
+        "firmness": athlete.phenotype.firmness,
+        "gender": athlete.phenotype.gender,
+        "height": athlete.phenotype.height,
+        "muscle": athlete.phenotype.muscle,
+        "proportions": athlete.phenotype.proportions,
+        "race": athlete.phenotype.race,
+        "weight": athlete.phenotype.weight,
     }
     human = HumanService.create_human(
         mask_helpers=True,
@@ -702,6 +740,11 @@ def create_athlete(
         macro_detail_dict=macro,
     )
     human.name = "BRAVEN_Athlete"
+    if not FaceService.is_faceunits01_installed(force_recheck=True):
+        raise RuntimeError(
+            "MPFB faceunits01 asset pack is required for the focused athlete"
+        )
+    FaceService.set_expression(human, athlete.expression.face_units)
     rig = HumanService.add_builtin_rig(human, "game_engine", import_weights=True)
     rig.name = "BRAVEN_Athlete_Rig"
 
@@ -712,7 +755,27 @@ def create_athlete(
     eyes = asset_path("eyes", "high-poly", "high-poly.mhclo")
     brows = asset_path("eyebrows", "eyebrow006", "eyebrow006.mhclo")
     lashes = asset_path("eyelashes", "eyelashes01", "eyelashes01.mhclo")
-    source_assets = [skin, suit, trainers, hair, eyes, brows, lashes]
+    face_targets = [
+        Path(target_path)
+        for name in athlete.expression.face_units
+        if (target_path := TargetService.target_full_path(name)) is not None
+    ]
+    face_pack_manifest = ASSET_DATA / "packs" / "faceunits01.json"
+    if not face_pack_manifest.is_file():
+        raise FileNotFoundError(
+            f"MPFB faceunits01 manifest is missing: {face_pack_manifest}"
+        )
+    source_assets = [
+        skin,
+        suit,
+        trainers,
+        hair,
+        eyes,
+        brows,
+        lashes,
+        face_pack_manifest,
+        *face_targets,
+    ]
 
     HumanService.set_character_skin(
         str(skin),
@@ -933,13 +996,17 @@ def main() -> None:
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
 
-    human, rig, assets, source_assets = create_athlete(config.presentation)
+    human, rig, assets, source_assets = create_athlete(
+        config.athlete,
+        config.presentation,
+    )
     character_objects = [rig, human, *assets]
     neutral_fbx = output / "braven_mpfb_athlete_neutral.fbx"
     export_fbx(neutral_fbx, character_objects, animation=False)
 
     baseline = {bone.name: bone.matrix.copy() for bone in rig.pose.bones}
-    knees = pose_power_stance(rig, baseline)
+    knees = pose_power_stance(rig, baseline, config.athlete)
+    pose_athletic_torso(rig, config.athlete)
     pose_shoulder_girdle(
         rig,
         {
@@ -997,6 +1064,29 @@ def main() -> None:
     max_finger_joint_bend = round(max(finger_joint_bends), 2)
     max_finger_base_deviation = max_finger_base_deviation_degrees(rig)
     orient_head_to_ball(rig, ball_centre)
+
+    knee_flexion_degrees = {
+        side: round(
+            180.0
+            - joint_angle_degrees(
+                world_head(rig, f"thigh_{side}"),
+                world_head(rig, f"calf_{side}"),
+                world_head(rig, f"foot_{side}"),
+            ),
+            2,
+        )
+        for side in ("l", "r")
+    }
+    torso_axis = world_head(rig, "neck_01") - world_head(rig, "pelvis")
+    torso_lean_degrees = round(
+        math.degrees(math.atan2(-torso_axis.y, torso_axis.z)),
+        2,
+    )
+    expression_shape_keys = [
+        key
+        for key in human.data.shape_keys.key_blocks
+        if key.name.startswith("!ex-") and key.value > 0.0
+    ]
 
     for side, values in arm_receipt.items():
         values["elbowDegrees"] = round(
@@ -1180,6 +1270,25 @@ def main() -> None:
             "type": "PERSP",
             "width": crop_view.resolution_px[0],
             "height": crop_view.resolution_px[1],
+        },
+        "athlete": {
+            "phenotype": {
+                "muscle": config.athlete.phenotype.muscle,
+                "weight": config.athlete.phenotype.weight,
+                "firmness": config.athlete.phenotype.firmness,
+            },
+            "readiness": {
+                "hipHingeDegrees": config.athlete.readiness.hip_hinge_degrees,
+                "chestLiftDegrees": config.athlete.readiness.chest_lift_degrees,
+                "torsoLeanDegrees": torso_lean_degrees,
+                "kneeFlexionDegrees": knee_flexion_degrees,
+            },
+            "expression": {
+                "name": config.athlete.expression.name,
+                "faceUnitsInstalled": FaceService.is_faceunits01_installed(),
+                "activeShapeKeys": len(expression_shape_keys),
+                "faceUnits": config.athlete.expression.face_units,
+            },
         },
         "presentation": {
             "style": config.presentation.style,

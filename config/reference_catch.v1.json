@@ -36,6 +36,40 @@
       "fingertips": 10.0
     }
   },
+  "athlete": {
+    "phenotype": {
+      "age": 0.32,
+      "cupsize": 0.28,
+      "firmness": 0.84,
+      "gender": 0.0,
+      "height": 0.72,
+      "muscle": 0.88,
+      "proportions": 0.52,
+      "race": {
+        "african": 0.0,
+        "asian": 0.0,
+        "caucasian": 1.0
+      },
+      "weight": 0.31
+    },
+    "readiness": {
+      "pelvisTranslationM": [0.0, 0.04, -0.06],
+      "hipHingeDegrees": 10.0,
+      "chestLiftDegrees": 3.0
+    },
+    "expression": {
+      "name": "focused_concentration",
+      "faceUnits": {
+        "browDownLeft": 0.16,
+        "browDownRight": 0.16,
+        "eyeSquintLeft": 0.11,
+        "eyeSquintRight": 0.11,
+        "mouthClose": 0.16,
+        "mouthPressLeft": 0.22,
+        "mouthPressRight": 0.22
+      }
+    }
+  },
   "pose": {
     "ballRadiusM": 0.111,
     "ballCentreM": [0.01131759, -0.58264951, 1.58630682],
@@ -44,7 +78,7 @@
       "r": [0.00722232, -0.39154312, 1.46621658]
     },
     "shoulderTargetsM": {
-      "l": [0.14379841, -0.048, 1.291],
+      "l": [0.14379841, -0.048, 1.2928],
       "r": [-0.14793558, -0.038, 1.315]
     },
     "armPoles": {

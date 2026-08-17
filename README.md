@@ -31,10 +31,16 @@ workspace.
 - Python 3.11 or newer for host-side contracts and tests. There are no PyPI runtime dependencies.
 - Blender 4.5 LTS with MPFB installed and enabled. Verified locally with Blender 4.5.12 LTS and
   MPFB build 20260722 / reported generator 2.0.17.
+- MPFB's CC0 Faceunits 01 functional asset pack. Download the official archive from
+  `https://files.makehumancommunity.org/functional/faceunits01.zip` and install it through MPFB's
+  asset-pack installer. The verified archive SHA-256 is
+  `D113107BD7EB59F3AF4DF6FC0EC29BFCC593F496D0B336AEC14F086A80CE7146`.
 - Cascadeur 2026.2 is optional and only needed for the Cascadeur-to-GLB path.
 
 MPFB is loaded from Blender's user extension directory. Do not use `--factory-startup` for the
-MPFB generator because that disables the installed extension preferences.
+MPFB generator because that disables the installed extension preferences. Generation stops with
+an explicit error if Faceunits 01 or its installed pack manifest is absent; the manifest and every
+used facial target are hashed into the render receipt.
 
 ## Verify the host-side contracts
 
@@ -78,10 +84,11 @@ render to the named reference and the pose is anatomically credible.
 
 [`config/reference_catch.v1.json`](config/reference_catch.v1.json) is the single source of truth
 for the current movement ID, reference provenance, pixel landmarks, anatomy limits, 3D pose
-targets, regulation-scale netball, camera views, training kit treatment, studio background, and
-lighting rig. `reference_pose_config.py` validates and loads it relative to this repository,
-independent of the current working directory. The generator uses MPFB's bundled shorts-and-shirt
-outfit, sports trainers, ponytail, skin, eye, eyebrow, and eyelash assets and records each source
+targets, athlete phenotype, athletic-readiness adjustments, focused facial expression, regulation-
+scale netball, camera views, training kit treatment, studio background, and lighting rig.
+`reference_pose_config.py` validates and loads it relative to this repository, independent of the
+current working directory. The generator uses MPFB's bundled shorts-and-shirt outfit, sports
+trainers, ponytail, skin, eye, eyebrow, eyelash, and Faceunits 01 assets and records each source
 asset hash in the receipt.
 
 The reference image itself is not committed. Place an authorised local copy at the configured

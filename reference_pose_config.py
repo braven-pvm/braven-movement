@@ -94,6 +94,39 @@ class PresentationConfig:
 
 
 @dataclass(frozen=True)
+class AthletePhenotype:
+    age: float
+    cupsize: float
+    firmness: float
+    gender: float
+    height: float
+    muscle: float
+    proportions: float
+    race: dict[str, float]
+    weight: float
+
+
+@dataclass(frozen=True)
+class AthleticReadiness:
+    pelvis_translation_m: tuple[float, float, float]
+    hip_hinge_degrees: float
+    chest_lift_degrees: float
+
+
+@dataclass(frozen=True)
+class AthleteExpression:
+    name: str
+    face_units: dict[str, float]
+
+
+@dataclass(frozen=True)
+class AthleteConfig:
+    phenotype: AthletePhenotype
+    readiness: AthleticReadiness
+    expression: AthleteExpression
+
+
+@dataclass(frozen=True)
 class ReferenceCatchConfig:
     source_path: Path
     schema_version: int
@@ -113,6 +146,7 @@ class ReferenceCatchConfig:
     hand_targets: dict[str, HandTarget]
     finger_curl_degrees: dict[str, tuple[float, float]]
     anatomy_limits_degrees: dict[str, float]
+    athlete: AthleteConfig
     presentation: PresentationConfig
     views: dict[str, ViewConfig]
 
@@ -123,6 +157,7 @@ def load_reference_catch_config(path: Path | None = None) -> ReferenceCatchConfi
         data: dict[str, Any] = json.loads(config_path.read_text(encoding="utf-8"))
         reference = data["reference"]
         pose = data["pose"]
+        athlete = data["athlete"]
         presentation = data["presentation"]
         views = data["views"]
         schema_version = int(data["schemaVersion"])
@@ -157,6 +192,36 @@ def load_reference_catch_config(path: Path | None = None) -> ReferenceCatchConfi
             views,
             {"referenceCrop", "referenceMatch", "fullBody"},
             "views",
+        )
+        _require_keys(
+            athlete,
+            {"phenotype", "readiness", "expression"},
+            "athlete",
+        )
+        _require_keys(
+            athlete["phenotype"],
+            {
+                "age",
+                "cupsize",
+                "firmness",
+                "gender",
+                "height",
+                "muscle",
+                "proportions",
+                "race",
+                "weight",
+            },
+            "athlete.phenotype",
+        )
+        _require_keys(
+            athlete["readiness"],
+            {"pelvisTranslationM", "hipHingeDegrees", "chestLiftDegrees"},
+            "athlete.readiness",
+        )
+        _require_keys(
+            athlete["expression"],
+            {"name", "faceUnits"},
+            "athlete.expression",
         )
         _require_keys(
             presentation,
@@ -249,6 +314,42 @@ def load_reference_catch_config(path: Path | None = None) -> ReferenceCatchConfi
                 name: float(value)
                 for name, value in pose["anatomyLimitsDegrees"].items()
             },
+            athlete=AthleteConfig(
+                phenotype=AthletePhenotype(
+                    age=float(athlete["phenotype"]["age"]),
+                    cupsize=float(athlete["phenotype"]["cupsize"]),
+                    firmness=float(athlete["phenotype"]["firmness"]),
+                    gender=float(athlete["phenotype"]["gender"]),
+                    height=float(athlete["phenotype"]["height"]),
+                    muscle=float(athlete["phenotype"]["muscle"]),
+                    proportions=float(athlete["phenotype"]["proportions"]),
+                    race={
+                        name: float(value)
+                        for name, value in athlete["phenotype"]["race"].items()
+                    },
+                    weight=float(athlete["phenotype"]["weight"]),
+                ),
+                readiness=AthleticReadiness(
+                    pelvis_translation_m=_float_tuple(
+                        athlete["readiness"]["pelvisTranslationM"],
+                        3,
+                        "athlete.readiness.pelvisTranslationM",
+                    ),
+                    hip_hinge_degrees=float(
+                        athlete["readiness"]["hipHingeDegrees"]
+                    ),
+                    chest_lift_degrees=float(
+                        athlete["readiness"]["chestLiftDegrees"]
+                    ),
+                ),
+                expression=AthleteExpression(
+                    name=str(athlete["expression"]["name"]),
+                    face_units={
+                        name: float(value)
+                        for name, value in athlete["expression"]["faceUnits"].items()
+                    },
+                ),
+            ),
             presentation=PresentationConfig(
                 style=str(presentation["style"]),
                 kit=MaterialPresentation(
