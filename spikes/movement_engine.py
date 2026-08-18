@@ -7,6 +7,7 @@ library is just a folder of movements.
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 import numpy as np
@@ -85,6 +86,23 @@ SHOULDER_LINE_FULL_AT_DEGREES = 15.0
 # above thirty. The right model is travel proportional to arm elevation, not zero
 # travel, and that is a real piece of engine work rather than a weight.
 SHOULDER_BASE_WEIGHT = 0.0
+
+# Scapulohumeral rhythm.
+#
+# Pinning the shoulder near its rest position broke every reaching drill, and
+# leaving it free let it slide 28 cm forward and snap between frames. Both are
+# wrong because both treat the shoulder as if it had one correct place. It does
+# not. A shoulder blade rotates as the arm rises, contributing roughly one
+# degree for every two of humerus above thirty, so where the shoulder belongs
+# depends on how high the arm is reaching.
+#
+# The shoulder target is therefore computed per frame from the elevation the
+# hand target asks for, and held there. Below thirty degrees it does not move at
+# all, which is why the drills that already worked are unaffected.
+SCAPULA_START_DEGREES = 30.0
+SCAPULA_RATIO = 0.5
+SCAPULA_MAX_DEGREES = 24.0
+SCAPULA_WEIGHT = 4.0
 # A drill that moves its feet does get a shoulder hold, for a different reason.
 # Split feet twist the pelvis, and with nothing holding the shoulder line the
 # trunk rotates freely and the arms swing across the body. Footwork drills do
@@ -323,6 +341,43 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
         shoulder_targets = {
             side: turned(rest_shoulders[side]) for side in ("l", "r")
         }
+
+        # Then let each shoulder ride up with its own arm, by the amount a
+        # shoulder blade actually contributes at that elevation.
+        scapula_targets = {}
+        trunk_down = root_target - neck_target
+        trunk_length = float(np.linalg.norm(trunk_down))
+        if trunk_length > 1e-6:
+            trunk_down = trunk_down / trunk_length
+            for side, hand_target in (("l", left_target), ("r", right_target)):
+                base = shoulder_targets[side]
+                reach = np.asarray(hand_target, dtype=np.float64) - base
+                reach_length = float(np.linalg.norm(reach))
+                if reach_length < 1e-6:
+                    continue
+                cosine = float(np.dot(reach / reach_length, trunk_down))
+                elevation = math.degrees(math.acos(max(-1.0, min(1.0, cosine))))
+                excess = max(0.0, elevation - SCAPULA_START_DEGREES)
+                contribution = min(excess * SCAPULA_RATIO, SCAPULA_MAX_DEGREES)
+                if contribution <= 0.0:
+                    continue
+                # Rotate the shoulder about the chest, in the plane the arm is
+                # reaching through. That is the direction a scapula travels.
+                pivot = neck_target
+                arm = base - pivot
+                axis = np.cross(arm, reach)
+                axis_length = float(np.linalg.norm(axis))
+                if axis_length < 1e-6:
+                    continue
+                axis = axis / axis_length
+                angle = math.radians(contribution)
+                cos_a, sin_a = math.cos(angle), math.sin(angle)
+                rotated = (
+                    arm * cos_a
+                    + np.cross(axis, arm) * sin_a
+                    + axis * float(np.dot(axis, arm)) * (1.0 - cos_a)
+                )
+                scapula_targets[side] = pivot + rotated
         turn_now = abs(track.turn_at(phase))
         base = FOOTWORK_SHOULDER_WEIGHT if track.moves_feet() else SHOULDER_BASE_WEIGHT
         shoulder_weight = base + SHOULDER_LINE_WEIGHT * min(
@@ -332,8 +387,10 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
             ("root", root_target, TRUNK_WEIGHT),
             ("c_spine3", chest_target, TRUNK_WEIGHT),
             ("c_neck", neck_target, TRUNK_WEIGHT * 0.6),
-            ("l_uparm", shoulder_targets["l"], shoulder_weight),
-            ("r_uparm", shoulder_targets["r"], shoulder_weight),
+            ("l_uparm", scapula_targets.get("l", shoulder_targets["l"]),
+             max(shoulder_weight, SCAPULA_WEIGHT)),
+            ("r_uparm", scapula_targets.get("r", shoulder_targets["r"]),
+             max(shoulder_weight, SCAPULA_WEIGHT)),
         ):
             if weight <= 0.0:
                 continue
