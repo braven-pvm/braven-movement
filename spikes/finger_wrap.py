@@ -11,10 +11,13 @@ up touching the ball; where on the ball is the finger's own business. That is
 why this uses a distance error rather than a position target: giving each tip a
 place to be would be authoring the grip again, one joint further down.
 
-Only the joints that curl are freed. The spread across the hand is left alone,
-because a netball is caught with the fingers spread as they already are, and
-freeing the spread let the little finger swing across the palm to reach the
-ball by the shortest route.
+The fingers are also held open. The manual's first instruction for a two hand
+catch is "Keep fingers up, thumbs in the middle", and its photographs show a
+wide fan, but the model's hand at rest measures 7.7 cm from index tip to little
+finger tip and the solve was closing it to 5.7 cm against a 22 cm ball. The
+spread is set as a posture rather than solved: letting the distance term reach
+it sent the little finger across the palm to touch the ball by the shortest
+route, which is not what a hand does.
 """
 
 from __future__ import annotations
@@ -25,8 +28,18 @@ import numpy as np
 # its own.
 FINGERS = ("index", "middle", "ring", "pinky")
 THUMB_JOINTS = ("thumb1", "thumb2", "thumb3")
-# Curl only. Spread and the small side to side rock stay frozen.
+# Curl only. The spread is set rather than solved, below.
 CURL_SUFFIX = "_rz"
+# How far each digit fans out, in radians. The index and the little finger
+# carry the fan; the middle and ring fingers sit between them and moving them
+# does not change the span. The model allows 45.8 degrees either way.
+SPREAD = {"index1_ry": 0.70, "middle1_ry": 0.18, "ring1_ry": -0.22,
+          "pinky1_ry": -0.70, "thumb0_ry": 0.25, "thumb1_ry": 0.12}
+# The thumb opens less than it looks like it should. Taken out to where the
+# manual's photographs put it, it goes 1.4 cm into the ball and stays there,
+# because only its curl is solved and the opening is fixed. At 0.25 the four
+# fingers still fan to 12.3 cm across, the thumb sits 6.2 cm off the index, and
+# nothing is inside the ball by more than a millimetre.
 
 # Where a finger touches. The pad, not the bone, so a tip sits its own skin
 # thickness outside the ball surface.
@@ -62,6 +75,24 @@ def enable_curl(character, enabled: np.ndarray, sides: tuple[str, ...]) -> np.nd
     for name in curl_parameters(character, sides):
         freed[names.index(name)] = True
     return freed
+
+
+def spread_fingers(character, parameters: np.ndarray, sides: tuple[str, ...]):
+    """Open the hand, as a posture that holds for the whole drill.
+
+    These parameters are never optimised, so setting them once on the pose the
+    solver starts from carries them through every frame. A hand waiting for a
+    ball is already open, which is what the manual's photographs show.
+    """
+    names = list(character.parameter_transform.names)
+    opened = np.asarray(parameters, dtype=np.float32).copy()
+    for side in sides:
+        for suffix, value in SPREAD.items():
+            name = f"{side}_{suffix}"
+            if name in names:
+                # The left and right hands fan in opposite directions.
+                opened[names.index(name)] = value if side == "l" else -value
+    return opened
 
 
 def wrap_joints(sides: tuple[str, ...]) -> dict[str, float]:

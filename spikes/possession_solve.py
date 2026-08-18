@@ -40,6 +40,7 @@ from contact_solve import (  # noqa: E402
     solver_options,
     trunk_constraints,
 )
+from finger_wrap import spread_fingers  # noqa: E402
 from grip import grip_targets, measure_hand  # noqa: E402
 from motion_track import (  # noqa: E402
     MAXIMUM_TURN_DEGREES,
@@ -130,6 +131,8 @@ def solve_movement(
         if identity is None
         else np.asarray(identity, dtype=np.float32).copy()
     )
+    # The hand is open before it is anything else.
+    rest = spread_fingers(character, rest, method.every_side)
     rest_positions = joint_positions(character, rest)
     reach_cm = arm_length(rest_positions, index)
     radius_cm = ball.radius_cm_for(reach_cm)

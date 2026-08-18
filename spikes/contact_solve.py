@@ -35,8 +35,6 @@ from grip import (  # noqa: E402
 )
 from motion_track import arm_length, load_motion  # noqa: E402
 from movement_engine import (  # noqa: E402
-    ELBOW_POLE_DOWN_CM,
-    ELBOW_POLE_OUT_CM,
     FOOT_WEIGHT,
     LIMIT_WEIGHT,
     SCAPULA_WEIGHT,
@@ -89,6 +87,22 @@ TWIST_SEEDS = (-2.0, -1.0, 0.0, 1.0)
 # brings the worst palm gap to 0.05 cm. Higher starts to overpower the grip
 # again: 1.5 puts it back to 9.8 cm.
 CONTACT_POLE_WEIGHT = 0.8
+# Where the elbow is pushed, in centimetres, on the reference athlete.
+#
+# The movement solver's 5 out and 11 down tucked the elbows into the ribs: the
+# shoulders are 38.6 cm apart and the elbows came out 17.5 cm apart, 12 cm
+# inboard of each shoulder. The manual's own photographs show them out and up.
+# Swept across the library, 16 out and 6 down opens them to 27.3 cm and also
+# quietens the two drills that were already rough, from 36 to 21.
+#
+# It does not reach the 38.6 cm the photographs show. Pushing the pole further,
+# or up rather than down, gets the width but costs the movement: at 22 out and
+# 6 up the elbows are 45 cm apart and the worst spike on a clean drill goes
+# from 2.1 to 11.3. A point target on the elbow is a tie breaker, and the right
+# instrument for holding the elbows up is a term on the upper arm's
+# orientation, which is engine work rather than a constant.
+ELBOW_POLE_OUT_CM = 16.0
+ELBOW_POLE_DOWN_CM = 6.0
 # The arm the pole offsets were measured on. Everything absolute in this file
 # is relative to this body and has to be scaled to any other.
 REFERENCE_ARM_CM = 52.68
