@@ -1,4 +1,4 @@
-<title>Snatch and Pull In</title>
+<title>Netball Catching Library</title>
 <style>
   :root {
     --court: #F2F4ED;
@@ -101,6 +101,30 @@
   }
 
   .chip.warn { border-color: var(--short); color: var(--short); }
+
+  .picker { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .picker button {
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--dust);
+    background: var(--bench);
+    border: 1px solid var(--edge);
+    border-radius: 4px;
+    padding: 8px 13px;
+    cursor: pointer;
+  }
+
+  .picker button[aria-pressed="true"] {
+    color: var(--court);
+    background: var(--chalk);
+    border-color: var(--chalk);
+  }
+
+  .picker button:focus-visible { outline: 2px solid var(--panel); outline-offset: 2px; }
+
+  .card.no-photo { display: none; }
 
   main {
     display: grid;
@@ -327,7 +351,7 @@
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">Braven Movement &middot; engine output</div>
+    <div class="eyebrow">Braven Movement &middot; netball catching</div>
     <h1 id="skill">Snatch and Pull In</h1>
     <p class="sub" id="blurb"></p>
     <div class="chips">
@@ -337,6 +361,8 @@
       <span class="chip warn">Bands provisional</span>
     </div>
   </header>
+
+  <nav class="picker" id="picker" aria-label="Skill"></nav>
 
   <main>
     <section class="card">
@@ -419,183 +445,172 @@
 <script id="payload" type="application/json">__DATA__</script>
 <script>
   (function () {
-    var data = JSON.parse(document.getElementById('payload').textContent);
-    var frames = data.frames;
-    var measures = data.measurements;
-    var coaching = data.coaching;
-    var last = frames.length - 1;
-
-    document.getElementById('skill').textContent = data.skill;
-    document.getElementById('source').textContent = data.source;
-    document.getElementById('blurb').textContent =
-      'A ' + data.sport + ' skill, solved joint by joint and graded against the ' +
-      'coaches manual. Scrub the movement, or pick a phase, and watch every ' +
-      'checkpoint answer.';
-
-    var photo = document.getElementById('photo');
-    if (data.referencePhoto) { photo.src = data.referencePhoto; }
-    else { photo.remove(); }
-
-    // Arms are the working limbs in this skill, so they carry the accent.
-    function isWork(bone) {
-      return /uparm|lowarm|wrist|clavicle/.test(bone[0] + ' ' + bone[1]);
-    }
+    var LIBRARY = JSON.parse(document.getElementById('payload').textContent);
+    var ids = Object.keys(LIBRARY);
 
     var SVG = 'http://www.w3.org/2000/svg';
     var VIEWS = ['front', 'side'];
 
-    // One set of shapes per view, so both cameras show the same solved frame.
-    var scenes = VIEWS.map(function (view) {
-      var boneGroup = document.querySelector('[data-bones="' + view + '"]');
-      var handGroup = document.querySelector('[data-hands="' + view + '"]');
-      var lines = data.bones.map(function (bone) {
-        var line = document.createElementNS(SVG, 'line');
-        line.setAttribute('class', 'bone' + (isWork(bone) ? ' work' : ''));
-        boneGroup.appendChild(line);
-        return { el: line, bone: bone };
-      });
-      var hands = ['l_wrist', 'r_wrist'].map(function (name) {
-        var dot = document.createElementNS(SVG, 'circle');
-        dot.setAttribute('class', 'hand');
-        dot.setAttribute('r', '7');
-        handGroup.appendChild(dot);
-        return { el: dot, name: name };
-      });
-      return {
-        view: view,
-        lines: lines,
-        hands: hands,
-        ball: document.querySelector('[data-ball="' + view + '"]')
-      };
-    });
-
-    // What is actually happening, in the coach's words, at this moment.
-    var contactFrame = data.contactFrame;
-    function beatFor(index) {
-      if (index < contactFrame * 0.45) {
-        return '<b>Ready.</b> Feet planted, knees bent in the power position. ' +
-               'She shows the passer her arm span. The ball is on its way.';
-      }
-      if (index < contactFrame) {
-        return '<b>React.</b> Hands travel out and up to meet the ball in ' +
-               'front of the shoulder. Watch the side view: this is reach, not a swing.';
-      }
-      if (index === contactFrame) {
-        return '<b>Contact.</b> Both hands take the ball together, elbows ' +
-               'working, out in front of the shoulder.';
-      }
-      return '<b>Pull in.</b> The ball comes in to the chest. The elbows fold, ' +
-             'the feet never move. She finishes ready to pass again.';
-    }
-
-    // Build the phase cards once, then update their numbers per frame.
-    var phaseOrder = Object.keys(coaching.phases);
-    var container = document.getElementById('phases');
-    var cards = phaseOrder.map(function (name) {
-      var checks = coaching.phases[name];
-      var card = document.createElement('button');
-      card.type = 'button';
-      card.className = 'phase';
-      card.setAttribute('data-active', 'false');
-
-      var head = document.createElement('div');
-      head.className = 'phase-head';
-      var title = document.createElement('span');
-      title.className = 'phase-name';
-      title.textContent = name.replace(/_/g, ' ');
-      var at = document.createElement('span');
-      at.className = 'phase-at';
-      head.appendChild(title);
-      head.appendChild(at);
-      card.appendChild(head);
-
-      var rows = checks.map(function (check) {
-        var wrap = document.createElement('div');
-        wrap.className = 'check';
-
-        var cue = document.createElement('div');
-        cue.className = 'cue';
-        cue.textContent = check.cue;
-        wrap.appendChild(cue);
-
-        var row = document.createElement('div');
-        row.className = 'meter-row';
-        var meter = document.createElement('div');
-        meter.className = 'meter';
-        var band = document.createElement('div');
-        band.className = 'band';
-        var marker = document.createElement('div');
-        marker.className = 'marker';
-        meter.appendChild(band);
-        meter.appendChild(marker);
-        var value = document.createElement('span');
-        value.className = 'value';
-        row.appendChild(meter);
-        row.appendChild(value);
-        wrap.appendChild(row);
-        card.appendChild(wrap);
-
-        // The meter shows the band inside a padded display range, so a value
-        // outside the band still has somewhere to sit.
-        var lo = check.band[0];
-        var hi = check.band[1];
-        var pad = Math.max(20, (hi - lo) * 0.45);
-        var from = lo - pad;
-        var to = hi + pad;
-        band.style.left = ((lo - from) / (to - from) * 100) + '%';
-        band.style.width = ((hi - lo) / (to - from) * 100) + '%';
-
-        return { check: check, marker: marker, value: value, from: from, to: to };
-      });
-
-      container.appendChild(card);
-      return { name: name, el: card, at: at, rows: rows, checks: checks };
-    });
-
-    // Each phase anchors at a fraction of the movement.
-    var anchors = {};
-    phaseOrder.forEach(function (name, i) {
-      anchors[name] = i / (phaseOrder.length - 1);
-    });
-    // Read the true anchor back from the measurement the assessment used.
-    var anchorList = [0, 0.3, 0.55, 1];
-    phaseOrder.forEach(function (name, i) {
-      anchors[name] = anchorList[i] !== undefined ? anchorList[i] : i / (phaseOrder.length - 1);
-    });
-
-    var track = document.getElementById('track');
-    phaseOrder.forEach(function (name) {
-      var at = anchors[name];
-      var tick = document.createElement('div');
-      tick.className = 'tick';
-      tick.style.left = (at * 100) + '%';
-      track.appendChild(tick);
-      var label = document.createElement('div');
-      label.className = 'tick-label';
-      label.style.left = (at * 100) + '%';
-      label.textContent = name.replace(/_/g, ' ');
-      track.appendChild(label);
-    });
-
-    var progress = document.getElementById('progress');
+    var picker = document.getElementById('picker');
+    var photoCard = document.getElementById('photo').closest('.card');
     var scrub = document.getElementById('scrub');
     var play = document.getElementById('play');
     var phaseRead = document.getElementById('phaseRead');
     var frameNote = document.getElementById('frameNote');
-    scrub.max = String(last);
+    var track = document.getElementById('track');
+    var phaseBox = document.getElementById('phases');
+
+    var data = null, scenes = [], cards = [], anchors = {}, last = 0;
+    var index = 0, playing = true;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      playing = false;
+      play.textContent = 'Play';
+    }
+
+    // Arms are the working limbs in these skills, so they carry the accent.
+    function isWork(bone) {
+      return /uparm|lowarm|wrist|clavicle/.test(bone[0] + ' ' + bone[1]);
+    }
+
+    function clear(node) {
+      while (node.firstChild) { node.removeChild(node.firstChild); }
+    }
+
+    function buildScenes() {
+      scenes = VIEWS.map(function (view) {
+        var boneGroup = document.querySelector('[data-bones="' + view + '"]');
+        var handGroup = document.querySelector('[data-hands="' + view + '"]');
+        clear(boneGroup);
+        clear(handGroup);
+        var lines = data.bones.map(function (bone) {
+          var line = document.createElementNS(SVG, 'line');
+          line.setAttribute('class', 'bone' + (isWork(bone) ? ' work' : ''));
+          boneGroup.appendChild(line);
+          return { el: line, bone: bone };
+        });
+        var hands = ['l_wrist', 'r_wrist'].map(function (name) {
+          var dot = document.createElementNS(SVG, 'circle');
+          dot.setAttribute('class', 'hand');
+          dot.setAttribute('r', '7');
+          handGroup.appendChild(dot);
+          return { el: dot, name: name };
+        });
+        return {
+          view: view,
+          lines: lines,
+          hands: hands,
+          ball: document.querySelector('[data-ball="' + view + '"]')
+        };
+      });
+    }
+
+    function buildPhases() {
+      clear(phaseBox);
+      var coaching = data.coaching;
+      var order = Object.keys(coaching.phases);
+      anchors = {};
+      order.forEach(function (name, i) {
+        var given = data.phaseAnchors ? data.phaseAnchors[name] : undefined;
+        anchors[name] = (given === undefined)
+          ? i / Math.max(order.length - 1, 1)
+          : given;
+      });
+
+      cards = order.map(function (name) {
+        var card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'phase';
+        card.setAttribute('data-active', 'false');
+
+        var head = document.createElement('div');
+        head.className = 'phase-head';
+        var title = document.createElement('span');
+        title.className = 'phase-name';
+        title.textContent = name.replace(/_/g, ' ');
+        var at = document.createElement('span');
+        at.className = 'phase-at';
+        head.appendChild(title);
+        head.appendChild(at);
+        card.appendChild(head);
+
+        var rows = coaching.phases[name].map(function (check) {
+          var wrap = document.createElement('div');
+          wrap.className = 'check';
+          var cue = document.createElement('div');
+          cue.className = 'cue';
+          cue.textContent = check.cue;
+          wrap.appendChild(cue);
+
+          var row = document.createElement('div');
+          row.className = 'meter-row';
+          var meter = document.createElement('div');
+          meter.className = 'meter';
+          var band = document.createElement('div');
+          band.className = 'band';
+          var marker = document.createElement('div');
+          marker.className = 'marker';
+          meter.appendChild(band);
+          meter.appendChild(marker);
+          var value = document.createElement('span');
+          value.className = 'value';
+          row.appendChild(meter);
+          row.appendChild(value);
+          wrap.appendChild(row);
+          card.appendChild(wrap);
+
+          var lo = check.band[0];
+          var hi = check.band[1];
+          var pad = Math.max(20, (hi - lo) * 0.45);
+          var from = lo - pad;
+          var to = hi + pad;
+          band.style.left = ((lo - from) / (to - from) * 100) + '%';
+          band.style.width = ((hi - lo) / (to - from) * 100) + '%';
+          return { check: check, marker: marker, value: value, from: from, to: to };
+        });
+
+        card.addEventListener('click', function () {
+          index = Math.round(anchors[name] * last);
+          scrub.value = String(index);
+          playing = false;
+          play.textContent = 'Play';
+          draw(index);
+        });
+        phaseBox.appendChild(card);
+        return { name: name, el: card, at: at, rows: rows };
+      });
+
+      clear(track);
+      var bar = document.createElement('div');
+      bar.className = 'progress';
+      bar.id = 'progressBar';
+      track.appendChild(bar);
+      order.forEach(function (name) {
+        var at = anchors[name];
+        var tick = document.createElement('div');
+        tick.className = 'tick';
+        tick.style.left = (at * 100) + '%';
+        track.appendChild(tick);
+        var label = document.createElement('div');
+        label.className = 'tick-label';
+        label.style.left = (at * 100) + '%';
+        label.textContent = name.replace(/_/g, ' ');
+        track.appendChild(label);
+      });
+    }
 
     function nearestPhase(fraction) {
-      var best = phaseOrder[0];
-      var bestGap = Infinity;
-      phaseOrder.forEach(function (name) {
-        var gap = Math.abs(anchors[name] - fraction);
-        if (gap < bestGap) { bestGap = gap; best = name; }
+      var names = Object.keys(anchors);
+      var best = names[0];
+      var gap = Infinity;
+      names.forEach(function (name) {
+        var distance = Math.abs(anchors[name] - fraction);
+        if (distance < gap) { gap = distance; best = name; }
       });
       return best;
     }
 
-    function draw(index) {
-      var frame = frames[index];
+    function draw(i) {
+      var frame = data.frames[i];
       scenes.forEach(function (scene) {
         var points = frame[scene.view];
         scene.lines.forEach(function (item) {
@@ -608,36 +623,39 @@
           item.el.setAttribute('y2', b[1]);
         });
         scene.hands.forEach(function (item) {
-          var p = points[item.name];
-          if (!p) { return; }
-          item.el.setAttribute('cx', p[0]);
-          item.el.setAttribute('cy', p[1]);
+          var pt = points[item.name];
+          if (!pt) { return; }
+          item.el.setAttribute('cx', pt[0]);
+          item.el.setAttribute('cy', pt[1]);
         });
         var ball = frame.ball[scene.view];
         scene.ball.setAttribute('cx', ball[0]);
         scene.ball.setAttribute('cy', ball[1]);
       });
-      document.getElementById('beat').innerHTML = beatFor(index);
 
-      var fraction = index / last;
-      var current = measures[index];
-      progress.style.width = (fraction * 100) + '%';
+      var fraction = i / last;
+      var current = data.measurements[i];
+      var bar = document.getElementById('progressBar');
+      if (bar) { bar.style.width = (fraction * 100) + '%'; }
       phaseRead.textContent = Math.round(fraction * 100) + '%';
-      frameNote.textContent = 'frame ' + (index + 1) + ' of ' + frames.length;
+      frameNote.textContent = 'frame ' + (i + 1) + ' of ' + data.frames.length;
 
       var active = nearestPhase(fraction);
+      var pretty = active.replace(/_/g, ' ');
+      document.getElementById('beat').innerHTML =
+        '<b>' + pretty.charAt(0).toUpperCase() + pretty.slice(1) + '.</b> '
+        + (data.notes && data.notes[active] ? data.notes[active] : '');
+
       cards.forEach(function (card) {
         card.el.setAttribute('data-active', card.name === active ? 'true' : 'false');
         card.at.textContent = Math.round(anchors[card.name] * 100) + '%';
         card.rows.forEach(function (row) {
-          // Live value at the current frame, so the meter tracks the scrubber.
           var live = current[row.check.measure];
           var shown = (live === undefined) ? row.check.measured : live;
           var lo = row.check.band[0];
           var hi = row.check.band[1];
           var verdict = shown < lo ? 'below' : (shown > hi ? 'above' : 'within');
-          var pos = (shown - row.from) / (row.to - row.from);
-          pos = Math.max(0, Math.min(1, pos));
+          var pos = Math.max(0, Math.min(1, (shown - row.from) / (row.to - row.from)));
           row.marker.style.left = 'calc(' + (pos * 100) + '% - 1px)';
           row.value.textContent = shown.toFixed(1) + '°';
           row.value.setAttribute('data-verdict', verdict);
@@ -645,10 +663,43 @@
       });
     }
 
-    var index = 0;
-    var playing = true;
-    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) { playing = false; play.textContent = 'Play'; }
+    function select(id) {
+      data = LIBRARY[id];
+      last = data.frames.length - 1;
+      scrub.max = String(last);
+      scrub.value = '0';
+      index = 0;
+      document.getElementById('skill').textContent = data.skill;
+      document.getElementById('source').textContent = data.source;
+      document.getElementById('blurb').textContent =
+        'A ' + data.sport + ' skill, solved joint by joint and graded against the '
+        + 'coaches manual. Scrub the movement, or pick a phase, and watch every '
+        + 'checkpoint answer.';
+      if (data.referencePhoto) {
+        document.getElementById('photo').src = data.referencePhoto;
+        photoCard.classList.remove('no-photo');
+      } else {
+        photoCard.classList.add('no-photo');
+      }
+      Array.prototype.forEach.call(picker.children, function (button) {
+        button.setAttribute(
+          'aria-pressed', button.getAttribute('data-id') === id ? 'true' : 'false'
+        );
+      });
+      buildScenes();
+      buildPhases();
+      draw(0);
+    }
+
+    ids.forEach(function (id) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.setAttribute('data-id', id);
+      button.textContent = LIBRARY[id].skill;
+      button.setAttribute('aria-pressed', 'false');
+      button.addEventListener('click', function () { select(id); });
+      picker.appendChild(button);
+    });
 
     scrub.addEventListener('input', function () {
       index = Number(scrub.value);
@@ -662,27 +713,18 @@
       play.textContent = playing ? 'Pause' : 'Play';
     });
 
-    cards.forEach(function (card) {
-      card.el.addEventListener('click', function () {
-        index = Math.round(anchors[card.name] * last);
-        scrub.value = String(index);
-        playing = false;
-        play.textContent = 'Play';
-        draw(index);
-      });
-    });
-
     var lastStep = 0;
     function tick(now) {
-      if (playing && now - lastStep > 70) {
+      if (playing && data && now - lastStep > 70) {
         lastStep = now;
-        index = (index + 1) % frames.length;
+        index = (index + 1) % data.frames.length;
         scrub.value = String(index);
         draw(index);
       }
       requestAnimationFrame(tick);
     }
-    draw(0);
+
+    select(ids[0]);
     requestAnimationFrame(tick);
   })();
 </script>

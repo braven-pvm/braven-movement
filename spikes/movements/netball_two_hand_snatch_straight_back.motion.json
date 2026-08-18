@@ -1,0 +1,51 @@
+{
+  "movementId": "netball_two_hand_snatch_straight_back",
+  "frames": 24,
+  "framesPerSecond": 24,
+  "notes": "The distinguishing feature of this drill is what does NOT happen. The manual says to pass the ball straight back to the passer without pulling it to the body, so there is no pull-in key. The hands stay out in front throughout.",
+  "stance": {
+    "hipDropFraction": 0.18
+  },
+  "keys": [
+    {
+      "atPhase": 0.0,
+      "name": "ready",
+      "across": 0.26,
+      "up": 0.16,
+      "ahead": 0.82,
+      "note": "Showing the passer the arm span, same start as the pull-in drill."
+    },
+    {
+      "atPhase": 0.3,
+      "name": "react",
+      "across": 0.27,
+      "up": 0.24,
+      "ahead": 0.62,
+      "note": "Reacting to the front."
+    },
+    {
+      "atPhase": 0.5,
+      "name": "contact",
+      "across": 0.26,
+      "up": 0.4,
+      "ahead": 0.72,
+      "note": "Contact in front of the shoulder."
+    },
+    {
+      "atPhase": 0.68,
+      "name": "control",
+      "across": 0.24,
+      "up": 0.34,
+      "ahead": 0.64,
+      "note": "Just enough give to control the ball. The hands stay out in front, they do not come to the body."
+    },
+    {
+      "atPhase": 1.0,
+      "name": "return",
+      "across": 0.22,
+      "up": 0.3,
+      "ahead": 0.8,
+      "note": "Straight back to the passer from where the ball was caught."
+    }
+  ]
+}

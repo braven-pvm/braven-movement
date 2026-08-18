@@ -21,30 +21,34 @@ import pymomentum.solver2 as solver2
 SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
 
-from catch_solver import (  # noqa: E402
-    CONTACT_PHASE,
-    FRAME_COUNT,
+from movement_engine import (  # noqa: E402
+    definition_path,
+    library,
     load_character,
-    solve_catch,
+    motion_path,
+    solve,
 )
+from motion_track import load_motion  # noqa: E402
 from movement_definition import load as load_movement  # noqa: E402
 from render_contact_sheet import BONES  # noqa: E402
 
-DEFINITION_PATH = SPIKE_DIR / "movements" / "netball_two_hand_catch.json"
+DEFAULT_MOVEMENT = "netball_two_hand_snatch_pull_in"
 
-REFERENCE_PHOTO = (
-    SPIKE_DIR.parent
-    / "references"
-    / "202526 updated coaches manual"
-    / "_page_71_Picture_13.jpeg"
+MANUAL_IMAGES = (
+    SPIKE_DIR.parent / "references" / "202526 updated coaches manual"
 )
+# A photograph belongs to the skill it shows. Putting the snatch photograph
+# beside the chest catch would tell a coach the wrong thing.
+REFERENCE_PHOTOS = {
+    "netball_two_hand_snatch_pull_in": "_page_71_Picture_13.jpeg",
+}
 VIEW_WIDTH = 420
 VIEW_HEIGHT = 560
 
 
-def main() -> int:
-    character = load_character()
-    result = solve_catch(character)
+def export(character, movement_id: str) -> Path:
+    track = load_motion(motion_path(movement_id))
+    result = solve(character, track)
     index = result["index"]
     all_points = result["points"]
     measurements = result["measurements"]
@@ -70,7 +74,7 @@ def main() -> int:
         ]
 
     drawn = sorted({name for bone in BONES for name in bone if name in index})
-    contact_frame = round(CONTACT_PHASE * (len(all_points) - 1))
+    contact_frame = round(track.contact_phase() * (len(all_points) - 1))
 
     # The ball. It arrives from in front, meets the hands at contact, then
     # travels with them into the chest. Without it there is no catch to see.
@@ -100,15 +104,19 @@ def main() -> int:
             entry["ball"][view] = to_screen(ball, view)
         frames.append(entry)
 
-    definition = load_movement(DEFINITION_PATH)
+    definition = load_movement(definition_path(movement_id))
     assessment = definition.assess(measurements)
 
     photo_uri = ""
-    if REFERENCE_PHOTO.is_file():
-        encoded = base64.b64encode(REFERENCE_PHOTO.read_bytes()).decode("ascii")
-        photo_uri = f"data:image/jpeg;base64,{encoded}"
+    photo_name = REFERENCE_PHOTOS.get(movement_id)
+    if photo_name:
+        photo = MANUAL_IMAGES / photo_name
+        if photo.is_file():
+            encoded = base64.b64encode(photo.read_bytes()).decode("ascii")
+            photo_uri = f"data:image/jpeg;base64,{encoded}"
 
     payload = {
+        "movementId": movement_id,
         "skill": definition.skill,
         "sport": definition.sport,
         "source": definition.source,
@@ -120,12 +128,17 @@ def main() -> int:
         "coaching": assessment.to_receipt(),
         "referencePhoto": photo_uri,
     }
-    output = SPIKE_DIR / "poc-output" / "viewer_data.json"
-    output.parent.mkdir(exist_ok=True)
+    output = SPIKE_DIR / "poc-output" / "library" / f"{movement_id}.viewer.json"
+    output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(payload), encoding="utf-8")
-    print(f"viewer data: {output}")
-    print(f"frames: {len(frames)}  bones: {len(payload['bones'])}")
-    print(f"photo embedded: {'yes' if photo_uri else 'no'}")
+    return output
+
+
+def main() -> int:
+    character = load_character()
+    for movement_id in library():
+        path = export(character, movement_id)
+        print(f"{movement_id:<42} -> {path.name}")
     return 0
 
 

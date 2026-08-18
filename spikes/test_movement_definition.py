@@ -123,32 +123,55 @@ class MovementTest(unittest.TestCase):
         self.assertTrue(any("Needs more" in note for note in notes))
 
 
-class ShippedDefinitionTest(unittest.TestCase):
-    def test_the_netball_catch_definition_loads_and_validates(self):
-        path = Path(__file__).resolve().parent / "movements" / "netball_two_hand_catch.json"
+class LibraryDefinitionTest(unittest.TestCase):
+    """Every definition in the library must satisfy these, including new ones."""
 
-        definition = load(path)
+    def definitions(self):
+        folder = Path(__file__).resolve().parent / "movements"
+        return [
+            path
+            for path in sorted(folder.glob("*.json"))
+            if not path.name.endswith(".motion.json")
+        ]
 
-        self.assertEqual(definition.sport, "netball")
-        # The phase names follow the manual's own description of the drill.
-        self.assertEqual(
-            [phase.name for phase in definition.phases],
-            ["ready", "react", "contact", "pull_in"],
-        )
-        # Every shipped band must survive the noise rule.
-        for phase in definition.phases:
-            for check in phase.checkpoints:
-                self.assertGreaterEqual(
-                    check.maximum_degrees - check.minimum_degrees, 5.0
-                )
+    def test_the_library_is_not_empty(self):
+        self.assertGreaterEqual(len(self.definitions()), 1)
 
-    def test_the_shipped_definition_declares_itself_provisional(self):
+    def test_every_definition_loads(self):
+        for path in self.definitions():
+            definition = load(path)
+            self.assertTrue(definition.skill, path.name)
+            self.assertGreaterEqual(len(definition.phases), 2, path.name)
+
+    def test_every_band_survives_the_noise_rule(self):
+        """A band narrower than the measurement threshold reports noise."""
+        for path in self.definitions():
+            for phase in load(path).phases:
+                for check in phase.checkpoints:
+                    self.assertGreaterEqual(
+                        check.maximum_degrees - check.minimum_degrees, 5.0,
+                        f"{path.name} {phase.name} {check.measure}",
+                    )
+
+    def test_every_definition_declares_itself_provisional(self):
         """Nobody should mistake placeholder bands for coaching truth."""
-        path = Path(__file__).resolve().parent / "movements" / "netball_two_hand_catch.json"
+        for path in self.definitions():
+            self.assertIn("PROVISIONAL", load(path).source, path.name)
 
-        definition = load(path)
+    def test_every_definition_cites_the_manual(self):
+        for path in self.definitions():
+            self.assertIn("Manual", load(path).source, path.name)
 
-        self.assertIn("PROVISIONAL", definition.source)
+    def test_every_checkpoint_has_a_cue_and_a_reason(self):
+        for path in self.definitions():
+            for phase in load(path).phases:
+                for check in phase.checkpoints:
+                    self.assertTrue(check.cue.strip(), f"{path.name} {check.measure}")
+                    self.assertTrue(check.why.strip(), f"{path.name} {check.measure}")
+
+    def test_the_netball_skills_are_all_netball(self):
+        for path in self.definitions():
+            self.assertEqual(load(path).sport, "netball", path.name)
 
 
 if __name__ == "__main__":

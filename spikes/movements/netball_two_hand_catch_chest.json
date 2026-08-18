@@ -1,0 +1,81 @@
+{
+  "movementId": "netball_two_hand_catch_chest",
+  "sport": "netball",
+  "skill": "2 Hands Catch",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger, Catching section, page 71. The manual gives three instructions for this catch: keep fingers up with thumbs in the middle, keep arms almost straight in front and pull the ball in to the chest as soon as it is caught, and use the momentum of the catch to pass the ball back. The cues below are the manual's. The numeric bands are NOT. They are PROVISIONAL and a coach must set them.",
+  "phases": [
+    {
+      "name": "ready",
+      "atPhase": 0.0,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 45.0,
+          "cue": "Arms almost straight in front, fingers up, thumbs in the middle.",
+          "why": "This is what separates the chest catch from the snatch. The snatch takes the ball with bent elbows; this one meets it with almost straight arms."
+        },
+        {
+          "measure": "leftKneeFlexionDegrees",
+          "minimumDegrees": 20.0,
+          "maximumDegrees": 70.0,
+          "cue": "Balanced base, ready to release straight away.",
+          "why": "The manual wants a quick catch and release, and a release needs a base."
+        }
+      ]
+    },
+    {
+      "name": "contact",
+      "atPhase": 0.45,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 40.0,
+          "cue": "Meet the ball with almost straight arms.",
+          "why": "Straight arms at contact leave the whole elbow range available to absorb the ball on the way in."
+        },
+        {
+          "measure": "rightElbowFlexionDegrees",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 40.0,
+          "cue": "Both arms the same. Thumbs in the middle behind the ball.",
+          "why": "A two-hand catch needs both hands presented equally."
+        }
+      ]
+    },
+    {
+      "name": "pull_in",
+      "atPhase": 0.72,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 50.0,
+          "maximumDegrees": 130.0,
+          "cue": "As soon as you catch the ball, pull it in to your chest.",
+          "why": "The pull-in absorbs the ball. Without it the ball bounces out of the hands."
+        },
+        {
+          "measure": "trunkLeanDegrees",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 12.0,
+          "cue": "Bring the ball to your chest. Do not take your chest to the ball.",
+          "why": "Leaning back to receive the ball costs balance and the next pass. The arms do the absorbing."
+        }
+      ]
+    },
+    {
+      "name": "release",
+      "atPhase": 1.0,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 10.0,
+          "maximumDegrees": 70.0,
+          "cue": "Use the momentum of the catch to pass the ball back straight away.",
+          "why": "The manual coaches this as quick catch and release. Holding the ball wastes the momentum already in the arms."
+        }
+      ]
+    }
+  ]
+}

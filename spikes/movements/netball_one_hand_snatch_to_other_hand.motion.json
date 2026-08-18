@@ -1,0 +1,66 @@
+{
+  "movementId": "netball_one_hand_snatch_to_other_hand",
+  "frames": 24,
+  "framesPerSecond": 24,
+  "notes": "The first asymmetric movement in the library. The right hand reaches out alone and takes the ball. The left hand then joins it, because the manual is explicit: get two hands on the ball as quick as possible. Keys carry per-hand overrides; where a hand has no override it uses the shared offsets.",
+  "stance": {
+    "hipDropFraction": 0.18
+  },
+  "keys": [
+    {
+      "atPhase": 0.0,
+      "name": "ready",
+      "across": 0.26,
+      "up": 0.14,
+      "ahead": 0.72,
+      "note": "Both hands showing the arm span, as in every snatch drill."
+    },
+    {
+      "atPhase": 0.35,
+      "name": "reach",
+      "across": 0.26,
+      "up": 0.20,
+      "ahead": 0.60,
+      "right": {
+        "across": 0.30,
+        "up": 0.38,
+        "ahead": 0.86
+      },
+      "note": "The catching hand goes alone. The other stays ready but does not chase."
+    },
+    {
+      "atPhase": 0.5,
+      "name": "contact",
+      "across": 0.26,
+      "up": 0.24,
+      "ahead": 0.58,
+      "right": {
+        "across": 0.28,
+        "up": 0.44,
+        "ahead": 0.92
+      },
+      "note": "One hand on the ball, out in front of the shoulder."
+    },
+    {
+      "atPhase": 0.72,
+      "name": "join",
+      "across": 0.24,
+      "up": 0.34,
+      "ahead": 0.72,
+      "right": {
+        "across": 0.24,
+        "up": 0.38,
+        "ahead": 0.76
+      },
+      "note": "The second hand arrives on the ball. This is the moment the manual calls for."
+    },
+    {
+      "atPhase": 1.0,
+      "name": "pull_in",
+      "across": 0.22,
+      "up": 0.04,
+      "ahead": 0.36,
+      "note": "Both hands bring the ball in together."
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "movementId": "netball_two_hand_catch_chest",
+  "frames": 24,
+  "framesPerSecond": 24,
+  "notes": "Hand positions are fractions of arm length, measured from the chest. across is out to the side, up is above the chest, ahead is in front. 1.0 ahead is a fully straight arm reaching forward.",
+  "stance": {
+    "hipDropFraction": 0.16
+  },
+  "keys": [
+    {
+      "atPhase": 0.0,
+      "name": "ready",
+      "across": 0.3,
+      "up": 0.12,
+      "ahead": 0.95,
+      "note": "Arms already almost straight in front. This is the manual's distinguishing instruction for this catch."
+    },
+    {
+      "atPhase": 0.45,
+      "name": "contact",
+      "across": 0.3,
+      "up": 0.18,
+      "ahead": 0.99,
+      "note": "Takes the ball with arms almost straight, at chest height. Fingers up, thumbs in the middle."
+    },
+    {
+      "atPhase": 0.72,
+      "name": "pull_in",
+      "across": 0.22,
+      "up": 0.02,
+      "ahead": 0.34,
+      "note": "As soon as the ball is caught it comes in to the chest."
+    },
+    {
+      "atPhase": 1.0,
+      "name": "release",
+      "across": 0.28,
+      "up": 0.12,
+      "ahead": 0.86,
+      "note": "The momentum of the catch carries straight into the pass back."
+    }
+  ]
+}

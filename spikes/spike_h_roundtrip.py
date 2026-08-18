@@ -33,13 +33,15 @@ from segment_measures import (  # noqa: E402
     elbow_flexion_degrees,
     shoulder_elevation_degrees,
 )
-from spike_f_movement import (  # noqa: E402
+from catch_solver import (  # noqa: E402
     ASSET_FOLDER,
+    CONTACT_PHASE,
     FORBIDDEN,
     LEVEL_OF_DETAIL,
     WANTED,
-    hand_targets,
     joint_positions,
+    load_character,
+    solve_catch,
 )
 
 # A landmark set a 2D detector actually produces. No fingertips, because no
@@ -140,33 +142,11 @@ def main() -> int:
     options.min_iterations = 5
 
     rest = np.zeros(count, dtype=np.float32)
-    rest_positions = joint_positions(character, rest)
-
-    # Build a truth pose: the catch at contact, solved the same way the movement
-    # spike solves it.
-    left_target, right_target = hand_targets(
-        rest_positions[index["l_wrist"]].copy(),
-        rest_positions[index["r_wrist"]].copy(),
-        0.55,
-    )
-    truth_error = solver2.PositionErrorFunction(character, weight=1.0)
-    for joint, target in (("l_wrist", left_target), ("r_wrist", right_target)):
-        truth_error.add_constraint(
-            index[joint],
-            target=np.asarray(target, dtype=np.float32),
-            offset=np.zeros(3, dtype=np.float32),
-            weight=1.0,
-        )
-    truth_function = solver2.SkeletonSolverFunction(
-        character, [truth_error, solver2.LimitErrorFunction(character, weight=5.0)]
-    )
-    truth_solver = solver2.GaussNewtonSolver(truth_function, options)
-    truth_solver.set_enabled_parameters(enabled)
-    truth_parameters = np.asarray(
-        truth_solver.solve(rest.reshape(-1, 1)), dtype=np.float32
-    ).reshape(-1)
-
-    truth_positions = joint_positions(character, truth_parameters)
+    # The truth pose is the contact frame of the pull-in drill, solved by the
+    # shared solver so this spike cannot drift from the library.
+    solved = solve_catch(character)
+    contact_frame = round(CONTACT_PHASE * (len(solved["points"]) - 1))
+    truth_positions = solved["points"][contact_frame]
     truth_angles = measure(truth_positions, index)
 
     observed_indices = [index[name] for name in OBSERVED]
