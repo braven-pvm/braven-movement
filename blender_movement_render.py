@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -41,6 +42,7 @@ from blender_mpfb_reference_catch import (  # noqa: E402
     pose_articulated_hand,
     render_view,
     rotate_bone_toward,
+    select_only,
     sha256,
     translate_bone_world,
     world_head,
@@ -72,7 +74,63 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--job", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--phase", action="append", default=None)
+    parser.add_argument("--turntable", type=int, default=0)
+    parser.add_argument("--animate", action="store_true")
+    parser.add_argument("--no-stills", action="store_true")
     return parser.parse_args(argv)
+
+
+def turntable(count: int, target: Vector, radius: float, height: float):
+    """Camera positions all the way round, starting at the front.
+
+    Three fixed views leave a pose ambiguous. A hand behind a ball and a hand
+    beside it look the same from one angle and different from the next one
+    round, and a coach cannot judge which it is from three pictures.
+    """
+    for step in range(count):
+        angle = 2.0 * math.pi * step / count
+        yield (
+            f"turn{round(math.degrees(angle)):03d}",
+            Vector((
+                target.x + radius * math.sin(angle),
+                target.y - radius * math.cos(angle),
+                height,
+            )),
+        )
+
+
+def keyframe(rig, ball, frame: int) -> None:
+    for bone in rig.pose.bones:
+        bone.keyframe_insert(data_path="location", frame=frame)
+        if bone.rotation_mode == "QUATERNION":
+            bone.keyframe_insert(data_path="rotation_quaternion", frame=frame)
+        else:
+            bone.keyframe_insert(data_path="rotation_euler", frame=frame)
+        bone.keyframe_insert(data_path="scale", frame=frame)
+    ball.keyframe_insert(data_path="location", frame=frame)
+
+
+def render_movie(camera, *, path: Path, resolution, location, target, lens,
+                 sensor_width, fps: int) -> None:
+    scene = bpy.context.scene
+    camera.data.type = "PERSP"
+    camera.data.lens = lens
+    camera.data.sensor_width = sensor_width
+    camera.location = location
+    camera.rotation_euler = (
+        target - camera.location
+    ).to_track_quat("-Z", "Y").to_euler()
+    scene.render.engine = "BLENDER_EEVEE_NEXT"
+    scene.render.resolution_x, scene.render.resolution_y = resolution
+    scene.render.resolution_percentage = 100
+    scene.render.fps = fps
+    scene.render.image_settings.file_format = "FFMPEG"
+    scene.render.ffmpeg.format = "MPEG4"
+    scene.render.ffmpeg.codec = "H264"
+    scene.render.ffmpeg.constant_rate_factor = "HIGH"
+    scene.render.filepath = str(path.with_suffix(""))
+    scene.render.use_file_extension = True
+    bpy.ops.render.render(animation=True)
 
 
 def bone_chain_length(rig, *bones: str) -> float:
@@ -220,7 +278,7 @@ def main() -> None:
     )
 
     rendered = []
-    for phase in phases:
+    for phase in phases if not args.no_stills else []:
         centre, receipt = pose_phase(
             rig, phase, job["anatomyLimitsDegrees"], basis, foot_baseline
         )
@@ -242,11 +300,86 @@ def main() -> None:
         receipt["name"] = phase["name"]
         receipt["frame"] = phase["frame"]
         receipt["ballCentreM"] = list(centre)
+        if args.turntable:
+            target = Vector(job["views"]["front"]["targetM"])
+            front = Vector(job["views"]["front"]["locationM"])
+            radius = math.hypot(front.x - target.x, front.y - target.y)
+            for name, location in turntable(
+                args.turntable, target, radius, front.z
+            ):
+                path = output / (
+                    f"{job['movementId']}.{phase['name']}.{name}.png"
+                )
+                images[name] = render_view(
+                    camera,
+                    path=path,
+                    resolution=tuple(job["views"]["front"]["resolutionPx"]),
+                    location=location,
+                    target=target,
+                    lens=job["views"]["front"]["lensMm"],
+                    sensor_width=job["views"]["front"]["sensorWidthMm"],
+                )
         receipt["views"] = images
         rendered.append(receipt)
         print(
             f"[movement-render] {phase['name']} frame {phase['frame']} "
             f"-> {len(images)} views"
+        )
+
+    animation = None
+    if args.animate:
+        frames = job.get("frames") or []
+        if not frames:
+            raise SystemExit(
+                "the job carries no frames. Export it with --every=N."
+            )
+        scene = bpy.context.scene
+        scene.frame_start = 1
+        scene.frame_end = len(frames)
+        fps = max(1, round(job["framesPerSecond"] / max(job["frameStep"], 1)))
+        # Set the frame before posing. Once keys exist, changing the frame
+        # evaluates them and would replace whatever was posed first.
+        for number, frame in enumerate(frames, start=1):
+            scene.frame_set(number)
+            centre, _ = pose_phase(
+                rig, frame, job["anatomyLimitsDegrees"], basis, foot_baseline
+            )
+            ball.location = centre
+            keyframe(rig, ball, number)
+        scene.frame_set(1)
+
+        glb = output / f"{job['movementId']}.glb"
+        select_only([rig, human, *assets, ball])
+        bpy.ops.export_scene.gltf(
+            filepath=str(glb),
+            export_format="GLB",
+            use_selection=True,
+            export_animations=True,
+            export_frame_range=True,
+        )
+        movie = output / f"{job['movementId']}.mp4"
+        view = job["views"]["quarter"]
+        render_movie(
+            camera,
+            path=movie,
+            resolution=tuple(view["resolutionPx"]),
+            location=Vector(view["locationM"]),
+            target=Vector(view["targetM"]),
+            lens=view["lensMm"],
+            sensor_width=view["sensorWidthMm"],
+            fps=fps,
+        )
+        animation = {
+            "frames": len(frames),
+            "framesPerSecond": fps,
+            "glb": {"path": str(glb), "bytes": glb.stat().st_size,
+                    "sha256": sha256(glb)},
+            "movie": {"path": str(movie),
+                      "bytes": movie.stat().st_size if movie.is_file() else 0},
+        }
+        print(
+            f"[movement-render] animated {len(frames)} frames at {fps} fps "
+            f"-> {glb.name} ({glb.stat().st_size // 1024} KB), {movie.name}"
         )
 
     receipt_path = output / f"{job['movementId']}.render.json"
@@ -257,6 +390,7 @@ def main() -> None:
                 "skill": job["skill"],
                 "jobSha256": sha256(args.job),
                 "sourceAssets": [str(path) for path in source_assets],
+                "animation": animation,
                 "phases": rendered,
             },
             indent=2,

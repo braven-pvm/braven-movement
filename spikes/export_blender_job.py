@@ -203,7 +203,7 @@ def phase_job(result, index, frame: int) -> dict:
     return job
 
 
-def build(character, movement_id: str) -> dict:
+def build(character, movement_id: str, every: int = 0) -> dict:
     definition = load_definition(definition_path(movement_id))
     result = solve_movement(character, movement_id)
     index = result["index"]
@@ -215,6 +215,13 @@ def build(character, movement_id: str) -> dict:
         job = phase_job(result, index, frame)
         job["name"] = phase.name
         phases.append(job)
+
+    # Every frame, for animation. The phases are the pictures a manual page
+    # wants and these are the movement between them.
+    frames_out = []
+    if every > 0:
+        for frame in range(0, frames, every):
+            frames_out.append(phase_job(result, index, frame))
 
     return {
         "schemaVersion": 1,
@@ -232,19 +239,27 @@ def build(character, movement_id: str) -> dict:
             }
             for name, view in VIEWS.items()
         },
+        "framesPerSecond": float(result["track"].frames_per_second),
+        "frameStep": int(every),
         "phases": phases,
+        "frames": frames_out,
     }
 
 
 def main(argv: list[str]) -> int:
-    movement_id = argv[1] if len(argv) > 1 else "netball_two_hand_snatch_pull_in"
+    wanted = [value for value in argv[1:] if not value.startswith("--")]
+    movement_id = wanted[0] if wanted else "netball_two_hand_snatch_pull_in"
+    every = 0
+    for value in argv[1:]:
+        if value.startswith("--every="):
+            every = int(value.split("=", 1)[1])
     character = load_character()
-    job = build(character, movement_id)
+    job = build(character, movement_id, every)
     OUTPUT.mkdir(parents=True, exist_ok=True)
     path = OUTPUT / f"{movement_id}.job.json"
     path.write_text(json.dumps(job, indent=2), encoding="utf-8")
     print(
-        f"{len(job['phases'])} phases -> {path} "
+        f"{len(job['phases'])} phases, {len(job['frames'])} frames -> {path} "
         f"({path.stat().st_size // 1024} KB)"
     )
     for phase in job["phases"]:
