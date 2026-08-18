@@ -58,6 +58,19 @@ TRUNK_WEIGHT = 10.0
 # degrees.
 SHOULDER_LINE_WEIGHT = 6.0
 SHOULDER_LINE_FULL_AT_DEGREES = 15.0
+# Held at zero, deliberately, after a failed attempt at a fix.
+#
+# The shoulder girdle currently slides up to 28 cm forward to help a hand reach,
+# which is far past the few centimetres a clavicle allows, and it is why the high
+# deflect never extends its elbow. Holding the shoulder at its rest position
+# instead was worse: it broke five passing drills, and pulling their reach back
+# to compensate still left the hands 3 cm short at the scaling floor.
+#
+# The reason is that a rest target is also anatomically wrong. A shoulder blade
+# rotates as the arm rises, about one degree of scapula for every two of humerus
+# above thirty. The right model is travel proportional to arm elevation, not zero
+# travel, and that is a real piece of engine work rather than a weight.
+SHOULDER_BASE_WEIGHT = 0.0
 # The elbow pole only breaks the tie, so it never fights the wrist target.
 ELBOW_POLE_WEIGHT = 0.35
 ELBOW_POLE_DOWN_CM = 11.0
@@ -231,7 +244,7 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
             side: turned(rest_shoulders[side]) for side in ("l", "r")
         }
         turn_now = abs(track.turn_at(phase))
-        shoulder_weight = SHOULDER_LINE_WEIGHT * min(
+        shoulder_weight = SHOULDER_BASE_WEIGHT + SHOULDER_LINE_WEIGHT * min(
             1.0, turn_now / SHOULDER_LINE_FULL_AT_DEGREES
         )
         for joint, target, weight in (
