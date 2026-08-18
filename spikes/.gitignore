@@ -1,3 +1,7 @@
 # pixi environments
 .pixi/*
 !.pixi/config.toml
+
+# SMPL-X model files. Research licence, redistribution not permitted.
+smplx-assets/*.npz
+smplx-assets/*.pkl
