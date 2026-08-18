@@ -56,6 +56,7 @@
   .stage:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
   .bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .transport { border-bottom: 1px solid var(--rule); padding-bottom: 12px; }
   button {
     background: transparent; color: var(--ink); border: 1px solid var(--line);
     border-radius: 3px; padding: 5px 11px;
@@ -95,6 +96,11 @@
   </header>
 
   <section class="panel">
+    <div class="bar transport">
+      <button type="button" id="play" class="primary">Pause</button>
+      <input id="scrub" type="range" min="0" value="0" aria-label="Frame">
+      <span class="now" id="now">frame 0</span>
+    </div>
     <div class="bar">
       <span class="label">View</span>
       <button type="button" data-view="front">Front</button>
@@ -105,11 +111,6 @@
       <button type="button" id="reset">Reset</button>
     </div>
     <div class="grid" id="views"></div>
-    <div class="bar">
-      <button type="button" id="play" class="primary">Play</button>
-      <input id="scrub" type="range" min="0" value="0" aria-label="Frame">
-      <span class="now" id="now">frame 0</span>
-    </div>
     <p class="hint">Drag a panel to orbit it. Scroll to zoom, hold shift and
     drag to pan, double click to reset. With the cameras linked every panel
     moves together, which is what you want when comparing two drills; unlink to
@@ -358,13 +359,26 @@ function stop() {
   if (timer) { clearInterval(timer); timer = null; }
   document.getElementById('play').textContent = 'Play';
 }
+
+function start() {
+  if (timer) return;
+  document.getElementById('play').textContent = 'Pause';
+  timer = setInterval(() => show((at + 1) % COUNT), 50);
+}
 const scrub = document.getElementById('scrub');
 scrub.max = COUNT - 1;
 scrub.addEventListener('input', event => { stop(); show(+event.target.value); });
 document.getElementById('play').addEventListener('click', () => {
-  if (timer) { stop(); return; }
-  document.getElementById('play').textContent = 'Pause';
-  timer = setInterval(() => show((at + 1) % COUNT), 50);
+  if (timer) stop(); else start();
 });
+
 show(0);
+// Running is the useful state: a still frame of a catch tells you almost
+// nothing. Anyone who has asked their system for less movement gets the still
+// frame instead, and the play button.
+if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  document.getElementById('play').textContent = 'Play';
+} else {
+  start();
+}
 </script>
