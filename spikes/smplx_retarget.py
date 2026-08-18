@@ -38,6 +38,13 @@ METRES_TO_CM = 100.0
 # free, they settle wherever the pelvis and the shoulders put them, which is
 # what a spine does anyway.
 #
+# The balls of the feet are in for the same reason the knuckles are in: an
+# ankle with nothing below it has no observed rotation, so the optimiser
+# leaves the foot wherever it started and the athlete stands on pointed toes.
+# SMPL-X's ankle to toe bone is 12.1 cm where MHR's is 14.8, an eighteen per
+# cent difference, which is the same order as the bones already in this list
+# and nothing like the collar's eighty two.
+#
 # The hands run index, middle, pinky, ring, thumb in SMPL-X's order, which is
 # not the order they are in on a hand.
 CORRESPONDENCE = {
@@ -45,6 +52,7 @@ CORRESPONDENCE = {
     1: "l_upleg", 2: "r_upleg",
     4: "l_lowleg", 5: "r_lowleg",
     7: "l_foot", 8: "r_foot",
+    10: "l_ball", 11: "r_ball",
     12: "c_neck",
     16: "l_uparm", 17: "r_uparm",
     18: "l_lowarm", 19: "r_lowarm",

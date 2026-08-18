@@ -51,8 +51,14 @@ OUTPUT = SPIKE_DIR / "poc-output"
 TEMPLATE = SPIKE_DIR / "manual_page_template.html"
 
 
-def figure(character, result: dict, phase: float, body=None) -> dict:
-    """The athlete, skinned, at one coaching phase."""
+def figure(
+    character, result: dict, phase: float, body=None, scale: int = 1
+) -> dict:
+    """The athlete, skinned, at one coaching phase.
+
+    Vertices come back as integers in units of 1/scale centimetres. The
+    drawing divides by the same number.
+    """
     frames = len(result["points"])
     number = max(0, min(frames - 1, round(phase * (frames - 1))))
     fit_error = None
@@ -76,10 +82,12 @@ def figure(character, result: dict, phase: float, body=None) -> dict:
     held = result["possession"].frames[number]
     return {
         "frame": number,
-        # Whole centimetres. The figure is drawn at about two pixels per
-        # centimetre, so a decimal place buys half a pixel and costs a third of
-        # the page.
-        "v": [round(float(value)) for value in skin.reshape(-1)],
+        # Integers, in units of 1/scale centimetres. A manual figure is drawn
+        # at about two pixels per centimetre, where whole centimetres cost
+        # half a pixel. A full size figure is drawn at five, where whole
+        # centimetres snap every vertex to a five pixel grid and the smooth
+        # normals come out faceted.
+        "v": [round(float(value) * scale) for value in skin.reshape(-1)],
         "ball": [round(float(value), 1) for value in held.centre],
         "holding": held.holding,
         "fit": fit_error,
