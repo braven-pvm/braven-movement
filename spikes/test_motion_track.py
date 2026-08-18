@@ -233,5 +233,72 @@ class LibraryTest(unittest.TestCase):
         self.assertIn("planted feet", str(caught.exception))
 
 
+class FootworkTest(unittest.TestCase):
+    """Feet that move, hips that travel, and a flight phase."""
+
+    LANDING = MOVEMENTS / "netball_double_foot_landing.motion.json"
+
+    def test_a_planted_drill_does_not_key_its_feet(self):
+        for name in (
+            "netball_two_hand_snatch_pull_in",
+            "netball_hooks_outside_hand",
+        ):
+            track = load_motion(MOVEMENTS / f"{name}.motion.json")
+            self.assertFalse(track.moves_feet(), name)
+
+    def test_the_landing_drill_keys_its_feet(self):
+        self.assertTrue(load_motion(self.LANDING).moves_feet())
+
+    def test_the_landing_drill_leaves_the_ground(self):
+        track = load_motion(self.LANDING)
+
+        self.assertTrue(track.airborne_phases())
+
+    def test_both_feet_leave_together_and_land_together(self):
+        """A double foot landing is the whole point of the drill."""
+        track = load_motion(self.LANDING)
+
+        for phase in (0.0, 0.5, 0.82, 1.0):
+            left, right = track.feet_at(phase)
+            self.assertLess(
+                abs(left.up - right.up), 0.12, f"feet split at phase {phase}"
+            )
+
+    def test_the_hips_travel_forward_over_the_movement(self):
+        track = load_motion(self.LANDING)
+
+        start = track.root_offset_at(0.0)[1]
+        finish = track.root_offset_at(1.0)[1]
+
+        self.assertLess(start, finish)
+
+    def test_a_planted_drill_does_not_travel(self):
+        track = load_motion(MOVEMENTS / "netball_two_hand_snatch_pull_in.motion.json")
+
+        for step in range(11):
+            across, ahead = track.root_offset_at(step / 10.0)
+            self.assertAlmostEqual(across, 0.0, places=9)
+            self.assertAlmostEqual(ahead, 0.0, places=9)
+
+    def test_keying_only_one_foot_is_rejected(self):
+        """Half a set of feet would jump between placed and planted."""
+        keys = [key(0.0, "a"), key(1.0, "b")]
+        keys[0]["footLeft"] = {"across": 0.16, "ahead": 0.0, "up": 0.0}
+        keys[0]["footRight"] = {"across": 0.16, "ahead": 0.0, "up": 0.0}
+        path = write_track(keys)
+
+        with self.assertRaises(MotionTrackError) as caught:
+            load_motion(path)
+
+        self.assertIn("every key or on none", str(caught.exception))
+
+    def test_a_foot_on_the_ground_reads_as_planted(self):
+        track = load_motion(self.LANDING)
+        left, right = track.feet_at(1.0)
+
+        self.assertFalse(left.airborne)
+        self.assertFalse(right.airborne)
+
+
 if __name__ == "__main__":
     unittest.main()

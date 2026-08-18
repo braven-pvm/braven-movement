@@ -71,6 +71,11 @@ SHOULDER_LINE_FULL_AT_DEGREES = 15.0
 # above thirty. The right model is travel proportional to arm elevation, not zero
 # travel, and that is a real piece of engine work rather than a weight.
 SHOULDER_BASE_WEIGHT = 0.0
+# A drill that moves its feet does get a shoulder hold, for a different reason.
+# Split feet twist the pelvis, and with nothing holding the shoulder line the
+# trunk rotates freely and the arms swing across the body. Footwork drills do
+# not reach at full stretch, so the hold costs them nothing.
+FOOTWORK_SHOULDER_WEIGHT = 3.0
 # The elbow pole only breaks the tie, so it never fights the wrist target.
 ELBOW_POLE_WEIGHT = 0.35
 ELBOW_POLE_DOWN_CM = 11.0
@@ -180,10 +185,14 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
     for frame in range(frame_count):
         phase = frame / (frame_count - 1)
         drop = np.array([0.0, track.hip_drop_at(phase) * reach_cm, 0.0])
+        # A footwork drill moves the hips through space. A planted drill leaves
+        # these at zero and behaves exactly as before.
+        across_cm, ahead_cm = track.root_offset_at(phase)
+        travel = np.array([across_cm * reach_cm, 0.0, ahead_cm * reach_cm])
         # A turn rotates the trunk about the vertical axis through the hips. The
         # feet stay planted, so the turn has to come from the trunk itself.
         rotation = turn_matrix(track.turn_at(phase))
-        root_target = rest_root - drop
+        root_target = rest_root - drop + travel
 
         def turned(rest_point: np.ndarray) -> np.ndarray:
             return root_target + rotation @ (rest_point - rest_root)
@@ -230,10 +239,36 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
                 offset=np.zeros(3, dtype=np.float32),
                 weight=ELBOW_POLE_WEIGHT * slack,
             )
-        for foot in ("l_foot", "r_foot"):
+        # Feet either follow the movement or stay where the athlete started.
+        placements = track.feet_at(phase)
+        if placements is None:
+            foot_targets = {
+                "l_foot": rest_positions[index["l_foot"]],
+                "r_foot": rest_positions[index["r_foot"]],
+            }
+        else:
+            ground = float(rest_positions[index["l_foot"]][1])
+            foot_targets = {}
+            for joint, placement, sign in (
+                ("l_foot", placements[0], 1.0),
+                ("r_foot", placements[1], -1.0),
+            ):
+                local = np.array(
+                    [
+                        sign * placement.across * reach_cm,
+                        0.0,
+                        placement.ahead * reach_cm,
+                    ]
+                )
+                point = root_target + rotation @ local
+                # Height is measured from the ground, not from the hips, so a
+                # planted foot stays on the floor however the hips move.
+                point[1] = ground + placement.up * reach_cm
+                foot_targets[joint] = point
+        for joint, target in foot_targets.items():
             position_error.add_constraint(
-                index[foot],
-                target=np.asarray(rest_positions[index[foot]], dtype=np.float32),
+                index[joint],
+                target=np.asarray(target, dtype=np.float32),
                 offset=np.zeros(3, dtype=np.float32),
                 weight=FOOT_WEIGHT,
             )
@@ -244,7 +279,8 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
             side: turned(rest_shoulders[side]) for side in ("l", "r")
         }
         turn_now = abs(track.turn_at(phase))
-        shoulder_weight = SHOULDER_BASE_WEIGHT + SHOULDER_LINE_WEIGHT * min(
+        base = FOOTWORK_SHOULDER_WEIGHT if track.moves_feet() else SHOULDER_BASE_WEIGHT
+        shoulder_weight = base + SHOULDER_LINE_WEIGHT * min(
             1.0, turn_now / SHOULDER_LINE_FULL_AT_DEGREES
         )
         for joint, target, weight in (
@@ -291,17 +327,34 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
         previous = solved
 
         points = joint_positions(character, solved)
-        # A left hand right of the right hand means a left and right mix-up
-        # upstream. This repository has produced that defect twice.
-        separation = float(points[index["l_wrist"]][0] - points[index["r_wrist"]][0])
-        if separation <= 0.0:
-            raise SolveError(
-                f"{track.movement_id} frame {frame}: the hands have crossed, "
-                f"left minus right is {separation:.1f} cm"
-            )
+        # A left hand on the right of the right hand means a left and right
+        # mix-up upstream. This repository has produced that defect twice.
+        #
+        # Measured along the athlete's own shoulder line, not along world X. A
+        # turned drill, or a running stride that rotates the trunk, moves the
+        # hands across world centre without either hand changing sides.
+        shoulder_line = points[index["l_uparm"]] - points[index["r_uparm"]]
+        length = float(np.linalg.norm(shoulder_line))
+        if length > 1e-6:
+            wrists = points[index["l_wrist"]] - points[index["r_wrist"]]
+            separation = float(np.dot(wrists, shoulder_line) / length)
+            if separation <= 0.0:
+                raise SolveError(
+                    f"{track.movement_id} frame {frame}: the hands have crossed. "
+                    f"Along the shoulder line, left minus right is "
+                    f"{separation:.1f} cm"
+                )
         points_per_frame.append(points)
         frame_measure = measure_frame(points, index, phase)
         frame_measure["trunkTurnDegrees"] = round(track.turn_at(phase), 2)
+        ground_level = float(rest_positions[index["l_foot"]][1])
+        left_up = float(points[index["l_foot"]][1]) - ground_level
+        right_up = float(points[index["r_foot"]][1]) - ground_level
+        frame_measure["leftFootHeightCm"] = round(left_up, 2)
+        frame_measure["rightFootHeightCm"] = round(right_up, 2)
+        # A double foot landing means both feet arrive together. The gap between
+        # their heights is what a coach is watching for.
+        frame_measure["footHeightGapCm"] = round(abs(left_up - right_up), 2)
         measurements.append(frame_measure)
         misses.append(float(np.linalg.norm(points[index["l_wrist"]] - left_target)))
 

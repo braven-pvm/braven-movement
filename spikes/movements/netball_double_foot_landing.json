@@ -1,0 +1,88 @@
+{
+  "movementId": "netball_double_foot_landing",
+  "sport": "netball",
+  "skill": "Double Foot Landing",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger, Footwork section, page 100 onward. The manual lists the individual footwork skills as double foot landing, left-right, right-left, turning, and step with one foot, and states the objective of the block training drill directly: the player needs to know which foot is the landing foot. The drill has players run from a line, receive a pass in the air, and land in a marked circle. The cues are the manual's. The numeric bands are NOT, and are PROVISIONAL until a coach sets them.",
+  "phases": [
+    {
+      "name": "approach",
+      "atPhase": 0.0,
+      "checkpoints": [
+        {
+          "measure": "leftKneeFlexionDegrees",
+          "minimumDegrees": 15.0,
+          "maximumDegrees": 80.0,
+          "cue": "Run in under control. You have to be able to stop where the circle is.",
+          "why": "An approach that is out of control cannot produce a landing the athlete chooses."
+        }
+      ]
+    },
+    {
+      "name": "flight",
+      "atPhase": 0.5,
+      "checkpoints": [
+        {
+          "measure": "footHeightGapCm",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 14.0,
+          "cue": "Both feet leave together and stay level in the air.",
+          "why": "Feet that separate in the air will separate on the way down, and the landing stops being a double foot landing."
+        },
+        {
+          "measure": "leftShoulderElevationDegrees",
+          "minimumDegrees": 40.0,
+          "maximumDegrees": 140.0,
+          "cue": "Hands up for the ball while you are in the air.",
+          "why": "The pass arrives during the flight, so the hands cannot wait for the landing."
+        }
+      ]
+    },
+    {
+      "name": "land",
+      "atPhase": 0.82,
+      "checkpoints": [
+        {
+          "measure": "footHeightGapCm",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 6.0,
+          "cue": "Land on both feet at the same time.",
+          "why": "This is the whole drill. One foot first is a different landing, and it changes which foot the player may then move."
+        },
+        {
+          "measure": "trunkLeanDegrees",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 22.0,
+          "cue": "Land balanced, chest over your feet.",
+          "why": "A landing that arrives off balance costs the step or the pass that follows it."
+        }
+      ]
+    },
+    {
+      "name": "absorb",
+      "atPhase": 1.0,
+      "checkpoints": [
+        {
+          "measure": "leftKneeFlexionDegrees",
+          "minimumDegrees": 35.0,
+          "maximumDegrees": 100.0,
+          "cue": "Absorb through your knees. Do not land stiff.",
+          "why": "A stiff landing sends the load into the joints instead of the muscles, and it leaves the athlete unable to move again."
+        },
+        {
+          "measure": "rightKneeFlexionDegrees",
+          "minimumDegrees": 35.0,
+          "maximumDegrees": 100.0,
+          "cue": "Both legs share the landing.",
+          "why": "A double foot landing that is absorbed on one leg carries the same load as a single foot landing."
+        },
+        {
+          "measure": "footHeightGapCm",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 6.0,
+          "cue": "Finish with both feet down and still, inside the circle.",
+          "why": "The manual has the player land in a marked circle, so the finish is a held position, not a drift."
+        }
+      ]
+    }
+  ]
+}

@@ -49,6 +49,31 @@ class HandOffset:
 
 
 @dataclass(frozen=True)
+class FootPlacement:
+    """Where a foot is, relative to the hips, in arm lengths.
+
+    ``up`` is zero when the foot is on the ground and positive when it is off it.
+    A movement that never keys its feet leaves them where the athlete started,
+    which is what every planted drill wants.
+    """
+
+    across: float
+    ahead: float
+    up: float
+
+    def blend(self, other: "FootPlacement", amount: float) -> "FootPlacement":
+        return FootPlacement(
+            self.across + (other.across - self.across) * amount,
+            self.ahead + (other.ahead - self.ahead) * amount,
+            self.up + (other.up - self.up) * amount,
+        )
+
+    @property
+    def airborne(self) -> bool:
+        return self.up > 0.02
+
+
+@dataclass(frozen=True)
 class MotionKey:
     at_phase: float
     name: str
@@ -62,6 +87,12 @@ class MotionKey:
     # athlete's left. A ball to the side is caught by turning, not only by
     # reaching, and the feet stay planted while the trunk turns over them.
     turn_degrees: float
+    # Where the feet are, and how far the hips have travelled. All None on a
+    # planted drill, which leaves the feet where the athlete started.
+    foot_left: FootPlacement | None
+    foot_right: FootPlacement | None
+    root_across: float
+    root_ahead: float
 
 
 @dataclass(frozen=True)
@@ -128,6 +159,62 @@ class MotionTrack:
                 )
         raise MotionTrackError(f"no key span covers phase {phase}")
 
+    def feet_at(self, phase: float) -> tuple[FootPlacement, FootPlacement] | None:
+        """Return both foot placements, or None when this drill keeps them still."""
+        keys = self.keys
+        if not self.moves_feet():
+            return None
+        if phase <= keys[0].at_phase:
+            return (keys[0].foot_left, keys[0].foot_right)  # type: ignore[return-value]
+        if phase >= keys[-1].at_phase:
+            return (keys[-1].foot_left, keys[-1].foot_right)  # type: ignore[return-value]
+        for first, second in zip(keys, keys[1:]):
+            if first.at_phase <= phase <= second.at_phase:
+                span = second.at_phase - first.at_phase
+                travel = 0.0 if span <= 0.0 else (phase - first.at_phase) / span
+                eased = 0.5 - 0.5 * math.cos(math.pi * travel)
+                return (
+                    first.foot_left.blend(second.foot_left, eased),  # type: ignore[union-attr]
+                    first.foot_right.blend(second.foot_right, eased),  # type: ignore[union-attr]
+                )
+        raise MotionTrackError(f"no key span covers phase {phase}")
+
+    def root_offset_at(self, phase: float) -> tuple[float, float]:
+        """Return how far the hips have travelled across and ahead, in arm lengths."""
+        keys = self.keys
+        if phase <= keys[0].at_phase:
+            return (keys[0].root_across, keys[0].root_ahead)
+        if phase >= keys[-1].at_phase:
+            return (keys[-1].root_across, keys[-1].root_ahead)
+        for first, second in zip(keys, keys[1:]):
+            if first.at_phase <= phase <= second.at_phase:
+                span = second.at_phase - first.at_phase
+                travel = 0.0 if span <= 0.0 else (phase - first.at_phase) / span
+                eased = 0.5 - 0.5 * math.cos(math.pi * travel)
+                return (
+                    first.root_across
+                    + (second.root_across - first.root_across) * eased,
+                    first.root_ahead + (second.root_ahead - first.root_ahead) * eased,
+                )
+        raise MotionTrackError(f"no key span covers phase {phase}")
+
+    def moves_feet(self) -> bool:
+        return all(
+            key.foot_left is not None and key.foot_right is not None
+            for key in self.keys
+        )
+
+    def airborne_phases(self) -> list[float]:
+        """Return the phases where both feet have left the ground."""
+        return [
+            key.at_phase
+            for key in self.keys
+            if key.foot_left is not None
+            and key.foot_right is not None
+            and key.foot_left.airborne
+            and key.foot_right.airborne
+        ]
+
     def turns(self) -> bool:
         return any(abs(key.turn_degrees) > 0.5 for key in self.keys)
 
@@ -166,6 +253,19 @@ def _hand(data: dict, fallback: HandOffset | None, name: str) -> HandOffset:
         raise MotionTrackError(f"key {name} is missing {error}") from None
 
 
+def _foot(data: dict | None, name: str) -> FootPlacement | None:
+    if data is None:
+        return None
+    try:
+        return FootPlacement(
+            across=float(data["across"]),
+            ahead=float(data["ahead"]),
+            up=float(data.get("up", 0.0)),
+        )
+    except KeyError as error:
+        raise MotionTrackError(f"foot in key {name} is missing {error}") from None
+
+
 def load_motion(path: Path) -> MotionTrack:
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     default_drop = float(data["stance"]["hipDropFraction"])
@@ -187,6 +287,10 @@ def load_motion(path: Path) -> MotionTrack:
                 right=right,
                 hip_drop=float(entry.get("hipDrop", default_drop)),
                 turn_degrees=float(entry.get("turnDegrees", default_turn)),
+                foot_left=_foot(entry.get("footLeft"), name),
+                foot_right=_foot(entry.get("footRight"), name),
+                root_across=float(entry.get("rootAcross", 0.0)),
+                root_ahead=float(entry.get("rootAhead", 0.0)),
             )
         )
 
@@ -197,6 +301,14 @@ def load_motion(path: Path) -> MotionTrack:
         raise MotionTrackError("keys must be ordered by atPhase")
     if not math.isclose(phases[0], 0.0) or not math.isclose(phases[-1], 1.0):
         raise MotionTrackError("keys must span phase 0 to phase 1")
+    keyed_feet = [
+        key.foot_left is not None and key.foot_right is not None for key in keys
+    ]
+    if any(keyed_feet) and not all(keyed_feet):
+        raise MotionTrackError(
+            "a movement must key both feet on every key or on none. Keying some "
+            "of them would leave the feet jumping between placed and planted."
+        )
     for key in keys:
         if abs(key.turn_degrees) > MAXIMUM_TURN_DEGREES:
             raise MotionTrackError(
