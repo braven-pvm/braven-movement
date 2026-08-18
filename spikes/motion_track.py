@@ -25,6 +25,11 @@ from typing import Sequence
 import numpy as np
 
 
+# Trunk rotation over planted feet. Beyond this the feet have to move, which is
+# a different drill from the ones the manual keeps static.
+MAXIMUM_TURN_DEGREES = 70.0
+
+
 class MotionTrackError(ValueError):
     pass
 
@@ -53,6 +58,10 @@ class MotionKey:
     # length. A drill with a steady stance leaves this at the movement default.
     # A jump needs it to change: load, rise, land.
     hip_drop: float
+    # How far the trunk is turned away from square, in degrees, positive to the
+    # athlete's left. A ball to the side is caught by turning, not only by
+    # reaching, and the feet stay planted while the trunk turns over them.
+    turn_degrees: float
 
 
 @dataclass(frozen=True)
@@ -101,6 +110,27 @@ class MotionTrack:
                 return first.hip_drop + (second.hip_drop - first.hip_drop) * eased
         raise MotionTrackError(f"no key span covers phase {phase}")
 
+    def turn_at(self, phase: float) -> float:
+        """Return the trunk turn at this phase, smoothly between the keys."""
+        keys = self.keys
+        if phase <= keys[0].at_phase:
+            return keys[0].turn_degrees
+        if phase >= keys[-1].at_phase:
+            return keys[-1].turn_degrees
+        for first, second in zip(keys, keys[1:]):
+            if first.at_phase <= phase <= second.at_phase:
+                span = second.at_phase - first.at_phase
+                travel = 0.0 if span <= 0.0 else (phase - first.at_phase) / span
+                eased = 0.5 - 0.5 * math.cos(math.pi * travel)
+                return (
+                    first.turn_degrees
+                    + (second.turn_degrees - first.turn_degrees) * eased
+                )
+        raise MotionTrackError(f"no key span covers phase {phase}")
+
+    def turns(self) -> bool:
+        return any(abs(key.turn_degrees) > 0.5 for key in self.keys)
+
     def has_moving_stance(self) -> bool:
         return len({key.hip_drop for key in self.keys}) > 1
 
@@ -139,6 +169,7 @@ def _hand(data: dict, fallback: HandOffset | None, name: str) -> HandOffset:
 def load_motion(path: Path) -> MotionTrack:
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     default_drop = float(data["stance"]["hipDropFraction"])
+    default_turn = float(data["stance"].get("turnDegrees", 0.0))
     keys: list[MotionKey] = []
     for entry in data["keys"]:
         name = str(entry["name"])
@@ -155,6 +186,7 @@ def load_motion(path: Path) -> MotionTrack:
                 left=left,
                 right=right,
                 hip_drop=float(entry.get("hipDrop", default_drop)),
+                turn_degrees=float(entry.get("turnDegrees", default_turn)),
             )
         )
 
@@ -166,6 +198,12 @@ def load_motion(path: Path) -> MotionTrack:
     if not math.isclose(phases[0], 0.0) or not math.isclose(phases[-1], 1.0):
         raise MotionTrackError("keys must span phase 0 to phase 1")
     for key in keys:
+        if abs(key.turn_degrees) > MAXIMUM_TURN_DEGREES:
+            raise MotionTrackError(
+                f"key {key.name} turns the trunk {key.turn_degrees:.0f} degrees, "
+                f"beyond the {MAXIMUM_TURN_DEGREES:.0f} degrees a person can "
+                "produce over planted feet"
+            )
         for side, offset in (("left", key.left), ("right", key.right)):
             if offset.ahead > 1.0:
                 raise MotionTrackError(
@@ -181,6 +219,16 @@ def load_motion(path: Path) -> MotionTrack:
     )
 
 
+def turn_matrix(turn_degrees: float) -> np.ndarray:
+    """Return the rotation about the vertical axis. MHR is Y up."""
+    angle = math.radians(turn_degrees)
+    cosine, sine = math.cos(angle), math.sin(angle)
+    return np.array(
+        [[cosine, 0.0, sine], [0.0, 1.0, 0.0], [-sine, 0.0, cosine]],
+        dtype=np.float64,
+    )
+
+
 def hand_targets_from_track(
     track: MotionTrack,
     phase: float,
@@ -193,23 +241,24 @@ def hand_targets_from_track(
     lateral offset. Reversing this crosses the arms and twists the trunk.
     """
     left_offset, right_offset = track.offsets_at(phase)
-    left = chest + np.array(
+    rotation = turn_matrix(track.turn_at(phase))
+    left = chest + rotation @ np.array(
         [
             left_offset.across * arm_length_cm,
             left_offset.up * arm_length_cm,
             left_offset.ahead * arm_length_cm,
         ],
-        dtype=np.float32,
+        dtype=np.float64,
     )
-    right = chest + np.array(
+    right = chest + rotation @ np.array(
         [
             -right_offset.across * arm_length_cm,
             right_offset.up * arm_length_cm,
             right_offset.ahead * arm_length_cm,
         ],
-        dtype=np.float32,
+        dtype=np.float64,
     )
-    return left, right
+    return left.astype(np.float32), right.astype(np.float32)
 
 
 def arm_length(points: np.ndarray, index: dict[str, int], side: str = "l") -> float:

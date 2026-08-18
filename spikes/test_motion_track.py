@@ -14,7 +14,18 @@ from motion_track import (  # noqa: E402
     MotionTrackError,
     hand_targets_from_track,
     load_motion,
+    turn_matrix,
 )
+
+
+def in_trunk_frame(track, phase, chest, point):
+    """Undo the trunk turn, so left and right mean left and right of the athlete.
+
+    Once a movement turns, world X stops meaning the athlete's left. The
+    handedness invariant lives in the trunk frame, not the world frame.
+    """
+    rotation = turn_matrix(-track.turn_at(phase))
+    return rotation @ (np.asarray(point, dtype=np.float64) - chest)
 
 MOVEMENTS = Path(__file__).resolve().parent / "movements"
 MOTION_PATHS = sorted(MOVEMENTS.glob("*.motion.json"))
@@ -52,17 +63,20 @@ def key(at_phase, name, across=0.25, up=0.0, ahead=0.4):
 class HandednessTest(unittest.TestCase):
     """MHR places the left side at positive X. Getting this wrong crosses the arms."""
 
-    def test_the_left_hand_target_is_on_the_positive_x_side(self):
+    def test_the_left_hand_is_on_the_left_of_the_trunk(self):
         chest = np.array([0.0, 140.0, 0.0], dtype=np.float32)
 
         for path in MOTION_PATHS:
             track = load_motion(path)
             left, right = hand_targets_from_track(track, 0.0, chest, 53.0)
-            self.assertGreater(left[0], right[0], path.name)
-            self.assertGreater(left[0], chest[0], path.name)
-            self.assertLess(right[0], chest[0], path.name)
+            left_local = in_trunk_frame(track, 0.0, chest, left)
+            right_local = in_trunk_frame(track, 0.0, chest, right)
+            self.assertGreater(left_local[0], right_local[0], path.name)
+            self.assertGreater(left_local[0], 0.0, path.name)
+            self.assertLess(right_local[0], 0.0, path.name)
 
     def test_the_hands_never_cross_at_any_phase(self):
+        """Measured in the trunk frame, so a turned drill is judged fairly."""
         chest = np.array([0.0, 140.0, 0.0], dtype=np.float32)
 
         for path in MOTION_PATHS:
@@ -70,12 +84,14 @@ class HandednessTest(unittest.TestCase):
             for step in range(41):
                 phase = step / 40.0
                 left, right = hand_targets_from_track(track, phase, chest, 53.0)
+                left_local = in_trunk_frame(track, phase, chest, left)
+                right_local = in_trunk_frame(track, phase, chest, right)
                 self.assertGreater(
-                    left[0], right[0],
+                    left_local[0], right_local[0],
                     f"{path.name}: the hands crossed at phase {phase:.3f}",
                 )
 
-    def test_both_hands_stay_in_front_of_the_chest(self):
+    def test_both_hands_stay_in_front_of_the_trunk(self):
         chest = np.array([0.0, 140.0, 0.0], dtype=np.float32)
 
         for path in MOTION_PATHS:
@@ -83,8 +99,12 @@ class HandednessTest(unittest.TestCase):
             for step in range(21):
                 phase = step / 20.0
                 left, right = hand_targets_from_track(track, phase, chest, 53.0)
-                self.assertGreater(left[2], chest[2], path.name)
-                self.assertGreater(right[2], chest[2], path.name)
+                self.assertGreater(
+                    in_trunk_frame(track, phase, chest, left)[2], 0.0, path.name
+                )
+                self.assertGreater(
+                    in_trunk_frame(track, phase, chest, right)[2], 0.0, path.name
+                )
 
 
 class InterpolationTest(unittest.TestCase):
@@ -180,17 +200,37 @@ class LibraryTest(unittest.TestCase):
 
         self.assertNotIn("pull_in", [item.name for item in track.keys])
 
-    def test_the_one_hand_drill_is_asymmetric(self):
-        path = MOVEMENTS / "netball_one_hand_snatch_to_other_hand.motion.json"
-        track = load_motion(path)
+    def test_the_drills_where_one_hand_leads_are_asymmetric(self):
+        """A drill the manual describes as one-handed must not be mirrored."""
+        for name in (
+            "netball_one_hand_snatch_to_other_hand",
+            "netball_hooks_outside_hand",
+        ):
+            track = load_motion(MOVEMENTS / f"{name}.motion.json")
+            self.assertFalse(track.is_symmetric(), name)
 
-        self.assertFalse(track.is_symmetric())
+    def test_a_turned_drill_declares_its_turn(self):
+        track = load_motion(MOVEMENTS / "netball_hooks_outside_hand.motion.json")
 
-    def test_the_two_hand_drills_are_symmetric(self):
-        for path in MOTION_PATHS:
-            if "one_hand" in path.name:
-                continue
-            self.assertTrue(load_motion(path).is_symmetric(), path.name)
+        self.assertTrue(track.turns())
+        self.assertGreater(abs(track.keys[0].turn_degrees), 20.0)
+
+    def test_a_square_drill_does_not_turn(self):
+        for name in (
+            "netball_two_hand_snatch_pull_in",
+            "netball_two_hand_catch_chest",
+        ):
+            self.assertFalse(load_motion(MOVEMENTS / f"{name}.motion.json").turns(), name)
+
+    def test_a_turn_beyond_what_planted_feet_allow_is_rejected(self):
+        keys = [key(0.0, "a"), key(1.0, "b")]
+        keys[0]["turnDegrees"] = 95.0
+        path = write_track(keys)
+
+        with self.assertRaises(MotionTrackError) as caught:
+            load_motion(path)
+
+        self.assertIn("planted feet", str(caught.exception))
 
 
 if __name__ == "__main__":

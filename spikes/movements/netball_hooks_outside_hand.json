@@ -1,0 +1,95 @@
+{
+  "movementId": "netball_hooks_outside_hand",
+  "sport": "netball",
+  "skill": "Hooks, Outside Hand",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger, Catching section, page 72. The manual describes the drill as: a person passes to the person who faces to a side, placing the ball in front of the receiver; the worker, with the hand closest to the passer, tries to control the ball, pull it in and pass back to the passer; if the worker struggles the passer will use a lob pass; and if the ball cannot be caught it may be bounced to gain control. The cues are the manual's. The numeric bands are NOT, and are PROVISIONAL until a coach sets them.",
+  "phases": [
+    {
+      "name": "facing_away",
+      "atPhase": 0.0,
+      "checkpoints": [
+        {
+          "measure": "trunkTurnDegrees",
+          "minimumDegrees": 30.0,
+          "maximumDegrees": 65.0,
+          "cue": "Face to the side. The ball is coming over your shoulder.",
+          "why": "The manual has the worker facing to a side. A player who starts square is not doing this drill."
+        },
+        {
+          "measure": "leftKneeFlexionDegrees",
+          "minimumDegrees": 20.0,
+          "maximumDegrees": 70.0,
+          "cue": "Feet planted, knees ready. The turn comes from your trunk.",
+          "why": "Turning by stepping is a footwork drill. This one trains the trunk to work over a still base."
+        }
+      ]
+    },
+    {
+      "name": "contact",
+      "atPhase": 0.5,
+      "checkpoints": [
+        {
+          "measure": "rightElbowFlexionDegrees",
+          "minimumDegrees": 10.0,
+          "maximumDegrees": 90.0,
+          "cue": "Near hand to the ball. Control it out in front.",
+          "why": "The manual names the hand closest to the passer. Reaching with the far hand turns the shoulders too early and loses the ball."
+        },
+        {
+          "measure": "trunkTurnDegrees",
+          "minimumDegrees": 8.0,
+          "maximumDegrees": 45.0,
+          "cue": "Still turned as you take it. Do not square up early.",
+          "why": "Squaring up before control is what makes the ball bounce off the hands."
+        },
+        {
+          "measure": "rightShoulderElevationDegrees",
+          "minimumDegrees": 35.0,
+          "maximumDegrees": 120.0,
+          "cue": "Reach across your body to meet it.",
+          "why": "The ball is placed in front of a turned athlete, so the near arm has to travel."
+        }
+      ]
+    },
+    {
+      "name": "gather",
+      "atPhase": 0.74,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 25.0,
+          "maximumDegrees": 120.0,
+          "cue": "Second hand on. Square up as you gather it.",
+          "why": "One hand controls, two hands secure. The turn unwinds as the second hand arrives."
+        },
+        {
+          "measure": "trunkTurnDegrees",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 30.0,
+          "cue": "Bring your chest round to where the pass is going.",
+          "why": "The pass back to the passer starts from a square chest."
+        }
+      ]
+    },
+    {
+      "name": "pull_in",
+      "atPhase": 1.0,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 45.0,
+          "maximumDegrees": 130.0,
+          "cue": "Pull it in to your chest and pass back.",
+          "why": "The manual finishes this drill with a pass back to the passer, so the ball has to be secured first."
+        },
+        {
+          "measure": "trunkLeanDegrees",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 16.0,
+          "cue": "Stay balanced through the turn.",
+          "why": "Turning and reaching at once tempts an athlete to lean, which costs the pass that follows."
+        }
+      ]
+    }
+  ]
+}

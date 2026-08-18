@@ -18,6 +18,7 @@ from motion_track import (
     arm_length,
     hand_targets_from_track,
     load_motion,
+    turn_matrix,
 )
 from segment_measures import (
     elbow_flexion_degrees,
@@ -50,6 +51,13 @@ FOOT_WEIGHT = 12.0
 # The trunk is held firmly, because a drifting trunk lets the athlete cheat every
 # hand target by moving her chest instead of her hands.
 TRUNK_WEIGHT = 10.0
+# The shoulder line says which way the athlete faces, so it is held only when
+# there is a turn to hold. A square drill leaves it free, because a shoulder
+# naturally travels a little during a reach and pinning it folds the elbow
+# instead. The weight rises with the turn and reaches full strength by 15
+# degrees.
+SHOULDER_LINE_WEIGHT = 6.0
+SHOULDER_LINE_FULL_AT_DEGREES = 15.0
 # The elbow pole only breaks the tie, so it never fights the wrist target.
 ELBOW_POLE_WEIGHT = 0.35
 ELBOW_POLE_DOWN_CM = 11.0
@@ -91,6 +99,7 @@ def measure_frame(points: np.ndarray, index: dict[str, int], phase: float) -> di
 
     entry: dict[str, float] = {"phase": round(phase, 4)}
     # A drifting trunk is how an athlete, or a solver, fakes a hand position.
+    entry["trunkTurnDegrees"] = 0.0  # filled in by the caller, which knows the track
     entry["trunkLeanDegrees"] = round(
         trunk_lean_degrees(pelvis=point("root"), neck=point("c_neck"), up=WORLD_UP), 2
     )
@@ -144,6 +153,9 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
     rest_root = rest_positions[index["root"]].copy()
     rest_chest = rest_positions[index["c_spine3"]].copy()
     rest_neck = rest_positions[index["c_neck"]].copy()
+    rest_shoulders = {
+        side: rest_positions[index[f"{side}_uparm"]].copy() for side in ("l", "r")
+    }
 
     frame_count = track.frames
     motion = np.zeros((frame_count, count), dtype=np.float32)
@@ -155,9 +167,18 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
     for frame in range(frame_count):
         phase = frame / (frame_count - 1)
         drop = np.array([0.0, track.hip_drop_at(phase) * reach_cm, 0.0])
+        # A turn rotates the trunk about the vertical axis through the hips. The
+        # feet stay planted, so the turn has to come from the trunk itself.
+        rotation = turn_matrix(track.turn_at(phase))
         root_target = rest_root - drop
-        chest_target = rest_chest - drop
-        neck_target = rest_neck - drop
+
+        def turned(rest_point: np.ndarray) -> np.ndarray:
+            return root_target + rotation @ (rest_point - rest_root)
+
+        # turned() is measured from the dropped root, so the drop is already in
+        # it. Subtracting it again sinks the whole trunk twice.
+        chest_target = turned(rest_chest)
+        neck_target = turned(rest_neck)
         # Hand keys are measured from the chest, so they must be measured from
         # where the chest is held, not from where it started.
         left_target, right_target = hand_targets_from_track(
@@ -179,7 +200,7 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
             ("l", left_target, 1.0),
             ("r", right_target, -1.0),
         ):
-            shoulder = rest_positions[index[f"{side}_uparm"]] - drop
+            shoulder = turned(rest_shoulders[side])
             midpoint = (shoulder + np.asarray(target)) / 2.0
             # The pole is scaled by how much slack the arm has. A hand at full
             # reach leaves the elbow nowhere to go, so a pole there only fights
@@ -203,11 +224,25 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
                 offset=np.zeros(3, dtype=np.float32),
                 weight=FOOT_WEIGHT,
             )
+        # The shoulders carry the turn. Pinning the chest position alone leaves
+        # the trunk free to face anywhere, so the shoulder line is what actually
+        # says which way the athlete is turned.
+        shoulder_targets = {
+            side: turned(rest_shoulders[side]) for side in ("l", "r")
+        }
+        turn_now = abs(track.turn_at(phase))
+        shoulder_weight = SHOULDER_LINE_WEIGHT * min(
+            1.0, turn_now / SHOULDER_LINE_FULL_AT_DEGREES
+        )
         for joint, target, weight in (
             ("root", root_target, TRUNK_WEIGHT),
             ("c_spine3", chest_target, TRUNK_WEIGHT),
             ("c_neck", neck_target, TRUNK_WEIGHT * 0.6),
+            ("l_uparm", shoulder_targets["l"], shoulder_weight),
+            ("r_uparm", shoulder_targets["r"], shoulder_weight),
         ):
+            if weight <= 0.0:
+                continue
             position_error.add_constraint(
                 index[joint],
                 target=np.asarray(target, dtype=np.float32),
@@ -252,7 +287,9 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
                 f"left minus right is {separation:.1f} cm"
             )
         points_per_frame.append(points)
-        measurements.append(measure_frame(points, index, phase))
+        frame_measure = measure_frame(points, index, phase)
+        frame_measure["trunkTurnDegrees"] = round(track.turn_at(phase), 2)
+        measurements.append(frame_measure)
         misses.append(float(np.linalg.norm(points[index["l_wrist"]] - left_target)))
 
     return {

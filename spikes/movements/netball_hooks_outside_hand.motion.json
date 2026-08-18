@@ -1,0 +1,72 @@
+{
+  "movementId": "netball_hooks_outside_hand",
+  "frames": 24,
+  "framesPerSecond": 24,
+  "notes": "The first turned movement, and the first where the ball is not in front of the athlete. The manual has the worker facing to a side while the passer places the ball in front of them, so the trunk is turned and the near hand does the work. Hand offsets are measured in the turned frame, so they follow the trunk.",
+  "stance": {
+    "hipDropFraction": 0.16,
+    "turnDegrees": 42
+  },
+  "keys": [
+    {
+      "atPhase": 0.0,
+      "name": "facing_away",
+      "across": 0.24,
+      "up": 0.06,
+      "ahead": 0.46,
+      "turnDegrees": 48,
+      "note": "Facing to the side, hands ready. The passer is off the athlete's right shoulder."
+    },
+    {
+      "atPhase": 0.32,
+      "name": "reach",
+      "across": 0.24,
+      "up": 0.2,
+      "ahead": 0.54,
+      "turnDegrees": 34,
+      "right": {
+        "across": 0.32,
+        "up": 0.34,
+        "ahead": 0.78
+      },
+      "note": "Turning in toward the ball. The near hand goes first, alone."
+    },
+    {
+      "atPhase": 0.5,
+      "name": "contact",
+      "across": 0.26,
+      "up": 0.24,
+      "ahead": 0.58,
+      "turnDegrees": 22,
+      "right": {
+        "across": 0.34,
+        "up": 0.1,
+        "ahead": 0.88
+      },
+      "note": "The near hand controls the ball out in front, still turned."
+    },
+    {
+      "atPhase": 0.74,
+      "name": "gather",
+      "across": 0.24,
+      "up": 0.28,
+      "ahead": 0.6,
+      "turnDegrees": 12,
+      "right": {
+        "across": 0.24,
+        "up": 0.32,
+        "ahead": 0.64
+      },
+      "note": "Squaring up as the second hand arrives on the ball."
+    },
+    {
+      "atPhase": 1.0,
+      "name": "pull_in",
+      "across": 0.22,
+      "up": 0.06,
+      "ahead": 0.42,
+      "turnDegrees": 4,
+      "note": "Square to the passer, ball in to the chest, ready to pass back."
+    }
+  ]
+}
