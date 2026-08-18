@@ -68,6 +68,35 @@ def add_floor() -> None:
     )
 
 
+def bake_shape_keys(objects) -> list[str]:
+    """Write the shape key mix into the vertices and remove the keys.
+
+    MPFB builds a body from shape keys, and the exporter turns them into
+    glTF morph targets: thirty seven of them on this athlete. three.js applies
+    them, so the file looked correct in the viewer written next to it, and most
+    other programs do not, because the format only guarantees a handful. They
+    drop them or mix them wrongly, and the body arrives deformed.
+
+    Baking costs nothing here. The shape is decided when the athlete is made
+    and never animated, so a morph target carries no information the vertices
+    cannot carry themselves.
+    """
+    baked = []
+    for item in objects:
+        mesh = getattr(item, "data", None)
+        if mesh is None or not getattr(mesh, "shape_keys", None):
+            continue
+        count = len(mesh.shape_keys.key_blocks)
+        item.shape_key_add(name="_baked", from_mix=True)
+        mixed = [point.co.copy()
+                 for point in mesh.shape_keys.key_blocks["_baked"].data]
+        item.shape_key_clear()
+        for vertex, position in zip(mesh.vertices, mixed):
+            vertex.co = position
+        baked.append(f"{item.name}:{count}")
+    return baked
+
+
 def parse_args() -> argparse.Namespace:
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     parser = argparse.ArgumentParser()
@@ -349,6 +378,9 @@ def main() -> None:
         scene.frame_set(1)
 
         glb = output / f"{job['movementId']}.glb"
+        baked = bake_shape_keys([human, *assets])
+        if baked:
+            print(f"[movement-render] baked shape keys: {', '.join(baked)}")
         select_only([rig, human, *assets, ball])
         bpy.ops.export_scene.gltf(
             filepath=str(glb),
