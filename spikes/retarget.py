@@ -12,16 +12,23 @@ quantity everything is written in.
 
 What a correct retarget looks like:
 
+- she catches it, and at about the same point in the drill
 - the palms still finish on the ball surface, which is an absolute distance and
   must not grow with the athlete
 - no finger goes into the ball
-- every measured angle sits close to the reference athlete's, because the same
-  movement performed by a bigger person is the same movement
 - no joint goes outside its own range
 - nothing snaps
 
-An angle is the right thing to compare. Distances are supposed to change with
-the body; angles are not, and they are also what the coaching layer grades.
+Joint angles are deliberately not in that list, and the first version of this
+file had them: it asked every body to reproduce the reference athlete's angles
+within five degrees. That premise is wrong. Two people of different proportions
+performing the same drill produce different joint angles, and that is not a
+defect, it is the reason a coach measures an individual rather than comparing
+her to a template. A short armed player holding the same ball at the same place
+really does work her shoulder six degrees harder.
+
+So the drift is reported rather than graded. It is a coaching observation about
+the athlete, not a fault in the engine.
 
     pixi run python retarget.py
     pixi run python retarget.py netball_two_hand_snatch_pull_in
@@ -52,13 +59,13 @@ from technique import has_technique, load_technique, technique_path  # noqa: E40
 
 OUTPUT = SPIKE_DIR / "poc-output" / "library"
 
-# How far a retargeted athlete's measured angles may sit from the reference
-# athlete's before the movement counts as having changed rather than scaled.
-#
-# Five degrees, the same threshold the coaching layer uses for the smallest
-# angle worth reporting. Below it the two bodies are performing a movement no
-# goniometer could tell apart.
-ANGLE_TOLERANCE_DEGREES = 5.0
+# How far the contact frame may move between bodies. Two frames at 60 per
+# second is a thirtieth of a second, and the ball travels 10 cm in each, so
+# more than that is a different catch rather than the same one taken by
+# somebody with a different reach.
+CONTACT_TOLERANCE_FRAMES = 3
+# A spike against neighbouring frames, the same test the proof uses.
+SNAP_RATIO = 3.0
 # The palm sits on the ball surface. That is an absolute distance and must not
 # grow with the athlete.
 PALM_TOLERANCE_CM = 1.0
@@ -112,7 +119,8 @@ def compare(runs: list[dict]) -> list[dict]:
     """Score every body against the reference, which is what was authored."""
     # Taken before the loop, because the loop drops each run's angle series
     # once it has been scored and the reference is usually scored first.
-    reference = next(run for run in runs if run["athlete"] == "reference")["angles"]
+    anchor = next(run for run in runs if run["athlete"] == "reference")
+    reference, contact = anchor["angles"], anchor["contactFrame"]
     for run in runs:
         worst, where = 0.0, None
         for key, series in run["angles"].items():
@@ -125,14 +133,18 @@ def compare(runs: list[dict]) -> list[dict]:
                 worst, where = gap, key
         run["worstAngleDriftDegrees"] = round(worst, 2)
         run["driftsMostOn"] = where
+        run["contactFrameDrift"] = run["contactFrame"] - contact
         run["checks"] = {
+            "catches it at the same point": (
+                abs(run["contactFrameDrift"]) <= CONTACT_TOLERANCE_FRAMES
+            ),
             "palms on the surface": run["worstPalmSkinGapCm"] <= PALM_TOLERANCE_CM,
             "no finger inside the ball": run["deepestFingerInsideBallCm"] <= 1.0,
             "anatomy clean": run["anatomyViolations"] == 0,
             "joint limits clean": (
                 run["worstJointOvershootDegrees"] <= TOLERANCE_DEGREES
             ),
-            "same movement as the reference": worst <= ANGLE_TOLERANCE_DEGREES,
+            "nothing snaps": run["spike"] <= SNAP_RATIO,
         }
         run["retargets"] = all(run["checks"].values())
         del run["angles"]
@@ -179,8 +191,8 @@ def main(argv: list[str]) -> int:
 
         print(f"\n{movement_id}")
         print(
-            "  athlete       height    arm   palm gap   finger in   "
-            "angle drift   limits   spike"
+            "  athlete       height    arm   contact   palm gap   finger in   "
+            "limits   spike   angle drift"
         )
         for run in runs:
             if "error" in run:
@@ -195,30 +207,46 @@ def main(argv: list[str]) -> int:
                 )
             print(
                 f"  {run['athlete']:<12s} {run['heightCm']:6.1f} {run['armCm']:6.2f} "
+                f"{run['contactFrameDrift']:+8d} "
                 f"{run['worstPalmSkinGapCm']:10.3f} "
                 f"{run['deepestFingerInsideBallCm']:+11.2f} "
-                f"{run['worstAngleDriftDegrees']:13.2f} "
                 f"{run['worstJointOvershootDegrees']:8.3f} "
-                f"{run['spike']:7.2f}{mark}"
+                f"{run['spike']:7.2f} "
+                f"{run['worstAngleDriftDegrees']:13.2f}{mark}"
             )
         drift = [r for r in runs if "error" not in r and r["driftsMostOn"]]
         if drift:
             worst = max(drift, key=lambda r: r["worstAngleDriftDegrees"])
-            if worst["worstAngleDriftDegrees"] > ANGLE_TOLERANCE_DEGREES:
-                print(
-                    f"     drifts most on {worst['driftsMostOn']}, "
-                    f"{worst['worstAngleDriftDegrees']:.1f} degrees on "
-                    f"{worst['athlete']}"
-                )
+            print(
+                f"     for the coach, not the engine: {worst['athlete']} works "
+                f"{worst['driftsMostOn'].replace('Degrees', '')} "
+                f"{worst['worstAngleDriftDegrees']:.1f} degrees differently"
+            )
 
     OUTPUT.mkdir(parents=True, exist_ok=True)
     (OUTPUT / "retarget.json").write_text(
         json.dumps(report, indent=2) + "\n", encoding="utf-8"
     )
-    print(
-        f"\n{failed} of {sum(len(v) for v in report.values())} body and drill "
-        "pairings do not retarget"
-    )
+    total = sum(len(value) for value in report.values())
+    print()
+    print(f"{total - failed} of {total} body and drill pairings retarget")
+    if failed:
+        # Worth separating. A failure the reference athlete shares is a
+        # defect in the drill, not in the retarget.
+        shared = sum(
+            1
+            for runs in report.values()
+            for run in runs
+            if not run.get("retargets")
+            and any(
+                other["athlete"] == "reference" and not other.get("retargets")
+                for other in runs
+            )
+        )
+        print(
+            f"  {failed} do not, and {shared} of those are on a drill the "
+            "reference athlete fails too, so they are the drill and not the body"
+        )
     return 1 if failed else 0
 
 

@@ -41,7 +41,12 @@ from contact_solve import (  # noqa: E402
     trunk_constraints,
 )
 from grip import grip_targets, measure_hand  # noqa: E402
-from motion_track import MAXIMUM_TURN_DEGREES, arm_length, load_motion  # noqa: E402
+from motion_track import (  # noqa: E402
+    MAXIMUM_TURN_DEGREES,
+    arm_length,
+    load_motion,
+    torso_length,
+)
 from movement_engine import (  # noqa: E402
     LIMIT_WEIGHT,
     SolveError,
@@ -75,7 +80,9 @@ OUTPUT = SPIKE_DIR / "poc-output" / "library"
 CONTINUITY_WEIGHT = 0.02
 
 
-def athlete_frames(track, rest_positions, index, reach_cm, phases, turns=None):
+def athlete_frames(
+    track, rest_positions, index, reach_cm, torso_cm, phases, turns=None
+):
     """The trunk, per frame, and the athlete's own frame that goes with it."""
     if turns is None:
         turns = [track.turn_at(phase) for phase in phases]
@@ -86,10 +93,14 @@ def athlete_frames(track, rest_positions, index, reach_cm, phases, turns=None):
     frames = [
         stance_frame(one.chest, reach_cm, turn) for one, turn in zip(placed, turns)
     ]
+    # The same frames scaled by the torso, for the ball she is already holding.
+    carried = [
+        stance_frame(one.chest, torso_cm, turn) for one, turn in zip(placed, turns)
+    ]
     shoulders = [
         (one.shoulders["l"] + one.shoulders["r"]) / 2.0 for one in placed
     ]
-    return placed, frames, shoulders
+    return placed, frames, carried, shoulders
 
 
 def solve_movement(
@@ -137,8 +148,9 @@ def solve_movement(
 
     phases = [number / (track.frames - 1) for number in range(track.frames)]
     authored = [track.turn_at(phase) for phase in phases]
-    placed, frames, shoulders = athlete_frames(
-        track, rest_positions, index, reach_cm, phases, authored
+    torso_cm = torso_length(rest_positions, index)
+    placed, frames, carried, shoulders = athlete_frames(
+        track, rest_positions, index, reach_cm, torso_cm, phases, authored
     )
     stance = stance_frame(placed[0].chest, reach_cm, track.turn_at(0.0))
 
@@ -153,8 +165,8 @@ def solve_movement(
             turns = turn_profile(
                 phases, ball.release_phase, ball.arrival_phase, turned_by, authored
             )
-            placed, frames, shoulders = athlete_frames(
-                track, rest_positions, index, reach_cm, phases, turns
+            placed, frames, carried, shoulders = athlete_frames(
+                track, rest_positions, index, reach_cm, torso_cm, phases, turns
             )
 
     held = resolve(
@@ -166,6 +178,8 @@ def solve_movement(
         after_contact=method.after_contact,
         reach_limit_cm=envelope.far_cm + radius_cm,
         arm_length_cm=reach_cm,
+        carry_frames=carried,
+        torso_length_cm=torso_cm,
         ready_offset=method.ready,
         release_phase=method.release_phase,
         sides_at=method.sides_at,

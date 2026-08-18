@@ -15,15 +15,16 @@
       "atPhase": 0.82,
       "name": "land",
       "across": 0.0,
-      "up": 0.24,
-      "ahead": 0.7
+      "up": 0.24409,
+      "ahead": 0.71194
     },
     {
       "atPhase": 1.0,
       "name": "absorb",
       "across": 0.0,
-      "up": 0.1,
-      "ahead": 0.58
+      "up": 0.10171,
+      "ahead": 0.58989
     }
-  ]
+  ],
+  "carryUnitNote": "afterContact is measured in torso lengths, not arm lengths. Where a ball sits when it is held against the chest depends on the chest and the ball, not on how long the arm is, and in arm lengths two athletes of the same height whose reach differed by a tenth held the same ball 9 percent apart. Every number here was multiplied by 1.017053, the reference athlete's arm over her torso, so her positions are unchanged and only other bodies move."
 }

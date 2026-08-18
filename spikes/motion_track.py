@@ -407,6 +407,18 @@ def hand_targets_from_track(
     return left.astype(np.float32), right.astype(np.float32)
 
 
+def torso_length(points: np.ndarray, index: dict[str, int]) -> float:
+    """Return the athlete's torso, hips to neck.
+
+    Where a ball sits once she is holding it is measured in these. Where you
+    hold a ball against your chest depends on your chest and on the ball, not
+    on how long your arm is: two athletes of the same height whose reach
+    differs by a tenth have the same torso and should hold it in the same
+    place, and in arm lengths they did not.
+    """
+    return float(np.linalg.norm(points[index["c_neck"]] - points[index["root"]]))
+
+
 def leg_length(points: np.ndarray, index: dict[str, int], side: str = "l") -> float:
     """Return the athlete's leg length, hip to knee to ankle.
 

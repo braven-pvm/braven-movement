@@ -357,12 +357,37 @@ Four causes found, three fixed.
 3. **The elbow pole was in absolute centimetres.** Eleven centimetres down and
    five out, measured on the reference body, is a proportionally harder pull on
    a shorter arm. Fixed: scaled by the athlete's own arm.
-4. **The carry is still in arm lengths, and should not be.** Where a ball sits
-   when it is held against the chest depends on the chest and the ball, not on
-   the arm. This is the same mistake as the first one, one layer up, and it is
-   what most of the remaining drift is: the short armed athlete's worst
-   disagreement is at the end of the drill, while she is holding the ball. Not
-   fixed. It needs the technique files migrating the way the motion files were.
+4. **The carry was in arm lengths.** Where a ball sits when it is held against
+   the chest depends on the chest and the ball, not on the arm. Fixed: the
+   carry is in torso lengths, hips to neck, and the technique files were
+   multiplied by 1.017053. Two athletes of the same height whose reach differs
+   by a tenth now hold the ball at the same 29.2 cm from the chest, where
+   before they held it 26.8 and 32.7 cm out.
+
+   It did not reduce the angle drift, which is what I expected it to do and
+   said it would. The drift on the same height pair did not move at all, and on
+   the oddly proportioned smallest body it got worse. The change is kept
+   because it is verifiably more correct and costs no anatomy, but the
+   prediction was wrong and the reason is the next paragraph.
+
+**The angle drift was the wrong thing to grade.** The first version of the check
+asked every body to reproduce the reference athlete's joint angles within five
+degrees. That premise is false. Two people of different proportions performing
+the same drill produce different joint angles, and that is not a defect, it is
+the reason a coach measures an individual rather than comparing her to a
+template. A short armed player holding the same ball in the same place really
+does work her shoulder six degrees harder, and the engine saying so is the
+engine working.
+
+The check now grades what should hold across bodies: she catches it at the same
+point in the drill, the palms finish on the surface, no finger enters the ball,
+the anatomy and the joint limits stay clean, and nothing snaps. The angle drift
+is reported beside them as a coaching observation.
+
+By that measure **29 of 40 body and drill pairings retarget**. All eleven that
+do not fail the same check, nothing snaps, and ten of the eleven are on a drill
+the reference athlete fails too. They are the free arm defect on the one hand
+drills, not a retargeting fault.
 
 **The model does not reach a junior squad.** Its scale parameters cover 158.0 to
 201.3 cm. Under-13 netball is 145 to 160. Asking for a body outside that range

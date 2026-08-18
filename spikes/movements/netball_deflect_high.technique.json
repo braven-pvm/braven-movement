@@ -15,16 +15,16 @@
     {
       "atPhase": 0.62,
       "name": "control",
-      "across": 0.22,
-      "up": 0.72,
-      "ahead": 0.5
+      "across": 0.22375,
+      "up": 0.73228,
+      "ahead": 0.50853
     },
     {
       "atPhase": 0.8,
       "name": "send_on",
-      "across": -0.2,
-      "up": 0.74,
-      "ahead": 0.62
+      "across": -0.20341,
+      "up": 0.75262,
+      "ahead": 0.63057
     }
   ],
   "ready": {
@@ -32,5 +32,6 @@
     "up": 0.72,
     "ahead": 0.3
   },
-  "readyNote": "Hands up beside the head, which is where the manual tells the passer to put the ball. Aiming the waiting hands at a passer two metres away instead left them at her waist."
+  "readyNote": "Hands up beside the head, which is where the manual tells the passer to put the ball. Aiming the waiting hands at a passer two metres away instead left them at her waist.",
+  "carryUnitNote": "afterContact is measured in torso lengths, not arm lengths. Where a ball sits when it is held against the chest depends on the chest and the ball, not on how long the arm is, and in arm lengths two athletes of the same height whose reach differed by a tenth held the same ball 9 percent apart. Every number here was multiplied by 1.017053, the reference athlete's arm over her torso, so her positions are unchanged and only other bodies move."
 }

@@ -9,6 +9,12 @@ A drill that passes the ball back runs the sentence twice. She takes it, she
 drives it, and at the release the hands stop being on it and it is a thing in
 flight again, carrying the speed she gave it.
 
+It is also a statement about units. A ball in flight is reached for, so its
+trajectory is in arm lengths. A ball she is holding sits against her chest, so
+its path from there is in torso lengths. Using the arm for both gave two
+athletes of the same height, differing only in reach, different places to hold
+the same ball.
+
 That sentence is also a statement about frames of reference, and this module is
 where it becomes arithmetic. Before contact the ball flies through the stance
 frame, which is fixed at the start of the drill and does not move with the
@@ -244,6 +250,8 @@ def resolve(
     after_contact,
     reach_limit_cm: float,
     arm_length_cm: float,
+    carry_frames: list[StanceFrame] | None = None,
+    torso_length_cm: float | None = None,
     ready_fraction: float = READY_FRACTION,
     contact_fraction: float = CONTACT_FRACTION,
     ready_offset: BallOffset | None = None,
@@ -262,6 +270,10 @@ def resolve(
         )
     ready_distance = ready_fraction * reach_limit_cm
     contact_distance = contact_fraction * reach_limit_cm
+    # The carry is measured from the chest, in torso lengths. Without a torso
+    # frame it falls back to the arm, which is what it used to do.
+    carry_frames = athlete_frames if carry_frames is None else carry_frames
+    carry_scale = arm_length_cm if torso_length_cm is None else torso_length_cm
 
     flight = [stance.place(ball.offset_at(phase)) for phase in phases]
 
@@ -278,7 +290,7 @@ def resolve(
     if contact is not None:
         carried_phases, carried_offsets = carry_path(
             phases[contact],
-            to_offset(athlete_frames[contact], flight[contact], arm_length_cm),
+            to_offset(carry_frames[contact], flight[contact], carry_scale),
             after_contact,
         )
 
@@ -306,7 +318,7 @@ def resolve(
         return toward(number, flight[0], ready_distance)
 
     def carried_at(number: int) -> np.ndarray:
-        return athlete_frames[number].place(
+        return carry_frames[number].place(
             sample_offsets(carried_phases, carried_offsets, phases[number])
         )
 
