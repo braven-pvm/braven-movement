@@ -1,13 +1,15 @@
-"""Draw the proof: one technique, four arrival points, nothing else changed.
+"""Draw the library, or the proof, side by side.
 
-The numbers in proof.py are the authority. This exists because the claim being
-made is a claim about movement, and a table cannot show whether a catch looks
-like a catch.
+With no arguments it draws every drill the library builds, each one solved by
+the ball. With a movement id it draws that drill against every pass it has,
+which is the proof: one technique, several arrival points, nothing else changed.
 
-Every panel is the same athlete, the same motion file and the same technique
-file. The only difference between them is where the passer put the ball.
+The numbers in build_library.py and proof.py are the authority. This exists
+because the claims being made are claims about movement, and a table cannot
+show whether a catch looks like a catch.
 
     pixi run python export_proof_viewer.py
+    pixi run python export_proof_viewer.py netball_two_hand_snatch_pull_in
 """
 
 from __future__ import annotations
@@ -21,8 +23,18 @@ import numpy as np
 SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
 
-from ball_track import ball_variants  # noqa: E402
-from movement_engine import load_character  # noqa: E402
+from ball_track import ball_variants, has_ball  # noqa: E402
+from movement_definition import load as load_definition  # noqa: E402
+from movement_engine import (  # noqa: E402
+    definition_path,
+    library,
+    load_character,
+)
+from technique import (  # noqa: E402
+    has_technique,
+    load_technique,
+    technique_path,
+)
 from possession_solve import solve_movement, spike_report, step_report  # noqa: E402
 from render_contact_sheet import BONES  # noqa: E402
 
@@ -92,14 +104,43 @@ def collect(character, movement_id: str, variant: str | None) -> dict:
 
 
 def main(argv: list[str]) -> int:
-    movement_id = argv[1] if len(argv) > 1 else DEFAULT
-    variants = ball_variants(movement_id)
-    if len(variants) < 2:
-        print(f"{movement_id} has only one ball trajectory")
-        return 1
-
     character = load_character()
-    runs = [collect(character, movement_id, variant) for variant in variants]
+    if len(argv) > 1:
+        movement_id = argv[1]
+        variants = ball_variants(movement_id)
+        if len(variants) < 2:
+            print(f"{movement_id} has only one ball trajectory")
+            return 1
+        runs = [collect(character, movement_id, variant) for variant in variants]
+        heading = "Four balls, one technique"
+        lede = (
+            "Same athlete, same movement file, same technique file. The only "
+            "thing that differs between these four is where the passer put the "
+            "ball. <b>Nothing about the hands is authored anywhere</b>: the "
+            "grip decides where on the ball each palm belongs and the solver "
+            "puts the hands there. Watch the wide catch, where she turns to "
+            "the ball rather than reaching across for it."
+        )
+    else:
+        movement_id = "library"
+        runs = []
+        for name in library():
+            if not (has_ball(name) and has_technique(name)):
+                continue
+            if not load_technique(technique_path(name)).possession_ready:
+                continue
+            run = collect(character, name, None)
+            run["variant"] = load_definition(definition_path(name)).skill
+            runs.append(run)
+        heading = "The ball moves her"
+        lede = (
+            "Every netball drill in the library, each one driven by the ball "
+            "rather than by an authored hand path. <b>Nothing about the hands "
+            "is written down anywhere</b>: the pass is a real parabola, the "
+            "grip decides where on the ball each palm belongs, and the solver "
+            "puts the hands there. The ball is pale while it is in flight and "
+            "solid once she has it."
+        )
     bones = [
         list(pair)
         for pair in BONES + HAND_BONES
@@ -109,6 +150,8 @@ def main(argv: list[str]) -> int:
         "movementId": movement_id,
         "bones": bones,
         "ballRadiusCm": 11.0,
+        "heading": heading,
+        "lede": lede,
         "runs": runs,
     }
     page = TEMPLATE.read_text(encoding="utf-8").replace(

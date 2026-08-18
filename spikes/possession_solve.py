@@ -192,16 +192,26 @@ def solve_movement(character, movement_id: str, variant: str | None = None) -> d
         for side in sides:
             if side in on_ball:
                 centres[side] = frame.centre
-            elif joining_from is None or not frame.holding:
+            elif joining_from is None:
                 centres[side] = frame.presented
+            elif not frame.holding:
+                # The free hand of a one hand drill waits. Only the hand that
+                # is taking the ball goes out to meet it.
+                centres[side] = frame.waiting
             else:
+                # The same squared ramp the catching hand uses. Easing this
+                # one in at both ends with a smoothstep was tried and made no
+                # difference, so what is left on the outside hand hooks drill
+                # is the free arm changing configuration as it comes round her,
+                # not the shape of the ramp.
                 travel = min(
                     1.0,
                     max(0.0, (phase - joining_from) / max(joining_span, 1e-9)),
                 ) ** 2
                 centres[side] = (
-                    frame.presented + (frame.centre - frame.presented) * travel
+                    frame.waiting + (frame.centre - frame.waiting) * travel
                 )
+
         contact_error, found = contact_constraints(
             character, index, placed[number], shapes, centres,
             radius_cm, method.spread_degrees, sides,

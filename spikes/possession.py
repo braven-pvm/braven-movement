@@ -102,6 +102,12 @@ class Frame:
     centre: np.ndarray
     # What the hands are asked to hold. The ball itself once she has reached it.
     presented: np.ndarray
+    # Where the athlete waits on this frame. A hand that is not part of the
+    # catch stays here until it is: the free hand of a one hand snatch does not
+    # reach for the interception point, it comes in afterwards. Presented is
+    # the ball itself once she is holding it, so a hand still on its way needs
+    # somewhere else to be or it arrives before it has travelled.
+    waiting: np.ndarray
     state: str
     holding: bool
     # Which hands are on the ball. Empty before contact and after release.
@@ -380,6 +386,7 @@ def resolve(
                 sides=() if sides_at is None else tuple(sides_at(phase)),
                 centre=centre,
                 presented=presented,
+                waiting=ready_point(number),
                 state=state,
                 holding=holding,
             )

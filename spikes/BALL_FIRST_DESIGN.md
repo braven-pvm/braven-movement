@@ -322,6 +322,22 @@ because they change what milestones 2 to 5 have to do.
 5. **The ball never intersects a wrist at any frame.** The old derived ball did
    so by construction, because it was placed at the midpoint of the wrists.
 
+## What is still rough
+
+- **The outside hand hooks drill jumps as the second hand comes in.** Its worst
+  step against neighbouring frames is 35 against 1.6 for the rest of the
+  library. It is the only drill that turns 45 degrees away and takes the ball
+  one handed, so the free arm has to travel round her to join, and it changes
+  configuration on the way. Easing the join at both ends rather than
+  accelerating into it made no difference, so it is the arm and not the ramp.
+- **The grip is held at one spread for the whole carry.** A real athlete
+  rotates her hands under the ball as she brings it in, which is what would let
+  her hold it closer to her chest than 29 cm without folding the elbow past
+  what AAOS allows.
+- **The bands are still provisional.** They are now measured against a hand
+  that is holding the ball rather than one inside it, which is a real
+  correction, but no coach has set them.
+
 ## Open questions, to answer with evidence rather than opinion
 
 1. ~~**Does the athlete turn to the ball, or is turn authored?**~~ Answered by

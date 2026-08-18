@@ -1,4 +1,4 @@
-<title>Four Balls, One Technique</title>
+<title>The Ball Moves Her</title>
 <style>
   /* Same instrument palette as the reach report, so the two read as one tool.
      Cool slate ground, the ball the only warm colour, measurements in mono. */
@@ -75,13 +75,8 @@
 
 <div class="wrap">
   <header>
-    <h1>Four balls, one technique</h1>
-    <p class="lede">Same athlete, same movement file, same technique file. The
-    only thing that differs between these four is where the passer put the ball.
-    <b>Nothing about the hands is authored anywhere</b> — the grip decides where
-    on the ball each palm belongs and the solver puts the hands there. Watch the
-    wide catch: she turns to it, because reaching across for it would put her
-    far arm at full stretch.</p>
+    <h1 id="heading"></h1>
+    <p class="lede" id="lede"></p>
   </header>
 
   <section class="panel">
@@ -97,6 +92,8 @@
 <script>
 const DATA = __DATA__;
 const RUNS = DATA.runs;
+document.getElementById('heading').textContent = DATA.heading;
+document.getElementById('lede').innerHTML = DATA.lede;
 const COUNT = Math.max(...RUNS.map(r => r.frames.length));
 let at = 0, timer = null;
 
