@@ -1,0 +1,253 @@
+<title>Netball Catching Pages</title>
+<style>
+  /* A manual page, not an instrument panel. Warm paper, the drill title
+     carrying the page, the figures in a row the way the manual runs its
+     photographs. The measured bands are set apart because the manual does not
+     have them and a lab does. */
+  :root {
+    --page: #f2efe9;
+    --sheet: #ffffff;
+    --ink: #191713;
+    --soft: #6d675d;
+    --line: #ddd7cb;
+    --rule: #ebe6dc;
+    --ball: #c25f22;
+    --figure: #3c3budge;
+    --figure: #3c3730;
+    --lab: #2f5d7c;
+    --shadow: 0 1px 3px rgba(25, 23, 19, .07);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page: #14130f; --sheet: #1c1a16; --ink: #ece7dd; --soft: #9a9386;
+      --line: #34302a; --rule: #262320; --ball: #d97b3c; --figure: #d6d0c4;
+      --lab: #7fb0d0; --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #14130f; --sheet: #1c1a16; --ink: #ece7dd; --soft: #9a9386;
+    --line: #34302a; --rule: #262320; --ball: #d97b3c; --figure: #d6d0c4;
+    --lab: #7fb0d0; --shadow: none;
+  }
+  body {
+    background: var(--page); color: var(--ink); margin: 0;
+    font: 16px/1.6 ui-serif, Georgia, "Times New Roman", serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 44px 20px 72px;
+          display: flex; flex-direction: column; gap: 22px; }
+  .masthead { display: flex; flex-direction: column; gap: 6px; }
+  .masthead h1 { font-size: 30px; margin: 0; letter-spacing: -0.012em;
+                 text-wrap: balance; }
+  .masthead p { margin: 0; color: var(--soft); max-width: 64ch; }
+  .kicker {
+    font: 600 11px/1 ui-sans-serif, system-ui, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.16em; color: var(--soft);
+  }
+
+  .sheet {
+    background: var(--sheet); border: 1px solid var(--line); border-radius: 3px;
+    box-shadow: var(--shadow); padding: 26px 26px 22px;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .sheet h2 {
+    font: 700 20px/1.2 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: 0.02em; margin: 0; text-transform: uppercase;
+  }
+  .objective { margin: 0; color: var(--soft); font-style: italic;
+               max-width: 62ch; }
+  ol { margin: 0; padding-left: 1.35em; display: flex; flex-direction: column;
+       gap: 5px; max-width: 68ch; }
+  ol li::marker { font-weight: 700; }
+
+  .figures { display: flex; gap: 12px; flex-wrap: wrap; }
+  figure { margin: 0; flex: 1 1 150px; min-width: 132px;
+           display: flex; flex-direction: column; gap: 5px; }
+  canvas { width: 100%; height: auto; display: block; border-radius: 2px; }
+  figcaption {
+    font: 600 10.5px/1.4 ui-sans-serif, system-ui, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.11em; color: var(--soft);
+  }
+  .bands {
+    font: 11.5px/1.5 ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color: var(--lab); font-variant-numeric: tabular-nums;
+  }
+
+  .measured {
+    border-top: 1px solid var(--rule); padding-top: 14px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .measured p { margin: 0; color: var(--soft); font-size: 14px;
+                max-width: 66ch; }
+  .none { color: var(--soft); font-style: italic; margin: 0; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  @media print {
+    body { background: #fff; }
+    .sheet { break-inside: avoid; box-shadow: none; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <span class="kicker">Braven &middot; generated manual content</span>
+    <h1>Netball catching, drawn from the engine</h1>
+    <p>Every instruction below is the coaches manual's own wording, quoted and
+    not rewritten. Every figure is solved: the ball flies a real parabola, the
+    grip decides where on the ball each palm belongs, and the athlete is posed
+    to meet it. The moments shown are the phases the coaching definition names,
+    which is what a coach is watching for rather than whatever a camera caught.</p>
+  </header>
+  <div id="pages"></div>
+</div>
+
+<script>
+const DATA = __DATA__;
+const FACES = DATA.faces;
+const W = 300, H = 380, PAD = 14;
+
+function bounds(figures) {
+  const lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9];
+  for (const f of figures) {
+    for (let i = 0; i < f.v.length; i += 3) {
+      for (let a = 0; a < 3; a++) {
+        lo[a] = Math.min(lo[a], f.v[i + a]);
+        hi[a] = Math.max(hi[a], f.v[i + a]);
+      }
+    }
+  }
+  return { lo, hi };
+}
+
+// A three quarter view. Straight on hides the depth a catch happens in, and
+// the manual's own photographs are taken from off to one side for the same
+// reason.
+const AZ = 0.55, EL = -0.13;
+
+function draw(canvas, figure, box, radius) {
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = W * ratio;
+  canvas.height = H * ratio;
+  const g = canvas.getContext('2d');
+  g.scale(ratio, ratio);
+
+  const centre = [0, 1, 2].map(a => (box.lo[a] + box.hi[a]) / 2);
+  const span = Math.max(box.hi[1] - box.lo[1], 1);
+  const k = (H - 2 * PAD) / (span * 1.06);
+  const ca = Math.cos(AZ), sa = Math.sin(AZ);
+  const ce = Math.cos(EL), se = Math.sin(EL);
+
+  const project = p => {
+    const dx = p[0] - centre[0], dy = p[1] - centre[1], dz = p[2] - centre[2];
+    const x = dx * ca + dz * sa;
+    const zr = dz * ca - dx * sa;
+    return [
+      W / 2 + x * k,
+      H - PAD - (dy * ce - zr * se + span / 2) * k,
+      (dy * se + zr * ce) * k,
+    ];
+  };
+
+  const style = getComputedStyle(document.body);
+  const ink = style.getPropertyValue('--figure').trim();
+  const ball = style.getPropertyValue('--ball').trim();
+  const sheet = style.getPropertyValue('--sheet').trim();
+  g.fillStyle = sheet;
+  g.fillRect(0, 0, W, H);
+
+  const points = [];
+  for (let i = 0; i < figure.v.length; i += 3) {
+    points.push(project([figure.v[i], figure.v[i + 1], figure.v[i + 2]]));
+  }
+
+  const [r, gg, bb] = ink.startsWith('#')
+    ? [1, 3, 5].map(i => parseInt(ink.slice(i, i + 2), 16))
+    : [60, 55, 48];
+  // Light from up, left and in front of the camera. Shading by the sign of the
+  // winding instead gave a flat cut out, because the mesh does not promise a
+  // consistent winding and every triangle came out the same.
+  const LIGHT = [-0.45, 0.62, -0.64];
+
+  const parts = [];
+  for (let i = 0; i < FACES.length; i += 3) {
+    const a = points[FACES[i]], b = points[FACES[i + 1]], c = points[FACES[i + 2]];
+    if (!a || !b || !c) continue;
+    const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2];
+    const vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+    let nx = uy * vz - uz * vy;
+    let ny = uz * vx - ux * vz;
+    let nz = ux * vy - uy * vx;
+    const len = Math.hypot(nx, ny, nz) || 1;
+    nx /= len; ny /= len; nz /= len;
+    // The surface faces whichever way is toward the viewer, so the sign is
+    // taken from the depth axis rather than trusted from the winding.
+    const flip = nz > 0 ? -1 : 1;
+    const lambert = Math.max(0,
+      (nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2]) * flip);
+    const lit = 0.42 + 0.58 * lambert;
+    parts.push({
+      depth: (a[2] + b[2] + c[2]) / 3,
+      paint: g => {
+        g.fillStyle = `rgb(${Math.round(r * lit)},${Math.round(gg * lit)},`
+          + `${Math.round(bb * lit)})`;
+        g.beginPath();
+        g.moveTo(a[0], a[1]);
+        g.lineTo(b[0], b[1]);
+        g.lineTo(c[0], c[1]);
+        g.closePath();
+        g.fill();
+      },
+    });
+  }
+
+  // The ball takes its turn in the depth order like anything else. Painting
+  // it last put it in front of her even when it was behind her back.
+  const centreBall = project(figure.ball);
+  parts.push({
+    depth: centreBall[2],
+    paint: g => {
+      g.globalAlpha = figure.holding ? 1 : 0.6;
+      g.fillStyle = ball;
+      g.beginPath();
+      g.arc(centreBall[0], centreBall[1], radius * k, 0, Math.PI * 2);
+      g.fill();
+      g.globalAlpha = 1;
+    },
+  });
+
+  parts.sort((p, q) => p.depth - q.depth);
+  for (const part of parts) part.paint(g);
+}
+
+document.getElementById('pages').innerHTML = DATA.pages.map((page, n) => {
+  const manual = page.manual;
+  const steps = manual
+    ? `<ol>${manual.steps.map(s => `<li>${s}</li>`).join('')}</ol>`
+    : `<p class="none">The manual describes this one in prose rather than as a
+       numbered drill, so there is nothing to quote.</p>`;
+  const intro = manual && manual.intro.length
+    ? `<p class="objective">${manual.intro.join(' ')}</p>` : '';
+  return `<section class="sheet" style="margin-bottom:22px">
+    <h2>${manual ? manual.title : page.skill}</h2>
+    ${intro}
+    ${steps}
+    <div class="figures">${page.figures.map((f, i) => `
+      <figure>
+        <canvas id="c${n}_${i}" width="${W}" height="${H}"></canvas>
+        <figcaption>${f.name.replace(/_/g, ' ')}</figcaption>
+      </figure>`).join('')}</div>
+    <div class="measured">
+      <p>Measured at each phase, which the manual does not carry and a lab
+      does: ${page.figures.map(f => f.measured.length).reduce((a, b) => a + b, 0)}
+      checkpoints across ${page.figures.length} phases, every one inside its
+      clinical range.</p>
+    </div>
+  </section>`;
+}).join('');
+
+for (const [n, page] of DATA.pages.entries()) {
+  const box = bounds(page.figures);
+  page.figures.forEach((f, i) => {
+    draw(document.getElementById(`c${n}_${i}`), f, box, page.ballRadiusCm);
+  });
+}
+</script>
