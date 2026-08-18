@@ -1,4 +1,4 @@
-<title>The Ball Moves Her</title>
+<title>__TITLE__</title>
 <style>
   /* Same instrument palette as the reach report, so the two read as one tool.
      Cool slate ground, the ball the only warm colour, measurements in mono. */
@@ -151,10 +151,22 @@ function measure(run) {
   return {
     centre: [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2],
     floor: lo[1],
+    span,
     scale: (H - 2 * PAD) / (span * 1.12),
   };
 }
 const FRAME = RUNS.map(measure);
+// Panels of different bodies share a scale and stand on the same floor.
+// Fitting each one to itself is right when they are the same athlete doing
+// different things, and exactly wrong when the difference is the athlete: a
+// 158 cm player and a 190 cm one came out the same size on the page.
+if (DATA.sharedScale) {
+  const widest = Math.max(...FRAME.map(m => m.span));
+  for (const m of FRAME) {
+    m.scale = (H - 2 * PAD) / (widest * 1.12);
+    m.centre[1] = m.floor + widest / 2;
+  }
+}
 
 function camera() { return { az: 0, el: 0, zoom: 1, panX: 0, panY: 0 }; }
 let cameras = RUNS.map(camera);
@@ -242,12 +254,16 @@ function drawAll() { RUNS.forEach((_, i) => draw(i)); }
 
 document.getElementById('views').innerHTML = RUNS.map((run, i) => `
   <figure>
-    <figcaption class="label">${run.variant} &middot; caught at ${run.catchHeightCm} cm</figcaption>
+    <figcaption class="label">${run.variant}${run.heightCm
+        ? ` &middot; ${run.heightCm} cm, ${run.armCm} cm arm`
+        : ` &middot; caught at ${run.catchHeightCm} cm`}</figcaption>
     <svg id="v${i}" class="stage" data-run="${i}" viewBox="0 0 ${W} ${H}"
          tabindex="0" role="img"
          aria-label="${run.variant}. Drag to orbit, scroll to zoom."></svg>
     <div class="stats">
-      <span>turn <b>${run.turnedByDegrees.toFixed(0)}&deg;</b> &middot;
+      <span>${run.heightCm ? 'caught at' : 'turn'} <b>${run.heightCm
+            ? run.catchHeightCm + ' cm'
+            : run.turnedByDegrees.toFixed(0) + '&deg;'}</b> &middot;
             elbow at contact <b>${run.elbowAtContact.toFixed(0)}&deg;</b></span>
       <span>fastest <b>${run.fastestDegreesPerSecond}&deg;/s</b> &middot;
             spike <b>${run.spike.toFixed(2)}</b></span>
