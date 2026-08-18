@@ -1,0 +1,145 @@
+<title>Braven Athlete Viewer</title>
+<style>
+  :root {
+    --court: #F2F4ED; --bench: #FFFFFF; --edge: #D8DED0;
+    --chalk: #161A12; --dust: #5F6A59;
+    --body: #D9482A; --panel: #178073;
+    --display: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --data: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --court: #12160F; --bench: #1B2118; --edge: #2C3428;
+      --chalk: #ECF1E6; --dust: #8B9784;
+      --body: #FF6B4A; --panel: #35B9A6;
+    }
+  }
+  :root[data-theme="dark"] {
+    --court: #12160F; --bench: #1B2118; --edge: #2C3428;
+    --chalk: #ECF1E6; --dust: #8B9784;
+    --body: #FF6B4A; --panel: #35B9A6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--court); color: var(--chalk);
+    font-family: var(--display); line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 20px 56px;
+          display: flex; flex-direction: column; gap: 20px; }
+  .eyebrow { font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+             color: var(--dust); font-weight: 600; }
+  h1 { margin: 0; font-size: clamp(28px, 5vw, 42px); font-weight: 800;
+       letter-spacing: -.03em; line-height: 1.03; text-wrap: balance; }
+  .sub { margin: 0; color: var(--dust); font-size: 15px; max-width: 62ch; }
+  .picker { display: flex; flex-wrap: wrap; gap: 8px; }
+  .picker button {
+    font: inherit; font-size: 13px; font-weight: 600; color: var(--dust);
+    background: var(--bench); border: 1px solid var(--edge);
+    border-radius: 4px; padding: 8px 13px; cursor: pointer;
+  }
+  .picker button[aria-pressed="true"] {
+    color: var(--court); background: var(--chalk); border-color: var(--chalk);
+  }
+  .picker button:focus-visible, .bar button:focus-visible,
+  #stage:focus-visible { outline: 2px solid var(--panel); outline-offset: 2px; }
+
+  .layout { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+            gap: 18px; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  .card { background: var(--bench); border: 1px solid var(--edge);
+          border-radius: 6px; overflow: hidden; }
+  .card-head { padding: 11px 15px; border-bottom: 1px solid var(--edge);
+               display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .card-title { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; }
+  .card-note { font-size: 11px; color: var(--dust); font-family: var(--data); }
+
+  #stage { display: block; width: 100%; height: 520px; touch-action: none;
+           cursor: grab; background: transparent; }
+  #stage:active { cursor: grabbing; }
+  .hint { padding: 8px 15px; font-size: 12px; color: var(--dust);
+          border-top: 1px solid var(--edge); }
+
+  .bar { display: flex; align-items: center; gap: 10px; padding: 11px 15px;
+         border-top: 1px solid var(--edge); flex-wrap: wrap; }
+  .bar button {
+    font: inherit; font-size: 12px; font-weight: 600; color: var(--dust);
+    background: transparent; border: 1px solid var(--edge);
+    border-radius: 4px; padding: 6px 10px; cursor: pointer;
+  }
+  .bar button.primary { color: var(--court); background: var(--chalk);
+                        border-color: var(--chalk); min-width: 68px; }
+  input[type="range"] { flex: 1; accent-color: var(--body); min-width: 120px; }
+
+  .phase-now { font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
+               font-weight: 700; color: var(--body); }
+  .readout { display: flex; flex-direction: column; }
+  .stat { display: flex; justify-content: space-between; gap: 12px;
+          padding: 9px 15px; border-bottom: 1px solid var(--edge); font-size: 13px; }
+  .stat:last-child { border-bottom: 0; }
+  .stat span { color: var(--dust); }
+  .stat b { font-family: var(--data); font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  .prov { font-size: 12px; color: var(--dust); max-width: 80ch; }
+  footer { border-top: 1px solid var(--edge); padding-top: 16px;
+           display: flex; flex-direction: column; gap: 8px; }
+  #fallback { padding: 20px; color: var(--dust); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Braven Movement &middot; athlete viewer</div>
+    <h1 id="skill">Braven Athlete Viewer</h1>
+    <p class="sub">
+      The solved athlete, skinned and drawn in three dimensions. Drag to turn her
+      around, scroll to zoom, or use the arrow keys. Every pose here came from the
+      same solver that grades the drills.
+    </p>
+  </header>
+
+  <nav class="picker" id="picker" aria-label="Skill"></nav>
+
+  <div class="layout">
+    <section class="card">
+      <div class="card-head">
+        <span class="card-title">Athlete</span>
+        <span class="card-note" id="frameNote"></span>
+      </div>
+      <canvas id="stage" tabindex="0"
+              aria-label="A three dimensional athlete performing the selected skill. Drag or use the arrow keys to turn the view."></canvas>
+      <div id="fallback" hidden>
+        This browser did not provide WebGL, so the athlete cannot be drawn here.
+      </div>
+      <div class="bar">
+        <button class="primary" id="play" type="button">Pause</button>
+        <input type="range" id="scrub" min="0" max="1" value="0" step="1"
+               aria-label="Movement frame" />
+        <button type="button" data-view="front">Front</button>
+        <button type="button" data-view="side">Side</button>
+        <button type="button" data-view="back">Back</button>
+      </div>
+      <p class="hint">Drag to orbit &middot; scroll to zoom &middot; arrow keys also turn the view</p>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <span class="card-title">Measured now</span>
+        <span class="phase-now" id="phaseNow"></span>
+      </div>
+      <div class="readout" id="readout"></div>
+    </section>
+  </div>
+
+  <footer>
+    <p class="prov" id="source"></p>
+    <p class="prov">
+      Mesh is the MHR athlete at level of detail 5, 971 vertices, skinned per
+      frame by the solver. Angles are the frame-free measures validated against
+      OpenSim. The bands behind them are provisional until a coach sets them.
+    </p>
+  </footer>
+</div>
+
+<script id="payload" type="application/json">__DATA__</script>
+<script>__SCRIPT__</script>
