@@ -48,6 +48,11 @@ FORBIDDEN = ("scale", "flexible")
 # The manual keeps the feet static. Pinning the feet and lowering the hips is
 # what produces the power position.
 FOOT_WEIGHT = 12.0
+# Joint limits have to outrank every target, or the solver pays the penalty and
+# bends a joint past where a person bends. At weight 5 the whole library solved
+# outside its limits, worst error 70.98 on the high deflect. At 200 the worst is
+# 0.005, and the hands reach their targets slightly better rather than worse.
+LIMIT_WEIGHT = 200.0
 # The trunk is held firmly, because a drifting trunk lets the athlete cheat every
 # hand target by moving her chest instead of her hands.
 TRUNK_WEIGHT = 10.0
@@ -306,7 +311,7 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
             character,
             [
                 position_error,
-                solver2.LimitErrorFunction(character, weight=5.0),
+                solver2.LimitErrorFunction(character, weight=LIMIT_WEIGHT),
                 continuity,
             ],
         )
