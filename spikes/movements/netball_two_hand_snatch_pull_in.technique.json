@@ -14,17 +14,17 @@
       "atPhase": 0.78,
       "name": "absorb",
       "across": 0.0,
-      "up": 0.28,
-      "ahead": 0.52,
+      "up": 0.3,
+      "ahead": 0.62,
       "note": "Giving with the ball. These keys move the ball, not the hands. The hands follow because they are holding it."
     },
     {
       "atPhase": 1.0,
       "name": "pull_in",
       "across": 0.0,
-      "up": 0.04,
-      "ahead": 0.36,
-      "note": "Ball secured at the chest, ready to release."
+      "up": 0.1,
+      "ahead": 0.55,
+      "note": "Ball secured at the chest, ready to release. This is where the ball centre goes, not where a wrist goes: the first draft reused the old hand keys and folded the elbow to 154 degrees, past the 150 AAOS allows. 0.55 of an arm length is 29 cm ahead of the chest joint, which is a spine joint, so the ball sits a few centimetres off the sternum. Measured: 0.40 gives 153 degrees of elbow flexion, 0.50 gives 149, and 0.55 gives 145. The grip is held at one spread for the whole carry, and a real athlete rotates her hands under the ball as she brings it in, which is what would let her hold it closer."
     }
   ]
 }
