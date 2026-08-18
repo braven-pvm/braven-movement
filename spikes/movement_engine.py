@@ -53,6 +53,15 @@ FOOT_WEIGHT = 12.0
 # outside its limits, worst error 70.98 on the high deflect. At 200 the worst is
 # 0.005, and the hands reach their targets slightly better rather than worse.
 LIMIT_WEIGHT = 200.0
+# The wrist had a position target and nothing else, so the hand was free to spin
+# about the forearm between frames. That is what threw the fingers around: the
+# thumb tip moved 17.7 cm in a single frame on the jump catch while the fingers
+# themselves never move, because they are frozen.
+#
+# Pointing the knuckles along the arm removes the spin, and it is also what the
+# manual asks for: fingers up, thumbs in the middle.
+HAND_WEIGHT = 2.5
+HAND_LIFT = 0.25
 # The trunk is held firmly, because a drifting trunk lets the athlete cheat every
 # hand target by moving her chest instead of her hands.
 TRUNK_WEIGHT = 10.0
@@ -179,6 +188,16 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
     rest_shoulders = {
         side: rest_positions[index[f"{side}_uparm"]].copy() for side in ("l", "r")
     }
+    # How far the knuckles sit from the wrist on this athlete.
+    palm_cm = {
+        side: float(
+            np.linalg.norm(
+                rest_positions[index[f"{side}_middle1"]]
+                - rest_positions[index[f"{side}_wrist"]]
+            )
+        )
+        for side in ("l", "r")
+    }
 
     frame_count = track.frames
     motion = np.zeros((frame_count, count), dtype=np.float32)
@@ -244,6 +263,27 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
                 offset=np.zeros(3, dtype=np.float32),
                 weight=ELBOW_POLE_WEIGHT * slack,
             )
+        # Point the knuckles along the arm, lifted a little, so the hand keeps a
+        # stable orientation instead of spinning about the forearm between
+        # frames. That spin is what threw the fingers around, and this is also
+        # what the manual asks for: fingers up, thumbs in the middle.
+        for side, hand_target in (("l", left_target), ("r", right_target)):
+            shoulder = turned(rest_shoulders[side])
+            along = np.asarray(hand_target) - shoulder
+            length = float(np.linalg.norm(along))
+            if length > 1e-6:
+                lifted = along / length + np.array([0.0, HAND_LIFT, 0.0])
+                lifted = lifted / float(np.linalg.norm(lifted))
+                position_error.add_constraint(
+                    index[f"{side}_middle1"],
+                    target=np.asarray(
+                        np.asarray(hand_target) + lifted * palm_cm[side],
+                        dtype=np.float32,
+                    ),
+                    offset=np.zeros(3, dtype=np.float32),
+                    weight=HAND_WEIGHT,
+                )
+
         # Feet either follow the movement or stay where the athlete started.
         placements = track.feet_at(phase)
         if placements is None:
