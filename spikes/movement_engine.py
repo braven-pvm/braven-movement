@@ -240,6 +240,54 @@ def measure_frame(points: np.ndarray, index: dict[str, int], phase: float) -> di
     return entry
 
 
+def scapula_targets(
+    placed: TrunkFrame, hand_targets: dict[str, np.ndarray]
+) -> dict[str, np.ndarray]:
+    """Return where each shoulder belongs, given how high its arm is reaching.
+
+    A shoulder blade rotates as the arm rises, contributing roughly one degree
+    for every two of humerus above thirty. A side with no hand target, such as
+    the free arm of a one hand drill, is left out and keeps its held position.
+    """
+    found: dict[str, np.ndarray] = {}
+    trunk_down = placed.root - placed.neck
+    trunk_length = float(np.linalg.norm(trunk_down))
+    if trunk_length <= 1e-6:
+        return found
+    trunk_down = trunk_down / trunk_length
+    for side, hand_target in hand_targets.items():
+        base = placed.shoulders[side]
+        reach = np.asarray(hand_target, dtype=np.float64) - base
+        reach_length = float(np.linalg.norm(reach))
+        if reach_length < 1e-6:
+            continue
+        cosine = float(np.dot(reach / reach_length, trunk_down))
+        elevation = math.degrees(math.acos(max(-1.0, min(1.0, cosine))))
+        excess = max(0.0, elevation - SCAPULA_START_DEGREES)
+        contribution = min(excess * SCAPULA_RATIO, SCAPULA_MAX_DEGREES)
+        if contribution <= 0.0:
+            continue
+        # Rotate the shoulder about the sternoclavicular joint, in the plane the
+        # arm is reaching through. That is the direction a scapula travels, and
+        # pivoting at the chest instead put the lever in the wrong place and
+        # made the legs compensate.
+        pivot = placed.neck
+        arm = base - pivot
+        axis = np.cross(arm, reach)
+        axis_length = float(np.linalg.norm(axis))
+        if axis_length < 1e-6:
+            continue
+        axis = axis / axis_length
+        angle = math.radians(contribution)
+        cos_a, sin_a = math.cos(angle), math.sin(angle)
+        found[side] = pivot + (
+            arm * cos_a
+            + np.cross(axis, arm) * sin_a
+            + axis * float(np.dot(axis, arm)) * (1.0 - cos_a)
+        )
+    return found
+
+
 def solve(character: geometry.Character, track: MotionTrack) -> dict:
     """Solve every frame of this movement and measure each one."""
     names = list(character.skeleton.joint_names)
@@ -388,40 +436,9 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
 
         # Then let each shoulder ride up with its own arm, by the amount a
         # shoulder blade actually contributes at that elevation.
-        scapula_targets = {}
-        trunk_down = root_target - neck_target
-        trunk_length = float(np.linalg.norm(trunk_down))
-        if trunk_length > 1e-6:
-            trunk_down = trunk_down / trunk_length
-            for side, hand_target in (("l", left_target), ("r", right_target)):
-                base = shoulder_targets[side]
-                reach = np.asarray(hand_target, dtype=np.float64) - base
-                reach_length = float(np.linalg.norm(reach))
-                if reach_length < 1e-6:
-                    continue
-                cosine = float(np.dot(reach / reach_length, trunk_down))
-                elevation = math.degrees(math.acos(max(-1.0, min(1.0, cosine))))
-                excess = max(0.0, elevation - SCAPULA_START_DEGREES)
-                contribution = min(excess * SCAPULA_RATIO, SCAPULA_MAX_DEGREES)
-                if contribution <= 0.0:
-                    continue
-                # Rotate the shoulder about the chest, in the plane the arm is
-                # reaching through. That is the direction a scapula travels.
-                pivot = neck_target
-                arm = base - pivot
-                axis = np.cross(arm, reach)
-                axis_length = float(np.linalg.norm(axis))
-                if axis_length < 1e-6:
-                    continue
-                axis = axis / axis_length
-                angle = math.radians(contribution)
-                cos_a, sin_a = math.cos(angle), math.sin(angle)
-                rotated = (
-                    arm * cos_a
-                    + np.cross(axis, arm) * sin_a
-                    + axis * float(np.dot(axis, arm)) * (1.0 - cos_a)
-                )
-                scapula_targets[side] = pivot + rotated
+        scapula = scapula_targets(
+            placed, {"l": left_target, "r": right_target}
+        )
         turn_now = abs(track.turn_at(phase))
         base = FOOTWORK_SHOULDER_WEIGHT if track.moves_feet() else SHOULDER_BASE_WEIGHT
         shoulder_weight = base + SHOULDER_LINE_WEIGHT * min(
@@ -431,9 +448,9 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
             ("root", root_target, TRUNK_WEIGHT),
             ("c_spine3", chest_target, TRUNK_WEIGHT),
             ("c_neck", neck_target, TRUNK_WEIGHT * 0.6),
-            ("l_uparm", scapula_targets.get("l", shoulder_targets["l"]),
+            ("l_uparm", scapula.get("l", shoulder_targets["l"]),
              max(shoulder_weight, SCAPULA_WEIGHT)),
-            ("r_uparm", scapula_targets.get("r", shoulder_targets["r"]),
+            ("r_uparm", scapula.get("r", shoulder_targets["r"]),
              max(shoulder_weight, SCAPULA_WEIGHT)),
         ):
             if weight <= 0.0:

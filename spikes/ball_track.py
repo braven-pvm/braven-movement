@@ -146,15 +146,17 @@ class BallTrack:
         return [key.at_phase for key in self.keys]
 
 
-def _offset(data: dict, name: str) -> BallOffset:
+def read_offset(data: dict, name: str, error=None) -> BallOffset:
+    """Read one stance frame offset. The technique file reads them too."""
+    raised = BallTrackError if error is None else error
     try:
         return BallOffset(
             across=float(data["across"]),
             up=float(data["up"]),
             ahead=float(data["ahead"]),
         )
-    except KeyError as error:
-        raise BallTrackError(f"ball key {name} is missing {error}") from None
+    except KeyError as missing:
+        raise raised(f"key {name} is missing {missing}") from None
 
 
 def load_ball(path: Path) -> BallTrack:
@@ -171,7 +173,7 @@ def load_ball(path: Path) -> BallTrack:
         BallKey(
             at_phase=float(entry["atPhase"]),
             name=str(entry.get("name", f"key{number}")),
-            offset=_offset(entry, str(entry.get("name", number))),
+            offset=read_offset(entry, str(entry.get("name", number))),
         )
         for number, entry in enumerate(data.get("keys", []))
     )

@@ -1,0 +1,30 @@
+{
+  "movementId": "netball_two_hand_snatch_pull_in",
+  "source": "202526 Netball Coaches Manual, page 71, 2 hand snatches and pull in",
+  "notes": "How the athlete meets the ball. This file never says where a hand is. The hands are solved against the ball, so the same technique can be practised against any trajectory in the arm span, which is what the manual asks for.",
+  "hands": "both",
+  "grip": {
+    "spreadDegrees": 90,
+    "faceBall": true,
+    "note": "The angle between the two palms, measured around the ball, half either side of the direction back toward the athlete. Both palms face the ball centre, which is what puts the fingers up and the thumbs behind.",
+    "whyNinety": "Measured, not chosen. Sweeping the spread from 40 to 140 degrees and solving each one, this athlete produces exactly what is asked from 80 degrees upward. Below that her forearm reaches its supination limit and the palms stay wider than requested: asking for 40 gives 92, asking for 60 gives 85. Ninety is the nearest round value clear of that floor, and it puts the thumb tips together behind the ball."
+  },
+  "afterContact": [
+    {
+      "atPhase": 0.78,
+      "name": "absorb",
+      "across": 0.0,
+      "up": 0.28,
+      "ahead": 0.52,
+      "note": "Giving with the ball. These keys move the ball, not the hands. The hands follow because they are holding it."
+    },
+    {
+      "atPhase": 1.0,
+      "name": "pull_in",
+      "across": 0.0,
+      "up": 0.04,
+      "ahead": 0.36,
+      "note": "Ball secured at the chest, ready to release."
+    }
+  ]
+}
