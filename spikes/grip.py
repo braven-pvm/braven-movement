@@ -185,6 +185,10 @@ def contacts(
     Every palm faces the ball centre. That is the whole of "fingers up, thumbs
     in the middle" that a sphere can express: the fingers are the tangent that
     points upward, and the thumbs follow from the anatomy of each hand.
+
+    A single hand has nothing to spread against, so it takes the ball on the
+    near side rather than half a spread off it. Spreading one hand puts the
+    palm 45 degrees round a ball it is holding on its own.
     """
     centre = np.asarray(ball_centre, dtype=np.float64)
     near = _unit(toward_catcher)
@@ -197,7 +201,7 @@ def contacts(
         )
     # Positive toward the athlete's left, matching MHR.
     lateral = _unit(lateral)
-    half = math.radians(spread_degrees) / 2.0
+    half = math.radians(spread_degrees) / 2.0 if len(sides) > 1 else 0.0
 
     found: dict[str, Contact] = {}
     for side in sides:

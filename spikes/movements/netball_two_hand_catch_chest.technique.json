@@ -1,0 +1,30 @@
+{
+  "movementId": "netball_two_hand_catch_chest",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger",
+  "notes": "Pull the ball in to the chest as soon as it is caught, then use the momentum of the catch to pass it back. The release is where the hand constraints stop and the ball is in flight again.",
+  "hands": "both",
+  "turnToBall": true,
+  "grip": {
+    "spreadDegrees": 90,
+    "faceBall": true
+  },
+  "release": {
+    "atPhase": 0.92
+  },
+  "afterContact": [
+    {
+      "atPhase": 0.76,
+      "name": "pull_in",
+      "across": 0.0,
+      "up": 0.12,
+      "ahead": 0.55
+    },
+    {
+      "atPhase": 0.92,
+      "name": "send_back",
+      "across": 0.0,
+      "up": 0.28,
+      "ahead": 0.95
+    }
+  ]
+}

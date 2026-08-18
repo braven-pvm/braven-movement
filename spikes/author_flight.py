@@ -107,26 +107,36 @@ def author(
     variant: str | None,
     catch: BallOffset,
     passer_ahead: float = DEFAULT_PASSER_AHEAD,
+    passer_across: float = 0.0,
     release_height_cm: float = DEFAULT_RELEASE_HEIGHT_CM,
     speed_cm: float = DEFAULT_SPEED_CM,
     arrival_phase: float = DEFAULT_ARRIVAL_PHASE,
     keys: int = DEFAULT_KEYS,
     radius_cm: float = SIZE_FIVE_RADIUS_CM,
     chest_cm: np.ndarray | None = None,
-    arm_cm: float | None = None,
+    arm_cm_override: float | None = None,
     note: str = "",
 ) -> dict:
     """Return a ball file for one pass, as a dictionary ready to write."""
     track = load_motion(MOVEMENT_DIR / f"{movement_id}.motion.json")
-    if chest_cm is None or arm_cm is None:
-        chest_cm, arm_cm = stance_of(movement_id)
-    chest = np.asarray(chest_cm, dtype=np.float64)
+    chest, arrival_chest, arm_cm = stance_of(movement_id, arrival_phase)
+    if chest_cm is not None:
+        chest = np.asarray(chest_cm, dtype=np.float64)
+    if arm_cm_override is not None:
+        arm_cm = arm_cm_override
 
-    catch_world = chest + np.array(
+    # The catch point is given relative to where the athlete is when she takes
+    # the ball, not to where she started. On a drill that runs and jumps those
+    # are half a metre apart, and an author means the first.
+    catch_world = arrival_chest + np.array(
         [catch.across * arm_cm, catch.up * arm_cm, catch.ahead * arm_cm]
     )
     release_world = np.array(
-        [chest[0], release_height_cm, chest[2] + passer_ahead * arm_cm]
+        [
+            chest[0] + passer_across * arm_cm,
+            release_height_cm,
+            chest[2] + passer_ahead * arm_cm,
+        ]
     )
     seconds, velocity = solve_launch(release_world, catch_world, speed_cm)
     flight_phase = seconds * track.frames_per_second / (track.frames - 1)
@@ -202,8 +212,10 @@ def author(
     }
 
 
-def stance_of(movement_id: str) -> tuple[np.ndarray, float]:
-    """Where this athlete's chest is at the start of this drill, and her reach."""
+def stance_of(
+    movement_id: str, arrival_phase: float = 0.0
+) -> tuple[np.ndarray, np.ndarray, float]:
+    """The chest at the start, the chest when the ball arrives, and the reach."""
     from movement_engine import joint_positions, load_character, trunk_frame
 
     character = load_character()
@@ -213,7 +225,11 @@ def stance_of(movement_id: str) -> tuple[np.ndarray, float]:
     points = joint_positions(character, rest)
     arm_cm = arm_length(points, index)
     track = load_motion(MOVEMENT_DIR / f"{movement_id}.motion.json")
-    return trunk_frame(track, 0.0, points, index, arm_cm).chest, arm_cm
+    return (
+        trunk_frame(track, 0.0, points, index, arm_cm).chest,
+        trunk_frame(track, arrival_phase, points, index, arm_cm).chest,
+        arm_cm,
+    )
 
 
 def main(argv: list[str]) -> int:
@@ -224,6 +240,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--up", type=float, required=True)
     parser.add_argument("--ahead", type=float, required=True)
     parser.add_argument("--passer-ahead", type=float, default=DEFAULT_PASSER_AHEAD)
+    parser.add_argument("--passer-across", type=float, default=0.0)
     parser.add_argument(
         "--release-height", type=float, default=DEFAULT_RELEASE_HEIGHT_CM
     )
@@ -238,6 +255,7 @@ def main(argv: list[str]) -> int:
         variant=arguments.variant,
         catch=BallOffset(arguments.across, arguments.up, arguments.ahead),
         passer_ahead=arguments.passer_ahead,
+        passer_across=arguments.passer_across,
         release_height_cm=arguments.release_height,
         speed_cm=arguments.speed,
         arrival_phase=arguments.arrival,

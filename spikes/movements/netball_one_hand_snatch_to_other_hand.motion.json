@@ -1,7 +1,8 @@
 {
   "movementId": "netball_one_hand_snatch_to_other_hand",
-  "frames": 40,
-  "framesPerSecond": 24,
+  "frames": 98,
+  "framesPerSecond": 60,
+  "rateNote": "60 frames per second, not 24. A real pass at 6 m per second crosses the whole reachable span in two frames at 24, and the largest elbow change between frames falls from 9.4 degrees at 24 to 4.4 at 60. Nothing about the movement changes with the rate; there were not enough frames to hold it.",
   "notes": "The first asymmetric movement in the library. The right hand reaches out alone and takes the ball. The left hand then joins it, because the manual is explicit: get two hands on the ball as quick as possible. Keys carry per-hand overrides; where a hand has no override it uses the shared offsets.",
   "stance": {
     "hipDropFraction": 0.18

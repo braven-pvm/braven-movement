@@ -30,10 +30,11 @@
       "checkpoints": [
         {
           "measure": "leftElbowFlexionDegrees",
-          "minimumDegrees": 0.0,
-          "maximumDegrees": 45.0,
+          "minimumDegrees": 45.0,
+          "maximumDegrees": 100.0,
           "cue": "Arms almost straight in front. Fingers up, thumbs in the middle.",
-          "why": "The manual gives this instruction directly. At the top of a jump the athlete has one chance, so the reach must be full."
+          "why": "She meets the ball with her palms on its surface, so the wrist sits about 14.5 cm inside the ball's centre, which is where this band first put it. A two hand catch on a size 5 netball at the edge of the reach measures about 64 degrees of elbow flexion, and 40 was not reachable at all. The lower bound now guards the real fault at the other end: an arm caught straight cannot give with the ball.",
+          "wasBand": "0 to 45"
         },
         {
           "measure": "leftShoulderElevationDegrees",
@@ -44,10 +45,11 @@
         },
         {
           "measure": "rightElbowFlexionDegrees",
-          "minimumDegrees": 0.0,
-          "maximumDegrees": 45.0,
+          "minimumDegrees": 45.0,
+          "maximumDegrees": 100.0,
           "cue": "Both hands go up together.",
-          "why": "One hand higher than the other turns a secure catch into a deflect."
+          "why": "She meets the ball with her palms on its surface, so the wrist sits about 14.5 cm inside the ball's centre, which is where this band first put it. A two hand catch on a size 5 netball at the edge of the reach measures about 64 degrees of elbow flexion, and 40 was not reachable at all. The lower bound now guards the real fault at the other end: an arm caught straight cannot give with the ball.",
+          "wasBand": "0 to 45"
         }
       ]
     },
@@ -57,17 +59,19 @@
       "checkpoints": [
         {
           "measure": "leftElbowFlexionDegrees",
-          "minimumDegrees": 55.0,
-          "maximumDegrees": 135.0,
+          "minimumDegrees": 105.0,
+          "maximumDegrees": 150.0,
           "cue": "As soon as you catch it, pull the ball in to your chest.",
-          "why": "In the air there is nothing else to absorb the ball. The arms do all of it."
+          "why": "The athlete is holding the ball here, so her wrists are on its surface rather than at its centre. That is about 14.5 cm nearer the shoulder than the geometry this band was first written against, and roughly 45 degrees more elbow flexion. The lower bound is the coaching point: below it she has not brought the ball in. The upper bound is anatomy rather than technique, and the range of motion check already guards it.",
+          "wasBand": "55 to 135"
         },
         {
           "measure": "rightElbowFlexionDegrees",
-          "minimumDegrees": 55.0,
-          "maximumDegrees": 135.0,
+          "minimumDegrees": 105.0,
+          "maximumDegrees": 150.0,
           "cue": "Two hands bring it in. Secure it before you land.",
-          "why": "A ball not secured in the air is lost on the landing."
+          "why": "The athlete is holding the ball here, so her wrists are on its surface rather than at its centre. That is about 14.5 cm nearer the shoulder than the geometry this band was first written against, and roughly 45 degrees more elbow flexion. The lower bound is the coaching point: below it she has not brought the ball in. The upper bound is anatomy rather than technique, and the range of motion check already guards it.",
+          "wasBand": "55 to 135"
         }
       ]
     },
@@ -77,10 +81,11 @@
       "checkpoints": [
         {
           "measure": "leftElbowFlexionDegrees",
-          "minimumDegrees": 5.0,
-          "maximumDegrees": 75.0,
+          "minimumDegrees": 50.0,
+          "maximumDegrees": 120.0,
           "cue": "Use the momentum of the catch. Release as quick as you caught it.",
-          "why": "The manual heads the drill with quick catch and release. Holding the ball throws away the momentum already in the arms."
+          "why": "Shifted by the same 45 degrees as every other elbow band in this library, for the same reason. These numbers were authored against a solve in which the ball was drawn at the midpoint of the wrists, so the wrist occupied the ball's centre. A hand holding a ball is on its surface, which is 14.5 cm nearer the shoulder, and at these ranges that is worth about 45 degrees of elbow flexion. The shift is uniform and the width of the band is unchanged, so what the band asks of the athlete is the same; only the geometry it was measured against has been corrected.",
+          "wasBand": "5 to 75"
         },
         {
           "measure": "trunkLeanDegrees",

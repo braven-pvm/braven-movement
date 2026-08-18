@@ -9,6 +9,27 @@ instead of in her palms. [BALL_FIRST_DESIGN.md](BALL_FIRST_DESIGN.md) inverts
 that. A movement is a ball trajectory and a technique, and the hands are solved.
 
 ```bash
+pixi run python build_library.py
+```
+
+```text
+ok Deflects, High                     8/8 checks    7.1 ms/frame   the ball
+ok Double Foot Landing                8/8 checks    6.6 ms/frame   the ball
+ok Hooks, Jump and Pull In Ball       9/9 checks    6.4 ms/frame   the ball
+ok Hooks, Outside Hand                9/9 checks    6.4 ms/frame   the ball
+ok 1 Hand Snatches to Other Hand      9/9 checks    8.6 ms/frame   the ball
+ok 2 Hands Catch                      7/7 checks    9.0 ms/frame   the ball
+ok 2 Hand Snatches and Pull In        11/11 checks   8.1 ms/frame   the ball
+ok 2 Hand Snatches and Straight Back  8/8 checks    8.4 ms/frame   the ball
+```
+
+All eight drills are driven by the ball. 69 of 69 coaching checks are met, no
+measured angle leaves its clinical range, and `check_joint_limits.py` reports no
+joint more than a quarter of a degree past its own limit.
+
+The same technique against four different passes:
+
+```bash
 pixi run python proof.py
 ```
 

@@ -1,7 +1,8 @@
 {
   "movementId": "netball_hooks_jump_pull_in",
-  "frames": 44,
-  "framesPerSecond": 24,
+  "frames": 108,
+  "framesPerSecond": 60,
+  "rateNote": "60 frames per second, not 24. A real pass at 6 m per second crosses the whole reachable span in two frames at 24, and the largest elbow change between frames falls from 9.4 degrees at 24 to 4.4 at 60. Nothing about the movement changes with the rate; there were not enough frames to hold it.",
   "notes": "A jump catch, and the first movement with a stance that changes. hipDrop per key loads the legs, extends through the jump, then absorbs on landing. Arms are almost straight at the top, the ball comes to the chest on the way down, and the momentum carries into the release.",
   "stance": {
     "hipDropFraction": -0.06
@@ -14,7 +15,17 @@
       "up": -0.02,
       "ahead": 0.6,
       "note": "Loading before the jump, hands ready but low.",
-      "hipDrop": 0.26
+      "hipDrop": 0.26,
+      "footLeft": {
+        "across": 0.34,
+        "ahead": -0.12,
+        "up": 0.0
+      },
+      "footRight": {
+        "across": 0.34,
+        "ahead": -0.12,
+        "up": 0.0
+      }
     },
     {
       "atPhase": 0.42,
@@ -23,7 +34,17 @@
       "up": 0.42,
       "ahead": 0.78,
       "note": "Going up, hands reaching for the ball.",
-      "hipDrop": 0.04
+      "hipDrop": 0.04,
+      "footLeft": {
+        "across": 0.34,
+        "ahead": -0.12,
+        "up": 0.06
+      },
+      "footRight": {
+        "across": 0.34,
+        "ahead": -0.12,
+        "up": 0.06
+      }
     },
     {
       "atPhase": 0.58,
@@ -32,7 +53,17 @@
       "up": 0.6,
       "ahead": 0.92,
       "note": "At the top, arms almost straight in front. Fingers up, thumbs in the middle.",
-      "hipDrop": -0.12
+      "hipDrop": -0.12,
+      "footLeft": {
+        "across": 0.34,
+        "ahead": -0.12,
+        "up": 0.2
+      },
+      "footRight": {
+        "across": 0.34,
+        "ahead": -0.12,
+        "up": 0.2
+      }
     },
     {
       "atPhase": 0.82,
@@ -41,7 +72,17 @@
       "up": 0.18,
       "ahead": 0.36,
       "note": "The ball comes in to the chest as she comes down.",
-      "hipDrop": 0.02
+      "hipDrop": 0.02,
+      "footLeft": {
+        "across": 0.34,
+        "ahead": -0.12,
+        "up": 0.06
+      },
+      "footRight": {
+        "across": 0.34,
+        "ahead": -0.12,
+        "up": 0.06
+      }
     },
     {
       "atPhase": 1.0,
@@ -50,7 +91,18 @@
       "up": 0.16,
       "ahead": 0.86,
       "note": "The momentum of the catch goes straight back out as the pass.",
-      "hipDrop": 0.14
+      "hipDrop": 0.14,
+      "footLeft": {
+        "across": 0.34,
+        "ahead": -0.12,
+        "up": 0.0
+      },
+      "footRight": {
+        "across": 0.34,
+        "ahead": -0.12,
+        "up": 0.0
+      }
     }
-  ]
+  ],
+  "footNote": "The feet are keyed because this drill is a jump, and every foot height is at least as large as the hip rise above standing at the same phase. It authored a rise of 0.12 of an arm length with the feet pinned to the floor, which asks the leg to be 6 cm longer than it is. The solver answered by locking the knee at 2 degrees for six frames and then unsticking it 13 degrees in one frame, which was the worst spike in the library. A locked knee under load is also a coaching fault in its own right, so check_locked_joints now reports it."
 }

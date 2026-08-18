@@ -242,12 +242,54 @@ steps below the clinical threshold the coaching layer already uses, because the
 knee wobbles a degree either way through a planted drill and a one degree step
 beside a tenth of a degree step is noise rather than a snap.
 
-### 5. Migrate the library
+### 5. Migrate the library — done
 
 Convert the remaining seven drills. Retune the coaching bands against honest
 anatomy, which is owed anyway after the scapular change.
 
 **Done when** `build_library.py` is green and `check_joint_limits.py` passes.
+
+Both hold. All eight drills are solved by the possession model, 69 of 69
+coaching checks are met, no measured angle leaves its clinical range, and no
+joint sits more than a quarter of a degree past its own limit.
+
+Two schema additions were needed, both named by the design already. A drill
+that passes the ball back has a `release`, which is the frame the hand
+constraints stop and the ball goes back to being a thing in flight, carrying
+the speed she gave it. A one hand drill has a `secondHand`, because the manual
+puts it in capitals: get two hands on the ball as quick as possible. A drill
+may also name where she waits, since a high deflect waits with her hands beside
+her head rather than aimed at the passer.
+
+What the migration found, in the order it hurt:
+
+1. **The feet were not moving.** The single frame contact solver pinned them at
+   their rest position and never read the movement, so under the possession
+   model a drill that runs and jumps kept both feet on the spot. The foot
+   placement is now one function that both solvers call.
+2. **A jump drill that could not jump.** The hooks jump authored a hip rise of
+   0.12 of an arm length with the feet pinned to the floor, which asks the leg
+   to be 6 cm longer than it is. The solver locked the knee at 2 degrees for
+   six frames and then unstuck it 13 degrees in one. Every foot height is now
+   at least the hip rise at the same phase.
+3. **The collarbone was 4 degrees outside its range on every drill, and 24 on
+   the high deflect** — including the drill still on hand keys, so it predates
+   all of this. The old check reported a squared error, which made a hundredth
+   of a degree look like six. Reading it in degrees found it. The limit weight
+   went from 200 to 30000, which brings the worst overshoot to 0.09 degrees.
+4. **The free arm had no constraint.** On a one hand drill only the catching
+   hand was shaped, so the other arm wandered and snapped 114 degrees at the
+   elbow on the frame it joined. Both hands are now shaped on every frame; what
+   changes is which one is on the ball.
+5. **The elbow pole was aimed in world axes.** On the one drill that turns 45
+   degrees it pushed the elbow across her body instead of away from it. Turning
+   it with the athlete cut the library's worst spike from 8.0 to 2.4.
+6. **Every elbow band was measured against a wrist inside the ball.** The old
+   ball was drawn at the midpoint of the wrists, so the wrist occupied the ball
+   centre. A hand holding a ball is on its surface, 14.5 cm nearer the
+   shoulder, which is about 45 degrees of elbow flexion at these ranges. All 23
+   elbow bands were shifted by that one number, keeping their widths, and each
+   records what it was before.
 
 ## What milestone 1 found
 

@@ -37,7 +37,6 @@ from motion_track import arm_length, load_motion  # noqa: E402
 from movement_engine import (  # noqa: E402
     ELBOW_POLE_DOWN_CM,
     ELBOW_POLE_OUT_CM,
-    ELBOW_POLE_WEIGHT,
     FOOT_WEIGHT,
     LIMIT_WEIGHT,
     SCAPULA_WEIGHT,
@@ -49,6 +48,7 @@ from movement_engine import (  # noqa: E402
     load_character,
     motion_path,
     scapula_targets,
+    foot_targets,
     trunk_frame,
 )
 from finger_wrap import (  # noqa: E402
@@ -78,6 +78,16 @@ CONTACT_WEIGHT = {
 # away. Solving from several starting twists and keeping the best costs about
 # 20 ms and removes the failure entirely.
 TWIST_SEEDS = (-2.0, -1.0, 0.0, 1.0)
+# The elbow pole, stronger than the movement solver's 0.35.
+#
+# The possession model folds the arm much further than hand keys ever did,
+# because the ball comes all the way to the chest, and a folded arm has two
+# answers: elbow up or elbow down. At 0.35 the solver sat in the elbow up
+# answer and dropped out of it, swinging the shoulder 58 degrees in one frame
+# and leaving the palm 13 cm off the ball. Swept across the whole library, 0.8
+# brings the worst palm gap to 0.05 cm. Higher starts to overpower the grip
+# again: 1.5 puts it back to 9.8 cm.
+CONTACT_POLE_WEIGHT = 0.8
 # The fingertips are frozen straight, so a flat hand cannot wrap a sphere. This
 # is how far the tips are allowed to be off the surface before it is reported.
 TIP_TOLERANCE_CM = 6.0
@@ -96,21 +106,38 @@ def contact_constraints(
     index: dict[str, int],
     placed,
     shapes: dict,
-    ball_centre_cm: np.ndarray,
+    ball_centre_cm,
     radius_cm: float,
     spread_degrees: float,
     sides: tuple[str, ...],
 ) -> tuple[solver2.PositionErrorFunction, dict]:
-    """Return the position errors that put these hands on this ball."""
+    """Return the position errors that put these hands on this ball.
+
+    ``ball_centre_cm`` may be one position or one per hand. A drill where the
+    second hand joins later needs the second: the hand that has the ball is on
+    the ball, and the one still coming is shaped around the point it is moving
+    toward. Leaving that hand unconstrained instead let the free arm wander,
+    and it snapped 114 degrees at the elbow on the frame it joined.
+
+    The grip geometry always uses every hand the drill will end up putting on
+    the ball, so a hand does not change where on the ball it belongs at the
+    moment the other one arrives.
+    """
     shoulders = np.mean([placed.shoulders[side] for side in ("l", "r")], axis=0)
-    found = contacts(
-        ball_centre=ball_centre_cm,
-        radius_cm=radius_cm,
-        toward_catcher=shoulders - np.asarray(ball_centre_cm, dtype=np.float64),
-        up=np.asarray(WORLD_UP, dtype=np.float64),
-        spread_degrees=spread_degrees,
-        sides=sides,
-    )
+    if not isinstance(ball_centre_cm, dict):
+        ball_centre_cm = {side: ball_centre_cm for side in sides}
+
+    found = {}
+    for side in sides:
+        centre = np.asarray(ball_centre_cm[side], dtype=np.float64)
+        found[side] = contacts(
+            ball_centre=centre,
+            radius_cm=radius_cm,
+            toward_catcher=shoulders - centre,
+            up=np.asarray(WORLD_UP, dtype=np.float64),
+            spread_degrees=spread_degrees,
+            sides=sides,
+        )[side]
     targets = grip_targets(shapes, found)
 
     error = solver2.PositionErrorFunction(character, weight=1.0)
@@ -148,13 +175,20 @@ def trunk_constraints(
 
 
 def foot_constraints(
-    character, index: dict[str, int], rest_positions: np.ndarray
+    character, index: dict[str, int], targets: dict
 ) -> solver2.PositionErrorFunction:
+    """Pin the feet where the movement puts them.
+
+    This used to pin them at their rest position and never read the movement,
+    so under the possession model a drill that runs and jumps kept both feet
+    on the spot. It takes the targets now, from the same function the movement
+    solver uses.
+    """
     error = solver2.PositionErrorFunction(character, weight=1.0)
-    for joint in ("l_foot", "r_foot"):
+    for joint, target in targets.items():
         error.add_constraint(
             index[joint],
-            target=np.asarray(rest_positions[index[joint]], dtype=np.float32),
+            target=np.asarray(target, dtype=np.float32),
             offset=np.zeros(3, dtype=np.float32),
             weight=FOOT_WEIGHT,
         )
@@ -180,14 +214,18 @@ def elbow_poles(
         slack = max(0.0, min(1.0, 1.0 - span / max(reach_cm, 1e-6)))
         if slack <= 0.0:
             continue
-        pole = midpoint + slack * np.array(
-            [sign * ELBOW_POLE_OUT_CM, -ELBOW_POLE_DOWN_CM, 0.0]
+        # Down and out relative to the athlete, not to the world. On the
+        # only drill in the library with a large authored turn, a world aligned
+        # pole pushes the elbow across her body instead of away from it.
+        pole = midpoint + slack * (
+            placed.rotation
+            @ np.array([sign * ELBOW_POLE_OUT_CM, -ELBOW_POLE_DOWN_CM, 0.0])
         )
         error.add_constraint(
             index[f"{side}_lowarm"],
             target=np.asarray(pole, dtype=np.float32),
             offset=np.zeros(3, dtype=np.float32),
-            weight=ELBOW_POLE_WEIGHT * slack,
+            weight=CONTACT_POLE_WEIGHT * slack,
         )
     return error
 
@@ -286,7 +324,11 @@ def solve_contact(
                 character, index, placed,
                 {side: targets[f"{side}_wrist"] for side in method.sides},
             ),
-            foot_constraints(character, index, rest_positions),
+            foot_constraints(
+                character,
+                index,
+                foot_targets(track, phase, placed, rest_positions, index, reach_cm),
+            ),
             elbow_poles(character, index, placed, targets, reach_cm, method.sides),
             solver2.LimitErrorFunction(character, weight=LIMIT_WEIGHT),
         ],

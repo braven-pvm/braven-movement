@@ -5,6 +5,10 @@ One rule carries the whole model:
     Possession transfers at contact. Before contact the ball drives the
     athlete. After contact the athlete drives the ball.
 
+A drill that passes the ball back runs the sentence twice. She takes it, she
+drives it, and at the release the hands stop being on it and it is a thing in
+flight again, carrying the speed she gave it.
+
 That sentence is also a statement about frames of reference, and this module is
 where it becomes arithmetic. Before contact the ball flies through the stance
 frame, which is fixed at the start of the drill and does not move with the
@@ -69,13 +73,25 @@ READY_FRACTION = 0.82
 # How far inside her reach the ball must come before she takes it. A person
 # catches with a bent elbow, both because a straight one cannot give with the
 # ball and because it is the configuration in which the arm has stopped being
-# able to steer. Measured across four arrival points, refer to the module
-# docstring.
-CONTACT_FRACTION = 0.92
+# able to steer.
+#
+# Measured by sweeping it across six drills. Raising it straightens the arm at
+# contact, from 95 degrees of elbow flexion at 0.86 to 59 at full reach, and
+# costs nothing in smoothness until full reach, where the spike and the worst
+# step both jump. 0.97 is the straightest arm that is still off the
+# singularity.
+CONTACT_FRACTION = 0.97
 
 
 class PossessionError(ValueError):
     pass
+
+
+# Gravity, in centimetres per second squared. A released ball is a thrown ball.
+GRAVITY_CM = 981.0
+# How long the hands keep extending along the line of the pass after she lets
+# go. The manual asks for it directly: extend through the ball as it goes.
+FOLLOW_THROUGH_SECONDS = 0.12
 
 
 @dataclass(frozen=True)
@@ -88,6 +104,8 @@ class Frame:
     presented: np.ndarray
     state: str
     holding: bool
+    # Which hands are on the ball. Empty before contact and after release.
+    sides: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -222,6 +240,10 @@ def resolve(
     arm_length_cm: float,
     ready_fraction: float = READY_FRACTION,
     contact_fraction: float = CONTACT_FRACTION,
+    ready_offset: BallOffset | None = None,
+    release_phase: float | None = None,
+    sides_at=None,
+    seconds_per_phase: float = 0.0,
 ) -> Possession:
     """Return where the ball is on every frame, and where the hands should go."""
     if not (len(phases) == len(athlete_frames) == len(shoulder_mids)):
@@ -254,22 +276,72 @@ def resolve(
             after_contact,
         )
 
-    def ready_point(number: int) -> np.ndarray:
-        """Hands up and in front, aimed at the passer, at the waiting distance."""
+    def toward(number: int, target: np.ndarray, distance_cm: float) -> np.ndarray:
+        """A point on the line to the target, no further out than she reaches."""
         shoulder = np.asarray(shoulder_mids[number], dtype=np.float64)
-        toward = flight[0] - shoulder
-        distance = float(np.linalg.norm(toward))
-        if distance < 1e-6:
+        along = np.asarray(target, dtype=np.float64) - shoulder
+        span = float(np.linalg.norm(along))
+        if span < 1e-6:
             return shoulder
-        return shoulder + toward * (ready_distance / distance)
+        return shoulder + along * (min(span, distance_cm) / span)
+
+    def ready_point(number: int) -> np.ndarray:
+        """Where she waits.
+
+        Aimed at the passer by default, which is the manual's hands up and in
+        front, showing the arm span. A drill may say otherwise: a high deflect
+        waits with the hands beside the head, and aiming those at a passer
+        standing two metres away put them at her waist.
+        """
+        if ready_offset is not None:
+            return toward(
+                number, athlete_frames[number].place(ready_offset), ready_distance
+            )
+        return toward(number, flight[0], ready_distance)
+
+    def carried_at(number: int) -> np.ndarray:
+        return athlete_frames[number].place(
+            sample_offsets(carried_phases, carried_offsets, phases[number])
+        )
+
+    # Where the ball is when she lets go, and how fast. A released ball keeps
+    # the speed she gave it, which is what makes the pass back a pass rather
+    # than the ball stopping in mid air.
+    thrown_from = None
+    if contact is not None and release_phase is not None:
+        going = [n for n, phase in enumerate(phases) if phase >= release_phase]
+        if going and going[0] > contact:
+            first = going[0]
+            step = seconds_per_phase * (phases[first] - phases[first - 1])
+            velocity = (
+                (carried_at(first) - carried_at(first - 1)) / step
+                if step > 1e-9
+                else np.zeros(3)
+            )
+            thrown_from = (first, carried_at(first), velocity)
 
     frames = []
     for number, phase in enumerate(phases):
-        holding = contact is not None and number >= contact
-        if holding:
-            centre = athlete_frames[number].place(
-                sample_offsets(carried_phases, carried_offsets, phase)
-            )
+        released = thrown_from is not None and number >= thrown_from[0]
+        holding = contact is not None and number >= contact and not released
+        if released:
+            thrown_at, origin, velocity = thrown_from
+            at = seconds_per_phase * (phase - phases[thrown_at])
+            centre = origin + velocity * at
+            centre[1] -= 0.5 * GRAVITY_CM * at * at
+            state = "released"
+            # The hands follow the line the pass went out on, not the ball
+            # itself. The ball falls, and following it down turned a deflect
+            # into the athlete watching her hands drop to her waist.
+            #
+            # The aim point travels out along that line rather than appearing
+            # at the end of it. Placing it two metres away straight away made
+            # the hands jump 25 cm outward on the release frame, which showed
+            # up as a 50 degree elbow step on every drill that passes the ball
+            # back.
+            along_the_pass = origin + velocity * min(at, FOLLOW_THROUGH_SECONDS)
+        elif holding:
+            centre = carried_at(number)
             state = "carried"
         else:
             centre = flight[number]
@@ -277,7 +349,15 @@ def resolve(
 
         if holding:
             presented = centre
-        elif phase <= ball.release_phase or contact is None:
+        elif released:
+            # Follow the ball she has just passed, out to where she can still
+            # reach, then no further. Clamping this at the waiting distance
+            # instead made her pull her hands back the moment she let go, and
+            # the manual asks for the opposite: extend through the ball as it
+            # goes. It is the same rule as presenting, so nothing jumps at the
+            # release.
+            presented = toward(number, along_the_pass, contact_distance)
+        elif contact is None or phase <= ball.release_phase:
             presented = ready_point(number)
         else:
             # Leave the ready position when the passer lets go, and arrive at
@@ -290,13 +370,14 @@ def resolve(
                 phases[contact] - ball.release_phase, 1e-9
             )
             travel = min(1.0, max(0.0, travel)) ** 2
-            start = ready_point(number)
-            presented = start + (flight[contact] - start) * travel
+            waiting = ready_point(number)
+            presented = waiting + (flight[contact] - waiting) * travel
 
         frames.append(
             Frame(
                 number=number,
                 phase=phase,
+                sides=() if sides_at is None else tuple(sides_at(phase)),
                 centre=centre,
                 presented=presented,
                 state=state,

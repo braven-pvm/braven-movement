@@ -1,7 +1,8 @@
 {
   "movementId": "netball_double_foot_landing",
-  "frames": 44,
-  "framesPerSecond": 24,
+  "frames": 110,
+  "framesPerSecond": 60,
+  "rateNote": "60 frames per second, not 24. A real pass at 6 m per second crosses the whole reachable span in two frames at 24, and the largest elbow change between frames falls from 9.4 degrees at 24 to 4.4 at 60. Nothing about the movement changes with the rate; there were not enough frames to hold it.",
   "notes": "The first footwork drill, and the first movement where the feet move and the hips travel. The athlete runs in, takes off, is briefly airborne with both feet clear of the ground, catches the ball in flight, and lands on both feet together. Foot placements are relative to the hips in arm lengths, with up measured from the ground, so a foot at up 0 is on the floor.",
   "stance": {
     "hipDropFraction": 0.14

@@ -31,10 +31,12 @@ from ball_track import ball_path, has_ball, load_ball, stance_frame  # noqa: E40
 from contact_solve import (  # noqa: E402
     close_fingers,
     contact_constraints,
+    contact_miss,
     elbow_poles,
     foot_constraints,
     measure_contact,
     pinned_parameters,
+    seeds,
     solver_options,
     trunk_constraints,
 )
@@ -45,6 +47,7 @@ from movement_engine import (  # noqa: E402
     SolveError,
     definition_path,
     enabled_parameters,
+    foot_targets,
     joint_positions,
     library,
     load_character,
@@ -150,12 +153,23 @@ def solve_movement(character, movement_id: str, variant: str | None = None) -> d
         after_contact=method.after_contact,
         reach_limit_cm=envelope.far_cm + radius_cm,
         arm_length_cm=reach_cm,
+        ready_offset=method.ready,
+        release_phase=method.release_phase,
+        sides_at=method.sides_at,
+        seconds_per_phase=(track.frames - 1) / track.frames_per_second,
     )
     if not held.caught:
         raise SolveError(
             f"{movement_id}: the ball never comes inside the athlete's reach, so "
             "there is no catch to solve. That is a dropped ball, not a defect."
         )
+
+    # When the free hand starts closing on the ball, and how long it takes.
+    joining_from = None
+    joining_span = 0.0
+    if method.second_hand_phase is not None:
+        joining_from = held.frames[held.contact_frame].phase
+        joining_span = method.second_hand_phase - joining_from
 
     enabled = enabled_parameters(character)
     started = time.perf_counter()
@@ -166,9 +180,31 @@ def solve_movement(character, movement_id: str, variant: str | None = None) -> d
 
     for frame in held.frames:
         number, phase = frame.number, frame.phase
+        # Every hand the drill uses is shaped on every frame. A hand that is
+        # not on the ball is shaped around the point it is moving toward, which
+        # before contact is what she is presenting at and between contact and
+        # the second hand joining is a point closing on the ball.
+        sides = method.every_side
+        # sides_at knows about the release and the second hand, not about
+        # contact, so a hand only counts as on the ball once she has it.
+        on_ball = frame.sides if frame.holding else ()
+        centres = {}
+        for side in sides:
+            if side in on_ball:
+                centres[side] = frame.centre
+            elif joining_from is None or not frame.holding:
+                centres[side] = frame.presented
+            else:
+                travel = min(
+                    1.0,
+                    max(0.0, (phase - joining_from) / max(joining_span, 1e-9)),
+                ) ** 2
+                centres[side] = (
+                    frame.presented + (frame.centre - frame.presented) * travel
+                )
         contact_error, found = contact_constraints(
-            character, index, placed[number], shapes, frame.presented,
-            radius_cm, method.spread_degrees, method.sides,
+            character, index, placed[number], shapes, centres,
+            radius_cm, method.spread_degrees, sides,
         )
         targets = grip_targets(shapes, found)
         continuity = solver2.ModelParametersErrorFunction(character)
@@ -179,11 +215,18 @@ def solve_movement(character, movement_id: str, variant: str | None = None) -> d
                 contact_error,
                 trunk_constraints(
                     character, index, placed[number],
-                    {side: targets[f"{side}_wrist"] for side in method.sides},
+                    {side: targets[f"{side}_wrist"] for side in sides},
                 ),
-                foot_constraints(character, index, rest_positions),
+                foot_constraints(
+                    character,
+                    index,
+                    foot_targets(
+                        track, phase, placed[number], rest_positions, index,
+                        reach_cm,
+                    ),
+                ),
                 elbow_poles(
-                    character, index, placed[number], targets, reach_cm, method.sides
+                    character, index, placed[number], targets, reach_cm, sides
                 ),
                 continuity,
                 solver2.LimitErrorFunction(character, weight=LIMIT_WEIGHT),
@@ -191,21 +234,47 @@ def solve_movement(character, movement_id: str, variant: str | None = None) -> d
         )
         solver = solver2.GaussNewtonSolver(function, solver_options())
         solver.set_enabled_parameters(enabled)
-        solved = np.asarray(
-            solver.solve(previous.reshape(-1, 1)), dtype=np.float32
-        ).reshape(-1)
+
+        def run(seed: np.ndarray) -> np.ndarray:
+            answer = np.asarray(
+                solver.solve(np.asarray(seed, dtype=np.float32).reshape(-1, 1)),
+                dtype=np.float32,
+            ).reshape(-1)
+            return np.asarray(
+                solver.solve(answer.reshape(-1, 1)), dtype=np.float32
+            ).reshape(-1)
+
         if number == 0:
+            # The first frame is a cold start: there is no previous pose and the
+            # rest pose has the arms by the sides. Solving it once from rest
+            # left the athlete in a different arm configuration from frame one,
+            # and the elbow moved 33 degrees over the first few frames while the
+            # target barely moved. Every later frame continues from its
+            # neighbour and needs none of this.
+            best, solved = float("inf"), None
+            for seed in seeds(character, rest, None):
+                answer = run(seed)
+                if not np.all(np.isfinite(answer)):
+                    continue
+                miss = contact_miss(
+                    joint_positions(character, answer), index, targets
+                )
+                if miss < best:
+                    best, solved = miss, answer
+            if solved is None:
+                solved = previous.copy()
+        else:
             solved = np.asarray(
-                solver.solve(solved.reshape(-1, 1)), dtype=np.float32
+                solver.solve(previous.reshape(-1, 1)), dtype=np.float32
             ).reshape(-1)
         if not np.all(np.isfinite(solved)):
             solved = previous.copy()
 
         # The fingers close on the ball only once she has it. Before that they
         # stay open, which is what a hand waiting to receive actually does.
-        if frame.holding:
+        if frame.holding and frame.sides:
             solved = close_fingers(
-                character, index, solved, frame.centre, radius_cm, method.sides
+                character, index, solved, frame.centre, radius_cm, frame.sides
             )
         motion[number] = solved
         previous = solved
@@ -222,6 +291,7 @@ def solve_movement(character, movement_id: str, variant: str | None = None) -> d
         entry["footHeightGapCm"] = round(abs(left_up - right_up), 2)
         entry["ballState"] = frame.state
         entry["holdingTheBall"] = frame.holding
+        entry["handsOnTheBall"] = len(frame.sides)
         measurements.append(entry)
 
     seconds = time.perf_counter() - started
@@ -255,7 +325,7 @@ def contact_report(character, result: dict) -> dict:
             "points": result["points"][number],
             "index": result["index"],
             "shapes": result["shapes"],
-            "sides": result["technique"].sides,
+            "sides": frame.sides or result["technique"].sides,
             "ballCentreCm": frame.centre,
             "radiusCm": result["radiusCm"],
             "targets": {},

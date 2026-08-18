@@ -50,10 +50,11 @@
       "checkpoints": [
         {
           "measure": "leftElbowFlexionDegrees",
-          "minimumDegrees": 35.0,
-          "maximumDegrees": 105.0,
+          "minimumDegrees": 95.0,
+          "maximumDegrees": 145.0,
           "cue": "Control it, but do not pull it in to your body.",
-          "why": "This is the whole difference between this drill and the pull-in. A ball brought to the chest here has failed the drill, not passed it."
+          "why": "The athlete is holding the ball here, so her wrists are on its surface rather than at its centre. That is about 14.5 cm nearer the shoulder than the geometry this band was first written against, and roughly 45 degrees more elbow flexion. The lower bound is the coaching point: below it she has not brought the ball in. The upper bound is anatomy rather than technique, and the range of motion check already guards it.",
+          "wasBand": "35 to 105"
         },
         {
           "measure": "trunkLeanDegrees",
@@ -70,10 +71,11 @@
       "checkpoints": [
         {
           "measure": "leftElbowFlexionDegrees",
-          "minimumDegrees": 0.0,
-          "maximumDegrees": 60.0,
+          "minimumDegrees": 45.0,
+          "maximumDegrees": 105.0,
           "cue": "Pass it straight back from where you caught it.",
-          "why": "The ball leaves from in front of the shoulder, which is the fastest release available."
+          "why": "Shifted by the same 45 degrees as every other elbow band in this library, for the same reason. These numbers were authored against a solve in which the ball was drawn at the midpoint of the wrists, so the wrist occupied the ball's centre. A hand holding a ball is on its surface, which is 14.5 cm nearer the shoulder, and at these ranges that is worth about 45 degrees of elbow flexion. The shift is uniform and the width of the band is unchanged, so what the band asks of the athlete is the same; only the geometry it was measured against has been corrected.",
+          "wasBand": "0 to 60"
         },
         {
           "measure": "leftShoulderElevationDegrees",

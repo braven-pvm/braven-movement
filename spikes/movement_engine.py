@@ -51,10 +51,28 @@ FORBIDDEN = ("scale", "flexible")
 # what produces the power position.
 FOOT_WEIGHT = 12.0
 # Joint limits have to outrank every target, or the solver pays the penalty and
-# bends a joint past where a person bends. At weight 5 the whole library solved
-# outside its limits, worst error 70.98 on the high deflect. At 200 the worst is
-# 0.005, and the hands reach their targets slightly better rather than worse.
-LIMIT_WEIGHT = 200.0
+# bends a joint past where a person bends.
+#
+# 200 was chosen when the limit check reported a squared error, which made a
+# hundredth of a degree look the same as six degrees. Reading the overshoot in
+# degrees instead showed the collarbone sitting 4 degrees outside its range on
+# every drill in the library, and 24 on the high deflect. The limit term is
+# soft, so the overshoot scales with the weight: 200 gives 4.1 degrees, 4000
+# gives 0.70, 20000 gives 0.157 and 30000 gives 0.09, which is a fiftieth of
+# what a goniometer resolves. The library stays green at all of them and the
+# palms stay on the ball to within half a millimetre.
+#
+# Past 30000 it starts to cost movement rather than buy anatomy. The outside
+# hand hooks drill turns 45 degrees away and takes the ball one handed across
+# the body, so it is already near the edge of her range, and the harder the
+# limit pushes back the sharper that drill gets: its worst spike against
+# neighbouring frames is 2.4 at 20000, 5.6 at 30000 and 9.0 at 60000. 30000 is
+# the last weight where the limits pass and the movement is still smooth.
+#
+# It also fixed the footwork drill, which was pressing against its own limits
+# and wandering as it came off them. Its worst spike against neighbouring
+# frames fell from 9.22 to 1.08.
+LIMIT_WEIGHT = 30000.0
 # The wrist had a position target and nothing else, so the hand was free to spin
 # about the forearm between frames. That is what threw the fingers around: the
 # thumb tip moved 17.7 cm in a single frame on the jump catch while the fingers
@@ -248,6 +266,46 @@ def measure_frame(points: np.ndarray, index: dict[str, int], phase: float) -> di
     return entry
 
 
+def foot_targets(
+    track: MotionTrack,
+    phase: float,
+    placed: TrunkFrame,
+    rest_positions: np.ndarray,
+    index: dict[str, int],
+    reach_cm: float,
+) -> dict[str, np.ndarray]:
+    """Return where each foot belongs at this phase.
+
+    A movement that keys its feet places them relative to the hips and turns
+    them with the trunk. One that does not leaves them where the athlete
+    started, which is what every planted drill wants.
+    """
+    placements = track.feet_at(phase)
+    if placements is None:
+        return {
+            joint: rest_positions[index[joint]] for joint in ("l_foot", "r_foot")
+        }
+    # Height is measured from the ground, not from the hips, so a planted foot
+    # stays on the floor however the hips move.
+    ground = float(rest_positions[index["l_foot"]][1])
+    targets: dict[str, np.ndarray] = {}
+    for joint, placement, sign in (
+        ("l_foot", placements[0], 1.0),
+        ("r_foot", placements[1], -1.0),
+    ):
+        local = np.array(
+            [
+                sign * placement.across * reach_cm,
+                0.0,
+                placement.ahead * reach_cm,
+            ]
+        )
+        point = placed.root + placed.rotation @ local
+        point[1] = ground + placement.up * reach_cm
+        targets[joint] = point
+    return targets
+
+
 def scapula_targets(
     placed: TrunkFrame, hand_targets: dict[str, np.ndarray]
 ) -> dict[str, np.ndarray]:
@@ -403,32 +461,10 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
                 )
 
         # Feet either follow the movement or stay where the athlete started.
-        placements = track.feet_at(phase)
-        if placements is None:
-            foot_targets = {
-                "l_foot": rest_positions[index["l_foot"]],
-                "r_foot": rest_positions[index["r_foot"]],
-            }
-        else:
-            ground = float(rest_positions[index["l_foot"]][1])
-            foot_targets = {}
-            for joint, placement, sign in (
-                ("l_foot", placements[0], 1.0),
-                ("r_foot", placements[1], -1.0),
-            ):
-                local = np.array(
-                    [
-                        sign * placement.across * reach_cm,
-                        0.0,
-                        placement.ahead * reach_cm,
-                    ]
-                )
-                point = root_target + rotation @ local
-                # Height is measured from the ground, not from the hips, so a
-                # planted foot stays on the floor however the hips move.
-                point[1] = ground + placement.up * reach_cm
-                foot_targets[joint] = point
-        for joint, target in foot_targets.items():
+        placed_feet = foot_targets(
+            track, phase, placed, rest_positions, index, reach_cm
+        )
+        for joint, target in placed_feet.items():
             position_error.add_constraint(
                 index[joint],
                 target=np.asarray(target, dtype=np.float32),

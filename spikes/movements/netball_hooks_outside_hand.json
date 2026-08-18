@@ -57,10 +57,11 @@
       "checkpoints": [
         {
           "measure": "leftElbowFlexionDegrees",
-          "minimumDegrees": 25.0,
-          "maximumDegrees": 120.0,
+          "minimumDegrees": 100.0,
+          "maximumDegrees": 150.0,
           "cue": "Second hand on. Square up as you gather it.",
-          "why": "One hand controls, two hands secure. The turn unwinds as the second hand arrives."
+          "why": "The athlete is holding the ball here, so her wrists are on its surface rather than at its centre. That is about 14.5 cm nearer the shoulder than the geometry this band was first written against, and roughly 45 degrees more elbow flexion. The lower bound is the coaching point: below it she has not brought the ball in. The upper bound is anatomy rather than technique, and the range of motion check already guards it.",
+          "wasBand": "25 to 120"
         },
         {
           "measure": "trunkTurnDegrees",
@@ -77,10 +78,11 @@
       "checkpoints": [
         {
           "measure": "leftElbowFlexionDegrees",
-          "minimumDegrees": 45.0,
-          "maximumDegrees": 130.0,
+          "minimumDegrees": 105.0,
+          "maximumDegrees": 150.0,
           "cue": "Pull it in to your chest and pass back.",
-          "why": "The manual finishes this drill with a pass back to the passer, so the ball has to be secured first."
+          "why": "The athlete is holding the ball here, so her wrists are on its surface rather than at its centre. That is about 14.5 cm nearer the shoulder than the geometry this band was first written against, and roughly 45 degrees more elbow flexion. The lower bound is the coaching point: below it she has not brought the ball in. The upper bound is anatomy rather than technique, and the range of motion check already guards it.",
+          "wasBand": "45 to 130"
         },
         {
           "measure": "trunkLeanDegrees",

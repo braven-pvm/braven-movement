@@ -1,8 +1,14 @@
 """Solve, measure, grade and export every movement in the library.
 
 This is the check that the authoring loop scales. Adding a skill should mean
-adding two JSON files and nothing else. If that is true, this script picks the
-new skill up with no edit.
+adding JSON files and nothing else. If that is true, this script picks the new
+skill up with no edit.
+
+A drill that has a ball trajectory and a technique is solved by the possession
+model: the ball is the reason the athlete moves and her hands are solved rather
+than authored. A drill that has neither is solved the old way, from hand keys.
+Both produce the same measurements, so the coaching layer cannot tell them
+apart and does not need to.
 
     pixi run python build_library.py
 """
@@ -34,6 +40,13 @@ from movement_engine import (  # noqa: E402
 from movement_definition import (  # noqa: E402
     MovementDefinitionError,
     load as load_definition,
+)
+from ball_track import has_ball  # noqa: E402
+from possession_solve import solve_movement, spike_report  # noqa: E402
+from technique import (  # noqa: E402
+    has_technique,
+    load_technique,
+    technique_path,
 )
 
 OUTPUT = SPIKE_DIR / "poc-output" / "library"
@@ -68,8 +81,17 @@ def build_one(character, movement_id: str) -> dict:
             "file name, so the library cannot pair them"
         )
 
+    possession = (
+        has_ball(movement_id)
+        and has_technique(movement_id)
+        and load_technique(technique_path(movement_id)).possession_ready
+    )
     started = time.perf_counter()
-    result = solve(character, track)
+    result = (
+        solve_movement(character, movement_id)
+        if possession
+        else solve(character, track)
+    )
     solve_seconds = time.perf_counter() - started
 
     measurements = result["measurements"]
@@ -79,6 +101,21 @@ def build_one(character, movement_id: str) -> dict:
     series = [frame["leftElbowFlexionDegrees"] for frame in measurements]
     steps = [abs(series[i + 1] - series[i]) for i in range(len(series) - 1)]
     leans = [frame["trunkLeanDegrees"] for frame in measurements]
+    possession_receipt = {}
+    if possession:
+        held = result["possession"]
+        possession_receipt = {
+            "contactFrame": held.contact_frame,
+            "contactPhase": round(held.frames[held.contact_frame].phase, 4),
+            "turnedByDegrees": result["turnedByDegrees"],
+            "biggestBallStepCm": round(held.biggest_ball_step_cm(), 2),
+            "ballStepAtHandoverCm": round(
+                held.ball_step_at(held.contact_frame), 2
+            ),
+            "worstSpikeAgainstNeighbours": spike_report(measurements)[
+                "worstNeighbourRatio"
+            ],
+        }
     gaps = [
         abs(frame["leftElbowFlexionDegrees"] - frame["rightElbowFlexionDegrees"])
         for frame in measurements
@@ -107,7 +144,10 @@ def build_one(character, movement_id: str) -> dict:
             "symmetric": track.is_symmetric(),
             "frames": track.frames,
             "framesPerSecond": track.frames_per_second,
-            "maxHandTargetMissCm": round(max(result["misses"]), 3),
+            "drivenBy": "the ball" if possession else "hand keys",
+            "maxHandTargetMissCm": (
+                None if possession else round(max(result["misses"]), 3)
+            ),
             "solveMillisecondsPerFrame": round(
                 solve_seconds / track.frames * 1000, 1
             ),
@@ -123,6 +163,7 @@ def build_one(character, movement_id: str) -> dict:
             "status": "passed" if not violations else "failed",
             "violations": violations,
         },
+        "possession": possession_receipt,
         "coaching": assessment.to_receipt(),
         "exports": {
             "glb": {
@@ -185,8 +226,13 @@ def main() -> int:
             f"{flag}{receipt['skill']:<34} {met}/{checks} checks   "
             f"{receipt['movement']['solveMillisecondsPerFrame']:>4} ms/frame   "
             f"lean {receipt['measurement']['maxTrunkLeanDegrees']:>5.2f} deg   "
-            f"{'symmetric' if receipt['movement']['symmetric'] else 'asymmetric'}"
+            f"{receipt['movement']['drivenBy']}"
         )
+        if receipt["anatomy"]["violations"]:
+            print(
+                f"     anatomy: {len(receipt['anatomy']['violations'])} frames "
+                f"outside range, first is {receipt['anatomy']['violations'][0]}"
+            )
         if met != checks:
             for phase, rows in coaching["phases"].items():
                 for row in rows:

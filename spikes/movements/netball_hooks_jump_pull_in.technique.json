@@ -1,0 +1,30 @@
+{
+  "movementId": "netball_hooks_jump_pull_in",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger",
+  "notes": "Quick catch and release with control. Pull the ball into the chest as soon as you catch it, then use the momentum of the catch to pass it back as soon as possible.",
+  "hands": "both",
+  "turnToBall": true,
+  "grip": {
+    "spreadDegrees": 90,
+    "faceBall": true
+  },
+  "release": {
+    "atPhase": 0.95
+  },
+  "afterContact": [
+    {
+      "atPhase": 0.82,
+      "name": "pull_in",
+      "across": 0.0,
+      "up": 0.2,
+      "ahead": 0.6
+    },
+    {
+      "atPhase": 0.95,
+      "name": "release",
+      "across": 0.0,
+      "up": 0.3,
+      "ahead": 0.94
+    }
+  ]
+}

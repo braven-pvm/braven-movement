@@ -1,0 +1,30 @@
+{
+  "movementId": "netball_hooks_outside_hand",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger",
+  "notes": "The hand closest to the passer controls the ball, then the other joins to pull it in. The trunk turn is authored here rather than derived, because facing away is the drill.",
+  "hands": "right",
+  "turnToBall": false,
+  "grip": {
+    "spreadDegrees": 90,
+    "faceBall": true
+  },
+  "secondHand": {
+    "atPhase": 0.62
+  },
+  "afterContact": [
+    {
+      "atPhase": 0.62,
+      "name": "gather",
+      "across": -0.06,
+      "up": 0.34,
+      "ahead": 0.78
+    },
+    {
+      "atPhase": 1.0,
+      "name": "pull_in",
+      "across": 0.0,
+      "up": 0.1,
+      "ahead": 0.55
+    }
+  ]
+}

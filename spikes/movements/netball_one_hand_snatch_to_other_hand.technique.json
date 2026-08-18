@@ -1,0 +1,30 @@
+{
+  "movementId": "netball_one_hand_snatch_to_other_hand",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger",
+  "notes": "One hand takes it and the other joins. The manual puts this in capitals: get 2 hands on the ball as quick as possible.",
+  "hands": "right",
+  "turnToBall": false,
+  "grip": {
+    "spreadDegrees": 90,
+    "faceBall": true
+  },
+  "secondHand": {
+    "atPhase": 0.6
+  },
+  "afterContact": [
+    {
+      "atPhase": 0.6,
+      "name": "join",
+      "across": -0.06,
+      "up": 0.36,
+      "ahead": 0.8
+    },
+    {
+      "atPhase": 1.0,
+      "name": "pull_in",
+      "across": 0.0,
+      "up": 0.1,
+      "ahead": 0.55
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "movementId": "netball_deflect_high",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger",
+  "notes": "Not a catch. The ball is controlled beside the head and sent on across the body, so the athlete has it for a fifth of the drill and then it is in flight again.",
+  "hands": "both",
+  "turnToBall": false,
+  "grip": {
+    "spreadDegrees": 100,
+    "faceBall": true
+  },
+  "release": {
+    "atPhase": 0.8
+  },
+  "afterContact": [
+    {
+      "atPhase": 0.62,
+      "name": "control",
+      "across": 0.22,
+      "up": 0.72,
+      "ahead": 0.5
+    },
+    {
+      "atPhase": 0.8,
+      "name": "send_on",
+      "across": -0.2,
+      "up": 0.74,
+      "ahead": 0.62
+    }
+  ],
+  "ready": {
+    "across": 0.3,
+    "up": 0.72,
+    "ahead": 0.3
+  },
+  "readyNote": "Hands up beside the head, which is where the manual tells the passer to put the ball. Aiming the waiting hands at a passer two metres away instead left them at her waist."
+}

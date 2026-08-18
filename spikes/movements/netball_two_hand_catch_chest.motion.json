@@ -1,7 +1,8 @@
 {
   "movementId": "netball_two_hand_catch_chest",
-  "frames": 40,
-  "framesPerSecond": 24,
+  "frames": 98,
+  "framesPerSecond": 60,
+  "rateNote": "60 frames per second, not 24. A real pass at 6 m per second crosses the whole reachable span in two frames at 24, and the largest elbow change between frames falls from 9.4 degrees at 24 to 4.4 at 60. Nothing about the movement changes with the rate; there were not enough frames to hold it.",
   "notes": "Hand positions are fractions of arm length, measured from the chest. across is out to the side, up is above the chest, ahead is in front. 1.0 ahead is a fully straight arm reaching forward.",
   "stance": {
     "hipDropFraction": 0.16

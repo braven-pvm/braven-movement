@@ -1,0 +1,30 @@
+{
+  "movementId": "netball_two_hand_snatch_straight_back",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger",
+  "notes": "The manual's one difference from the pull in drill: pass the ball straight back to the passer, without pulling it to the body. So the ball never comes closer than 0.74 of an arm length.",
+  "hands": "both",
+  "turnToBall": true,
+  "grip": {
+    "spreadDegrees": 90,
+    "faceBall": true
+  },
+  "release": {
+    "atPhase": 0.9
+  },
+  "afterContact": [
+    {
+      "atPhase": 0.68,
+      "name": "control",
+      "across": 0.0,
+      "up": 0.34,
+      "ahead": 0.74
+    },
+    {
+      "atPhase": 0.9,
+      "name": "straight_back",
+      "across": 0.0,
+      "up": 0.3,
+      "ahead": 1.02
+    }
+  ]
+}

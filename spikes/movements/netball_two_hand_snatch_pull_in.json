@@ -10,10 +10,11 @@
       "checkpoints": [
         {
           "measure": "leftElbowFlexionDegrees",
-          "minimumDegrees": 15.0,
-          "maximumDegrees": 70.0,
+          "minimumDegrees": 50.0,
+          "maximumDegrees": 105.0,
           "cue": "Power position, ready to move, hands and arms ready to work.",
-          "why": "The manual keeps the feet static and makes the hands and arms do the catching, so the arms must start ready."
+          "why": "She meets the ball with her palms on its surface, so the wrist sits about 14.5 cm inside the ball's centre, which is where this band first put it. A two hand catch on a size 5 netball at the edge of the reach measures about 64 degrees of elbow flexion, and 40 was not reachable at all. The lower bound now guards the real fault at the other end: an arm caught straight cannot give with the ball.",
+          "wasBand": "15 to 70"
         },
         {
           "measure": "leftShoulderElevationDegrees",
@@ -77,24 +78,27 @@
       "checkpoints": [
         {
           "measure": "leftElbowFlexionDegrees",
-          "minimumDegrees": 55.0,
-          "maximumDegrees": 130.0,
+          "minimumDegrees": 105.0,
+          "maximumDegrees": 150.0,
           "cue": "As soon as you catch it, pull the ball in to your chest.",
-          "why": "The pull-in is the skill. It absorbs the ball and secures it away from a defender."
+          "why": "The athlete is holding the ball here, so her wrists are on its surface rather than at its centre. That is about 14.5 cm nearer the shoulder than the geometry this band was first written against, and roughly 45 degrees more elbow flexion. The lower bound is the coaching point: below it she has not brought the ball in. The upper bound is anatomy rather than technique, and the range of motion check already guards it.",
+          "wasBand": "55 to 130"
         },
         {
           "measure": "rightElbowFlexionDegrees",
-          "minimumDegrees": 55.0,
-          "maximumDegrees": 130.0,
+          "minimumDegrees": 105.0,
+          "maximumDegrees": 150.0,
           "cue": "Pull in with two hands, not one.",
-          "why": "The manual names this skill 2 Hand Snatches and Pull In. One hand pulling in is a different skill."
+          "why": "The athlete is holding the ball here, so her wrists are on its surface rather than at its centre. That is about 14.5 cm nearer the shoulder than the geometry this band was first written against, and roughly 45 degrees more elbow flexion. The lower bound is the coaching point: below it she has not brought the ball in. The upper bound is anatomy rather than technique, and the range of motion check already guards it.",
+          "wasBand": "55 to 130"
         },
         {
           "measure": "leftShoulderElevationDegrees",
-          "minimumDegrees": 10.0,
-          "maximumDegrees": 60.0,
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 50.0,
           "cue": "Ball in to the chest, ready to release again.",
-          "why": "The manual wants a quick catch and release, so the finish must already be a passing position."
+          "why": "With the ball at the chest and the elbows folded, the upper arm hangs. The fault a coach is watching for here is the elbow winging out, which reads as high elevation, so the meaningful bound is the upper one. The old lower bound of 10 degrees asked the upper arm to be lifted while the ball was tucked in, which is the opposite of the cue.",
+          "wasBand": "10 to 60"
         },
         {
           "measure": "leftKneeFlexionDegrees",
