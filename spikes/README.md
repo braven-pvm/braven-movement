@@ -1,5 +1,58 @@
 # Spikes
 
+## The possession model, milestone 1
+
+The engine used to derive the ball from the hands: the hands were authored, then
+the ball was drawn at the midpoint of the wrists. So the ball followed the
+athlete, it could never be the reason she moved, and it sat through her wrists
+instead of in her palms. [BALL_FIRST_DESIGN.md](BALL_FIRST_DESIGN.md) inverts
+that. A movement becomes a ball trajectory and a technique, and the hands are
+solved rather than authored.
+
+Milestone 1 is the smallest step that can fail honestly. It places the ball and
+asks one question per frame, without solving anything:
+
+```bash
+pixi run python ball_reach.py
+```
+
+```text
+netball_two_hand_snatch_pull_in
+  ball radius 11.0 cm on a 52.68 cm arm, released at phase 0.3782, arrives at 0.55
+  palm reaches 9.59 to 56.78 cm from the shoulder
+  ...
+     20 0.513  flight      0.0  151.2   75.7      -15.2        -15.2   neither
+     21 0.538  flight      0.0  148.9   50.7        8.7          8.7   both
+  out of reach for 21 of 40 frames
+  enters reach at phase 0.538, arrival is at phase 0.550
+  milestone 1: passed
+```
+
+The answer has to be a property of the ball and the body, never of the solver.
+A solve that stretched an arm would report a catch that never happened.
+
+[export_reach_viewer.py](export_reach_viewer.py) draws the same numbers, so they
+can be checked by eye rather than trusted.
+
+### What it found
+
+- **A real pass crosses the arm span in two frames.** The flight is 0.28 seconds
+  at 6 m per second and the reachable shell is 57 cm deep, so the ball goes from
+  15 cm out of reach to 9 cm inside it between one frame and the next. At 24
+  frames per second a catch is an instant, not a phase.
+- **The drill reacts before the ball moves.** The `react` key sits at phase 0.30
+  and the passer does not let go until 0.378.
+- **The authored arrival point is 2.8 cm outside the palms**, so the new
+  trajectory and the existing hand keys already agree to within 3 cm.
+- **After arrival the ball and the hands part by 18.8 cm**, because the athlete
+  pulls in while the ball has no keys left. That is the size of what milestone 3
+  must add.
+- **A stationary key beside a flying one costs 4.3 cm.** The interpolator keeps
+  speed continuous through a key, so it eased the ball out of the passer's hand.
+  Bounding the flight with a release phase instead of keying the hold brought the
+  same five keys to 0.18 cm against a real parabola.
+
+
 ## The proof of concept
 
 [poc_engine.py](poc_engine.py) runs the whole engine on the netball catch, using

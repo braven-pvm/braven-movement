@@ -33,28 +33,50 @@ change.
 
 ### `<id>.ball.json` — where the ball goes, and when
 
-Positions are in the athlete's own frame, in arm lengths, so a trajectory
-authored on one body retargets to another. `across` is positive to the athlete's
-left, matching MHR.
+Positions are in the athlete's **stance frame**, in arm lengths, so a
+trajectory authored on one body retargets to another. `across` is positive to
+the athlete's left, matching MHR.
+
+The stance frame is anchored at the chest as the athlete stands at phase 0, and
+oriented by the way she faces at phase 0. It does not follow her. If the ball
+moved with the trunk, a turn would carry the ball around with it and she could
+never turn toward the ball, which is the point of the change.
 
 ```json
 {
   "movementId": "netball_two_hand_snatch_pull_in",
+  "radiusCm": 11.0,
   "radiusFraction": 0.21,
+  "release": { "atPhase": 0.3782 },
   "arrival": { "atPhase": 0.55 },
   "keys": [
-    { "atPhase": 0.0,  "across": 0.10, "up": 0.55, "ahead": 2.40 },
-    { "atPhase": 0.55, "across": 0.10, "up": 0.42, "ahead": 0.88 }
+    { "atPhase": 0.3782, "across": 0.0, "up": 0.1832, "ahead": 4.000 },
+    { "atPhase": 0.4125, "across": 0.0, "up": 0.3467, "ahead": 3.364 },
+    { "atPhase": 0.4469, "across": 0.0, "up": 0.4521, "ahead": 2.728 },
+    { "atPhase": 0.4813, "across": 0.0, "up": 0.4995, "ahead": 2.092 },
+    { "atPhase": 0.5156, "across": 0.0, "up": 0.4888, "ahead": 1.456 },
+    { "atPhase": 0.55,   "across": 0.0, "up": 0.4200, "ahead": 0.820 }
   ]
 }
 ```
 
-Only the incoming flight is authored. After `arrival` the ball has no keys,
-because the athlete carries it.
+Only the flight is authored, from `release` to `arrival`. Before release the
+passer holds the ball. After arrival the athlete does.
+
+`release` was added while building milestone 1, and it is not cosmetic. The
+interpolator keeps its speed continuous through a key, so a stationary key next
+to a flying one forces the slope at the join to zero and the ball eases out of
+the passer's hand rather than leaving it at speed. Measured against a real
+parabola that cost 4.3 cm even with five keys. Bounding the flight instead of
+keying the hold removes the join, and the same five keys then track the arc to
+0.18 cm. A drill whose ball is already in the air on the first frame omits
+`release`, and phase 0 is the default.
 
 `radiusFraction` is the ball radius as a fraction of arm length, so a size 4 and
 a size 5 are different drills without new geometry. A size 5 netball on a 53 cm
-arm is about 0.21.
+arm is about 0.21. `radiusCm` was added beside it, and wins where both are
+given, because a size 5 netball is the same object whoever catches it: scaling
+it with the athlete quietly hands a shorter player a smaller ball.
 
 ### `<id>.technique.json` — how she meets it
 
@@ -141,13 +163,18 @@ The whole stack below the hands is unaffected, and none of it should be touched:
 Each one ends in something runnable and measurable. Do not start the next until
 the current one is honest.
 
-### 1. Ball trajectory and reach test
+### 1. Ball trajectory and reach test — done
 
 Load a `.ball.json`, place the ball per frame, and report for every frame whether
 it lies inside the athlete's reachable span. No solving yet.
 
 **Done when** the two-hand snatch reports the ball unreachable early in the
 flight and reachable from its arrival phase onward.
+
+Built as `ball_track.py`, `ball_reach.py` and `export_reach_viewer.py`, with
+`movements/netball_two_hand_snatch_pull_in.ball.json` and 43 tests. The snatch
+reports the ball out of reach for frames 0 to 20 and in reach from frame 21,
+one frame before it arrives. What it found is below.
 
 ### 2. Contact constraints
 
@@ -181,6 +208,37 @@ anatomy, which is owed anyway after the scapular change.
 
 **Done when** `build_library.py` is green and `check_joint_limits.py` passes.
 
+## What milestone 1 found
+
+None of these are blocking, and none of them are fixed. They are recorded here
+because they change what milestones 2 to 5 have to do.
+
+1. **A real pass crosses the arm span in about two frames.** The flight is 0.28
+   seconds at 6 m/s, and the reachable shell is 57 cm deep, so the ball goes
+   from 15 cm out of reach to 9 cm inside it between one frame and the next.
+   At 24 frames per second a catch is not a phase, it is an instant. Milestone
+   2 solves a single frame, so this does not block it, but milestone 3 cannot
+   assume the contact frame can be found by looking for a frame where the ball
+   is comfortably in reach. There may be only one such frame, and with a faster
+   pass there may be none.
+2. **The drill reacts before the ball moves.** The `react` key is at phase 0.30
+   and the passer does not let go until 0.378. The athlete is currently moving
+   for a ball that is still in the passer's hands. That is not wrong as
+   coaching, because a worker reads the passer rather than the ball, but the
+   engine has no passer, so today it is unmotivated. This is the first real
+   evidence for the milestone 5 retune.
+3. **The authored arrival point is 2.8 cm outside the palms.** Solving the
+   existing hand keys and measuring the palms against the authored ball gives
+   13.8 cm from palm centre to ball centre, against an 11 cm radius. So the
+   existing drill and the new trajectory already agree to within 3 cm, and
+   closing that gap is exactly milestone 2's job.
+4. **After arrival the ball and the hands part company by 18.8 cm.** The
+   athlete pulls in to her chest while the ball, having no keys after arrival,
+   stays where she caught it. This is the measured size of what milestone 3
+   has to add.
+5. **The ball never intersects a wrist at any frame.** The old derived ball did
+   so by construction, because it was placed at the midpoint of the wrists.
+
 ## Open questions, to answer with evidence rather than opinion
 
 1. **Does the athlete turn to the ball, or is turn authored?** Deriving it is
@@ -196,6 +254,10 @@ anatomy, which is owed anyway after the scapular change.
 4. **One ball or many?** Deflect drills have two workers and the ball leaves.
    Nothing in this design forbids a second trajectory after release, and nothing
    in it requires one yet.
+5. **Is 24 frames per second enough to author a catch?** Finding 1 says a real
+   pass crosses the whole reachable span in two frames. Either the drills run
+   at a higher rate, or the contact frame is found by sub-frame interpolation
+   rather than by scanning frames. Milestone 2 will show which is needed.
 
 ## Why now
 

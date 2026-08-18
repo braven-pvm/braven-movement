@@ -218,6 +218,19 @@ class MovementAssessment:
         }
 
 
+def definition_files(folder: Path) -> list[Path]:
+    """Return every coaching definition in a folder, and nothing else.
+
+    One movement owns several files: the coaching definition, the motion track,
+    and now the ball trajectory. Only the plain ``<id>.json`` is a definition.
+    Listing them by excluding the others broke the moment a third suffix
+    arrived, so the rule is positive: a definition has one dot in its name.
+    """
+    return sorted(
+        path for path in folder.glob("*.json") if path.name.count(".") == 1
+    )
+
+
 def load(path: Path) -> MovementDefinition:
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     return MovementDefinition(

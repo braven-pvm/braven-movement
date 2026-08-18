@@ -8,6 +8,7 @@ library is just a folder of movements.
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -118,6 +119,63 @@ class SolveError(RuntimeError):
     pass
 
 
+@dataclass(frozen=True)
+class TrunkFrame:
+    """Where the trunk is at one phase, before any arm is solved.
+
+    The hip drop, the hip travel and the trunk turn are all authored, so the
+    trunk is known without solving anything. Anything measured in the athlete's
+    own frame is measured from here: a hand key, a foot placement, and now a
+    ball position.
+    """
+
+    root: np.ndarray
+    chest: np.ndarray
+    neck: np.ndarray
+    shoulders: dict[str, np.ndarray]
+    rotation: np.ndarray
+    rest_root: np.ndarray
+
+    def place(self, rest_point: np.ndarray) -> np.ndarray:
+        """Carry a rest pose point into this frame."""
+        return self.root + self.rotation @ (rest_point - self.rest_root)
+
+
+def trunk_frame(
+    track: MotionTrack,
+    phase: float,
+    rest_positions: np.ndarray,
+    index: dict[str, int],
+    reach_cm: float,
+) -> TrunkFrame:
+    """Return the trunk placement at this phase. No solving happens here."""
+    rest_root = rest_positions[index["root"]]
+    drop = np.array([0.0, track.hip_drop_at(phase) * reach_cm, 0.0])
+    # A footwork drill moves the hips through space. A planted drill leaves
+    # these at zero and behaves exactly as before.
+    across_cm, ahead_cm = track.root_offset_at(phase)
+    travel = np.array([across_cm * reach_cm, 0.0, ahead_cm * reach_cm])
+    # A turn rotates the trunk about the vertical axis through the hips. The
+    # feet stay planted, so the turn has to come from the trunk itself.
+    rotation = turn_matrix(track.turn_at(phase))
+    root = rest_root - drop + travel
+
+    def place(rest_point: np.ndarray) -> np.ndarray:
+        return root + rotation @ (rest_point - rest_root)
+
+    return TrunkFrame(
+        root=root,
+        chest=place(rest_positions[index["c_spine3"]]),
+        neck=place(rest_positions[index["c_neck"]]),
+        shoulders={
+            side: place(rest_positions[index[f"{side}_uparm"]])
+            for side in ("l", "r")
+        },
+        rotation=rotation,
+        rest_root=rest_root,
+    )
+
+
 def load_character() -> geometry.Character:
     return geometry.Character.load_fbx(
         str(ASSET_FOLDER / f"lod{LEVEL_OF_DETAIL}.fbx"),
@@ -198,11 +256,6 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
     rest_positions = joint_positions(character, rest)
     reach_cm = arm_length(rest_positions, index)
 
-    # The stance can change during a movement. A steady drill holds one hip
-    # drop, while a jump loads, rises and lands, so it is read per frame.
-    rest_root = rest_positions[index["root"]].copy()
-    rest_chest = rest_positions[index["c_spine3"]].copy()
-    rest_neck = rest_positions[index["c_neck"]].copy()
     rest_shoulders = {
         side: rest_positions[index[f"{side}_uparm"]].copy() for side in ("l", "r")
     }
@@ -226,23 +279,14 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
     previous = rest.copy()
     for frame in range(frame_count):
         phase = frame / (frame_count - 1)
-        drop = np.array([0.0, track.hip_drop_at(phase) * reach_cm, 0.0])
-        # A footwork drill moves the hips through space. A planted drill leaves
-        # these at zero and behaves exactly as before.
-        across_cm, ahead_cm = track.root_offset_at(phase)
-        travel = np.array([across_cm * reach_cm, 0.0, ahead_cm * reach_cm])
-        # A turn rotates the trunk about the vertical axis through the hips. The
-        # feet stay planted, so the turn has to come from the trunk itself.
-        rotation = turn_matrix(track.turn_at(phase))
-        root_target = rest_root - drop + travel
-
-        def turned(rest_point: np.ndarray) -> np.ndarray:
-            return root_target + rotation @ (rest_point - rest_root)
-
-        # turned() is measured from the dropped root, so the drop is already in
+        placed = trunk_frame(track, phase, rest_positions, index, reach_cm)
+        rotation = placed.rotation
+        root_target = placed.root
+        turned = placed.place
+        # place() is measured from the dropped root, so the drop is already in
         # it. Subtracting it again sinks the whole trunk twice.
-        chest_target = turned(rest_chest)
-        neck_target = turned(rest_neck)
+        chest_target = placed.chest
+        neck_target = placed.neck
         # Hand keys are measured from the chest, so they must be measured from
         # where the chest is held, not from where it started.
         left_target, right_target = hand_targets_from_track(

@@ -11,6 +11,7 @@ from movement_definition import (  # noqa: E402
     MovementDefinition,
     MovementDefinitionError,
     Phase,
+    definition_files,
     load,
 )
 
@@ -128,11 +129,7 @@ class LibraryDefinitionTest(unittest.TestCase):
 
     def definitions(self):
         folder = Path(__file__).resolve().parent / "movements"
-        return [
-            path
-            for path in sorted(folder.glob("*.json"))
-            if not path.name.endswith(".motion.json")
-        ]
+        return definition_files(folder)
 
     def test_the_library_is_not_empty(self):
         self.assertGreaterEqual(len(self.definitions()), 1)
