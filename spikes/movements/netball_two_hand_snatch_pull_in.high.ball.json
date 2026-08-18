@@ -1,0 +1,69 @@
+{
+  "movementId": "netball_two_hand_snatch_pull_in",
+  "variant": "high",
+  "source": "authored by author_flight.py from a passer position and a catch point in the arm span",
+  "notes": "The ball high in the arm span, taken above the head. Same technique file as the central pass and the wide one.",
+  "radiusCm": 11.0,
+  "radiusFraction": 0.2088,
+  "release": {
+    "atPhase": 0.3572
+  },
+  "arrival": {
+    "atPhase": 0.55
+  },
+  "flight": {
+    "method": "real parabola under gravity, sampled at keys",
+    "passerAheadCm": 210.7,
+    "releaseHeightCm": 135.0,
+    "launchSpeedMetresPerSecond": 6.53,
+    "launchAngleDegrees": 23.2,
+    "flightSeconds": 0.312,
+    "peakHeightCm": 168.7,
+    "catchHeightCm": 167.5,
+    "splineErrorCm": 0.346
+  },
+  "keys": [
+    {
+      "atPhase": 0.3572,
+      "name": "release",
+      "across": 0.0,
+      "up": 0.1832,
+      "ahead": 4.0
+    },
+    {
+      "atPhase": 0.3958,
+      "name": "flight1",
+      "across": 0.0,
+      "up": 0.4513,
+      "ahead": 3.29
+    },
+    {
+      "atPhase": 0.4343,
+      "name": "flight2",
+      "across": 0.0,
+      "up": 0.647,
+      "ahead": 2.58
+    },
+    {
+      "atPhase": 0.4729,
+      "name": "flight3",
+      "across": 0.0,
+      "up": 0.7704,
+      "ahead": 1.87
+    },
+    {
+      "atPhase": 0.5114,
+      "name": "flight4",
+      "across": 0.0,
+      "up": 0.8214,
+      "ahead": 1.16
+    },
+    {
+      "atPhase": 0.55,
+      "name": "arrival",
+      "across": 0.0,
+      "up": 0.8,
+      "ahead": 0.45
+    }
+  ]
+}

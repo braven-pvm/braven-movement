@@ -54,6 +54,11 @@ class Technique:
     hands: str
     spread_degrees: float
     face_ball: bool
+    # Whether the athlete turns toward the ball rather than taking it square.
+    # A wide ball caught square puts the far arm across the body at nearly full
+    # extension, which is both awkward and the configuration in which the elbow
+    # stops steering smoothly.
+    turn_to_ball: bool
     after_contact: tuple[AfterContactKey, ...]
 
     @property
@@ -107,5 +112,6 @@ def load_technique(path: Path) -> Technique:
         hands=hands,
         spread_degrees=spread,
         face_ball=bool(grip.get("faceBall", True)),
+        turn_to_ball=bool(data.get("turnToBall", False)),
         after_contact=tuple(keys),
     )

@@ -176,7 +176,7 @@ Built as `ball_track.py`, `ball_reach.py` and `export_reach_viewer.py`, with
 reports the ball out of reach for frames 0 to 20 and in reach from frame 21,
 one frame before it arrives. What it found is below.
 
-### 2. Contact constraints
+### 2. Contact constraints — done
 
 Palms on the surface, normals at the centre, two hands `spreadDegrees` apart.
 Solve a single frame at the arrival phase.
@@ -184,7 +184,7 @@ Solve a single frame at the arrival phase.
 **Done when** both palms sit within 1 cm of the ball surface, the ball does not
 intersect the wrists, and joint limits stay clean.
 
-### 3. Possession transfer
+### 3. Possession transfer — done
 
 Run the full movement. Ball driven by its own keys before contact, by
 `afterContact` keys after.
@@ -192,7 +192,7 @@ Run the full movement. Ball driven by its own keys before contact, by
 **Done when** the two-hand snatch runs end to end, the ball never jumps at the
 handover frame, and per-frame joint jumps are no worse than today.
 
-### 4. The proof: the same technique, three arrival points
+### 4. The proof: the same technique, three arrival points — passed
 
 Author **one** technique file and **three** ball files, placing the ball high,
 central and wide within the arm span. Solve all three.
@@ -200,6 +200,47 @@ central and wide within the arm span. Solve all three.
 **Done when** all three produce a plausible catch with no new hand authoring.
 This is the milestone that proves or kills the model. If the athlete cannot adapt
 to a ball placed differently, the inversion has bought nothing.
+
+Four were run rather than three: central, high, low and wide. All four are
+caught, with one technique file and no hand authoring anywhere.
+
+| ball    | arrival        | caught at | turn | palm gap | fastest  | spike |
+|---------|----------------|-----------|------|----------|----------|-------|
+| central | 0.00/0.42/0.82 | 149 cm    | 0°   | 0.01 cm  | 225 °/s  | 0.00  |
+| high    | 0.00/0.80/0.45 | 168 cm    | 0°   | 0.01 cm  | 388 °/s  | 1.65  |
+| low     | 0.00/0.02/0.66 | 132 cm    | 0°   | 0.02 cm  | 218 °/s  | 0.00  |
+| wide    | 0.60/0.32/0.58 | 146 cm    | 46°  | 0.02 cm  | 479 °/s  | 1.98  |
+
+At contact, in every one of them, both wrists sit 15.1 to 15.2 cm from the ball
+centre and the fingertips sit 0.1 cm off its surface. The arrival points differ
+by 36 cm of height and 32 cm of width, and the grip comes out the same.
+
+Three things had to change for that, and two of them were the design's own open
+questions answering themselves.
+
+**The athlete turns to the ball, and the turn is derived.** That is open
+question 1. A ball 31 cm to her left, taken square, leaves her right shoulder
+62 cm from it against her left shoulder's 39. The far arm reaches across at
+nearly full extension, and the elbow swung 21 degrees in one frame while the
+ball moved 1.5 cm. She now turns to put the ball in front of her and no
+further, capped at what a trunk does over planted feet. It is opt in per
+technique, so a drill with an authored turn keeps it.
+
+**Contact belongs inside the reach, not at its edge.** An arm at full extension
+is a kinematic singularity: the elbow stops responding smoothly to where the
+hand goes. Taking the ball at the exact reach limit made the movement worse as
+the frame rate rose, and a margin of 8 percent removes it. It is also what a
+person does, because a straight arm cannot give with the ball.
+
+**The check for snapping was wrong, and it was rewritten after it failed.**
+The first version compared each run against the central pass and failed
+anything more than a quarter rougher. That measures which arrival point is
+easiest rather than which is plausible: a wide ball is taken faster than a
+central one by a real athlete too. It now looks for a spike, meaning a frame
+whose step is more than three times the steps either side of it, and ignores
+steps below the clinical threshold the coaching layer already uses, because the
+knee wobbles a degree either way through a planted drill and a one degree step
+beside a tenth of a degree step is noise rather than a snap.
 
 ### 5. Migrate the library
 
@@ -241,16 +282,22 @@ because they change what milestones 2 to 5 have to do.
 
 ## Open questions, to answer with evidence rather than opinion
 
-1. **Does the athlete turn to the ball, or is turn authored?** Deriving it is
-   more correct and matches the hooks drill, where the manual has her facing away
-   until the ball arrives. Deriving it may also make the turn unstable. Milestone
-   4 will show which.
+1. ~~**Does the athlete turn to the ball, or is turn authored?**~~ Answered by
+   milestone 4: derived. A wide ball taken square puts the far arm across the
+   body at nearly full extension and the elbow swings 21 degrees in a frame.
+   Turning to it cuts that to 8 and puts the palm back on the ball. It did not
+   turn out to be unstable, because the turn is taken from where the ball
+   arrives, which is known without solving anything, rather than from where it
+   is now.
 2. **What happens when the ball is out of reach?** A failed catch is a real
    coaching outcome and the engine should be able to represent it, rather than
    stretching to reach.
-3. **Do the fingers need to move?** All 104 finger parameters are frozen. Palms
-   on a sphere may be enough for a POC, but "fingers up, thumbs in the middle" is
-   a finger statement and the grip is where it will show.
+3. ~~**Do the fingers need to move?**~~ Answered by milestone 2: yes. Frozen
+   straight, the fingertips finished 7.4 cm off the ball with the palm exactly
+   on it, so the hand met the ball as a flat plate. Freeing 15 curl parameters
+   per hand and asking each tip for a distance rather than a place closes that
+   to 0.1 cm. It has to be a second solve with the arm held, or the fingers
+   reach the ball by dragging the whole hand round it.
 4. **One ball or many?** Deflect drills have two workers and the ball leaves.
    Nothing in this design forbids a second trajectory after release, and nothing
    in it requires one yet.

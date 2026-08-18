@@ -3,6 +3,8 @@
   "source": "202526 Netball Coaches Manual, page 71, 2 hand snatches and pull in",
   "notes": "How the athlete meets the ball. This file never says where a hand is. The hands are solved against the ball, so the same technique can be practised against any trajectory in the arm span, which is what the manual asks for.",
   "hands": "both",
+  "turnToBall": true,
+  "turnNote": "She turns to put the ball in front of her, and no further. A ball 31 cm to her left, taken square, leaves her right shoulder 62 cm from it against her left shoulder's 39, so the far arm reaches across at nearly full extension where the elbow stops steering smoothly.",
   "grip": {
     "spreadDegrees": 90,
     "faceBall": true,

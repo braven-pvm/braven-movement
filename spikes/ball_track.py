@@ -47,13 +47,32 @@ MOVEMENT_DIR = Path(__file__).resolve().parent / "movements"
 BALL_SUFFIX = ".ball.json"
 
 
-def ball_path(movement_id: str) -> Path:
+def ball_path(movement_id: str, variant: str | None = None) -> Path:
+    """Where one drill's ball lives.
+
+    A drill may have more than one. The same technique against a ball placed
+    high, centrally and wide is the same skill practised into three parts of
+    the arm span, which is what the manual asks for and what proves that the
+    hands are solved rather than authored.
+    """
+    if variant:
+        return MOVEMENT_DIR / f"{movement_id}.{variant}{BALL_SUFFIX}"
     return MOVEMENT_DIR / (movement_id + BALL_SUFFIX)
 
 
-def has_ball(movement_id: str) -> bool:
+def has_ball(movement_id: str, variant: str | None = None) -> bool:
     """A drill without a trajectory is not a defect. It has not been migrated."""
-    return ball_path(movement_id).is_file()
+    return ball_path(movement_id, variant).is_file()
+
+
+def ball_variants(movement_id: str) -> list[str | None]:
+    """Every ball this drill has, the plain one first."""
+    found: list[str | None] = [None] if has_ball(movement_id) else []
+    for path in sorted(MOVEMENT_DIR.glob(f"{movement_id}.*{BALL_SUFFIX}")):
+        name = path.name[len(movement_id) + 1 : -len(BALL_SUFFIX)]
+        if name:
+            found.append(name)
+    return found
 
 
 class BallTrackError(ValueError):

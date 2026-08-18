@@ -1,56 +1,74 @@
 # Spikes
 
-## The possession model, milestone 1
+## The possession model
 
 The engine used to derive the ball from the hands: the hands were authored, then
 the ball was drawn at the midpoint of the wrists. So the ball followed the
 athlete, it could never be the reason she moved, and it sat through her wrists
 instead of in her palms. [BALL_FIRST_DESIGN.md](BALL_FIRST_DESIGN.md) inverts
-that. A movement becomes a ball trajectory and a technique, and the hands are
-solved rather than authored.
-
-Milestone 1 is the smallest step that can fail honestly. It places the ball and
-asks one question per frame, without solving anything:
+that. A movement is a ball trajectory and a technique, and the hands are solved.
 
 ```bash
-pixi run python ball_reach.py
+pixi run python proof.py
 ```
 
 ```text
-netball_two_hand_snatch_pull_in
-  ball radius 11.0 cm on a 52.68 cm arm, released at phase 0.3782, arrives at 0.55
-  palm reaches 9.59 to 56.78 cm from the shoulder
-  ...
-     20 0.513  flight      0.0  151.2   75.7      -15.2        -15.2   neither
-     21 0.538  flight      0.0  148.9   50.7        8.7          8.7   both
-  out of reach for 21 of 40 frames
-  enters reach at phase 0.538, arrival is at phase 0.550
-  milestone 1: passed
+netball_two_hand_snatch_pull_in: one technique, 4 arrival points
+
+variant   arrival across/up/ahead   catch cm   turn   frame   palm gap   finger in   fastest deg/s   spike
+central     0.00  0.42   0.82      149.2    0.0      52      +0.01       +0.12             225    0.00
+high        0.00  0.80   0.45      168.4    0.0      51      +0.01       +0.12             388    1.65
+low         0.00  0.02   0.66      132.4    0.0      51      +0.02       +0.12             218    0.00
+wide        0.60  0.32   0.58      146.4   46.0      51      +0.02       +0.12             479    1.98
+
+4 of 4 arrival points produce a plausible catch, with no hand authoring anywhere.
 ```
 
-The answer has to be a property of the ball and the body, never of the solver.
-A solve that stretched an arm would report a catch that never happened.
+One technique file, four passes, arrival points 36 cm apart in height and 32 cm
+in width. At contact, in every one of them, both wrists sit 15.1 to 15.2 cm from
+the ball centre and the fingertips sit 0.1 cm off its surface.
 
-[export_reach_viewer.py](export_reach_viewer.py) draws the same numbers, so they
-can be checked by eye rather than trusted.
+The pieces:
+
+- `ball_track.py` — the flight, in a stance frame fixed at the start of the drill
+- `technique.py` — which hands, how far apart around the ball, what she does with it
+- `grip.py` — the athlete's own hand, measured once, placed against a sphere
+- `finger_wrap.py` — closing the fingers, as a distance rather than a place
+- `possession.py` — who has the ball on each frame, and where the hands go
+- `possession_solve.py` — the whole movement
+- `ball_reach.py` — can she reach it at all, without solving anything
+- `author_flight.py` — a passer position and a catch point become a real parabola
+- `proof.py` — one technique against every ball the drill has
 
 ### What it found
 
-- **A real pass crosses the arm span in two frames.** The flight is 0.28 seconds
-  at 6 m per second and the reachable shell is 57 cm deep, so the ball goes from
-  15 cm out of reach to 9 cm inside it between one frame and the next. At 24
-  frames per second a catch is an instant, not a phase.
-- **The drill reacts before the ball moves.** The `react` key sits at phase 0.30
-  and the passer does not let go until 0.378.
-- **The authored arrival point is 2.8 cm outside the palms**, so the new
-  trajectory and the existing hand keys already agree to within 3 cm.
-- **After arrival the ball and the hands part by 18.8 cm**, because the athlete
-  pulls in while the ball has no keys left. That is the size of what milestone 3
-  must add.
-- **A stationary key beside a flying one costs 4.3 cm.** The interpolator keeps
-  speed continuous through a key, so it eased the ball out of the passer's hand.
-  Bounding the flight with a release phase instead of keying the hold brought the
-  same five keys to 0.18 cm against a real parabola.
+- **A real pass crosses the arm span in two frames at 24 fps.** The flight is
+  0.28 seconds at 6 m per second and the reachable shell is 57 cm deep. Over the
+  same movement the largest elbow step is 9.4 degrees at 24 frames per second,
+  4.7 at 48, 4.4 at 60 and 3.7 at 96. Nothing about the movement changes with the
+  rate; there were not enough frames to hold it. The snatch is authored at 60.
+- **Three points do not fix a hand.** The wrist, the middle knuckle and the thumb
+  base all sit near the axis the hand rolls about, so the solver drove the
+  forearm to its pronation limit with the palm 163 degrees from the ball and
+  reported sub-centimetre errors. The index and little knuckles are 6 cm apart
+  across the palm and give the roll something to pull against.
+- **62 degrees is not a grip this athlete can make.** Sweeping the spread from 40
+  to 140, she produces what is asked from 80 upward. Below that her forearm
+  reaches its supination limit. `contact_solve.py` now names the parameter that
+  ran out whenever a drill cannot be performed.
+- **The fingers do need to move.** Frozen straight they finished 7.4 cm off the
+  ball with the palm exactly on it. Freeing 15 curl parameters per hand closes
+  that to 0.1 cm, in a second solve with the arm held.
+- **The athlete turns to a wide ball.** Taken square, a ball 31 cm to her left
+  leaves her right shoulder 62 cm from it and the elbow swings 21 degrees in one
+  frame. Turning cuts that to 8.
+- **Nobody catches with a locked elbow.** An arm at full extension is a
+  kinematic singularity, and taking the ball at the exact reach limit made the
+  movement worse as the frame rate rose rather than better.
+- **A stationary key beside a flying one costs 4.3 cm.** The interpolator eased
+  the ball out of the passer's hand. Bounding the flight with a release phase
+  brought the same five keys to 0.18 cm against a real parabola.
+
 
 
 ## The proof of concept

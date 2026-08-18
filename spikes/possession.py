@@ -13,9 +13,14 @@ and travels with her trunk. The handover is the frame where one becomes the
 other.
 
 Contact is not authored. It is the first frame where the ball comes inside the
-athlete's reach, which is the same test the reach report already applies. If
+athlete's reach, with a margin, because nobody catches with a locked elbow. If
 that frame never arrives, the drill is a dropped ball, and that is a real
 coaching outcome rather than a failure to report.
+
+The margin is not cosmetic. An arm at full extension is a kinematic
+singularity: the elbow angle stops responding smoothly to where the hand goes,
+and a ball placed wide, where the far arm is stretched across the body, swung
+the elbow 21 degrees in one frame while the ball moved 1.5 cm.
 
 Taking contact at the distance she waits at instead reverses the movement. Her
 waiting hands are further out than the ball is when she takes it, so she pulls
@@ -45,6 +50,7 @@ with speed is what lets the hands give with it afterwards.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -60,6 +66,12 @@ from motion_track import _sample
 # for 15 to 70 degrees of elbow flexion. It must also stay below one so that
 # taking the ball is an extension rather than a retraction.
 READY_FRACTION = 0.82
+# How far inside her reach the ball must come before she takes it. A person
+# catches with a bent elbow, both because a straight one cannot give with the
+# ball and because it is the configuration in which the arm has stopped being
+# able to steer. Measured across four arrival points, refer to the module
+# docstring.
+CONTACT_FRACTION = 0.92
 
 
 class PossessionError(ValueError):
@@ -107,6 +119,49 @@ class Possession:
         return float(
             np.linalg.norm(self.frames[number].centre - self.frames[number - 1].centre)
         )
+
+
+# A ball this far off the centre line is straight ahead as far as the athlete
+# is concerned, and turning for it would be a twitch rather than a movement.
+TURN_DEADBAND_DEGREES = 8.0
+
+
+def turn_toward(
+    arrival: BallOffset, maximum_degrees: float = 70.0
+) -> float:
+    """Return how far the athlete turns to take this ball, in degrees.
+
+    Positive is toward her left, matching MHR. She turns to put the ball in
+    front of her, and no further, which is the rule the design asks for. The
+    turn is capped at what a trunk can do over planted feet, so a ball beyond
+    that is still taken across the body and the drill says so by failing rather
+    than by inventing footwork.
+    """
+    bearing = math.degrees(math.atan2(arrival.across, max(arrival.ahead, 1e-6)))
+    if abs(bearing) < TURN_DEADBAND_DEGREES:
+        return 0.0
+    return max(-maximum_degrees, min(maximum_degrees, bearing))
+
+
+def turn_profile(
+    phases: list[float],
+    release_phase: float,
+    contact_phase: float,
+    turn_degrees: float,
+    base_degrees: list[float],
+) -> list[float]:
+    """Spread the turn over the flight, finishing as the ball arrives.
+
+    The same squared ramp the hands use, so the trunk and the arms are doing
+    one movement rather than two. Any turn the movement itself authored is kept
+    underneath, because a drill that starts the athlete facing away means it.
+    """
+    span = max(contact_phase - release_phase, 1e-9)
+    profile = []
+    for phase, base in zip(phases, base_degrees):
+        travel = min(1.0, max(0.0, (phase - release_phase) / span)) ** 2
+        profile.append(base + turn_degrees * travel)
+    return profile
 
 
 def carry_path(
@@ -166,18 +221,27 @@ def resolve(
     reach_limit_cm: float,
     arm_length_cm: float,
     ready_fraction: float = READY_FRACTION,
+    contact_fraction: float = CONTACT_FRACTION,
 ) -> Possession:
     """Return where the ball is on every frame, and where the hands should go."""
     if not (len(phases) == len(athlete_frames) == len(shoulder_mids)):
         raise PossessionError("every frame needs a phase, a trunk and a shoulder line")
+    if ready_fraction >= contact_fraction:
+        raise PossessionError(
+            f"she waits at {ready_fraction:.2f} of her reach and takes the ball "
+            f"at {contact_fraction:.2f}, so taking it would be a retraction "
+            "rather than a reach"
+        )
     ready_distance = ready_fraction * reach_limit_cm
+    contact_distance = contact_fraction * reach_limit_cm
 
     flight = [stance.place(ball.offset_at(phase)) for phase in phases]
 
-    # The first frame she can touch it. Same test as the reach report.
+    # The first frame she can take it with a bent elbow, not the first frame
+    # she could touch it at full stretch.
     contact = None
     for number, (centre, shoulder) in enumerate(zip(flight, shoulder_mids)):
-        if float(np.linalg.norm(centre - shoulder)) <= reach_limit_cm:
+        if float(np.linalg.norm(centre - shoulder)) <= contact_distance:
             contact = number
             break
 

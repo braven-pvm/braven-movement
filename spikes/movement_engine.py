@@ -147,8 +147,14 @@ def trunk_frame(
     rest_positions: np.ndarray,
     index: dict[str, int],
     reach_cm: float,
+    turn_degrees: float | None = None,
 ) -> TrunkFrame:
-    """Return the trunk placement at this phase. No solving happens here."""
+    """Return the trunk placement at this phase. No solving happens here.
+
+    The turn is read from the movement unless one is given. The possession
+    model derives it from where the ball is, because turning toward a wide
+    ball is something an athlete does rather than something a coach types.
+    """
     rest_root = rest_positions[index["root"]]
     drop = np.array([0.0, track.hip_drop_at(phase) * reach_cm, 0.0])
     # A footwork drill moves the hips through space. A planted drill leaves
@@ -157,7 +163,9 @@ def trunk_frame(
     travel = np.array([across_cm * reach_cm, 0.0, ahead_cm * reach_cm])
     # A turn rotates the trunk about the vertical axis through the hips. The
     # feet stay planted, so the turn has to come from the trunk itself.
-    rotation = turn_matrix(track.turn_at(phase))
+    rotation = turn_matrix(
+        track.turn_at(phase) if turn_degrees is None else turn_degrees
+    )
     root = rest_root - drop + travel
 
     def place(rest_point: np.ndarray) -> np.ndarray:

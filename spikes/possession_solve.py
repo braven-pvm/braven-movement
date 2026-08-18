@@ -39,7 +39,7 @@ from contact_solve import (  # noqa: E402
     trunk_constraints,
 )
 from grip import grip_targets, measure_hand  # noqa: E402
-from motion_track import arm_length, load_motion  # noqa: E402
+from motion_track import MAXIMUM_TURN_DEGREES, arm_length, load_motion  # noqa: E402
 from movement_engine import (  # noqa: E402
     LIMIT_WEIGHT,
     SolveError,
@@ -52,8 +52,16 @@ from movement_engine import (  # noqa: E402
     motion_path,
     trunk_frame,
 )
-from movement_definition import load as load_definition  # noqa: E402
-from possession import READY_FRACTION, resolve  # noqa: E402
+from movement_definition import (  # noqa: E402
+    MINIMUM_MEANINGFUL_BAND_DEGREES,
+    load as load_definition,
+)
+from possession import (  # noqa: E402
+    READY_FRACTION,
+    resolve,
+    turn_profile,
+    turn_toward,
+)
 from technique import has_technique, load_technique, technique_path  # noqa: E402
 
 OUTPUT = SPIKE_DIR / "poc-output" / "library"
@@ -64,14 +72,16 @@ OUTPUT = SPIKE_DIR / "poc-output" / "library"
 CONTINUITY_WEIGHT = 0.02
 
 
-def athlete_frames(track, rest_positions, index, reach_cm, phases):
+def athlete_frames(track, rest_positions, index, reach_cm, phases, turns=None):
     """The trunk, per frame, and the athlete's own frame that goes with it."""
+    if turns is None:
+        turns = [track.turn_at(phase) for phase in phases]
     placed = [
-        trunk_frame(track, phase, rest_positions, index, reach_cm) for phase in phases
+        trunk_frame(track, phase, rest_positions, index, reach_cm, turn)
+        for phase, turn in zip(phases, turns)
     ]
     frames = [
-        stance_frame(one.chest, reach_cm, track.turn_at(phase))
-        for one, phase in zip(placed, phases)
+        stance_frame(one.chest, reach_cm, turn) for one, turn in zip(placed, turns)
     ]
     shoulders = [
         (one.shoulders["l"] + one.shoulders["r"]) / 2.0 for one in placed
@@ -79,10 +89,14 @@ def athlete_frames(track, rest_positions, index, reach_cm, phases):
     return placed, frames, shoulders
 
 
-def solve_movement(character, movement_id: str) -> dict:
-    """Solve every frame of a movement against its ball. No hand keys are read."""
+def solve_movement(character, movement_id: str, variant: str | None = None) -> dict:
+    """Solve every frame of a movement against its ball. No hand keys are read.
+
+    The variant selects which ball. The technique never changes with it, which
+    is the whole claim being tested: one technique, any arrival point.
+    """
     track = load_motion(motion_path(movement_id))
-    ball = load_ball(ball_path(movement_id))
+    ball = load_ball(ball_path(movement_id, variant))
     method = load_technique(technique_path(movement_id))
 
     names = list(character.skeleton.joint_names)
@@ -106,10 +120,26 @@ def solve_movement(character, movement_id: str) -> dict:
     )
 
     phases = [number / (track.frames - 1) for number in range(track.frames)]
+    authored = [track.turn_at(phase) for phase in phases]
     placed, frames, shoulders = athlete_frames(
-        track, rest_positions, index, reach_cm, phases
+        track, rest_positions, index, reach_cm, phases, authored
     )
     stance = stance_frame(placed[0].chest, reach_cm, track.turn_at(0.0))
+
+    # A wide ball is taken by turning to it, not by reaching across. The turn
+    # comes from where the ball arrives, which is known without solving, so
+    # nothing here depends on the pose it produces.
+    turns = authored
+    turned_by = 0.0
+    if method.turn_to_ball:
+        turned_by = turn_toward(ball.keys[-1].offset, MAXIMUM_TURN_DEGREES)
+        if turned_by:
+            turns = turn_profile(
+                phases, ball.release_phase, ball.arrival_phase, turned_by, authored
+            )
+            placed, frames, shoulders = athlete_frames(
+                track, rest_positions, index, reach_cm, phases, turns
+            )
 
     held = resolve(
         phases=phases,
@@ -197,6 +227,7 @@ def solve_movement(character, movement_id: str) -> dict:
     seconds = time.perf_counter() - started
     return {
         "movementId": movement_id,
+        "variant": variant,
         "track": track,
         "ball": ball,
         "technique": method,
@@ -209,6 +240,8 @@ def solve_movement(character, movement_id: str) -> dict:
         "radiusCm": radius_cm,
         "armLengthCm": reach_cm,
         "secondsPerFrame": seconds / track.frames,
+        "turnedByDegrees": round(turned_by, 2),
+        "turns": turns,
     }
 
 
@@ -248,8 +281,43 @@ def step_report(measurements: list[dict]) -> dict:
     return worst
 
 
-def build(character, movement_id: str) -> dict:
-    result = solve_movement(character, movement_id)
+def spike_report(measurements: list[dict]) -> dict:
+    """Find frames where a measured angle jumps against its own neighbours.
+
+    A snap is a local spike, not a fast movement. Comparing the largest step in
+    a run against the largest step in an easier run measures which run is
+    easier, which is a different question and the wrong one: a wide ball is
+    taken faster than a central one by a real athlete too.
+
+    So each step is judged against the two either side of it. Anything more
+    than three times its neighbours is a frame the movement jumps at.
+    """
+    worst_ratio = 0.0
+    worst_where = None
+    for key, value in measurements[0].items():
+        if not key.endswith("Degrees") or not isinstance(value, (int, float)):
+            continue
+        series = [frame[key] for frame in measurements]
+        steps = [abs(series[i + 1] - series[i]) for i in range(len(series) - 1)]
+        for number in range(1, len(steps) - 1):
+            neighbours = (steps[number - 1] + steps[number + 1]) / 2.0
+            # A step of a fraction of a degree is noise, not a movement, and
+            # dividing by it produces enormous ratios that mean nothing.
+            if steps[number] < MINIMUM_MEANINGFUL_BAND_DEGREES or neighbours < 0.2:
+                continue
+            ratio = steps[number] / neighbours
+            if ratio > worst_ratio:
+                worst_ratio = ratio
+                worst_where = {"measure": key, "frame": number + 1,
+                               "stepDegrees": round(steps[number], 2)}
+    return {
+        "worstNeighbourRatio": round(worst_ratio, 2),
+        "at": worst_where,
+    }
+
+
+def build(character, movement_id: str, variant: str | None = None) -> dict:
+    result = solve_movement(character, movement_id, variant)
     held = result["possession"]
     measurements = result["measurements"]
     definition = load_definition(definition_path(movement_id))
@@ -257,12 +325,14 @@ def build(character, movement_id: str) -> dict:
 
     report = {
         "movementId": movement_id,
+        "variant": variant,
         "skill": definition.skill,
         "possession": {
             "contactFrame": held.contact_frame,
             "contactPhase": round(held.frames[held.contact_frame].phase, 4),
             "arrivalPhase": result["ball"].arrival_phase,
             "readyFraction": READY_FRACTION,
+            "turnedByDegrees": result["turnedByDegrees"],
             "biggestBallStepCm": round(held.biggest_ball_step_cm(), 2),
             "ballStepAtHandoverCm": round(
                 held.ball_step_at(held.contact_frame), 2
@@ -283,7 +353,8 @@ def build(character, movement_id: str) -> dict:
     }
     report["ranOutOf"] = sorted(set(report["ranOutOf"]))
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    (OUTPUT / f"{movement_id}.possession.json").write_text(
+    stem = movement_id if variant is None else f"{movement_id}.{variant}"
+    (OUTPUT / f"{stem}.possession.json").write_text(
         json.dumps(report, indent=2) + "\n", encoding="utf-8"
     )
     return report
