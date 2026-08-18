@@ -68,6 +68,90 @@ def add_floor() -> None:
     )
 
 
+HELPER_GROUPS = ("HelperGeometry", "JointCubes")
+
+
+def delete_helper_geometry(human) -> str:
+    """Remove MakeHuman's fitting helpers before the model leaves Blender.
+
+    The MakeHuman base mesh is 19158 vertices, of which only 13380 are the
+    body. The rest are helpers: a tube round the legs that clothes are fitted
+    to, cubes at every joint, and patches over the eyes, hair and teeth.
+    Blender hides them through the alpha channel of the skin texture, so they
+    never appear in a render.
+
+    That masking does not survive the glTF export. The helpers arrive opaque,
+    and the athlete has a skirt to the floor, ladders down her thighs and
+    streaks across her face. The reference generator's own export has this
+    too, so it predates this module.
+
+    Deleting them is safe here because the clothes are already fitted and the
+    model is on its way out.
+    """
+    import bmesh
+
+    mesh = human.data
+    wanted = {human.vertex_groups[name].index
+              for name in HELPER_GROUPS if name in human.vertex_groups}
+    if not wanted:
+        return "no helper groups"
+    keep = human.vertex_groups["body"].index if "body" in human.vertex_groups         else None
+
+    doomed = []
+    for vertex in mesh.vertices:
+        groups = {g.group for g in vertex.groups if g.weight > 0.0}
+        if groups & wanted and (keep is None or keep not in groups):
+            doomed.append(vertex.index)
+    if not doomed:
+        return "no helper vertices"
+
+    was = len(mesh.vertices)
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+    bm.verts.ensure_lookup_table()
+    bmesh.ops.delete(bm, geom=[bm.verts[i] for i in doomed], context="VERTS")
+    bm.to_mesh(mesh)
+    bm.free()
+    mesh.update()
+    return f"{was} to {len(mesh.vertices)} vertices"
+
+
+def set_alpha(objects, mode: str) -> list[str]:
+    """Choose how each material's transparency is drawn.
+
+    The skin blends on a hashed mask, which dithers: blotches over the legs,
+    arms and face wherever the texture alpha is neither one nor zero. That mask
+    does two jobs. It hid the helper geometry, which is deleted now, and it
+    hides the body under the clothes, which still matters. Make the skin fully
+    opaque and she wears her own chest over her shirt.
+
+    So the skin is clipped rather than blended: a hard cut at the threshold,
+    which the format stores as a mask and every reader handles the same way.
+    The kit and the eyes have nothing to hide and are opaque. Hair, lashes and
+    brows keep their blending, because they are flat cards with cut-out shapes
+    and a hard edge on a hair card looks like cardboard.
+    """
+    changed = []
+    for item in objects:
+        for slot in item.material_slots:
+            material = slot.material
+            if material is None:
+                continue
+            material.blend_method = mode
+            if mode == "CLIP":
+                material.alpha_threshold = 0.5
+            elif material.use_nodes:
+                for node in material.node_tree.nodes:
+                    if node.type != "BSDF_PRINCIPLED":
+                        continue
+                    alpha = node.inputs["Alpha"]
+                    for link in list(alpha.links):
+                        material.node_tree.links.remove(link)
+                    alpha.default_value = 1.0
+            changed.append(f"{material.name}={mode.lower()}")
+    return changed
+
+
 def bake_shape_keys(objects) -> list[str]:
     """Write the shape key mix into the vertices and remove the keys.
 
@@ -95,6 +179,39 @@ def bake_shape_keys(objects) -> list[str]:
             vertex.co = position
         baked.append(f"{item.name}:{count}")
     return baked
+
+
+def bake_action(rig, first: int, last: int) -> None:
+    """Rewrite the action by visual keying, for the exporter.
+
+    Every bone here is posed by assigning a world matrix, because that is how
+    the reference generator aims a limb at a target. Blender evaluates that
+    correctly and renders it correctly. The glTF exporter samples the action
+    instead, and the values a matrix assignment leaves behind do not survive
+    that sampling, so the exported athlete arrives smeared while the rendered
+    one is perfect.
+
+    Visual keying reads the pose Blender actually evaluates and writes it back
+    as plain translate, rotate and scale keys, which is what the format stores.
+    """
+    bpy.ops.object.mode_set(mode="OBJECT")
+    for item in bpy.context.selected_objects:
+        item.select_set(False)
+    rig.select_set(True)
+    bpy.context.view_layer.objects.active = rig
+    bpy.ops.object.mode_set(mode="POSE")
+    bpy.ops.pose.select_all(action="SELECT")
+    bpy.ops.nla.bake(
+        frame_start=first,
+        frame_end=last,
+        only_selected=True,
+        visual_keying=True,
+        clear_constraints=False,
+        clear_parents=False,
+        use_current_action=True,
+        bake_types={"POSE"},
+    )
+    bpy.ops.object.mode_set(mode="OBJECT")
 
 
 def parse_args() -> argparse.Namespace:
@@ -377,6 +494,14 @@ def main() -> None:
             keyframe(rig, ball, number)
         scene.frame_set(1)
 
+        bake_action(rig, 1, len(frames))
+        # With the masks applied the skin's texture alpha has nothing left to
+        # hide, and all it does is dither: angular patches over the legs, arms
+        # and face wherever it is neither one nor zero. Hair, lashes and brows
+        # keep theirs, because they are cut-out cards.
+        solid = [human] + [a for a in assets
+                           if "casualsuit" in a.name or "high-poly" in a.name]
+        print(f"[movement-render] alpha: {', '.join(set_alpha(solid, 'OPAQUE'))}")
         glb = output / f"{job['movementId']}.glb"
         baked = bake_shape_keys([human, *assets])
         if baked:
@@ -388,6 +513,13 @@ def main() -> None:
             use_selection=True,
             export_animations=True,
             export_frame_range=True,
+            # MPFB hides the fitting helpers and the body under the clothes
+            # with two mask modifiers. The exporter ignores modifiers unless
+            # it is asked, so both masks were dropped and the athlete arrived
+            # wearing a skirt of helper geometry with her chest through her
+            # shirt. This is what applies them. It also disables shape key
+            # export, which is why they are baked first.
+            export_apply=True,
         )
         movie = output / f"{job['movementId']}.mp4"
         view = job["views"]["quarter"]
