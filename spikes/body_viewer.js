@@ -98,6 +98,37 @@
   };
   var lineBuffer = gl.createBuffer();
 
+  // A ball. Built once as a unit sphere, then moved and scaled per frame.
+  function unitSphere(rings, segments) {
+    var verts = [], index = [];
+    for (var y = 0; y <= rings; y++) {
+      var phi = Math.PI * y / rings;
+      for (var x = 0; x <= segments; x++) {
+        var theta = 2 * Math.PI * x / segments;
+        verts.push(
+          Math.sin(phi) * Math.cos(theta),
+          Math.cos(phi),
+          Math.sin(phi) * Math.sin(theta)
+        );
+      }
+    }
+    for (var ry = 0; ry < rings; ry++) {
+      for (var rx = 0; rx < segments; rx++) {
+        var a = ry * (segments + 1) + rx;
+        var b = a + segments + 1;
+        index.push(a, b, a + 1, b, b + 1, a + 1);
+      }
+    }
+    return { verts: new Float32Array(verts), index: new Uint16Array(index) };
+  }
+  var sphere = unitSphere(14, 20);
+  var ballPositions = new Float32Array(sphere.verts.length);
+  var ballBuffer = gl.createBuffer();
+  var ballNormalBuffer = gl.createBuffer();
+  var ballIndexBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ballIndexBuffer);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, sphere.index, gl.STATIC_DRAW);
+
   var positionBuffer = gl.createBuffer();
   var normalBuffer = gl.createBuffer();
   var indexBuffer = gl.createBuffer();
@@ -160,6 +191,8 @@
   var skeleton = null;
   var showMesh = true;
   var showSkeleton = false;
+  var ballCentre = null;
+  var ballRadius = 11;
   var playing = true;
   var azimuth = 0.55;
   var elevation = 0.12;
@@ -269,6 +302,33 @@
     gl.drawElements(gl.TRIANGLES, faces.length, gl.UNSIGNED_SHORT, 0);
     }
 
+    if (ballCentre) {
+      for (var v = 0; v < sphere.verts.length; v += 3) {
+        ballPositions[v] = ballCentre[0] + sphere.verts[v] * ballRadius;
+        ballPositions[v + 1] = ballCentre[1] + sphere.verts[v + 1] * ballRadius;
+        ballPositions[v + 2] = ballCentre[2] + sphere.verts[v + 2] * ballRadius;
+      }
+      gl.useProgram(program);
+      gl.uniformMatrix4fv(uniforms.modelView, false, new Float32Array(modelView));
+      gl.uniformMatrix4fv(uniforms.projection, false, new Float32Array(projection));
+      gl.uniformMatrix3fv(
+        uniforms.normalMatrix, false, new Float32Array(normalFrom(modelView))
+      );
+      gl.uniform3fv(uniforms.baseColour, new Float32Array(theme.rim));
+      gl.uniform3fv(uniforms.rimColour, new Float32Array(theme.base));
+      gl.bindBuffer(gl.ARRAY_BUFFER, ballBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, ballPositions, gl.DYNAMIC_DRAW);
+      gl.enableVertexAttribArray(attributes.position);
+      gl.vertexAttribPointer(attributes.position, 3, gl.FLOAT, false, 0, 0);
+      // On a unit sphere the outward normal is the vertex itself.
+      gl.bindBuffer(gl.ARRAY_BUFFER, ballNormalBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, sphere.verts, gl.DYNAMIC_DRAW);
+      gl.enableVertexAttribArray(attributes.normal);
+      gl.vertexAttribPointer(attributes.normal, 3, gl.FLOAT, false, 0, 0);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ballIndexBuffer);
+      gl.drawElements(gl.TRIANGLES, sphere.index.length, gl.UNSIGNED_SHORT, 0);
+    }
+
     if (showSkeleton && skeleton) {
       // Drawn without depth test so the bones stay visible through the body.
       gl.disable(gl.DEPTH_TEST);
@@ -290,6 +350,8 @@
     frameIndex = index;
     positions = new Float32Array(data.frames[index]);
     skeleton = data.skeletons ? new Float32Array(data.skeletons[index]) : null;
+    ballCentre = data.balls ? data.balls[index] : null;
+    ballRadius = data.ballRadius || 11;
     normals = computeNormals(positions, faces);
     var fraction = index / Math.max(data.frames.length - 1, 1);
     document.getElementById('scrub').value = String(index);
