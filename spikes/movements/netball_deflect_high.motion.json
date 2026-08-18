@@ -1,6 +1,6 @@
 {
   "movementId": "netball_deflect_high",
-  "frames": 20,
+  "frames": 36,
   "framesPerSecond": 24,
   "notes": "A deflect is not a catch. The ball is controlled and sent on in one movement, beside the head, so there is no pull-in and no key where the hands come near the chest. The hands stay high throughout.",
   "stance": {

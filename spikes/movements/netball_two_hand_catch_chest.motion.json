@@ -1,6 +1,6 @@
 {
   "movementId": "netball_two_hand_catch_chest",
-  "frames": 24,
+  "frames": 40,
   "framesPerSecond": 24,
   "notes": "Hand positions are fractions of arm length, measured from the chest. across is out to the side, up is above the chest, ahead is in front. 1.0 ahead is a fully straight arm reaching forward.",
   "stance": {
@@ -24,7 +24,7 @@
       "note": "Takes the ball with arms almost straight, at chest height. Fingers up, thumbs in the middle."
     },
     {
-      "atPhase": 0.72,
+      "atPhase": 0.76,
       "name": "pull_in",
       "across": 0.22,
       "up": 0.02,

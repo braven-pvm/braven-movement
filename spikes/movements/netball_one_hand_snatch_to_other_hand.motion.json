@@ -1,6 +1,6 @@
 {
   "movementId": "netball_one_hand_snatch_to_other_hand",
-  "frames": 24,
+  "frames": 40,
   "framesPerSecond": 24,
   "notes": "The first asymmetric movement in the library. The right hand reaches out alone and takes the ball. The left hand then joins it, because the manual is explicit: get two hands on the ball as quick as possible. Keys carry per-hand overrides; where a hand has no override it uses the shared offsets.",
   "stance": {
@@ -19,10 +19,10 @@
       "atPhase": 0.35,
       "name": "reach",
       "across": 0.26,
-      "up": 0.20,
-      "ahead": 0.60,
+      "up": 0.2,
+      "ahead": 0.6,
       "right": {
-        "across": 0.30,
+        "across": 0.3,
         "up": 0.38,
         "ahead": 0.86
       },

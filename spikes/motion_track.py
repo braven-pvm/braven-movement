@@ -48,6 +48,74 @@ class HandOffset:
         )
 
 
+def _tangents(phases, values):
+    """Return a slope at each key that is smooth but never overshoots.
+
+    Fritsch and Carlson's method. A raised cosine between each pair of keys
+    forced the speed to zero at every key, so a movement stopped and restarted
+    at each one and read as jarring. A plain Catmull-Rom fixed the stopping but
+    overshot badly on unevenly spaced keys, which is worse: it invents swings
+    the author never asked for. This keeps the speed continuous through a key
+    and stays inside the values the author wrote.
+    """
+    count = len(values)
+    if count < 2:
+        return [0.0] * count
+
+    secants = []
+    for index in range(count - 1):
+        span = phases[index + 1] - phases[index]
+        secants.append(
+            0.0 if span <= 0.0 else (values[index + 1] - values[index]) / span
+        )
+
+    slopes = [0.0] * count
+    slopes[0] = secants[0]
+    slopes[-1] = secants[-1]
+    for index in range(1, count - 1):
+        before, after = secants[index - 1], secants[index]
+        if before * after <= 0.0:
+            # A turning point. A zero slope here is what stops the overshoot.
+            slopes[index] = 0.0
+        else:
+            first = phases[index] - phases[index - 1]
+            second = phases[index + 1] - phases[index]
+            total = first + second
+            slopes[index] = (3.0 * total) / (
+                (total + second) / before + (total + first) / after
+            )
+    return slopes
+
+
+def _sample(values, phase, phases):
+    """Sample a list of per-key numbers smoothly at this phase."""
+    if phase <= phases[0]:
+        return values[0]
+    if phase >= phases[-1]:
+        return values[-1]
+
+    index = 0
+    for candidate in range(len(phases) - 1):
+        if phases[candidate] <= phase <= phases[candidate + 1]:
+            index = candidate
+            break
+
+    span = phases[index + 1] - phases[index]
+    if span <= 0.0:
+        return values[index]
+    travel = (phase - phases[index]) / span
+
+    slopes = _tangents(phases, values)
+    t2 = travel * travel
+    t3 = t2 * travel
+    return (
+        (2.0 * t3 - 3.0 * t2 + 1.0) * values[index]
+        + (t3 - 2.0 * t2 + travel) * span * slopes[index]
+        + (-2.0 * t3 + 3.0 * t2) * values[index + 1]
+        + (t3 - t2) * span * slopes[index + 1]
+    )
+
+
 @dataclass(frozen=True)
 class FootPlacement:
     """Where a foot is, relative to the hips, in arm lengths.
@@ -110,93 +178,59 @@ class MotionTrack:
         key, so the movement eases rather than jerking from one pose to the next.
         """
         keys = self.keys
-        if phase <= keys[0].at_phase:
+        phases = [key.at_phase for key in keys]
+        if phase <= phases[0]:
             return (keys[0].left, keys[0].right)
-        if phase >= keys[-1].at_phase:
+        if phase >= phases[-1]:
             return (keys[-1].left, keys[-1].right)
 
-        for first, second in zip(keys, keys[1:]):
-            if first.at_phase <= phase <= second.at_phase:
-                span = second.at_phase - first.at_phase
-                travel = 0.0 if span <= 0.0 else (phase - first.at_phase) / span
-                eased = 0.5 - 0.5 * math.cos(math.pi * travel)
-                return (
-                    first.left.blend(second.left, eased),
-                    first.right.blend(second.right, eased),
-                )
-        raise MotionTrackError(f"no key span covers phase {phase}")
+        def side(pick):
+            return HandOffset(
+                across=_sample([pick(k).across for k in keys], phase, phases),
+                up=_sample([pick(k).up for k in keys], phase, phases),
+                ahead=_sample([pick(k).ahead for k in keys], phase, phases),
+            )
+
+        return (side(lambda k: k.left), side(lambda k: k.right))
 
     def hip_drop_at(self, phase: float) -> float:
         """Return the hip drop at this phase, smoothly between the keys."""
-        keys = self.keys
-        if phase <= keys[0].at_phase:
-            return keys[0].hip_drop
-        if phase >= keys[-1].at_phase:
-            return keys[-1].hip_drop
-        for first, second in zip(keys, keys[1:]):
-            if first.at_phase <= phase <= second.at_phase:
-                span = second.at_phase - first.at_phase
-                travel = 0.0 if span <= 0.0 else (phase - first.at_phase) / span
-                eased = 0.5 - 0.5 * math.cos(math.pi * travel)
-                return first.hip_drop + (second.hip_drop - first.hip_drop) * eased
-        raise MotionTrackError(f"no key span covers phase {phase}")
+        phases = [key.at_phase for key in self.keys]
+        return _sample([key.hip_drop for key in self.keys], phase, phases)
 
     def turn_at(self, phase: float) -> float:
         """Return the trunk turn at this phase, smoothly between the keys."""
-        keys = self.keys
-        if phase <= keys[0].at_phase:
-            return keys[0].turn_degrees
-        if phase >= keys[-1].at_phase:
-            return keys[-1].turn_degrees
-        for first, second in zip(keys, keys[1:]):
-            if first.at_phase <= phase <= second.at_phase:
-                span = second.at_phase - first.at_phase
-                travel = 0.0 if span <= 0.0 else (phase - first.at_phase) / span
-                eased = 0.5 - 0.5 * math.cos(math.pi * travel)
-                return (
-                    first.turn_degrees
-                    + (second.turn_degrees - first.turn_degrees) * eased
-                )
-        raise MotionTrackError(f"no key span covers phase {phase}")
+        phases = [key.at_phase for key in self.keys]
+        return _sample([key.turn_degrees for key in self.keys], phase, phases)
 
     def feet_at(self, phase: float) -> tuple[FootPlacement, FootPlacement] | None:
         """Return both foot placements, or None when this drill keeps them still."""
         keys = self.keys
         if not self.moves_feet():
             return None
-        if phase <= keys[0].at_phase:
+        phases = [key.at_phase for key in keys]
+        if phase <= phases[0]:
             return (keys[0].foot_left, keys[0].foot_right)  # type: ignore[return-value]
-        if phase >= keys[-1].at_phase:
+        if phase >= phases[-1]:
             return (keys[-1].foot_left, keys[-1].foot_right)  # type: ignore[return-value]
-        for first, second in zip(keys, keys[1:]):
-            if first.at_phase <= phase <= second.at_phase:
-                span = second.at_phase - first.at_phase
-                travel = 0.0 if span <= 0.0 else (phase - first.at_phase) / span
-                eased = 0.5 - 0.5 * math.cos(math.pi * travel)
-                return (
-                    first.foot_left.blend(second.foot_left, eased),  # type: ignore[union-attr]
-                    first.foot_right.blend(second.foot_right, eased),  # type: ignore[union-attr]
-                )
-        raise MotionTrackError(f"no key span covers phase {phase}")
+
+        def foot(pick):
+            across = _sample([pick(k).across for k in keys], phase, phases)
+            ahead = _sample([pick(k).ahead for k in keys], phase, phases)
+            up = _sample([pick(k).up for k in keys], phase, phases)
+            # A spline can dip below the floor between two planted keys, and a
+            # foot does not go through the ground.
+            return FootPlacement(across, ahead, max(0.0, up))
+
+        return (foot(lambda k: k.foot_left), foot(lambda k: k.foot_right))
 
     def root_offset_at(self, phase: float) -> tuple[float, float]:
         """Return how far the hips have travelled across and ahead, in arm lengths."""
-        keys = self.keys
-        if phase <= keys[0].at_phase:
-            return (keys[0].root_across, keys[0].root_ahead)
-        if phase >= keys[-1].at_phase:
-            return (keys[-1].root_across, keys[-1].root_ahead)
-        for first, second in zip(keys, keys[1:]):
-            if first.at_phase <= phase <= second.at_phase:
-                span = second.at_phase - first.at_phase
-                travel = 0.0 if span <= 0.0 else (phase - first.at_phase) / span
-                eased = 0.5 - 0.5 * math.cos(math.pi * travel)
-                return (
-                    first.root_across
-                    + (second.root_across - first.root_across) * eased,
-                    first.root_ahead + (second.root_ahead - first.root_ahead) * eased,
-                )
-        raise MotionTrackError(f"no key span covers phase {phase}")
+        phases = [key.at_phase for key in self.keys]
+        return (
+            _sample([key.root_across for key in self.keys], phase, phases),
+            _sample([key.root_ahead for key in self.keys], phase, phases),
+        )
 
     def moves_feet(self) -> bool:
         return all(

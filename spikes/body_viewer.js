@@ -73,6 +73,31 @@
     rimColour: gl.getUniformLocation(program, 'rimColour')
   };
 
+  // A second, flat program for the skeleton overlay. Lines want no lighting.
+  var LINE_VERTEX = [
+    'attribute vec3 position;',
+    'uniform mat4 modelView;',
+    'uniform mat4 projection;',
+    'void main() { gl_Position = projection * modelView * vec4(position, 1.0); }'
+  ].join('\n');
+  var LINE_FRAGMENT = [
+    'precision mediump float;',
+    'uniform vec3 lineColour;',
+    'void main() { gl_FragColor = vec4(lineColour, 1.0); }'
+  ].join('\n');
+
+  var lineProgram = gl.createProgram();
+  gl.attachShader(lineProgram, compile(gl.VERTEX_SHADER, LINE_VERTEX));
+  gl.attachShader(lineProgram, compile(gl.FRAGMENT_SHADER, LINE_FRAGMENT));
+  gl.linkProgram(lineProgram);
+  var lineAttribute = gl.getAttribLocation(lineProgram, 'position');
+  var lineUniforms = {
+    modelView: gl.getUniformLocation(lineProgram, 'modelView'),
+    projection: gl.getUniformLocation(lineProgram, 'projection'),
+    lineColour: gl.getUniformLocation(lineProgram, 'lineColour')
+  };
+  var lineBuffer = gl.createBuffer();
+
   var positionBuffer = gl.createBuffer();
   var normalBuffer = gl.createBuffer();
   var indexBuffer = gl.createBuffer();
@@ -132,6 +157,9 @@
   var positions = null;
   var normals = null;
   var frameIndex = 0;
+  var skeleton = null;
+  var showMesh = true;
+  var showSkeleton = false;
   var playing = true;
   var azimuth = 0.55;
   var elevation = 0.12;
@@ -218,6 +246,8 @@
       0.72, canvas.width / Math.max(canvas.height, 1), span * 0.05, span * 12
     );
 
+    if (showMesh) {
+    gl.useProgram(program);
     gl.uniformMatrix4fv(uniforms.modelView, false, new Float32Array(modelView));
     gl.uniformMatrix4fv(uniforms.projection, false, new Float32Array(projection));
     gl.uniformMatrix3fv(
@@ -225,7 +255,6 @@
     );
     gl.uniform3fv(uniforms.baseColour, new Float32Array(theme.base));
     gl.uniform3fv(uniforms.rimColour, new Float32Array(theme.rim));
-
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
     gl.enableVertexAttribArray(attributes.position);
@@ -238,11 +267,29 @@
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
     gl.drawElements(gl.TRIANGLES, faces.length, gl.UNSIGNED_SHORT, 0);
+    }
+
+    if (showSkeleton && skeleton) {
+      // Drawn without depth test so the bones stay visible through the body.
+      gl.disable(gl.DEPTH_TEST);
+      gl.useProgram(lineProgram);
+      gl.uniformMatrix4fv(lineUniforms.modelView, false, new Float32Array(modelView));
+      gl.uniformMatrix4fv(lineUniforms.projection, false, new Float32Array(projection));
+      gl.uniform3fv(lineUniforms.lineColour, new Float32Array(theme.rim));
+      gl.bindBuffer(gl.ARRAY_BUFFER, lineBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, skeleton, gl.DYNAMIC_DRAW);
+      gl.enableVertexAttribArray(lineAttribute);
+      gl.vertexAttribPointer(lineAttribute, 3, gl.FLOAT, false, 0, 0);
+      gl.lineWidth(2);
+      gl.drawArrays(gl.LINES, 0, skeleton.length / 3);
+      gl.enable(gl.DEPTH_TEST);
+    }
   }
 
   function showFrame(index) {
     frameIndex = index;
     positions = new Float32Array(data.frames[index]);
+    skeleton = data.skeletons ? new Float32Array(data.skeletons[index]) : null;
     normals = computeNormals(positions, faces);
     var fraction = index / Math.max(data.frames.length - 1, 1);
     document.getElementById('scrub').value = String(index);
@@ -344,6 +391,28 @@
     event.preventDefault();
     draw();
   });
+
+  function syncToggles() {
+    var mesh = document.getElementById('toggleMesh');
+    var bones = document.getElementById('toggleSkeleton');
+    mesh.setAttribute('aria-pressed', showMesh ? 'true' : 'false');
+    bones.setAttribute('aria-pressed', showSkeleton ? 'true' : 'false');
+  }
+
+  document.getElementById('toggleMesh').addEventListener('click', function () {
+    showMesh = !showMesh;
+    // Never leave an empty canvas. Hiding the body turns the bones on.
+    if (!showMesh && !showSkeleton) { showSkeleton = true; }
+    syncToggles();
+    draw();
+  });
+  document.getElementById('toggleSkeleton').addEventListener('click', function () {
+    showSkeleton = !showSkeleton;
+    if (!showMesh && !showSkeleton) { showMesh = true; }
+    syncToggles();
+    draw();
+  });
+  syncToggles();
 
   document.querySelectorAll('[data-view]').forEach(function (button) {
     button.addEventListener('click', function () {

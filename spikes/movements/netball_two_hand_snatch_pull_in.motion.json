@@ -1,6 +1,6 @@
 {
   "movementId": "netball_two_hand_snatch_pull_in",
-  "frames": 24,
+  "frames": 40,
   "framesPerSecond": 24,
   "notes": "Hand positions are given relative to the chest and scaled by the athlete's own arm length, so the same movement retargets to any body without rewriting numbers. Units are fractions of arm length. across is the distance out to the side, up is above the chest, ahead is in front of the chest. A value of 1.0 ahead means a fully straight arm reaching forward.",
   "stance": {
@@ -25,7 +25,7 @@
       "note": "Reacting to the front, hands rising toward the ball."
     },
     {
-      "atPhase": 0.55,
+      "atPhase": 0.5,
       "name": "contact",
       "across": 0.26,
       "up": 0.42,
@@ -33,7 +33,7 @@
       "note": "Contact, in front of the shoulder, near full reach."
     },
     {
-      "atPhase": 0.78,
+      "atPhase": 0.74,
       "name": "absorb",
       "across": 0.24,
       "up": 0.28,

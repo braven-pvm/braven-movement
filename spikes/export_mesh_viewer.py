@@ -26,6 +26,7 @@ sys.path.insert(0, str(SPIKE_DIR))
 
 from motion_track import load_motion  # noqa: E402
 from movement_definition import load as load_definition  # noqa: E402
+from render_contact_sheet import BONES  # noqa: E402
 from movement_engine import (  # noqa: E402
     ASSET_FOLDER,
     definition_path,
@@ -53,13 +54,25 @@ def export(character: geometry.Character, movement_id: str) -> Path:
     result = solve(character, track)
 
     faces = np.asarray(character.mesh.faces, dtype=np.int32)
-    parameter_count = character.parameter_transform.size
+    names = list(character.skeleton.joint_names)
+    index = {name: number for number, name in enumerate(names)}
+    bones = [pair for pair in BONES if all(n in index for n in pair)]
 
     frames = []
+    skeletons = []
     for parameters in result["motion"]:
         state = geometry.model_parameters_to_skeleton_state(
             character, np.asarray(parameters, dtype=np.float32)
         )
+        joints = np.asarray(state).reshape(-1, 8)[:, :3]
+        # Only the joints the skeleton overlay draws, so the page stays small.
+        segment = []
+        for first, second in bones:
+            for joint in (first, second):
+                segment.extend(
+                    round(float(value), 1) for value in joints[index[joint]]
+                )
+        skeletons.append(segment)
         skinned = np.asarray(character.skin_points(state), dtype=np.float64)
         # Only the vertices travel. Normals are recomputed from the faces in the
         # viewer, which costs nothing at this size and halves the page.
@@ -78,6 +91,8 @@ def export(character: geometry.Character, movement_id: str) -> Path:
         "vertexCount": int(faces.max()) + 1,
         "faces": [int(value) for value in faces.reshape(-1)],
         "frames": frames,
+        "skeletons": skeletons,
+        "boneCount": len(bones),
         "framesPerSecond": track.frames_per_second,
         "bounds": {
             "min": [round(float(value), 1) for value in everything.min(axis=0)],

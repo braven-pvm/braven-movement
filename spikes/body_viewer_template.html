@@ -70,6 +70,8 @@
   }
   .bar button.primary { color: var(--court); background: var(--chalk);
                         border-color: var(--chalk); min-width: 68px; }
+  .bar button[aria-pressed="true"] { color: var(--court);
+                                    background: var(--panel); border-color: var(--panel); }
   input[type="range"] { flex: 1; accent-color: var(--body); min-width: 120px; }
 
   .phase-now { font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
@@ -118,8 +120,10 @@
         <button type="button" data-view="front">Front</button>
         <button type="button" data-view="side">Side</button>
         <button type="button" data-view="back">Back</button>
+        <button type="button" id="toggleMesh" aria-pressed="true">Body</button>
+        <button type="button" id="toggleSkeleton" aria-pressed="false">Bones</button>
       </div>
-      <p class="hint">Drag to orbit &middot; scroll to zoom &middot; arrow keys also turn the view</p>
+      <p class="hint">Drag to orbit &middot; scroll to zoom &middot; arrow keys also turn the view &middot; Body and Bones show either layer, or both together</p>
     </section>
 
     <section class="card">

@@ -1,6 +1,6 @@
 {
   "movementId": "netball_hooks_jump_pull_in",
-  "frames": 26,
+  "frames": 44,
   "framesPerSecond": 24,
   "notes": "A jump catch, and the first movement with a stance that changes. hipDrop per key loads the legs, extends through the jump, then absorbs on landing. Arms are almost straight at the top, the ball comes to the chest on the way down, and the momentum carries into the release.",
   "stance": {
