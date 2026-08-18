@@ -407,6 +407,23 @@ def hand_targets_from_track(
     return left.astype(np.float32), right.astype(np.float32)
 
 
+def leg_length(points: np.ndarray, index: dict[str, int], side: str = "l") -> float:
+    """Return the athlete's leg length, hip to knee to ankle.
+
+    Stance is measured in these rather than in arm lengths. How far the hips
+    drop, where the feet go and how far they travel are all things the legs do,
+    and expressing them in arm lengths made them depend on the wrong limb: two
+    athletes of the same height with the same legs, differing only in reach,
+    came out with knees 5 degrees apart.
+    """
+    hip = points[index[f"{side}_upleg"]]
+    knee = points[index[f"{side}_lowleg"]]
+    ankle = points[index[f"{side}_foot"]]
+    thigh = float(np.linalg.norm(knee - hip))
+    shank = float(np.linalg.norm(ankle - knee))
+    return thigh + shank
+
+
 def arm_length(points: np.ndarray, index: dict[str, int], side: str = "l") -> float:
     """Return the athlete's arm length, shoulder to elbow to wrist."""
     shoulder = points[index[f"{side}_uparm"]]

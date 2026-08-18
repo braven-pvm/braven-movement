@@ -30,7 +30,7 @@ SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
 
 from ball_track import has_ball  # noqa: E402
-from contact_solve import minmax_limits  # noqa: E402
+from athlete import minmax_limits  # noqa: E402
 from motion_track import load_motion  # noqa: E402
 from movement_engine import (  # noqa: E402
     library,
@@ -56,10 +56,18 @@ TOLERANCE_DEGREES = 0.25
 
 
 def overshoots(character, parameters: np.ndarray, limits: dict) -> dict[str, float]:
-    """Return every parameter outside its range, and by how many degrees."""
+    """Return every joint outside its range, and by how many degrees.
+
+    Scale parameters are left out. They are lengths, not angles, so reporting
+    one of them in degrees is a category error, and a body outside the model's
+    size range is a different fault from a pose outside a joint's range. That
+    is what athlete.supported_heights is for.
+    """
     names = list(character.parameter_transform.names)
     found: dict[str, float] = {}
     for name, (low, high) in limits.items():
+        if name.startswith("scale_"):
+            continue
         value = float(parameters[names.index(name)])
         past = max(low - value, value - high, 0.0)
         if past > 0.0:

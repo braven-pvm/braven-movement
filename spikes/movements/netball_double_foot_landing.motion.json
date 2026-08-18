@@ -5,7 +5,8 @@
   "rateNote": "60 frames per second, not 24. A real pass at 6 m per second crosses the whole reachable span in two frames at 24, and the largest elbow change between frames falls from 9.4 degrees at 24 to 4.4 at 60. Nothing about the movement changes with the rate; there were not enough frames to hold it.",
   "notes": "The first footwork drill, and the first movement where the feet move and the hips travel. The athlete runs in, takes off, is briefly airborne with both feet clear of the ground, catches the ball in flight, and lands on both feet together. Foot placements are relative to the hips in arm lengths, with up measured from the ground, so a foot at up 0 is on the floor.",
   "stance": {
-    "hipDropFraction": 0.14
+    "hipDropFraction": 0.08776,
+    "unitNote": "Stance is measured in leg lengths, not arm lengths. hipDrop, the foot placements and the root travel were all written in arm lengths, which made them depend on the wrong limb: two athletes of the same height with the same legs, differing only in reach, came out with knees 5 degrees apart. Every stance number here was multiplied by 0.626885, the reference athlete's arm over her leg, so her poses are exactly what they were and only other bodies change."
   },
   "keys": [
     {
@@ -14,16 +15,16 @@
       "across": 0.34,
       "up": 0.02,
       "ahead": 0.4,
-      "hipDrop": 0.08,
-      "rootAhead": -0.7,
+      "hipDrop": 0.05015,
+      "rootAhead": -0.43882,
       "footLeft": {
-        "across": 0.16,
-        "ahead": 0.24,
+        "across": 0.1003,
+        "ahead": 0.15045,
         "up": 0.0
       },
       "footRight": {
-        "across": 0.16,
-        "ahead": -0.26,
+        "across": 0.1003,
+        "ahead": -0.16299,
         "up": 0.0
       },
       "note": "Running in. Feet split front and back, hips behind the landing spot."
@@ -34,17 +35,17 @@
       "across": 0.32,
       "up": 0.14,
       "ahead": 0.52,
-      "hipDrop": 0.3,
-      "rootAhead": -0.4,
+      "hipDrop": 0.18807,
+      "rootAhead": -0.25075,
       "footLeft": {
-        "across": 0.15,
-        "ahead": -0.1,
+        "across": 0.09403,
+        "ahead": -0.06269,
         "up": 0.0
       },
       "footRight": {
-        "across": 0.15,
-        "ahead": -0.3,
-        "up": 0.02
+        "across": 0.09403,
+        "ahead": -0.18807,
+        "up": 0.01254
       },
       "note": "Loading into the take-off. The driving foot is still down."
     },
@@ -54,17 +55,17 @@
       "across": 0.3,
       "up": 0.38,
       "ahead": 0.72,
-      "hipDrop": -0.1,
-      "rootAhead": -0.12,
+      "hipDrop": -0.06269,
+      "rootAhead": -0.07523,
       "footLeft": {
-        "across": 0.15,
-        "ahead": 0.1,
-        "up": 0.3
+        "across": 0.09403,
+        "ahead": 0.06269,
+        "up": 0.18807
       },
       "footRight": {
-        "across": 0.15,
-        "ahead": 0.04,
-        "up": 0.3
+        "across": 0.09403,
+        "ahead": 0.02508,
+        "up": 0.18807
       },
       "note": "Airborne. Both feet clear of the ground, hands up for the ball."
     },
@@ -74,17 +75,17 @@
       "across": 0.3,
       "up": 0.42,
       "ahead": 0.78,
-      "hipDrop": -0.06,
+      "hipDrop": -0.03761,
       "rootAhead": 0.0,
       "footLeft": {
-        "across": 0.16,
-        "ahead": 0.14,
-        "up": 0.22
+        "across": 0.1003,
+        "ahead": 0.08776,
+        "up": 0.13791
       },
       "footRight": {
-        "across": 0.16,
-        "ahead": 0.14,
-        "up": 0.22
+        "across": 0.1003,
+        "ahead": 0.08776,
+        "up": 0.13791
       },
       "note": "Catching in the air, feet already levelling for the landing."
     },
@@ -94,15 +95,15 @@
       "across": 0.28,
       "up": 0.12,
       "ahead": 0.44,
-      "hipDrop": 0.16,
+      "hipDrop": 0.1003,
       "rootAhead": 0.0,
       "footLeft": {
-        "across": 0.17,
+        "across": 0.10657,
         "ahead": 0.0,
         "up": 0.0
       },
       "footRight": {
-        "across": 0.17,
+        "across": 0.10657,
         "ahead": 0.0,
         "up": 0.0
       },
@@ -114,15 +115,15 @@
       "across": 0.26,
       "up": 0.02,
       "ahead": 0.34,
-      "hipDrop": 0.34,
+      "hipDrop": 0.21314,
       "rootAhead": 0.0,
       "footLeft": {
-        "across": 0.17,
+        "across": 0.10657,
         "ahead": 0.0,
         "up": 0.0
       },
       "footRight": {
-        "across": 0.17,
+        "across": 0.10657,
         "ahead": 0.0,
         "up": 0.0
       },

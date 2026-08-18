@@ -56,6 +56,7 @@ from finger_wrap import (  # noqa: E402
     wrap_constraints,
     wrap_report,
 )
+from athlete import minmax_limits  # noqa: E402,F401
 from technique import has_technique, load_technique, technique_path  # noqa: E402
 
 OUTPUT = SPIKE_DIR / "poc-output" / "library"
@@ -88,6 +89,9 @@ TWIST_SEEDS = (-2.0, -1.0, 0.0, 1.0)
 # brings the worst palm gap to 0.05 cm. Higher starts to overpower the grip
 # again: 1.5 puts it back to 9.8 cm.
 CONTACT_POLE_WEIGHT = 0.8
+# The arm the pole offsets were measured on. Everything absolute in this file
+# is relative to this body and has to be scaled to any other.
+REFERENCE_ARM_CM = 52.68
 # The fingertips are frozen straight, so a flat hand cannot wrap a sphere. This
 # is how far the tips are allowed to be off the surface before it is reported.
 TIP_TOLERANCE_CM = 6.0
@@ -217,7 +221,11 @@ def elbow_poles(
         # Down and out relative to the athlete, not to the world. On the
         # only drill in the library with a large authored turn, a world aligned
         # pole pushes the elbow across her body instead of away from it.
-        pole = midpoint + slack * (
+        # Scaled by the athlete's own arm. These were absolute centimetres
+        # measured on the reference body, so on a shorter arm the same pole was
+        # a proportionally harder pull and the elbow came out at a different
+        # angle for the same movement.
+        pole = midpoint + slack * (reach_cm / REFERENCE_ARM_CM) * (
             placed.rotation
             @ np.array([sign * ELBOW_POLE_OUT_CM, -ELBOW_POLE_DOWN_CM, 0.0])
         )
@@ -451,20 +459,6 @@ PINNED_FRACTION = 0.02
 # The engine should say when a grip is not the one that was asked for. Anything
 # further than this and the achieved spread is reported as unreachable.
 SPREAD_TOLERANCE_DEGREES = 3.0
-
-
-def minmax_limits(character) -> dict[str, tuple[float, float]]:
-    """Return each parameter's own range of motion, by name."""
-    names = list(character.parameter_transform.names)
-    found: dict[str, tuple[float, float]] = {}
-    for limit in character.parameter_limits:
-        if str(limit.type) != "LimitType.MinMax":
-            continue
-        data = limit.data.minmax
-        number = int(data.model_parameter_index)
-        if 0 <= number < len(names):
-            found[names[number]] = (float(data.min), float(data.max))
-    return found
 
 
 def pinned_parameters(character, parameters: np.ndarray) -> list[str]:

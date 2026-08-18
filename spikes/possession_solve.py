@@ -92,11 +92,20 @@ def athlete_frames(track, rest_positions, index, reach_cm, phases, turns=None):
     return placed, frames, shoulders
 
 
-def solve_movement(character, movement_id: str, variant: str | None = None) -> dict:
+def solve_movement(
+    character,
+    movement_id: str,
+    variant: str | None = None,
+    identity: np.ndarray | None = None,
+) -> dict:
     """Solve every frame of a movement against its ball. No hand keys are read.
 
     The variant selects which ball. The technique never changes with it, which
     is the whole claim being tested: one technique, any arrival point.
+
+    ``identity`` is the athlete's size. Everything the drill says is in arm
+    lengths, so a different body should produce the same movement at its own
+    scale, and that is the other claim being tested.
     """
     track = load_motion(motion_path(movement_id))
     ball = load_ball(ball_path(movement_id, variant))
@@ -105,7 +114,11 @@ def solve_movement(character, movement_id: str, variant: str | None = None) -> d
     names = list(character.skeleton.joint_names)
     index = {name: number for number, name in enumerate(names)}
     count = character.parameter_transform.size
-    rest = np.zeros(count, dtype=np.float32)
+    rest = (
+        np.zeros(count, dtype=np.float32)
+        if identity is None
+        else np.asarray(identity, dtype=np.float32).copy()
+    )
     rest_positions = joint_positions(character, rest)
     reach_cm = arm_length(rest_positions, index)
     radius_cm = ball.radius_cm_for(reach_cm)
@@ -319,6 +332,7 @@ def solve_movement(character, movement_id: str, variant: str | None = None) -> d
         "shapes": shapes,
         "radiusCm": radius_cm,
         "armLengthCm": reach_cm,
+        "identity": rest,
         "secondsPerFrame": seconds / track.frames,
         "turnedByDegrees": round(turned_by, 2),
         "turns": turns,

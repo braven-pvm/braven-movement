@@ -18,6 +18,7 @@ import pymomentum.solver2 as solver2
 from motion_track import (
     MotionTrack,
     arm_length,
+    leg_length,
     hand_targets_from_track,
     load_motion,
     turn_matrix,
@@ -166,6 +167,7 @@ def trunk_frame(
     index: dict[str, int],
     reach_cm: float,
     turn_degrees: float | None = None,
+    leg_cm: float | None = None,
 ) -> TrunkFrame:
     """Return the trunk placement at this phase. No solving happens here.
 
@@ -174,11 +176,14 @@ def trunk_frame(
     ball is something an athlete does rather than something a coach types.
     """
     rest_root = rest_positions[index["root"]]
-    drop = np.array([0.0, track.hip_drop_at(phase) * reach_cm, 0.0])
+    # Stance is measured in leg lengths. It is the legs that drop the hips and
+    # carry them through space, not the arms.
+    stance_cm = leg_length(rest_positions, index) if leg_cm is None else leg_cm
+    drop = np.array([0.0, track.hip_drop_at(phase) * stance_cm, 0.0])
     # A footwork drill moves the hips through space. A planted drill leaves
     # these at zero and behaves exactly as before.
     across_cm, ahead_cm = track.root_offset_at(phase)
-    travel = np.array([across_cm * reach_cm, 0.0, ahead_cm * reach_cm])
+    travel = np.array([across_cm * stance_cm, 0.0, ahead_cm * stance_cm])
     # A turn rotates the trunk about the vertical axis through the hips. The
     # feet stay planted, so the turn has to come from the trunk itself.
     rotation = turn_matrix(
@@ -273,6 +278,7 @@ def foot_targets(
     rest_positions: np.ndarray,
     index: dict[str, int],
     reach_cm: float,
+    leg_cm: float | None = None,
 ) -> dict[str, np.ndarray]:
     """Return where each foot belongs at this phase.
 
@@ -288,6 +294,7 @@ def foot_targets(
     # Height is measured from the ground, not from the hips, so a planted foot
     # stays on the floor however the hips move.
     ground = float(rest_positions[index["l_foot"]][1])
+    stance_cm = leg_length(rest_positions, index) if leg_cm is None else leg_cm
     targets: dict[str, np.ndarray] = {}
     for joint, placement, sign in (
         ("l_foot", placements[0], 1.0),
@@ -295,13 +302,13 @@ def foot_targets(
     ):
         local = np.array(
             [
-                sign * placement.across * reach_cm,
+                sign * placement.across * stance_cm,
                 0.0,
-                placement.ahead * reach_cm,
+                placement.ahead * stance_cm,
             ]
         )
         point = placed.root + placed.rotation @ local
-        point[1] = ground + placement.up * reach_cm
+        point[1] = ground + placement.up * stance_cm
         targets[joint] = point
     return targets
 
@@ -354,8 +361,18 @@ def scapula_targets(
     return found
 
 
-def solve(character: geometry.Character, track: MotionTrack) -> dict:
-    """Solve every frame of this movement and measure each one."""
+def solve(
+    character: geometry.Character,
+    track: MotionTrack,
+    identity: np.ndarray | None = None,
+) -> dict:
+    """Solve every frame of this movement and measure each one.
+
+    ``identity`` carries the athlete's size. It is a set of scale parameters,
+    which are in FORBIDDEN, so the solver never moves them and the athlete
+    keeps her proportions however hard a target pulls. Left out, it is the
+    reference body the model ships with.
+    """
     names = list(character.skeleton.joint_names)
     index = {name: position for position, name in enumerate(names)}
     count = character.parameter_transform.size
@@ -366,7 +383,11 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
     options.max_iterations = 30
     options.min_iterations = 4
 
-    rest = np.zeros(count, dtype=np.float32)
+    rest = (
+        np.zeros(count, dtype=np.float32)
+        if identity is None
+        else np.asarray(identity, dtype=np.float32).copy()
+    )
     rest_positions = joint_positions(character, rest)
     reach_cm = arm_length(rest_positions, index)
 
@@ -592,5 +613,9 @@ def library() -> list[str]:
     )
 
 
-def solve_movement(character: geometry.Character, movement_id: str) -> dict:
-    return solve(character, load_motion(motion_path(movement_id)))
+def solve_movement(
+    character: geometry.Character,
+    movement_id: str,
+    identity: np.ndarray | None = None,
+) -> dict:
+    return solve(character, load_motion(motion_path(movement_id)), identity)

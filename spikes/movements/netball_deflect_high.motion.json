@@ -5,7 +5,8 @@
   "rateNote": "60 frames per second, not 24. A real pass at 6 m per second crosses the whole reachable span in two frames at 24, and the largest elbow change between frames falls from 9.4 degrees at 24 to 4.4 at 60. Nothing about the movement changes with the rate; there were not enough frames to hold it.",
   "notes": "A deflect is not a catch. The ball is controlled and sent on in one movement, beside the head, so there is no pull-in and no key where the hands come near the chest. The hands stay high throughout.",
   "stance": {
-    "hipDropFraction": 0.14
+    "hipDropFraction": 0.08776,
+    "unitNote": "Stance is measured in leg lengths, not arm lengths. hipDrop, the foot placements and the root travel were all written in arm lengths, which made them depend on the wrong limb: two athletes of the same height with the same legs, differing only in reach, came out with knees 5 degrees apart. Every stance number here was multiplied by 0.626885, the reference athlete's arm over her leg, so her poses are exactly what they were and only other bodies change."
   },
   "keys": [
     {

@@ -322,6 +322,58 @@ because they change what milestones 2 to 5 have to do.
 5. **The ball never intersects a wrist at any frame.** The old derived ball did
    so by construction, because it was placed at the midpoint of the wrists.
 
+## Retargeting, which the whole design rests on
+
+Everything is written in arm lengths so that a movement authored on one body
+carries to another. Nothing had ever checked it. `retarget.py` runs the library
+on five bodies: the reference, the shortest and tallest the model will make, and
+two players of the same height whose reach differs by a tenth either way. That
+last pair is the one that matters, because they differ in exactly the quantity
+everything is written in.
+
+**What retargets perfectly.** The grip and the anatomy. Across every body and
+every drill the palm finishes between 0.001 and 0.081 cm from the ball surface,
+no finger goes into the ball, and no joint sits more than 0.21 degrees past its
+own limit. The contact model is genuinely body independent.
+
+**What does not.** The pose. Measured angles drift 5.5 to 25.7 degrees from the
+reference athlete's, where five is the smallest difference the coaching layer
+will report. The same drill on two bodies is not yet the same movement.
+
+Four causes found, three fixed.
+
+1. **Stance was measured in arm lengths.** The hip drop, the foot placements and
+   the root travel are all things the legs do, and they were scaled by the arm.
+   Two athletes of the same height with identical 84.05 cm legs, differing only
+   in reach, came out with knees 5 degrees apart. Fixed: stance is in leg
+   lengths, and every authored number was multiplied by 0.626885, the reference
+   athlete's arm over her leg, so her poses are unchanged and only other bodies
+   move.
+2. **Hands did not scale with the body.** A 158 cm athlete had the reference
+   athlete's hands, which quietly changed the grip, because the palm meets the
+   ball at a fixed 3.5 cm of skin. Fixed, as far as the model allows: the hand
+   scale is capped at a fifth either way, so a 190 cm athlete's hand comes out
+   4 mm short of proportional.
+3. **The elbow pole was in absolute centimetres.** Eleven centimetres down and
+   five out, measured on the reference body, is a proportionally harder pull on
+   a shorter arm. Fixed: scaled by the athlete's own arm.
+4. **The carry is still in arm lengths, and should not be.** Where a ball sits
+   when it is held against the chest depends on the chest and the ball, not on
+   the arm. This is the same mistake as the first one, one layer up, and it is
+   what most of the remaining drift is: the short armed athlete's worst
+   disagreement is at the end of the drill, while she is holding the ball. Not
+   fixed. It needs the technique files migrating the way the motion files were.
+
+**The model does not reach a junior squad.** Its scale parameters cover 158.0 to
+201.3 cm. Under-13 netball is 145 to 160. Asking for a body outside that range
+now says so rather than quietly building the nearest one it can, but the range
+is the model's and not something this repository can widen.
+
+**The limit check was calling a length a degree.** It judged every parameter
+with a range, including the scale parameters, and ran them through
+`math.degrees`. That is how a body the model would not make came out as a
+55 degree joint violation. Pose and shape are now told apart.
+
 ## What is still rough
 
 - **The outside hand hooks drill jumps as the second hand comes in.** Its worst

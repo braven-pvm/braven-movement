@@ -5,8 +5,9 @@
   "rateNote": "60 frames per second, not 24. A real pass at 6 m per second crosses the whole reachable span in two frames at 24, and the largest elbow change between frames falls from 9.4 degrees at 24 to 4.4 at 60. Nothing about the movement changes with the rate; there were not enough frames to hold it.",
   "notes": "The first turned movement, and the first where the ball is not in front of the athlete. The manual has the worker facing to a side while the passer places the ball in front of them, so the trunk is turned and the near hand does the work. Hand offsets are measured in the turned frame, so they follow the trunk.",
   "stance": {
-    "hipDropFraction": 0.16,
-    "turnDegrees": 42
+    "hipDropFraction": 0.1003,
+    "turnDegrees": 42,
+    "unitNote": "Stance is measured in leg lengths, not arm lengths. hipDrop, the foot placements and the root travel were all written in arm lengths, which made them depend on the wrong limb: two athletes of the same height with the same legs, differing only in reach, came out with knees 5 degrees apart. Every stance number here was multiplied by 0.626885, the reference athlete's arm over her leg, so her poses are exactly what they were and only other bodies change."
   },
   "keys": [
     {

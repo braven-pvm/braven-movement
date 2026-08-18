@@ -60,6 +60,8 @@ The pieces:
 - `ball_reach.py` — can she reach it at all, without solving anything
 - `author_flight.py` — a passer position and a catch point become a real parabola
 - `proof.py` — one technique against every ball the drill has
+- `athlete.py` + `retarget.py` — build bodies of other sizes and run the
+  whole library on them
 
 ### What it found
 
