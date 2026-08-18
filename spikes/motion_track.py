@@ -49,6 +49,10 @@ class MotionKey:
     name: str
     left: HandOffset
     right: HandOffset
+    # How far the hips sit below standing at this key, as a fraction of arm
+    # length. A drill with a steady stance leaves this at the movement default.
+    # A jump needs it to change: load, rise, land.
+    hip_drop: float
 
 
 @dataclass(frozen=True)
@@ -81,6 +85,24 @@ class MotionTrack:
                     first.right.blend(second.right, eased),
                 )
         raise MotionTrackError(f"no key span covers phase {phase}")
+
+    def hip_drop_at(self, phase: float) -> float:
+        """Return the hip drop at this phase, smoothly between the keys."""
+        keys = self.keys
+        if phase <= keys[0].at_phase:
+            return keys[0].hip_drop
+        if phase >= keys[-1].at_phase:
+            return keys[-1].hip_drop
+        for first, second in zip(keys, keys[1:]):
+            if first.at_phase <= phase <= second.at_phase:
+                span = second.at_phase - first.at_phase
+                travel = 0.0 if span <= 0.0 else (phase - first.at_phase) / span
+                eased = 0.5 - 0.5 * math.cos(math.pi * travel)
+                return first.hip_drop + (second.hip_drop - first.hip_drop) * eased
+        raise MotionTrackError(f"no key span covers phase {phase}")
+
+    def has_moving_stance(self) -> bool:
+        return len({key.hip_drop for key in self.keys}) > 1
 
     def key_phases(self) -> list[float]:
         return [key.at_phase for key in self.keys]
@@ -116,6 +138,7 @@ def _hand(data: dict, fallback: HandOffset | None, name: str) -> HandOffset:
 
 def load_motion(path: Path) -> MotionTrack:
     data = json.loads(Path(path).read_text(encoding="utf-8"))
+    default_drop = float(data["stance"]["hipDropFraction"])
     keys: list[MotionKey] = []
     for entry in data["keys"]:
         name = str(entry["name"])
@@ -127,7 +150,11 @@ def load_motion(path: Path) -> MotionTrack:
         )
         keys.append(
             MotionKey(
-                at_phase=float(entry["atPhase"]), name=name, left=left, right=right
+                at_phase=float(entry["atPhase"]),
+                name=name,
+                left=left,
+                right=right,
+                hip_drop=float(entry.get("hipDrop", default_drop)),
             )
         )
 

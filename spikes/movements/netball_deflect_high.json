@@ -1,0 +1,88 @@
+{
+  "movementId": "netball_deflect_high",
+  "sport": "netball",
+  "skill": "Deflects, High",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger, Catching section, page 71 to 72. The manual describes the drill as: pass the ball next to the receiver's head, where their hands are, and that player passes back across to the player next to their head where their hands are. Both players are working, both need to control the ball, one passes straight and the other across, and players swap so both do straight and cross passes. The cues are the manual's. The numeric bands are NOT, and are PROVISIONAL until a coach sets them. KNOWN GAP: the three elbow checkpoints in this drill do not yet pass. The hands reach high beside the head, and the solver answers by elevating the shoulder girdle toward the target rather than extending the elbow, so the arm stays folded at about 120 degrees. Every other skill in the library is unaffected because none of them ask for a high reach. The fix is a constraint on how far the clavicle may travel, not a change to these bands.",
+  "phases": [
+    {
+      "name": "ready",
+      "atPhase": 0.0,
+      "checkpoints": [
+        {
+          "measure": "leftShoulderElevationDegrees",
+          "minimumDegrees": 55.0,
+          "maximumDegrees": 130.0,
+          "cue": "Hands already up beside your head. That is where the ball is coming.",
+          "why": "The manual has the passer place the ball where the hands already are. Hands that start low will never arrive in time."
+        },
+        {
+          "measure": "leftKneeFlexionDegrees",
+          "minimumDegrees": 15.0,
+          "maximumDegrees": 65.0,
+          "cue": "Light on your feet. This one is quick.",
+          "why": "Both players are working continuously, so the base has to allow a fast repeat."
+        }
+      ]
+    },
+    {
+      "name": "contact",
+      "atPhase": 0.45,
+      "checkpoints": [
+        {
+          "measure": "leftShoulderElevationDegrees",
+          "minimumDegrees": 70.0,
+          "maximumDegrees": 150.0,
+          "cue": "Take it beside your head, not in front of your chest.",
+          "why": "A high deflect that drops to the chest has become a catch, which is a different drill."
+        },
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 20.0,
+          "maximumDegrees": 100.0,
+          "cue": "Meet it with working elbows, ready to send it on.",
+          "why": "A locked arm cannot redirect a ball. A collapsed one cannot control it."
+        }
+      ]
+    },
+    {
+      "name": "control",
+      "atPhase": 0.7,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 25.0,
+          "maximumDegrees": 105.0,
+          "cue": "Control it. Both of you are working, so it must not go loose.",
+          "why": "The manual states that both players need to control the ball. An uncontrolled deflect ends the drill."
+        },
+        {
+          "measure": "trunkLeanDegrees",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 14.0,
+          "cue": "Stay tall. Reach with your hands, not your body.",
+          "why": "Leaning into a high ball costs the balance needed for the next one."
+        }
+      ]
+    },
+    {
+      "name": "send_on",
+      "atPhase": 1.0,
+      "checkpoints": [
+        {
+          "measure": "leftShoulderElevationDegrees",
+          "minimumDegrees": 60.0,
+          "maximumDegrees": 145.0,
+          "cue": "Send it on from up there. Straight, or across.",
+          "why": "The ball leaves from beside the head, which is what keeps the drill fast for both players."
+        },
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 70.0,
+          "cue": "Extend through the ball as it goes.",
+          "why": "A pass that finishes with a folded arm has no length on it."
+        }
+      ]
+    }
+  ]
+}

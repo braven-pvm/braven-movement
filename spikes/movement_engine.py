@@ -139,15 +139,11 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
     rest_positions = joint_positions(character, rest)
     reach_cm = arm_length(rest_positions, index)
 
-    # The power position lowers the whole body, so the trunk landmarks drop with
-    # the hips. These are where the trunk must stay for the whole movement.
-    drop = np.array([0.0, track.hip_drop_fraction * reach_cm, 0.0])
-    root_target = rest_positions[index["root"]].copy() - drop
-    chest_target = rest_positions[index["c_spine3"]].copy() - drop
-    neck_target = rest_positions[index["c_neck"]].copy() - drop
-    # Hand keys are measured from the chest, so they must be measured from where
-    # the chest is held, not from where it started.
-    hand_anchor = chest_target
+    # The stance can change during a movement. A steady drill holds one hip
+    # drop, while a jump loads, rises and lands, so it is read per frame.
+    rest_root = rest_positions[index["root"]].copy()
+    rest_chest = rest_positions[index["c_spine3"]].copy()
+    rest_neck = rest_positions[index["c_neck"]].copy()
 
     frame_count = track.frames
     motion = np.zeros((frame_count, count), dtype=np.float32)
@@ -158,8 +154,14 @@ def solve(character: geometry.Character, track: MotionTrack) -> dict:
     previous = rest.copy()
     for frame in range(frame_count):
         phase = frame / (frame_count - 1)
+        drop = np.array([0.0, track.hip_drop_at(phase) * reach_cm, 0.0])
+        root_target = rest_root - drop
+        chest_target = rest_chest - drop
+        neck_target = rest_neck - drop
+        # Hand keys are measured from the chest, so they must be measured from
+        # where the chest is held, not from where it started.
         left_target, right_target = hand_targets_from_track(
-            track, phase, hand_anchor, reach_cm
+            track, phase, chest_target, reach_cm
         )
 
         position_error = solver2.PositionErrorFunction(character, weight=1.0)

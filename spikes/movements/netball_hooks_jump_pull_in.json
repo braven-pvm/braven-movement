@@ -1,0 +1,95 @@
+{
+  "movementId": "netball_hooks_jump_pull_in",
+  "sport": "netball",
+  "skill": "Hooks, Jump and Pull In Ball",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger, Catching section, page 72. The manual heads this drill with quick catch and release, with control: as quick as you catch the ball you must be able to release the ball. Its three instructions are: keep fingers up with thumbs in the middle, keep arms almost straight in front and pull the ball into the chest as soon as you catch it, and use the momentum of the catch to pass the ball back as soon as possible. The cues are the manual's. The numeric bands are NOT, and are PROVISIONAL until a coach sets them.",
+  "phases": [
+    {
+      "name": "gather",
+      "atPhase": 0.0,
+      "checkpoints": [
+        {
+          "measure": "leftKneeFlexionDegrees",
+          "minimumDegrees": 30.0,
+          "maximumDegrees": 90.0,
+          "cue": "Load the legs. The jump comes from here.",
+          "why": "A jump catch is decided before the feet leave the ground. No load, no height."
+        },
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 25.0,
+          "maximumDegrees": 105.0,
+          "cue": "Hands ready, not yet reaching.",
+          "why": "Reaching early wastes the arm range that the catch itself needs."
+        }
+      ]
+    },
+    {
+      "name": "contact",
+      "atPhase": 0.58,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 45.0,
+          "cue": "Arms almost straight in front. Fingers up, thumbs in the middle.",
+          "why": "The manual gives this instruction directly. At the top of a jump the athlete has one chance, so the reach must be full."
+        },
+        {
+          "measure": "leftShoulderElevationDegrees",
+          "minimumDegrees": 80.0,
+          "maximumDegrees": 165.0,
+          "cue": "Take it at the highest point you can reach.",
+          "why": "The whole purpose of jumping is to meet the ball above the defender."
+        },
+        {
+          "measure": "rightElbowFlexionDegrees",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 45.0,
+          "cue": "Both hands go up together.",
+          "why": "One hand higher than the other turns a secure catch into a deflect."
+        }
+      ]
+    },
+    {
+      "name": "pull_in",
+      "atPhase": 0.82,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 55.0,
+          "maximumDegrees": 135.0,
+          "cue": "As soon as you catch it, pull the ball in to your chest.",
+          "why": "In the air there is nothing else to absorb the ball. The arms do all of it."
+        },
+        {
+          "measure": "rightElbowFlexionDegrees",
+          "minimumDegrees": 55.0,
+          "maximumDegrees": 135.0,
+          "cue": "Two hands bring it in. Secure it before you land.",
+          "why": "A ball not secured in the air is lost on the landing."
+        }
+      ]
+    },
+    {
+      "name": "release",
+      "atPhase": 1.0,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 5.0,
+          "maximumDegrees": 75.0,
+          "cue": "Use the momentum of the catch. Release as quick as you caught it.",
+          "why": "The manual heads the drill with quick catch and release. Holding the ball throws away the momentum already in the arms."
+        },
+        {
+          "measure": "trunkLeanDegrees",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 16.0,
+          "cue": "Land balanced, ready to pass.",
+          "why": "A landing that is off balance delays the pass the drill exists to train."
+        }
+      ]
+    }
+  ]
+}
