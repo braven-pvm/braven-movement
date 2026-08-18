@@ -142,25 +142,38 @@ def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict)
     reset_pose(rig, basis)
     stance = pose_stance(rig, phase["stance"], foot_baseline)
 
+    # The ball is placed from the body, and it is the one absolute size in the
+    # scene. A grip on it cannot be carried across as a direction from the
+    # shoulder, because narrower shoulders would then hold it with narrower
+    # hands, which is not how holding a ball works.
+    arm = bone_chain_length(rig, "upperarm_l", "lowerarm_l", "hand_l")
+    shoulders = (
+        world_head(rig, "upperarm_l") + world_head(rig, "upperarm_r")
+    ) / 2.0
+    ball_centre = shoulders + Vector(phase["ball"]["fromShouldersInArms"]) * arm
+    radius = phase["ball"]["radiusM"]
+    grip = phase.get("grip")
+
     arms = {}
     for side in ("l", "r"):
         wanted = phase["arms"][side]
         shoulder = world_head(rig, f"upperarm_{side}")
-        arm = bone_chain_length(
+        reach = bone_chain_length(
             rig, f"upperarm_{side}", f"lowerarm_{side}", f"hand_{side}"
         )
-        target = shoulder + Vector(wanted["direction"]) * (
-            wanted["reachFraction"] * arm
-        )
+        if grip is None:
+            # Still reaching for it. The arm says where the hand goes.
+            target = shoulder + Vector(wanted["direction"]) * (
+                wanted["reachFraction"] * reach
+            )
+        else:
+            # She has it. The ball says where the hand goes.
+            target = ball_centre + Vector(grip[side]["outward"]) * (
+                radius + grip[side]["wristFromSurfaceInArms"] * reach
+            )
         arms[side] = pose_arm(
             rig, side=side, wrist_target=target, pole=Vector(wanted["pole"])
         )
-
-    # The ball sits where the posed hands put it, not where the solved hands
-    # did, because this athlete's arms are not the same length.
-    arm = bone_chain_length(rig, "upperarm_l", "lowerarm_l", "hand_l")
-    between = (world_head(rig, "hand_l") + world_head(rig, "hand_r")) / 2.0
-    ball_centre = between + Vector(phase["ball"]["fromWristsInArms"]) * arm
 
     hands = {}
     for side in ("l", "r"):

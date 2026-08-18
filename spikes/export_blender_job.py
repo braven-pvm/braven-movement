@@ -142,20 +142,46 @@ def _stance(points, index) -> dict:
     return {"ankleFromPelvisInLegs": ankles}
 
 
+def _grip(points, index, centre, radius: float, arm: float) -> dict:
+    """Where each hand meets the ball, measured from the ball.
+
+    A grip cannot cross as a direction from the shoulder. The ball is one
+    absolute size on every body, so a narrower pair of shoulders needs the
+    hands to open further, not the same amount. Sending shoulder directions
+    closed this athlete's grip from 19.0 cm between the wrists to 12.1 and put
+    both hands in front of the ball instead of either side of it.
+
+    So the ball is placed first and the hands are placed on it, which is what
+    the possession model says happens once she has it.
+    """
+    grip = {}
+    for side in ("l", "r"):
+        wrist = to_blender(points[index[f"{side}_wrist"]])
+        outward = wrist - centre
+        grip[side] = {
+            "outward": [round(float(v), 6) for v in unit(outward)],
+            "wristFromSurfaceInArms": round(
+                float((np.linalg.norm(outward) - radius) / arm), 6
+            ),
+        }
+    return grip
+
+
 def phase_job(result, index, frame: int) -> dict:
     points = result["points"][frame]
     held = result["possession"].frames[frame]
 
-    wrists = np.stack(
-        [to_blender(points[index[f"{side}_wrist"]]) for side in ("l", "r")]
-    )
-    between = wrists.mean(axis=0)
+    shoulders = np.stack(
+        [to_blender(points[index[f"{side}_uparm"]]) for side in ("l", "r")]
+    ).mean(axis=0)
     shoulder = to_blender(points[index["l_uparm"]])
     elbow = to_blender(points[index["l_lowarm"]])
     arm = (np.linalg.norm(elbow - shoulder)
            + np.linalg.norm(to_blender(points[index["l_wrist"]]) - elbow))
+    centre = to_blender(held.centre)
+    radius = float(result["radiusCm"]) / 100.0
 
-    return {
+    job = {
         "frame": int(frame),
         "arms": {side: _arm(points, index, side) for side in ("l", "r")},
         "hands": {side: _hand(points, index, side) for side in ("l", "r")},
@@ -163,13 +189,18 @@ def phase_job(result, index, frame: int) -> dict:
         "ball": {
             # Absolute in metres, because a netball is a netball. Where it sits
             # is relative, because that depends on the body holding it.
-            "radiusM": round(float(result["radiusCm"]) / 100.0, 4),
-            "fromWristsInArms": [
-                round(float(v), 6) for v in (to_blender(held.centre) - between) / arm
+            "radiusM": round(radius, 4),
+            "fromShouldersInArms": [
+                round(float(v), 6) for v in (centre - shoulders) / arm
             ],
             "holding": bool(held.holding),
         },
     }
+    # Before she has it the athlete reaches for the ball, and the arms say
+    # where the hands go. After she has it the ball says where they go.
+    if held.holding:
+        job["grip"] = _grip(points, index, centre, radius, arm)
+    return job
 
 
 def build(character, movement_id: str) -> dict:
