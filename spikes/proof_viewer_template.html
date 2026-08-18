@@ -5,19 +5,20 @@
   :root {
     --page: #e9edf1; --card: #ffffff; --ink: #11161c; --soft: #5c6673;
     --line: #c9d2db; --rule: #dde4ea; --ball: #d2701a; --in: #1c6f52;
-    --focus: #2c6fb8; --shadow: 0 1px 2px rgba(17, 22, 28, .06);
+    --floor: #b9c4cf; --focus: #2c6fb8;
+    --shadow: 0 1px 2px rgba(17, 22, 28, .06);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --page: #0e1216; --card: #161b21; --ink: #e4e9ef; --soft: #8d99a7;
       --line: #2a323b; --rule: #222a32; --ball: #e8903f; --in: #4cba8c;
-      --focus: #6aa9e8; --shadow: none;
+      --floor: #313b46; --focus: #6aa9e8; --shadow: none;
     }
   }
   :root[data-theme="dark"] {
     --page: #0e1216; --card: #161b21; --ink: #e4e9ef; --soft: #8d99a7;
     --line: #2a323b; --rule: #222a32; --ball: #e8903f; --in: #4cba8c;
-    --focus: #6aa9e8; --shadow: none;
+    --floor: #313b46; --focus: #6aa9e8; --shadow: none;
   }
   body {
     background: var(--page); color: var(--ink); margin: 0;
@@ -25,7 +26,7 @@
     -webkit-font-smoothing: antialiased;
   }
   .wrap {
-    max-width: 1000px; margin: 0 auto; padding: 40px 20px 64px;
+    max-width: 1060px; margin: 0 auto; padding: 40px 20px 64px;
     display: flex; flex-direction: column; gap: 16px;
   }
   header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 6px; }
@@ -43,33 +44,47 @@
     font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.13em;
     color: var(--soft); margin: 0;
   }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
           gap: 14px; }
   figure { margin: 0; display: flex; flex-direction: column; gap: 6px; }
   svg { width: 100%; height: auto; display: block; }
+  .stage {
+    border: 1px solid var(--rule); border-radius: 3px; overflow: hidden;
+    cursor: grab; touch-action: none; background: transparent;
+  }
+  .stage:active { cursor: grabbing; }
+  .stage:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  button {
+    background: transparent; color: var(--ink); border: 1px solid var(--line);
+    border-radius: 3px; padding: 5px 11px;
+    font: 500 11.5px/1 ui-monospace, "Cascadia Mono", Consolas, monospace;
+    letter-spacing: 0.07em; text-transform: uppercase; cursor: pointer;
+  }
+  button:hover { border-color: var(--soft); }
+  button[aria-pressed="true"], button.primary {
+    background: var(--ink); color: var(--card); border-color: var(--ink);
+  }
+  button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  #play { min-width: 74px; font-weight: 600; }
+  input[type=range] { flex: 1; accent-color: var(--ball); min-width: 120px; }
+  input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
   .stats {
     font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
     font-size: 11.5px; color: var(--soft); font-variant-numeric: tabular-nums;
     display: flex; flex-direction: column; gap: 1px;
   }
   .stats b { color: var(--ink); font-weight: 500; }
-  .controls { display: flex; align-items: center; gap: 14px; }
-  button {
-    background: var(--ink); color: var(--card); border: 1px solid var(--ink);
-    border-radius: 3px; padding: 6px 16px;
-    font: 600 13px/1 ui-monospace, "Cascadia Mono", Consolas, monospace;
-    letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer;
-    min-width: 74px;
-  }
-  input[type=range] { flex: 1; accent-color: var(--ball); min-width: 120px; }
-  :is(button, input):focus-visible { outline: 2px solid var(--focus);
-                                     outline-offset: 2px; }
   .now {
     font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
     font-size: 12px; color: var(--soft); font-variant-numeric: tabular-nums;
-    min-width: 116px;
+    min-width: 118px;
   }
   .caught { color: var(--in); }
+  .hint { color: var(--soft); font-size: 12.5px; margin: 0;
+          border-top: 1px solid var(--rule); padding-top: 10px; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
@@ -80,53 +95,156 @@
   </header>
 
   <section class="panel">
+    <div class="bar">
+      <span class="label">View</span>
+      <button type="button" data-view="front">Front</button>
+      <button type="button" data-view="side">Side</button>
+      <button type="button" data-view="top">Above</button>
+      <button type="button" data-view="quarter">Three quarter</button>
+      <button type="button" id="link" aria-pressed="true">Cameras linked</button>
+      <button type="button" id="reset">Reset</button>
+    </div>
     <div class="grid" id="views"></div>
-    <div class="controls">
-      <button id="play" type="button">Play</button>
+    <div class="bar">
+      <button type="button" id="play" class="primary">Play</button>
       <input id="scrub" type="range" min="0" value="0" aria-label="Frame">
       <span class="now" id="now">frame 0</span>
     </div>
+    <p class="hint">Drag a panel to orbit it. Scroll to zoom, hold shift and
+    drag to pan, double click to reset. With the cameras linked every panel
+    moves together, which is what you want when comparing two drills; unlink to
+    look at one from its own angle. Arrow keys orbit a focused panel.</p>
   </section>
 </div>
 
 <script>
 const DATA = __DATA__;
 const RUNS = DATA.runs;
+const COUNT = Math.max(...RUNS.map(r => r.frames.length));
 document.getElementById('heading').textContent = DATA.heading;
 document.getElementById('lede').innerHTML = DATA.lede;
-const COUNT = Math.max(...RUNS.map(r => r.frames.length));
-let at = 0, timer = null;
 
-function bounds() {
+const W = 300, H = 360, PAD = 18;
+// Facing the viewer from the front, facing right from the side, facing up the
+// panel from above. The same three the reach report uses, so a person moving
+// between the two pages is not re-learning which way she is pointing.
+const VIEWS = {
+  front:   { az: 0,           el: 0 },
+  side:    { az: Math.PI / 2, el: 0 },
+  top:     { az: 0,           el: -Math.PI / 2 + 0.001 },
+  quarter: { az: 0.62,        el: -0.30 },
+};
+
+// The athlete decides the framing, not the ball. The ball starts two metres
+// away, and letting it into the bounds shrank her to a thumbnail.
+function measure(run) {
   const lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9];
-  for (const run of RUNS) {
-    for (const f of run.frames) {
-      for (const p of Object.values(f.j).concat([f.b])) {
-        for (let i = 0; i < 3; i++) {
-          lo[i] = Math.min(lo[i], p[i]); hi[i] = Math.max(hi[i], p[i]);
-        }
+  for (const f of run.frames) {
+    for (const p of Object.values(f.j)) {
+      for (let i = 0; i < 3; i++) {
+        lo[i] = Math.min(lo[i], p[i]); hi[i] = Math.max(hi[i], p[i]);
       }
     }
   }
-  // The passer's end of the flight would shrink the athlete to nothing, so the
-  // view is framed on her and the ball enters it.
-  lo[2] = Math.max(lo[2], -90); hi[2] = Math.min(hi[2], 120);
-  return { lo, hi };
+  const span = Math.max(hi[1] - lo[1], hi[0] - lo[0], hi[2] - lo[2], 1);
+  return {
+    centre: [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2],
+    floor: lo[1],
+    scale: (H - 2 * PAD) / (span * 1.12),
+  };
 }
-const B = bounds();
-const W = 300, H = 360, PAD = 16;
-const spanX = Math.max(B.hi[0] - B.lo[0], 1) * 1.15;
-const spanY = Math.max(B.hi[1] - B.lo[1], 1);
-const K = Math.min((W - 2 * PAD) / spanX, (H - 2 * PAD) / spanY);
-const midX = (B.lo[0] + B.hi[0]) / 2;
-const X = v => W / 2 + (v - midX) * K;
-const Y = v => H - PAD - (v - B.lo[1]) * K;
+const FRAME = RUNS.map(measure);
+
+function camera() { return { az: 0, el: 0, zoom: 1, panX: 0, panY: 0 }; }
+let cameras = RUNS.map(camera);
+let linked = true;
+let at = 0, timer = null;
+
+function project(point, run, cam) {
+  const m = FRAME[run];
+  const dx = point[0] - m.centre[0];
+  const dy = point[1] - m.centre[1];
+  const dz = point[2] - m.centre[2];
+  const ca = Math.cos(cam.az), sa = Math.sin(cam.az);
+  const x = dx * ca + dz * sa;
+  const zr = dz * ca - dx * sa;
+  const ce = Math.cos(cam.el), se = Math.sin(cam.el);
+  const y = dy * ce - zr * se;
+  const depth = dy * se + zr * ce;
+  const k = m.scale * cam.zoom;
+  return [W / 2 + x * k + cam.panX, H / 2 - y * k + cam.panY, depth];
+}
+
+// A grid on the floor. Without it a rotated stick figure has no up, no
+// forward, and no sense of how far the ball still has to come.
+function floorLines(run, cam) {
+  const m = FRAME[run];
+  const out = [];
+  const reach = 70, step = 35;
+  for (let i = -reach; i <= reach; i += step) {
+    for (const pair of [
+      [[m.centre[0] + i, m.floor, m.centre[2] - reach],
+       [m.centre[0] + i, m.floor, m.centre[2] + reach]],
+      [[m.centre[0] - reach, m.floor, m.centre[2] + i],
+       [m.centre[0] + reach, m.floor, m.centre[2] + i]],
+    ]) {
+      const a = project(pair[0], run, cam), b = project(pair[1], run, cam);
+      out.push({
+        depth: -1e6,
+        svg: `<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}"
+          x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="var(--floor)"
+          stroke-width="0.8" opacity=".6"/>`,
+      });
+    }
+  }
+  return out;
+}
+
+const FINGER = /(index|middle|ring|pinky|thumb)/;
+
+function draw(run) {
+  const cam = cameras[run];
+  const data = RUNS[run];
+  const f = data.frames[Math.min(at, data.frames.length - 1)];
+  const parts = floorLines(run, cam);
+
+  for (const [p, q] of DATA.bones) {
+    const a = f.j[p], c = f.j[q];
+    if (!a || !c) continue;
+    const pa = project(a, run, cam), pc = project(c, run, cam);
+    const thin = FINGER.test(p) || FINGER.test(q);
+    parts.push({
+      depth: (pa[2] + pc[2]) / 2,
+      svg: `<line x1="${pa[0].toFixed(1)}" y1="${pa[1].toFixed(1)}"
+        x2="${pc[0].toFixed(1)}" y2="${pc[1].toFixed(1)}" stroke="var(--ink)"
+        stroke-width="${thin ? 1.1 : 2.4}" stroke-linecap="round"/>`,
+    });
+  }
+
+  const ball = project(f.b, run, cam);
+  parts.push({
+    depth: ball[2],
+    svg: `<circle cx="${ball[0].toFixed(1)}" cy="${ball[1].toFixed(1)}"
+      r="${(DATA.ballRadiusCm * FRAME[run].scale * cam.zoom).toFixed(1)}"
+      fill="var(--ball)" fill-opacity="${f.c ? .95 : .5}"
+      stroke="${f.c ? 'var(--in)' : 'var(--soft)'}"
+      stroke-width="${f.c ? 2.2 : 1.2}"/>`,
+  });
+
+  // Nearer things last. Without this the ball is always in front of her, even
+  // when it is behind her back.
+  parts.sort((a, b) => a.depth - b.depth);
+  document.getElementById('v' + run).innerHTML = parts.map(p => p.svg).join('');
+}
+
+function drawAll() { RUNS.forEach((_, i) => draw(i)); }
 
 document.getElementById('views').innerHTML = RUNS.map((run, i) => `
   <figure>
     <figcaption class="label">${run.variant} &middot; caught at ${run.catchHeightCm} cm</figcaption>
-    <svg id="v${i}" viewBox="0 0 ${W} ${H}" role="img"
-         aria-label="${run.variant} catch, seen from the front"></svg>
+    <svg id="v${i}" class="stage" data-run="${i}" viewBox="0 0 ${W} ${H}"
+         tabindex="0" role="img"
+         aria-label="${run.variant}. Drag to orbit, scroll to zoom."></svg>
     <div class="stats">
       <span>turn <b>${run.turnedByDegrees.toFixed(0)}&deg;</b> &middot;
             elbow at contact <b>${run.elbowAtContact.toFixed(0)}&deg;</b></span>
@@ -135,36 +253,104 @@ document.getElementById('views').innerHTML = RUNS.map((run, i) => `
     </div>
   </figure>`).join('');
 
-function frameAt(run, i) {
-  return run.frames[Math.min(i, run.frames.length - 1)];
+function forEachCamera(run, change) {
+  if (linked) cameras.forEach(change);
+  else change(cameras[run]);
+  drawAll();
 }
 
-function draw(run, i, svg) {
-  const f = frameAt(run, i);
-  const out = [];
-  for (const [p, q] of DATA.bones) {
-    const a = f.j[p], c = f.j[q];
-    if (!a || !c) continue;
-    const thin = p.includes('_index') || p.includes('_middle') ||
-                 p.includes('_ring') || p.includes('_pinky') ||
-                 p.includes('_thumb') || q.match(/(index|middle|ring|pinky|thumb)/);
-    out.push(`<line x1="${X(a[0])}" y1="${Y(a[1])}" x2="${X(c[0])}" y2="${Y(c[1])}"
-      stroke="var(--ink)" stroke-width="${thin ? 1.1 : 2.4}"
-      stroke-linecap="round"/>`);
-  }
-  out.push(`<circle cx="${X(f.b[0])}" cy="${Y(f.b[1])}" r="${DATA.ballRadiusCm * K}"
-    fill="var(--ball)" fill-opacity="${f.c ? .95 : .5}"
-    stroke="${f.c ? 'var(--in)' : 'var(--soft)'}" stroke-width="${f.c ? 2.2 : 1.2}"/>`);
-  svg.innerHTML = out.join('');
+function orbit(run, dx, dy) {
+  forEachCamera(run, cam => {
+    cam.az += dx * 0.011;
+    const limit = Math.PI / 2 - 0.01;
+    cam.el = Math.max(-limit, Math.min(limit, cam.el + dy * 0.011));
+  });
 }
+
+for (const stage of document.querySelectorAll('.stage')) {
+  const run = +stage.dataset.run;
+  let dragging = null;
+
+  stage.addEventListener('pointerdown', event => {
+    stage.setPointerCapture(event.pointerId);
+    dragging = { x: event.clientX, y: event.clientY, pan: event.shiftKey };
+  });
+  stage.addEventListener('pointermove', event => {
+    if (!dragging) return;
+    const dx = event.clientX - dragging.x, dy = event.clientY - dragging.y;
+    dragging.x = event.clientX; dragging.y = event.clientY;
+    if (dragging.pan) {
+      // The panel is drawn in viewBox units, so a pixel of pointer travel is
+      // not a unit of pan until it is scaled by how wide the panel is drawn.
+      const k = W / stage.getBoundingClientRect().width;
+      forEachCamera(run, cam => { cam.panX += dx * k; cam.panY += dy * k; });
+    } else {
+      orbit(run, dx, dy);
+    }
+  });
+  const release = event => {
+    if (!dragging) return;
+    dragging = null;
+    if (stage.hasPointerCapture(event.pointerId)) {
+      stage.releasePointerCapture(event.pointerId);
+    }
+  };
+  stage.addEventListener('pointerup', release);
+  stage.addEventListener('pointercancel', release);
+
+  stage.addEventListener('wheel', event => {
+    event.preventDefault();
+    const by = Math.exp(-event.deltaY * 0.0016);
+    forEachCamera(run, cam => {
+      cam.zoom = Math.max(0.25, Math.min(8, cam.zoom * by));
+    });
+  }, { passive: false });
+
+  stage.addEventListener('dblclick', () => {
+    if (linked) cameras = RUNS.map(camera);
+    else cameras[run] = camera();
+    drawAll();
+  });
+
+  stage.addEventListener('keydown', event => {
+    const step = { ArrowLeft: [-16, 0], ArrowRight: [16, 0],
+                   ArrowUp: [0, -16], ArrowDown: [0, 16] }[event.key];
+    if (!step) return;
+    event.preventDefault();
+    orbit(run, step[0], step[1]);
+  });
+}
+
+for (const button of document.querySelectorAll('[data-view]')) {
+  button.addEventListener('click', () => {
+    const view = VIEWS[button.dataset.view];
+    cameras.forEach(cam => { cam.az = view.az; cam.el = view.el; });
+    drawAll();
+  });
+}
+document.getElementById('reset').addEventListener('click', () => {
+  cameras = RUNS.map(camera);
+  drawAll();
+});
+const linkButton = document.getElementById('link');
+linkButton.addEventListener('click', () => {
+  linked = !linked;
+  linkButton.setAttribute('aria-pressed', String(linked));
+  linkButton.textContent = linked ? 'Cameras linked' : 'Cameras free';
+  if (linked) {
+    const first = { ...cameras[0] };
+    cameras = RUNS.map(() => ({ ...first }));
+    drawAll();
+  }
+});
 
 function show(i) {
   at = i;
-  RUNS.forEach((run, n) => draw(run, i, document.getElementById('v' + n)));
-  const any = frameAt(RUNS[0], i);
-  document.getElementById('now').textContent =
-    `frame ${any.n}` + (any.c ? ' · holding' : ' · in flight');
-  document.getElementById('now').className = 'now' + (any.c ? ' caught' : '');
+  drawAll();
+  const any = RUNS[0].frames[Math.min(i, RUNS[0].frames.length - 1)];
+  const now = document.getElementById('now');
+  now.textContent = `frame ${any.n}` + (any.c ? ' · holding' : ' · in flight');
+  now.className = 'now' + (any.c ? ' caught' : '');
   document.getElementById('scrub').value = i;
 }
 
@@ -174,7 +360,7 @@ function stop() {
 }
 const scrub = document.getElementById('scrub');
 scrub.max = COUNT - 1;
-scrub.addEventListener('input', e => { stop(); show(+e.target.value); });
+scrub.addEventListener('input', event => { stop(); show(+event.target.value); });
 document.getElementById('play').addEventListener('click', () => {
   if (timer) { stop(); return; }
   document.getElementById('play').textContent = 'Pause';
