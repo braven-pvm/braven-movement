@@ -30,9 +30,11 @@ import numpy as np
 SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
 
+from ball_track import has_ball  # noqa: E402
 from movement_definition import load as load_definition  # noqa: E402
-from movement_engine import definition_path, load_character  # noqa: E402
+from movement_engine import definition_path, library, load_character  # noqa: E402
 from possession_solve import solve_movement  # noqa: E402
+from technique import has_technique, load_technique, technique_path  # noqa: E402
 
 OUTPUT = SPIKE_DIR / "poc-output"
 
@@ -248,27 +250,40 @@ def build(character, movement_id: str, every: int = 0) -> dict:
 
 def main(argv: list[str]) -> int:
     wanted = [value for value in argv[1:] if not value.startswith("--")]
-    movement_id = wanted[0] if wanted else "netball_two_hand_snatch_pull_in"
     every = 0
     for value in argv[1:]:
         if value.startswith("--every="):
             every = int(value.split("=", 1)[1])
+    if "--all" in argv[1:]:
+        wanted = [
+            name
+            for name in library()
+            if has_ball(name)
+            and has_technique(name)
+            and load_technique(technique_path(name)).possession_ready
+        ]
+    if not wanted:
+        wanted = ["netball_two_hand_snatch_pull_in"]
+
+    # Loading the character reads a 4.5 GB asset directory, so it is loaded
+    # once however many movements are asked for.
     character = load_character()
-    job = build(character, movement_id, every)
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    path = OUTPUT / f"{movement_id}.job.json"
-    path.write_text(json.dumps(job, indent=2), encoding="utf-8")
-    print(
-        f"{len(job['phases'])} phases, {len(job['frames'])} frames -> {path} "
-        f"({path.stat().st_size // 1024} KB)"
-    )
-    for phase in job["phases"]:
-        left, right = phase["arms"]["l"], phase["arms"]["r"]
+    for movement_id in wanted:
+        job = build(character, movement_id, every)
+        path = OUTPUT / f"{movement_id}.job.json"
+        path.write_text(json.dumps(job, indent=2), encoding="utf-8")
         print(
-            f"   {phase['name']:9s} frame {phase['frame']:3d}  "
-            f"reach l {left['reachFraction']:.2f} r {right['reachFraction']:.2f}  "
-            f"holding {phase['ball']['holding']}"
+            f"{len(job['phases'])} phases, {len(job['frames'])} frames -> {path} "
+            f"({path.stat().st_size // 1024} KB)"
         )
+        for phase in job["phases"]:
+            left, right = phase["arms"]["l"], phase["arms"]["r"]
+            print(
+                f"   {phase['name']:9s} frame {phase['frame']:3d}  "
+                f"reach l {left['reachFraction']:.2f} r {right['reachFraction']:.2f}  "
+                f"holding {phase['ball']['holding']}"
+            )
     return 0
 
 

@@ -159,7 +159,10 @@ def bake_action(rig, first: int, last: int) -> None:
 def parse_args() -> argparse.Namespace:
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     parser = argparse.ArgumentParser()
-    parser.add_argument("--job", type=Path, required=True)
+    # Repeatable. Building the athlete costs about two minutes and the phases
+    # cost fifteen seconds each, so eight drills in one session are far
+    # cheaper than eight sessions.
+    parser.add_argument("--job", type=Path, required=True, action="append")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     parser.add_argument("--phase", action="append", default=None)
@@ -343,43 +346,50 @@ def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
     return ball_centre, {"stance": stance, "arms": arms, "hands": hands}
 
 
-def main() -> None:
-    args = parse_args()
-    job = json.loads(args.job.read_text(encoding="utf-8"))
-    output = args.output.resolve()
-    output.mkdir(parents=True, exist_ok=True)
+class Studio:
+    """The athlete and the room. Built once, then posed for every job."""
+
+    def __init__(self, config):
+        self.config = config
+        self.world_colour = config.presentation.studio.world_color
+        (
+            self.human,
+            self.rig,
+            self.assets,
+            self.source_assets,
+        ) = create_athlete(config.athlete, config.presentation)
+        self.basis = {
+            bone.name: bone.matrix_basis.copy() for bone in self.rig.pose.bones
+        }
+        self.foot_baseline = {
+            f"foot_{side}": self.rig.pose.bones[f"foot_{side}"].matrix.copy()
+            for side in ("l", "r")
+        }
+        self.camera, self.lights = add_camera_and_lights(config.presentation)
+        add_floor()
+        self.ball = None
+        self.ball_seams = []
+
+    def add_ball(self, radius: float) -> None:
+        # The reference generator builds the ball a coach recognises: panels,
+        # a seam colour and six embossed seam loops. This drew a plain coral
+        # sphere of its own. The seams are parented to the ball, so moving the
+        # ball still moves the whole thing.
+        self.ball, self.ball_seams = create_panelled_netball(
+            Vector((0.0, 0.0, 0.0)), radius, self.config.presentation
+        )
+
+
+def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) -> None:
+    config, world_colour = studio.config, studio.world_colour
+    rig, human, assets = studio.rig, studio.human, studio.assets
+    basis, foot_baseline = studio.basis, studio.foot_baseline
+    camera, ball, ball_seams = studio.camera, studio.ball, studio.ball_seams
 
     wanted = args.phase or [phase["name"] for phase in job["phases"]]
     phases = [phase for phase in job["phases"] if phase["name"] in wanted]
     if not phases:
         raise SystemExit(f"no phase of {job['movementId']} matches {wanted}")
-
-    # The athlete, her kit, the studio and the finger curl are this lane's
-    # versioned configuration, not the job's. The job carries the movement.
-    config = load_reference_catch_config(args.config)
-    world_colour = config.presentation.studio.world_color
-
-    human, rig, assets, source_assets = create_athlete(
-        config.athlete,
-        config.presentation,
-    )
-    basis = {bone.name: bone.matrix_basis.copy() for bone in rig.pose.bones}
-    foot_baseline = {
-        f"foot_{side}": rig.pose.bones[f"foot_{side}"].matrix.copy()
-        for side in ("l", "r")
-    }
-    camera, _lights = add_camera_and_lights(config.presentation)
-    add_floor()
-
-    # The reference generator builds the ball a coach recognises: panels, a
-    # seam colour and six embossed seam loops. This drew a plain coral sphere
-    # of its own. The seams are parented to the ball, so moving the ball still
-    # moves the whole thing.
-    ball, ball_seams = create_panelled_netball(
-        Vector((0.0, 0.0, 0.0)),
-        job["phases"][0]["ball"]["radiusM"],
-        config.presentation,
-    )
 
     rendered = []
     for phase in phases if not args.no_stills else []:
@@ -515,8 +525,8 @@ def main() -> None:
             {
                 "movementId": job["movementId"],
                 "skill": job["skill"],
-                "jobSha256": sha256(args.job),
-                "sourceAssets": [str(path) for path in source_assets],
+                "jobSha256": sha256(job_path),
+                "sourceAssets": [str(path) for path in studio.source_assets],
                 "animation": animation,
                 "phases": rendered,
             },
@@ -525,6 +535,29 @@ def main() -> None:
         encoding="utf-8",
     )
     print(f"[movement-render] PASS receipt={receipt_path}")
+
+
+def main() -> None:
+    args = parse_args()
+    output = args.output.resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    jobs = [json.loads(path.read_text(encoding="utf-8")) for path in args.job]
+
+    if args.animate and len(jobs) > 1:
+        # The export bakes the shape keys away and sets the materials opaque,
+        # so a second job would export an athlete already baked.
+        raise SystemExit("--animate takes one --job. Run the others separately.")
+
+    radii = {job["phases"][0]["ball"]["radiusM"] for job in jobs}
+    if len(radii) > 1:
+        raise SystemExit(f"the jobs disagree about the ball radius: {sorted(radii)}")
+
+    studio = Studio(load_reference_catch_config(args.config))
+    studio.add_ball(radii.pop())
+
+    for number, (job, path) in enumerate(zip(jobs, args.job), start=1):
+        print(f"[movement-render] {number}/{len(jobs)} {job['movementId']}")
+        render_job(studio, job, path, args, output)
 
 
 if __name__ == "__main__":
