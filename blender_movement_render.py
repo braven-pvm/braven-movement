@@ -31,6 +31,10 @@ MODULE_DIR = Path(__file__).resolve().parent
 if str(MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(MODULE_DIR))
 
+from reference_pose_config import (  # noqa: E402
+    DEFAULT_CONFIG_PATH,
+    load_reference_catch_config,
+)
 from blender_mpfb_reference_catch import (  # noqa: E402
     add_camera_and_lights,
     create_athlete,
@@ -219,6 +223,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--job", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     parser.add_argument("--phase", action="append", default=None)
     parser.add_argument("--turntable", type=int, default=0)
     parser.add_argument("--animate", action="store_true")
@@ -342,7 +347,8 @@ def pose_stance(rig, stance: dict, foot_baseline: dict) -> dict:
     return placed
 
 
-def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict):
+def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
+               finger_curl_degrees: dict):
     reset_pose(rig, basis)
     stance = pose_stance(rig, phase["stance"], foot_baseline)
 
@@ -389,7 +395,12 @@ def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict)
             palm_normal=Vector(phase["hands"][side]["palmNormal"]),
             max_forearm_roll_degrees=limits["forearmRoll"],
         )
-        pose_articulated_hand(rig, side=side, ball_centre=ball_centre)
+        pose_articulated_hand(
+            rig,
+            side=side,
+            ball_centre=ball_centre,
+            finger_curl_degrees=finger_curl_degrees,
+        )
     orient_head_to_ball(rig, ball_centre)
     return ball_centre, {"stance": stance, "arms": arms, "hands": hands}
 
@@ -405,13 +416,21 @@ def main() -> None:
     if not phases:
         raise SystemExit(f"no phase of {job['movementId']} matches {wanted}")
 
-    human, rig, assets, source_assets = create_athlete()
+    # The athlete, her kit, the studio and the finger curl are this lane's
+    # versioned configuration, not the job's. The job carries the movement.
+    config = load_reference_catch_config(args.config)
+    world_colour = config.presentation.studio.world_color
+
+    human, rig, assets, source_assets = create_athlete(
+        config.athlete,
+        config.presentation,
+    )
     basis = {bone.name: bone.matrix_basis.copy() for bone in rig.pose.bones}
     foot_baseline = {
         f"foot_{side}": rig.pose.bones[f"foot_{side}"].matrix.copy()
         for side in ("l", "r")
     }
-    camera = add_camera_and_lights()
+    camera, _lights = add_camera_and_lights(config.presentation)
     add_floor()
 
     bpy.ops.mesh.primitive_uv_sphere_add(
@@ -426,7 +445,8 @@ def main() -> None:
     rendered = []
     for phase in phases if not args.no_stills else []:
         centre, receipt = pose_phase(
-            rig, phase, job["anatomyLimitsDegrees"], basis, foot_baseline
+            rig, phase, job["anatomyLimitsDegrees"], basis, foot_baseline,
+            config.finger_curl_degrees,
         )
         ball.location = centre
         bpy.context.view_layer.update()
@@ -442,6 +462,7 @@ def main() -> None:
                 target=Vector(view["targetM"]),
                 lens=view["lensMm"],
                 sensor_width=view["sensorWidthMm"],
+                world_colour=world_colour,
             )
         receipt["name"] = phase["name"]
         receipt["frame"] = phase["frame"]
@@ -464,6 +485,7 @@ def main() -> None:
                     target=target,
                     lens=job["views"]["front"]["lensMm"],
                     sensor_width=job["views"]["front"]["sensorWidthMm"],
+                    world_colour=world_colour,
                 )
         receipt["views"] = images
         rendered.append(receipt)
@@ -488,7 +510,8 @@ def main() -> None:
         for number, frame in enumerate(frames, start=1):
             scene.frame_set(number)
             centre, _ = pose_phase(
-                rig, frame, job["anatomyLimitsDegrees"], basis, foot_baseline
+                rig, frame, job["anatomyLimitsDegrees"], basis, foot_baseline,
+                config.finger_curl_degrees,
             )
             ball.location = centre
             keyframe(rig, ball, number)
