@@ -37,6 +37,7 @@ from reference_pose_config import (  # noqa: E402
 )
 from blender_mpfb_reference_catch import (  # noqa: E402
     add_camera_and_lights,
+    bake_shape_keys,
     create_athlete,
     elbow_for_target,
     make_material,
@@ -47,6 +48,7 @@ from blender_mpfb_reference_catch import (  # noqa: E402
     render_view,
     rotate_bone_toward,
     select_only,
+    set_alpha,
     sha256,
     translate_bone_world,
     world_head,
@@ -118,71 +120,6 @@ def delete_helper_geometry(human) -> str:
     bm.free()
     mesh.update()
     return f"{was} to {len(mesh.vertices)} vertices"
-
-
-def set_alpha(objects, mode: str) -> list[str]:
-    """Choose how each material's transparency is drawn.
-
-    The skin blends on a hashed mask, which dithers: blotches over the legs,
-    arms and face wherever the texture alpha is neither one nor zero. That mask
-    does two jobs. It hid the helper geometry, which is deleted now, and it
-    hides the body under the clothes, which still matters. Make the skin fully
-    opaque and she wears her own chest over her shirt.
-
-    So the skin is clipped rather than blended: a hard cut at the threshold,
-    which the format stores as a mask and every reader handles the same way.
-    The kit and the eyes have nothing to hide and are opaque. Hair, lashes and
-    brows keep their blending, because they are flat cards with cut-out shapes
-    and a hard edge on a hair card looks like cardboard.
-    """
-    changed = []
-    for item in objects:
-        for slot in item.material_slots:
-            material = slot.material
-            if material is None:
-                continue
-            material.blend_method = mode
-            if mode == "CLIP":
-                material.alpha_threshold = 0.5
-            elif material.use_nodes:
-                for node in material.node_tree.nodes:
-                    if node.type != "BSDF_PRINCIPLED":
-                        continue
-                    alpha = node.inputs["Alpha"]
-                    for link in list(alpha.links):
-                        material.node_tree.links.remove(link)
-                    alpha.default_value = 1.0
-            changed.append(f"{material.name}={mode.lower()}")
-    return changed
-
-
-def bake_shape_keys(objects) -> list[str]:
-    """Write the shape key mix into the vertices and remove the keys.
-
-    MPFB builds a body from shape keys, and the exporter turns them into
-    glTF morph targets: thirty seven of them on this athlete. three.js applies
-    them, so the file looked correct in the viewer written next to it, and most
-    other programs do not, because the format only guarantees a handful. They
-    drop them or mix them wrongly, and the body arrives deformed.
-
-    Baking costs nothing here. The shape is decided when the athlete is made
-    and never animated, so a morph target carries no information the vertices
-    cannot carry themselves.
-    """
-    baked = []
-    for item in objects:
-        mesh = getattr(item, "data", None)
-        if mesh is None or not getattr(mesh, "shape_keys", None):
-            continue
-        count = len(mesh.shape_keys.key_blocks)
-        item.shape_key_add(name="_baked", from_mix=True)
-        mixed = [point.co.copy()
-                 for point in mesh.shape_keys.key_blocks["_baked"].data]
-        item.shape_key_clear()
-        for vertex, position in zip(mesh.vertices, mixed):
-            vertex.co = position
-        baked.append(f"{item.name}:{count}")
-    return baked
 
 
 def bake_action(rig, first: int, last: int) -> None:
@@ -521,9 +458,10 @@ def main() -> None:
         # With the masks applied the skin's texture alpha has nothing left to
         # hide, and all it does is dither: angular patches over the legs, arms
         # and face wherever it is neither one nor zero. Hair, lashes and brows
-        # keep theirs, because they are cut-out cards.
-        solid = [human] + [a for a in assets
-                           if "casualsuit" in a.name or "high-poly" in a.name]
+        # keep theirs, because they are cut-out cards. So do the eyes, whose
+        # cornea is transparent over the iris: opaque gives her blank white
+        # discs and no pupil.
+        solid = [human] + [a for a in assets if "casualsuit" in a.name]
         print(f"[movement-render] alpha: {', '.join(set_alpha(solid, 'OPAQUE'))}")
         glb = output / f"{job['movementId']}.glb"
         baked = bake_shape_keys([human, *assets])
