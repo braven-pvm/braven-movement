@@ -51,6 +51,12 @@ FORBIDDEN = ("scale", "flexible")
 # The manual keeps the feet static. Pinning the feet and lowering the hips is
 # what produces the power position.
 FOOT_WEIGHT = 12.0
+# How far off the ground a foot may be and still count as planted.
+#
+# The keys place a foot's height in leg lengths, and a planted foot is keyed at
+# zero. One centimetre is slack for the interpolation between keys, and is far
+# below the height of any keyed step in the library.
+PLANTED_CM = 1.0
 # Joint limits have to outrank every target, or the solver pays the penalty and
 # bends a joint past where a person bends.
 #
@@ -285,12 +291,24 @@ def foot_targets(
     A movement that keys its feet places them relative to the hips and turns
     them with the trunk. One that does not leaves them where the athlete
     started, which is what every planted drill wants.
+
+    A planted foot also gets its ball placed, not only its ankle. An ankle on
+    its own leaves the foot's pitch unobserved, and the solver held it 48 to 62
+    degrees plantarflexed against a rest of 21 on every frame of every drill,
+    which put the ball of the foot 3.7 to 5.2 cm through the floor. The ball is
+    placed at its rest offset from the ankle, turned with the trunk, so flat
+    means what the rig means by flat. A foot off the ground keeps a free pitch,
+    because a foot in flight points.
     """
     placements = track.feet_at(phase)
     if placements is None:
-        return {
+        targets = {
             joint: rest_positions[index[joint]] for joint in ("l_foot", "r_foot")
         }
+        for joint in ("l_ball", "r_ball"):
+            if joint in index:
+                targets[joint] = rest_positions[index[joint]]
+        return targets
     # Height is measured from the ground, not from the hips, so a planted foot
     # stays on the floor however the hips move.
     ground = float(rest_positions[index["l_foot"]][1])
@@ -310,6 +328,12 @@ def foot_targets(
         point = placed.root + placed.rotation @ local
         point[1] = ground + placement.up * stance_cm
         targets[joint] = point
+
+        toe = joint.replace("_foot", "_ball")
+        lifted = placement.up * stance_cm
+        if toe in index and lifted <= PLANTED_CM:
+            offset = rest_positions[index[toe]] - rest_positions[index[joint]]
+            targets[toe] = point + placed.rotation @ offset
     return targets
 
 
