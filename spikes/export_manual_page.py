@@ -3,115 +3,134 @@
 This is the first thing the engine is actually for. The coaches manual gives a
 drill a title, an objective, a numbered list of instructions, and a photograph.
 Everything except the photograph already exists in the repository. This makes
-the photograph, from the solve, at the phases the coaching definition already
-names.
+the photograph, at the phases the coaching definition already names.
 
 A rendered figure has one advantage a photograph does not: the manual shows one
 moment, and this shows the moments a coach is actually watching for. The phases
 are not chosen here, they come from the coaching definition, which is where a
 coach would set them.
 
-The body is SMPL-X, posed by fitting it to the solved MHR joint centres. MHR
-ships one body and no way to change its build, and the figure in a manual has
-to look like the athlete the manual is for. The solve is untouched: SMPL-X is
-worn, not solved on. Refer to smplx_retarget.py, and to LICENCE-RISK.md for the
-licence this is under.
+The figures are Blender stills of the MPFB athlete, made by
+`blender_movement_render.py` from the job that `export_blender_job.py` writes.
+They arrive with kit, materials and studio lighting. This page assembles them
+and does not solve, pose or render anything itself.
 
-If the SMPL-X model is not installed it falls back to MHR's own skin and says
-so, so the page still builds.
+It drew an SMPL-X body through a numpy rasteriser before. SMPL-X is under a
+research licence and may not be sold without a licence from the Max Planck
+Institute, so it does not belong on the path that makes the product. Refer to
+LICENCE-RISK.md. MPFB output is CC0. Refer to docs/LICENSING.md.
 
-    pixi run python export_manual_page.py
-    pixi run python export_manual_page.py netball_two_hand_snatch_pull_in
+Render the drills first, from the repository root:
+
+    blender -b -P blender_movement_render.py -- --job <each> --output out/manual
+
+Then build the page:
+
+    pixi run python export_manual_page.py --renders ../out/manual
+    pixi run python export_manual_page.py --renders ../out/manual --view side
 """
 
 from __future__ import annotations
 
+import argparse
+import base64
+import io
 import json
 import sys
 from pathlib import Path
 
-import numpy as np
-import pymomentum.geometry as geometry
+from PIL import Image
 
 SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
 
-from ball_track import has_ball  # noqa: E402
-from export_mesh_viewer import VIEWER_LOD, load_mesh_character  # noqa: E402
 from manual_source import for_movement, load as load_manual  # noqa: E402
 from movement_definition import load as load_definition  # noqa: E402
-from movement_engine import definition_path, library  # noqa: E402
-import smplx_body  # noqa: E402
-import smplx_retarget  # noqa: E402
-from movement_engine import joint_positions, load_character  # noqa: E402
-from possession_solve import solve_movement  # noqa: E402
-from technique import has_technique, load_technique, technique_path  # noqa: E402
+from movement_engine import definition_path  # noqa: E402
 
 OUTPUT = SPIKE_DIR / "poc-output"
 TEMPLATE = SPIKE_DIR / "manual_page_template.html"
+DEFAULT_RENDERS = SPIKE_DIR.parent / "out" / "manual"
+
+# A manual figure is printed about 150 points wide. This is that at three
+# times, which stays crisp on a dense screen and keeps a page of eight drills
+# inside a couple of megabytes.
+FIGURE_WIDTH = 480
+FIGURE_QUALITY = 82
 
 
-def figure(
-    character, result: dict, phase: float, body=None, scale: int = 1
-) -> dict:
-    """The athlete, skinned, at one coaching phase.
+def figure_data_uri(path: Path) -> tuple[str, int]:
+    """The rendered still, narrowed and encoded for the page.
 
-    Vertices come back as integers in units of 1/scale centimetres. The
-    drawing divides by the same number.
+    The page carries its pictures rather than pointing at them, because it is
+    published as a single file and a strict content policy blocks any request
+    to another host. The full render is about 1.5 MB and thirty three of them
+    would not fit.
     """
-    frames = len(result["points"])
-    number = max(0, min(frames - 1, round(phase * (frames - 1))))
-    fit_error = None
-    if body is None:
-        state = geometry.model_parameters_to_skeleton_state(
-            character, np.asarray(result["motion"][number], dtype=np.float32)
-        )
-        skin = np.asarray(character.skin_points(state), dtype=np.float64)
-    else:
-        model, shape, merge = body
-        theta, translation, worst, mean, shaped, rest = smplx_retarget.fit(
-            model, result["points"][number], result["index"], shape=shape
-        )
-        skin = smplx_retarget.skin(model, shaped, rest, theta, translation)
-        # The same merge every frame, so the faces stay valid.
-        merged = np.zeros((int(merge.max()) + 1, 3), dtype=np.float64)
-        np.add.at(merged, merge, skin)
-        counts = np.bincount(merge, minlength=len(merged)).reshape(-1, 1)
-        skin = merged / np.maximum(counts, 1)
-        fit_error = {"worstCm": round(worst, 2), "meanCm": round(mean, 2)}
-    held = result["possession"].frames[number]
-    return {
-        "frame": number,
-        # Integers, in units of 1/scale centimetres. A manual figure is drawn
-        # at about two pixels per centimetre, where whole centimetres cost
-        # half a pixel. A full size figure is drawn at five, where whole
-        # centimetres snap every vertex to a five pixel grid and the smooth
-        # normals come out faceted.
-        "v": [round(float(value) * scale) for value in skin.reshape(-1)],
-        "ball": [round(float(value), 1) for value in held.centre],
-        "holding": held.holding,
-        "fit": fit_error,
-    }
+    with Image.open(path) as image:
+        image = image.convert("RGB")
+        height = round(image.height * FIGURE_WIDTH / image.width)
+        image = image.resize((FIGURE_WIDTH, height), Image.LANCZOS)
+        buffer = io.BytesIO()
+        image.save(buffer, format="JPEG", quality=FIGURE_QUALITY, optimize=True)
+    raw = buffer.getvalue()
+    return "data:image/jpeg;base64," + base64.b64encode(raw).decode("ascii"), len(raw)
 
 
-def build(character, movement_id: str, drills: dict, body=None) -> dict:
+def still_path(recorded: str, renders: Path) -> Path:
+    """Where the still actually is now.
+
+    The receipt records the absolute path of the machine that rendered it, so
+    a render directory that has been moved or copied leaves every one of them
+    pointing nowhere. The file name is the stable part.
+    """
+    beside = renders / Path(recorded).name
+    if beside.is_file():
+        return beside
+    return Path(recorded)
+
+
+def build(
+    movement_id: str, receipt: dict, job: dict, drills: dict, view: str, renders: Path
+) -> dict:
     definition = load_definition(definition_path(movement_id))
-    result = solve_movement(character, movement_id)
     manual = for_movement(movement_id, drills)
-
-    figures = []
-    for phase in definition.phases:
-        drawn = figure(character, result, phase.at_phase, body)
-        drawn["name"] = phase.name
-        # The measured cues, which the manual does not have and a lab does.
-        drawn["measured"] = [
+    bands = {
+        phase.name: [
             {
                 "measure": check.measure,
                 "band": [check.minimum_degrees, check.maximum_degrees],
             }
             for check in phase.checkpoints
         ]
-        figures.append(drawn)
+        for phase in definition.phases
+    }
+    holding = {phase["name"]: phase["ball"]["holding"] for phase in job["phases"]}
+
+    figures, embedded = [], 0
+    for phase in receipt["phases"]:
+        rendered = phase["views"].get(view)
+        if rendered is None:
+            raise SystemExit(
+                f"{movement_id} {phase['name']} has no {view} view. "
+                f"It has {sorted(phase['views'])}."
+            )
+        still = still_path(rendered["path"], renders)
+        if not still.is_file():
+            raise SystemExit(
+                f"{movement_id} {phase['name']} {view} is missing: {still}"
+            )
+        uri, size = figure_data_uri(still)
+        embedded += size
+        figures.append(
+            {
+                "name": phase["name"],
+                "frame": phase["frame"],
+                "image": uri,
+                "holding": holding.get(phase["name"], False),
+                "measured": bands.get(phase["name"], []),
+            }
+        )
 
     return {
         "movementId": movement_id,
@@ -125,68 +144,75 @@ def build(character, movement_id: str, drills: dict, body=None) -> dict:
             "steps": list(manual.steps),
         },
         "figures": figures,
-        "ballRadiusCm": result["radiusCm"],
-        "framesPerSecond": result["track"].frames_per_second,
+        "ballRadiusCm": round(job["phases"][0]["ball"]["radiusM"] * 100.0, 1),
+        "framesPerSecond": job["framesPerSecond"],
+        "figureBytes": embedded,
     }
 
 
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("movements", nargs="*", default=None)
+    parser.add_argument("--renders", type=Path, default=DEFAULT_RENDERS)
+    parser.add_argument("--jobs", type=Path, default=OUTPUT)
+    parser.add_argument("--output", type=Path, default=OUTPUT / "manual.html")
+    parser.add_argument("--view", default="quarter")
+    return parser.parse_args(argv[1:])
+
+
 def main(argv: list[str]) -> int:
-    wanted = argv[1:] or [
-        name
-        for name in library()
-        if has_ball(name)
-        and has_technique(name)
-        and load_technique(technique_path(name)).possession_ready
-    ]
-    character = load_mesh_character()
+    args = parse_args(argv)
+    renders = args.renders.resolve()
+    if not renders.is_dir():
+        raise SystemExit(
+            f"no render directory at {renders}. Run blender_movement_render.py "
+            f"first, with --output {renders}."
+        )
+
+    receipts = sorted(renders.glob("*.render.json"))
+    wanted = args.movements or [path.name[: -len(".render.json")] for path in receipts]
     drills = load_manual()
 
-    # The figure is SMPL-X where it is installed, and MHR's own skin where it
-    # is not, so a missing model file costs the look and not the build.
-    body, faces, wearing = None, None, "MHR"
-    reason = smplx_body.missing()
-    if reason:
-        print("SMPL-X not installed, drawing MHR instead.")
-        print(f"  {reason}")
-    else:
-        model = smplx_body.load()
-        solver = load_character()
-        rest = joint_positions(
-            solver, np.zeros(solver.parameter_transform.size, dtype=np.float32)
+    pages, missing = [], []
+    for movement_id in wanted:
+        receipt_path = renders / f"{movement_id}.render.json"
+        job_path = args.jobs / f"{movement_id}.job.json"
+        if not receipt_path.is_file() or not job_path.is_file():
+            missing.append(movement_id)
+            continue
+        pages.append(
+            build(
+                movement_id,
+                json.loads(receipt_path.read_text(encoding="utf-8")),
+                json.loads(job_path.read_text(encoding="utf-8")),
+                drills,
+                args.view,
+                renders,
+            )
         )
-        index = {n: i for i, n in enumerate(solver.skeleton.joint_names)}
-        shape = smplx_retarget.fit_shape(model, rest, index)
-        shaped, _ = model.body(shape)
-        merge, reduced = smplx_body.decimate(shaped * 100.0, model.faces)
-        body = (model, shape, merge)
-        faces = np.asarray(reduced, dtype=np.int32)
-        print(
-            f"  mesh reduced to {int(merge.max()) + 1} vertices and "
-            f"{len(reduced)} faces for drawing"
-        )
-        wearing = "SMPL-X"
-        print(f"SMPL-X fitted to the athlete: shape {np.round(shape, 2)}")
-    if faces is None:
-        faces = np.asarray(character.mesh.faces, dtype=np.int32)
 
-    pages = [build(character, movement_id, drills, body) for movement_id in wanted]
-    quoted = sum(1 for page in pages if page["manual"])
+    if not pages:
+        raise SystemExit(f"no drill has both a render and a job under {renders}")
+
     payload = {
-        "faces": [int(value) for value in faces.reshape(-1)],
-        "levelOfDetail": VIEWER_LOD,
-        "wearing": wearing,
+        "figures": f"Blender 4.5 and MPFB, {args.view} view",
         "pages": pages,
     }
     page = TEMPLATE.read_text(encoding="utf-8").replace(
         "__DATA__", json.dumps(payload)
     )
-    OUTPUT.mkdir(parents=True, exist_ok=True)
-    path = OUTPUT / "manual.html"
-    path.write_text(page, encoding="utf-8")
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(page, encoding="utf-8")
+
+    quoted = sum(1 for page_data in pages if page_data["manual"])
+    drawn = sum(len(page_data["figures"]) for page_data in pages)
     print(
         f"{len(pages)} pages, {quoted} quoting the manual directly, "
-        f"{len(faces)} faces -> {path} ({path.stat().st_size // 1024} KB)"
+        f"{drawn} figures -> {args.output} "
+        f"({args.output.stat().st_size // 1024} KB)"
     )
+    for name in missing:
+        print(f"  no render or job for {name}, so it has no page")
     return 0
 
 
