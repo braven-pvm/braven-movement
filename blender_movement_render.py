@@ -39,6 +39,7 @@ from blender_mpfb_reference_catch import (  # noqa: E402
     add_camera_and_lights,
     bake_shape_keys,
     create_athlete,
+    create_panelled_netball,
     elbow_for_target,
     make_material,
     orient_hand,
@@ -370,13 +371,14 @@ def main() -> None:
     camera, _lights = add_camera_and_lights(config.presentation)
     add_floor()
 
-    bpy.ops.mesh.primitive_uv_sphere_add(
-        segments=64, ring_count=32, radius=job["phases"][0]["ball"]["radiusM"]
-    )
-    ball = bpy.context.active_object
-    ball.name = "BRAVEN_Netball"
-    ball.data.materials.append(
-        make_material("BRAVEN_Netball_Coral", (0.88, 0.16, 0.11, 1.0), 0.48)
+    # The reference generator builds the ball a coach recognises: panels, a
+    # seam colour and six embossed seam loops. This drew a plain coral sphere
+    # of its own. The seams are parented to the ball, so moving the ball still
+    # moves the whole thing.
+    ball, ball_seams = create_panelled_netball(
+        Vector((0.0, 0.0, 0.0)),
+        job["phases"][0]["ball"]["radiusM"],
+        config.presentation,
     )
 
     rendered = []
@@ -467,7 +469,7 @@ def main() -> None:
         baked = bake_shape_keys([human, *assets])
         if baked:
             print(f"[movement-render] baked shape keys: {', '.join(baked)}")
-        select_only([rig, human, *assets, ball])
+        select_only([rig, human, *assets, ball, *ball_seams])
         bpy.ops.export_scene.gltf(
             filepath=str(glb),
             export_format="GLB",
