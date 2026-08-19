@@ -1,0 +1,31 @@
+{
+  "movementId": "netball_two_hand_snatch_straight_back",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger",
+  "notes": "The manual's one difference from the pull in drill: pass the ball straight back to the passer, without pulling it to the body. So the ball never comes closer than 0.74 of an arm length.",
+  "hands": "both",
+  "turnToBall": true,
+  "grip": {
+    "spreadDegrees": 90,
+    "faceBall": true
+  },
+  "release": {
+    "atPhase": 0.9
+  },
+  "afterContact": [
+    {
+      "atPhase": 0.68,
+      "name": "control",
+      "across": 0.0,
+      "up": 0.3458,
+      "ahead": 0.75262
+    },
+    {
+      "atPhase": 0.9,
+      "name": "straight_back",
+      "across": 0.0,
+      "up": 0.30512,
+      "ahead": 1.03739
+    }
+  ],
+  "carryUnitNote": "afterContact is measured in torso lengths, not arm lengths. Where a ball sits when it is held against the chest depends on the chest and the ball, not on how long the arm is, and in arm lengths two athletes of the same height whose reach differed by a tenth held the same ball 9 percent apart. Every number here was multiplied by 1.017053, the reference athlete's arm over her torso, so her positions are unchanged and only other bodies move."
+}

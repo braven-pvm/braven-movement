@@ -1,0 +1,69 @@
+{
+  "movementId": "netball_two_hand_snatch_straight_back",
+  "variant": null,
+  "source": "authored by author_flight.py from a passer position and a catch point in the arm span",
+  "notes": "In front of the shoulder, near full reach.",
+  "radiusCm": 11.0,
+  "radiusFraction": 0.2088,
+  "release": {
+    "atPhase": 0.3284
+  },
+  "arrival": {
+    "atPhase": 0.5
+  },
+  "flight": {
+    "method": "real parabola under gravity, sampled at keys",
+    "passerAheadCm": 210.7,
+    "releaseHeightCm": 135.0,
+    "launchSpeedMetresPerSecond": 6.26,
+    "launchAngleDegrees": 16.5,
+    "flightSeconds": 0.277,
+    "peakHeightCm": 151.0,
+    "catchHeightCm": 146.4,
+    "splineErrorCm": 0.212
+  },
+  "keys": [
+    {
+      "atPhase": 0.3284,
+      "name": "release",
+      "across": 0.0,
+      "up": 0.1832,
+      "ahead": 4.0
+    },
+    {
+      "atPhase": 0.3627,
+      "name": "flight1",
+      "across": 0.0,
+      "up": 0.3412,
+      "ahead": 3.368
+    },
+    {
+      "atPhase": 0.397,
+      "name": "flight2",
+      "across": 0.0,
+      "up": 0.4419,
+      "ahead": 2.736
+    },
+    {
+      "atPhase": 0.4314,
+      "name": "flight3",
+      "across": 0.0,
+      "up": 0.4853,
+      "ahead": 2.104
+    },
+    {
+      "atPhase": 0.4657,
+      "name": "flight4",
+      "across": 0.0,
+      "up": 0.4713,
+      "ahead": 1.472
+    },
+    {
+      "atPhase": 0.5,
+      "name": "arrival",
+      "across": 0.0,
+      "up": 0.4,
+      "ahead": 0.84
+    }
+  ]
+}

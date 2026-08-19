@@ -1,0 +1,16 @@
+[workspace]
+authors = ["Marius Bloemhof <developer@pvm.co.za>"]
+channels = ["conda-forge"]
+name = "spikes"
+platforms = ["win-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = "3.12.*"
+pymomentum = ">=0.1.114,<0.2"
+
+[pypi-dependencies]
+mhr = ">=1.0.1, <2"
+mediapipe = ">=1.0.1, <2"

@@ -1,0 +1,69 @@
+{
+  "movementId": "netball_deflect_high",
+  "variant": null,
+  "source": "authored by author_flight.py from a passer position and a catch point in the arm span",
+  "notes": "Next to the head, where the hands are, which is what the manual asks the passer for.",
+  "radiusCm": 11.0,
+  "radiusFraction": 0.2088,
+  "release": {
+    "atPhase": 0.2326
+  },
+  "arrival": {
+    "atPhase": 0.45
+  },
+  "flight": {
+    "method": "real parabola under gravity, sampled at keys",
+    "passerAheadCm": 210.7,
+    "releaseHeightCm": 155.0,
+    "launchSpeedMetresPerSecond": 6.32,
+    "launchAngleDegrees": 18.2,
+    "flightSeconds": 0.315,
+    "peakHeightCm": 174.9,
+    "catchHeightCm": 168.5,
+    "splineErrorCm": 0.242
+  },
+  "keys": [
+    {
+      "atPhase": 0.2326,
+      "name": "release",
+      "across": 0.0,
+      "up": 0.5228,
+      "ahead": 4.0
+    },
+    {
+      "atPhase": 0.276,
+      "name": "flight1",
+      "across": 0.056,
+      "up": 0.7224,
+      "ahead": 3.284
+    },
+    {
+      "atPhase": 0.3195,
+      "name": "flight2",
+      "across": 0.112,
+      "up": 0.8478,
+      "ahead": 2.568
+    },
+    {
+      "atPhase": 0.363,
+      "name": "flight3",
+      "across": 0.168,
+      "up": 0.8993,
+      "ahead": 1.852
+    },
+    {
+      "atPhase": 0.4065,
+      "name": "flight4",
+      "across": 0.224,
+      "up": 0.8767,
+      "ahead": 1.136
+    },
+    {
+      "atPhase": 0.45,
+      "name": "arrival",
+      "across": 0.28,
+      "up": 0.78,
+      "ahead": 0.42
+    }
+  ]
+}

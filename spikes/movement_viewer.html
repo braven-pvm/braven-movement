@@ -1,0 +1,256 @@
+<!doctype html>
+<!--
+  Turn the solved movement round and watch it, on the Blender athlete.
+
+  The stick figure viewers in this repository are good at movement and bad at
+  bodies. The Blender renders are the other way round. This loads the animated
+  GLB that blender_movement_render.py exports, so one page has both.
+
+  It needs three.js beside it. The library is not committed, because it is not
+  ours to ship:
+
+      cd poc-output && mkdir -p lib/loaders lib/controls lib/utils
+      curl -o lib/three.module.min.js https://unpkg.com/three@0.160.0/build/three.module.min.js
+      curl -o lib/loaders/GLTFLoader.js https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js
+      curl -o lib/controls/OrbitControls.js https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js
+      curl -o lib/utils/BufferGeometryUtils.js https://unpkg.com/three@0.160.0/examples/jsm/utils/BufferGeometryUtils.js
+
+  The loader directories mirror three's own, because GLTFLoader imports its
+  siblings by relative path and a flat folder gives a 404 with no message.
+
+  Serve it, and pass ?glb=<path> for a movement other than the default.
+-->
+<meta charset="utf-8">
+<title>Movement Viewer</title>
+<style>
+  :root {
+    --ground: #14120f; --plate: #1e1b17; --ink: #ece6da; --muted: #948b7b;
+    --rule: #34302a; --accent: #d97b3c;
+    --data: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font: 14px/1.5 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex; flex-direction: column;
+  }
+  .bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+         padding: 9px 14px; border-bottom: 1px solid var(--rule); }
+  h1 { margin: 0 10px 0 0; font-size: 15px; white-space: nowrap; }
+  .label { font: 600 10px/1 var(--data); letter-spacing: 0.14em;
+           text-transform: uppercase; color: var(--muted); }
+  button {
+    background: transparent; color: var(--ink); border: 1px solid var(--rule);
+    border-radius: 3px; padding: 5px 11px; cursor: pointer;
+    font: 500 11px/1 var(--data); letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  button[aria-pressed="true"], button.on {
+    background: var(--ink); color: var(--ground); border-color: var(--ink);
+  }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  input[type="range"] { flex: 1; min-width: 160px; accent-color: var(--accent); }
+  #stage { flex: 1; min-height: 0; position: relative; }
+  canvas { display: block; width: 100%; height: 100%; }
+  .readout { padding: 7px 14px; border-top: 1px solid var(--rule);
+             font: 11.5px/1.5 var(--data); color: var(--muted);
+             font-variant-numeric: tabular-nums; }
+  .readout b { color: var(--ink); font-weight: 600; }
+  #status { position: absolute; inset: 0; display: grid; place-items: center;
+            font: 12px/1.6 var(--data); color: var(--muted); text-align: center;
+            padding: 20px; }
+</style>
+
+<div class="bar">
+  <h1 id="title">Movement viewer</h1>
+  <button type="button" id="play" class="on">Pause</button>
+  <input type="range" id="scrub" min="0" max="1000" value="0">
+  <span class="label">View</span>
+  <button type="button" data-az="0">Front</button>
+  <button type="button" data-az="0.55">Quarter</button>
+  <button type="button" data-az="1.5708">Side</button>
+  <button type="button" data-az="3.1416">Back</button>
+  <button type="button" id="spin">Turntable</button>
+</div>
+<div id="stage"><div id="status">Loading the athlete&hellip;</div></div>
+<div class="readout" id="readout"></div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "./lib/three.module.min.js",
+  "three/addons/": "./lib/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from './lib/loaders/GLTFLoader.js';
+import { OrbitControls } from './lib/controls/OrbitControls.js';
+
+const params = new URLSearchParams(location.search);
+const SOURCE = params.get('glb')
+  || 'anim/netball_two_hand_snatch_pull_in.glb';
+document.getElementById('title').textContent =
+  SOURCE.split('/').pop().replace(/\.glb$/, '').replace(/_/g, ' ');
+
+const stage = document.getElementById('stage');
+const status = document.getElementById('status');
+const readout = document.getElementById('readout');
+
+const renderer = new THREE.WebGLRenderer({
+  antialias: true,
+  // So a frame can be read back and checked. A blank canvas has
+  // shipped from this repository once already.
+  preserveDrawingBuffer: true,
+});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x14120f);
+
+const camera = new THREE.PerspectiveCamera(38, 1, 0.05, 60);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.target.set(0, 0.90, 0);
+
+// Three lights, in the same places the Blender render puts them, so what
+// turns here and what is printed do not look like two different athletes.
+const key = new THREE.DirectionalLight(0xfff0e2, 2.6);
+key.position.set(3.0, 4.5, 3.8);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+key.shadow.camera.top = 2.4; key.shadow.camera.bottom = -0.4;
+key.shadow.camera.left = -2.0; key.shadow.camera.right = 2.0;
+key.shadow.bias = -0.0012;
+scene.add(key);
+const fill = new THREE.DirectionalLight(0xb8dbff, 1.15);
+fill.position.set(-3.2, 2.8, 2.2);
+scene.add(fill);
+const rim = new THREE.DirectionalLight(0xb8d1ff, 1.5);
+rim.position.set(0.3, 3.6, -2.6);
+scene.add(rim);
+scene.add(new THREE.HemisphereLight(0x9fb4cc, 0x2a2620, 0.55));
+
+const floor = new THREE.Mesh(
+  new THREE.PlaneGeometry(24, 24),
+  new THREE.MeshStandardMaterial({ color: 0x333538, roughness: 0.95 })
+);
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+let mixer = null, action = null, actions = [], duration = 0;
+let playing = true, spinning = false;
+const clock = new THREE.Clock();
+const scrub = document.getElementById('scrub');
+const play = document.getElementById('play');
+
+function frame(azimuth, distance = 3.9) {
+  camera.position.set(
+    controls.target.x + distance * Math.sin(azimuth),
+    controls.target.y + 0.15,
+    controls.target.z + distance * Math.cos(azimuth)
+  );
+  controls.update();
+}
+frame(0.55);
+
+new GLTFLoader().load(SOURCE, gltf => {
+  status.remove();
+  // Blender is Z up and three.js is Y up. The exporter already rotates the
+  // scene, so the model arrives upright and only needs its feet on the floor.
+  gltf.scene.traverse(node => {
+    if (!node.isMesh) return;
+    node.castShadow = true;
+    node.receiveShadow = true;
+    if (node.material) node.material.side = THREE.FrontSide;
+  });
+  scene.add(gltf.scene);
+
+  // Blender exports the athlete and the ball as separate clips. Playing only
+  // the first one leaves the ball standing still while she catches nothing.
+  if (gltf.animations.length) {
+    mixer = new THREE.AnimationMixer(gltf.scene);
+    actions = gltf.animations.map(clip => {
+      const played = mixer.clipAction(clip);
+      played.play();
+      return played;
+    });
+    action = actions[0];
+    duration = Math.max(...gltf.animations.map(clip => clip.duration));
+    mixer.update(0);
+  }
+  // Do not ground her here. Blender already stands her on the floor, and a
+  // box round a skinned mesh reports its bind pose rather than the pose it is
+  // in, which lifted her out of the top of the frame.
+  readout.innerHTML =
+    `<b>${gltf.animations.length}</b> clips, <b>${duration.toFixed(2)} s</b>`
+    + ' &middot; drag to orbit, scroll to zoom, right drag to pan,'
+    + ' double click to reset';
+}, undefined, error => {
+  status.textContent = `The model did not load: ${error?.message || error}. `
+    + `Expected it at ${SOURCE}.`;
+});
+
+play.addEventListener('click', () => {
+  playing = !playing;
+  play.textContent = playing ? 'Pause' : 'Play';
+  play.classList.toggle('on', playing);
+});
+scrub.addEventListener('input', () => {
+  if (!action || !duration) return;
+  playing = false;
+  play.textContent = 'Play';
+  play.classList.remove('on');
+  for (const played of actions) played.time = (scrub.value / 1000) * duration;
+  mixer.update(0);
+});
+for (const button of document.querySelectorAll('[data-az]'))
+  button.addEventListener('click', () => {
+    spinning = false;
+    document.getElementById('spin').classList.remove('on');
+    frame(parseFloat(button.dataset.az));
+  });
+renderer.domElement.addEventListener('dblclick', () => {
+  spinning = false;
+  document.getElementById('spin').classList.remove('on');
+  controls.target.set(0, 0.90, 0);
+  frame(0.55);
+});
+const spin = document.getElementById('spin');
+spin.addEventListener('click', () => {
+  spinning = !spinning;
+  spin.classList.toggle('on', spinning);
+});
+
+function resize() {
+  const { clientWidth: w, clientHeight: h } = stage;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / Math.max(h, 1);
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+resize();
+
+// Exposed so a frame can be forced and inspected. A page that is not
+// visible gets no animation frames, so the loop below never runs and the
+// canvas reads back black whether the scene is right or wrong.
+window.__viewer = { THREE, renderer, scene, camera, controls,
+  render: () => renderer.render(scene, camera) };
+
+let angle = 0.55;
+renderer.setAnimationLoop(() => {
+  const delta = clock.getDelta();
+  if (mixer && playing) {
+    mixer.update(delta);
+    if (duration) scrub.value = Math.round((action.time % duration) / duration * 1000);
+  }
+  if (spinning) { angle += delta * 0.45; frame(angle); }
+  controls.update();
+  renderer.render(scene, camera);
+});
+</script>

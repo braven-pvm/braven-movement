@@ -1,0 +1,97 @@
+{
+  "movementId": "netball_hooks_outside_hand",
+  "sport": "netball",
+  "skill": "Hooks, Outside Hand",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger, Catching section, page 72. The manual describes the drill as: a person passes to the person who faces to a side, placing the ball in front of the receiver; the worker, with the hand closest to the passer, tries to control the ball, pull it in and pass back to the passer; if the worker struggles the passer will use a lob pass; and if the ball cannot be caught it may be bounced to gain control. The cues are the manual's. The numeric bands are NOT, and are PROVISIONAL until a coach sets them.",
+  "phases": [
+    {
+      "name": "facing_away",
+      "atPhase": 0.0,
+      "checkpoints": [
+        {
+          "measure": "trunkTurnDegrees",
+          "minimumDegrees": 30.0,
+          "maximumDegrees": 65.0,
+          "cue": "Face to the side. The ball is coming over your shoulder.",
+          "why": "The manual has the worker facing to a side. A player who starts square is not doing this drill."
+        },
+        {
+          "measure": "leftKneeFlexionDegrees",
+          "minimumDegrees": 20.0,
+          "maximumDegrees": 70.0,
+          "cue": "Feet planted, knees ready. The turn comes from your trunk.",
+          "why": "Turning by stepping is a footwork drill. This one trains the trunk to work over a still base."
+        }
+      ]
+    },
+    {
+      "name": "contact",
+      "atPhase": 0.5,
+      "checkpoints": [
+        {
+          "measure": "rightElbowFlexionDegrees",
+          "minimumDegrees": 10.0,
+          "maximumDegrees": 90.0,
+          "cue": "Near hand to the ball. Control it out in front.",
+          "why": "The manual names the hand closest to the passer. Reaching with the far hand turns the shoulders too early and loses the ball."
+        },
+        {
+          "measure": "trunkTurnDegrees",
+          "minimumDegrees": 8.0,
+          "maximumDegrees": 45.0,
+          "cue": "Still turned as you take it. Do not square up early.",
+          "why": "Squaring up before control is what makes the ball bounce off the hands."
+        },
+        {
+          "measure": "rightShoulderElevationDegrees",
+          "minimumDegrees": 35.0,
+          "maximumDegrees": 120.0,
+          "cue": "Reach across your body to meet it.",
+          "why": "The ball is placed in front of a turned athlete, so the near arm has to travel."
+        }
+      ]
+    },
+    {
+      "name": "gather",
+      "atPhase": 0.74,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 100.0,
+          "maximumDegrees": 150.0,
+          "cue": "Second hand on. Square up as you gather it.",
+          "why": "The athlete is holding the ball here, so her wrists are on its surface rather than at its centre. That is about 14.5 cm nearer the shoulder than the geometry this band was first written against, and roughly 45 degrees more elbow flexion. The lower bound is the coaching point: below it she has not brought the ball in. The upper bound is anatomy rather than technique, and the range of motion check already guards it.",
+          "wasBand": "25 to 120"
+        },
+        {
+          "measure": "trunkTurnDegrees",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 30.0,
+          "cue": "Bring your chest round to where the pass is going.",
+          "why": "The pass back to the passer starts from a square chest."
+        }
+      ]
+    },
+    {
+      "name": "pull_in",
+      "atPhase": 1.0,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 105.0,
+          "maximumDegrees": 150.0,
+          "cue": "Pull it in to your chest and pass back.",
+          "why": "The athlete is holding the ball here, so her wrists are on its surface rather than at its centre. That is about 14.5 cm nearer the shoulder than the geometry this band was first written against, and roughly 45 degrees more elbow flexion. The lower bound is the coaching point: below it she has not brought the ball in. The upper bound is anatomy rather than technique, and the range of motion check already guards it.",
+          "wasBand": "45 to 130"
+        },
+        {
+          "measure": "trunkLeanDegrees",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 16.0,
+          "cue": "Stay balanced through the turn.",
+          "why": "Turning and reaching at once tempts an athlete to lean, which costs the pass that follows."
+        }
+      ]
+    }
+  ]
+}

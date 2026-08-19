@@ -1,0 +1,113 @@
+{
+  "movementId": "netball_two_hand_snatch_pull_in",
+  "sport": "netball",
+  "skill": "2 Hand Snatches and Pull In",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger, Catching section, page 70 to 72. The phase names and the coaching cues come from the manual. The numeric bands DO NOT. The manual coaches this skill in words, not in degrees, so the bands below are derived from the manual's direction and are still PROVISIONAL. A coach must set the numbers before an athlete sees them. Every band is wider than the 5 degree measurement threshold.",
+  "phases": [
+    {
+      "name": "ready",
+      "atPhase": 0.0,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 50.0,
+          "maximumDegrees": 105.0,
+          "cue": "Power position, ready to move, hands and arms ready to work.",
+          "why": "She meets the ball with her palms on its surface, so the wrist sits about 14.5 cm inside the ball's centre, which is where this band first put it. A two hand catch on a size 5 netball at the edge of the reach measures about 64 degrees of elbow flexion, and 40 was not reachable at all. The lower bound now guards the real fault at the other end: an arm caught straight cannot give with the ball.",
+          "wasBand": "15 to 70"
+        },
+        {
+          "measure": "leftShoulderElevationDegrees",
+          "minimumDegrees": 20.0,
+          "maximumDegrees": 70.0,
+          "cue": "Show the passer your arm span, the range your hands can reach.",
+          "why": "The passer may put the ball anywhere inside that span, so the span must be presented honestly."
+        },
+        {
+          "measure": "leftKneeFlexionDegrees",
+          "minimumDegrees": 25.0,
+          "maximumDegrees": 75.0,
+          "cue": "Wide base power position. Sit into your legs, ready to move.",
+          "why": "The manual lists a wide base power position as the technique for this drill. Straight legs cannot move quickly in any direction."
+        }
+      ]
+    },
+    {
+      "name": "react",
+      "atPhase": 0.3,
+      "checkpoints": [
+        {
+          "measure": "leftShoulderElevationDegrees",
+          "minimumDegrees": 45.0,
+          "maximumDegrees": 105.0,
+          "cue": "React to the front, in front of your shoulder.",
+          "why": "Taking the ball in front of the shoulder line is what gives the arms room to absorb it."
+        }
+      ]
+    },
+    {
+      "name": "contact",
+      "atPhase": 0.55,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 40.0,
+          "maximumDegrees": 110.0,
+          "cue": "Snatch the ball in front of your shoulder, elbows working.",
+          "why": "CORRECTED from the manual photographs on page 71. An earlier band demanded almost straight arms, but that instruction belongs to the 2 Hands Catch at the chest, which is a different skill. In both snatch photographs the elbows are clearly bent as the athlete takes the ball high and in front."
+        },
+        {
+          "measure": "rightElbowFlexionDegrees",
+          "minimumDegrees": 40.0,
+          "maximumDegrees": 110.0,
+          "cue": "Both hands snatch together. Fingers up, thumbs in the middle.",
+          "why": "A two-hand snatch needs both hands presented equally, or it becomes a one-hand catch."
+        },
+        {
+          "measure": "leftShoulderElevationDegrees",
+          "minimumDegrees": 50.0,
+          "maximumDegrees": 140.0,
+          "cue": "React to the front, hands up in front of the shoulder.",
+          "why": "The photographs show the hands taken at or above shoulder height, in front of the body, inside the arm span the worker showed the passer."
+        }
+      ]
+    },
+    {
+      "name": "pull_in",
+      "atPhase": 1.0,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 105.0,
+          "maximumDegrees": 150.0,
+          "cue": "As soon as you catch it, pull the ball in to your chest.",
+          "why": "The athlete is holding the ball here, so her wrists are on its surface rather than at its centre. That is about 14.5 cm nearer the shoulder than the geometry this band was first written against, and roughly 45 degrees more elbow flexion. The lower bound is the coaching point: below it she has not brought the ball in. The upper bound is anatomy rather than technique, and the range of motion check already guards it.",
+          "wasBand": "55 to 130"
+        },
+        {
+          "measure": "rightElbowFlexionDegrees",
+          "minimumDegrees": 105.0,
+          "maximumDegrees": 150.0,
+          "cue": "Pull in with two hands, not one.",
+          "why": "The athlete is holding the ball here, so her wrists are on its surface rather than at its centre. That is about 14.5 cm nearer the shoulder than the geometry this band was first written against, and roughly 45 degrees more elbow flexion. The lower bound is the coaching point: below it she has not brought the ball in. The upper bound is anatomy rather than technique, and the range of motion check already guards it.",
+          "wasBand": "55 to 130"
+        },
+        {
+          "measure": "leftShoulderElevationDegrees",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 50.0,
+          "cue": "Ball in to the chest, ready to release again.",
+          "why": "With the ball at the chest and the elbows folded, the upper arm hangs. The fault a coach is watching for here is the elbow winging out, which reads as high elevation, so the meaningful bound is the upper one. The old lower bound of 10 degrees asked the upper arm to be lifted while the ball was tucked in, which is the opposite of the cue.",
+          "wasBand": "10 to 60"
+        },
+        {
+          "measure": "leftKneeFlexionDegrees",
+          "minimumDegrees": 25.0,
+          "maximumDegrees": 75.0,
+          "cue": "Stay in your power position. The feet do not move, the arms do the work.",
+          "why": "The manual keeps the worker static with the feet and uses hands and arms to pull the ball in. Standing up out of the base loses the next movement."
+        }
+      ]
+    }
+  ]
+}

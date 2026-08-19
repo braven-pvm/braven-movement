@@ -1,0 +1,74 @@
+{
+  "movementId": "netball_two_hand_snatch_pull_in",
+  "source": "202526 Netball Coaches Manual, page 71, 2 hand snatches and pull in",
+  "notes": "Where the ball is, and when. Positions are given in the athlete's stance frame, in fractions of her own arm length, so the same pass retargets to any body. The frame is anchored at her chest as she stands at phase 0 and it does not move with her: she turns and drops inside it while the ball flies through it. across is positive to her left, up is above the chest, ahead is in front of the chest. Only the flight is authored, from release to arrival.",
+  "radiusCm": 11.0,
+  "radiusFraction": 0.21,
+  "sizeNote": "A size 5 netball is 690 to 710 mm around, so 11 cm in radius. radiusCm is stated because the ball is the same object whoever catches it. radiusFraction is kept so a drill can scale the ball with the athlete instead, and on this 52.7 cm arm the two agree.",
+  "release": {
+    "atPhase": 0.3782,
+    "note": "The passer lets go. Before this the ball is held at the release point. The flight is bounded here rather than keyed from phase 0, because a stationary key next to a flying one forces the interpolator to zero speed at the join and the ball eases out of the hand. Measured against the true arc that cost 4.3 cm."
+  },
+  "arrival": {
+    "atPhase": 0.55,
+    "note": "The manual has the worker snatch the ball in front of the shoulder. This is where the incoming flight ends. Whether she can actually reach it is measured, not assumed."
+  },
+  "flight": {
+    "method": "real parabola under gravity, sampled at five keys",
+    "passerDistanceCm": 210.7,
+    "releaseHeightCm": 135.0,
+    "launchSpeedMetresPerSecond": 6.27,
+    "launchAngleDegrees": 16.8,
+    "flightSeconds": 0.279,
+    "peakHeightCm": 151.8,
+    "splineErrorCm": 0.18,
+    "note": "The keys sample a ballistic arc rather than describing a shape. splineErrorCm is how far the interpolated ball strays from that arc, at worst, across the whole flight. Two keys cost 2.0 cm and five cost 0.18 cm, so five are used."
+  },
+  "keys": [
+    {
+      "atPhase": 0.3782,
+      "name": "release",
+      "across": 0.0,
+      "up": 0.1832,
+      "ahead": 4.0,
+      "note": "Leaves the passer's hands 2.1 m in front, at 135 cm, which is chest height on a standing feeder."
+    },
+    {
+      "atPhase": 0.4125,
+      "name": "flight1",
+      "across": 0.0,
+      "up": 0.3467,
+      "ahead": 3.364
+    },
+    {
+      "atPhase": 0.4469,
+      "name": "flight2",
+      "across": 0.0,
+      "up": 0.4521,
+      "ahead": 2.728
+    },
+    {
+      "atPhase": 0.4813,
+      "name": "flight3",
+      "across": 0.0,
+      "up": 0.4995,
+      "ahead": 2.092,
+      "note": "Near the top of the arc, at 152 cm."
+    },
+    {
+      "atPhase": 0.5156,
+      "name": "flight4",
+      "across": 0.0,
+      "up": 0.4888,
+      "ahead": 1.456
+    },
+    {
+      "atPhase": 0.55,
+      "name": "arrival",
+      "across": 0.0,
+      "up": 0.42,
+      "ahead": 0.82,
+      "note": "In front of the shoulder, at the height the drill's existing contact key already reaches. The ball centre sits 15 cm beyond each wrist, which is a palm plus a ball radius, so the hands are on the surface rather than through it."
+    }
+  ]
+}

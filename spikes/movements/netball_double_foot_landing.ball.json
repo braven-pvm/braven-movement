@@ -1,0 +1,69 @@
+{
+  "movementId": "netball_double_foot_landing",
+  "variant": null,
+  "source": "authored by author_flight.py from a passer position and a catch point in the arm span",
+  "notes": "Received in the air, between the take off and the landing.",
+  "radiusCm": 11.0,
+  "radiusFraction": 0.2088,
+  "release": {
+    "atPhase": 0.5392
+  },
+  "arrival": {
+    "atPhase": 0.66
+  },
+  "flight": {
+    "method": "real parabola under gravity, sampled at keys",
+    "passerAheadCm": 210.7,
+    "releaseHeightCm": 150.0,
+    "launchSpeedMetresPerSecond": 6.21,
+    "launchAngleDegrees": 14.8,
+    "flightSeconds": 0.22,
+    "peakHeightCm": 162.8,
+    "catchHeightCm": 161.2,
+    "splineErrorCm": 0.162
+  },
+  "keys": [
+    {
+      "atPhase": 0.5392,
+      "name": "release",
+      "across": 0.0,
+      "up": 0.3679,
+      "ahead": 4.0
+    },
+    {
+      "atPhase": 0.5633,
+      "name": "flight1",
+      "across": 0.0,
+      "up": 0.4821,
+      "ahead": 3.5
+    },
+    {
+      "atPhase": 0.5875,
+      "name": "flight2",
+      "across": 0.0,
+      "up": 0.5604,
+      "ahead": 3.0
+    },
+    {
+      "atPhase": 0.6117,
+      "name": "flight3",
+      "across": 0.0,
+      "up": 0.6028,
+      "ahead": 2.5
+    },
+    {
+      "atPhase": 0.6358,
+      "name": "flight4",
+      "across": 0.0,
+      "up": 0.6094,
+      "ahead": 2.0
+    },
+    {
+      "atPhase": 0.66,
+      "name": "arrival",
+      "across": 0.0,
+      "up": 0.58,
+      "ahead": 1.5
+    }
+  ]
+}

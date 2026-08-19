@@ -1,0 +1,69 @@
+{
+  "movementId": "netball_two_hand_catch_chest",
+  "variant": null,
+  "source": "authored by author_flight.py from a passer position and a catch point in the arm span",
+  "notes": "Straight to the chest, at the height the manual's arms almost straight in front puts the hands.",
+  "radiusCm": 11.0,
+  "radiusFraction": 0.2088,
+  "release": {
+    "atPhase": 0.2795
+  },
+  "arrival": {
+    "atPhase": 0.45
+  },
+  "flight": {
+    "method": "real parabola under gravity, sampled at keys",
+    "passerAheadCm": 210.7,
+    "releaseHeightCm": 135.0,
+    "launchSpeedMetresPerSecond": 6.24,
+    "launchAngleDegrees": 16.1,
+    "flightSeconds": 0.276,
+    "peakHeightCm": 150.2,
+    "catchHeightCm": 145.4,
+    "splineErrorCm": 0.196
+  },
+  "keys": [
+    {
+      "atPhase": 0.2795,
+      "name": "release",
+      "across": 0.0,
+      "up": 0.1632,
+      "ahead": 4.0
+    },
+    {
+      "atPhase": 0.3136,
+      "name": "flight1",
+      "across": 0.0,
+      "up": 0.3158,
+      "ahead": 3.372
+    },
+    {
+      "atPhase": 0.3477,
+      "name": "flight2",
+      "across": 0.0,
+      "up": 0.4118,
+      "ahead": 2.744
+    },
+    {
+      "atPhase": 0.3818,
+      "name": "flight3",
+      "across": 0.0,
+      "up": 0.4511,
+      "ahead": 2.116
+    },
+    {
+      "atPhase": 0.4159,
+      "name": "flight4",
+      "across": 0.0,
+      "up": 0.4339,
+      "ahead": 1.488
+    },
+    {
+      "atPhase": 0.45,
+      "name": "arrival",
+      "across": 0.0,
+      "up": 0.36,
+      "ahead": 0.86
+    }
+  ]
+}

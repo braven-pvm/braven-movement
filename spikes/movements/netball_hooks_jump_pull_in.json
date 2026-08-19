@@ -1,0 +1,100 @@
+{
+  "movementId": "netball_hooks_jump_pull_in",
+  "sport": "netball",
+  "skill": "Hooks, Jump and Pull In Ball",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger, Catching section, page 72. The manual heads this drill with quick catch and release, with control: as quick as you catch the ball you must be able to release the ball. Its three instructions are: keep fingers up with thumbs in the middle, keep arms almost straight in front and pull the ball into the chest as soon as you catch it, and use the momentum of the catch to pass the ball back as soon as possible. The cues are the manual's. The numeric bands are NOT, and are PROVISIONAL until a coach sets them.",
+  "phases": [
+    {
+      "name": "gather",
+      "atPhase": 0.0,
+      "checkpoints": [
+        {
+          "measure": "leftKneeFlexionDegrees",
+          "minimumDegrees": 30.0,
+          "maximumDegrees": 90.0,
+          "cue": "Load the legs. The jump comes from here.",
+          "why": "A jump catch is decided before the feet leave the ground. No load, no height."
+        },
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 25.0,
+          "maximumDegrees": 105.0,
+          "cue": "Hands ready, not yet reaching.",
+          "why": "Reaching early wastes the arm range that the catch itself needs."
+        }
+      ]
+    },
+    {
+      "name": "contact",
+      "atPhase": 0.58,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 45.0,
+          "maximumDegrees": 100.0,
+          "cue": "Arms almost straight in front. Fingers up, thumbs in the middle.",
+          "why": "She meets the ball with her palms on its surface, so the wrist sits about 14.5 cm inside the ball's centre, which is where this band first put it. A two hand catch on a size 5 netball at the edge of the reach measures about 64 degrees of elbow flexion, and 40 was not reachable at all. The lower bound now guards the real fault at the other end: an arm caught straight cannot give with the ball.",
+          "wasBand": "0 to 45"
+        },
+        {
+          "measure": "leftShoulderElevationDegrees",
+          "minimumDegrees": 80.0,
+          "maximumDegrees": 165.0,
+          "cue": "Take it at the highest point you can reach.",
+          "why": "The whole purpose of jumping is to meet the ball above the defender."
+        },
+        {
+          "measure": "rightElbowFlexionDegrees",
+          "minimumDegrees": 45.0,
+          "maximumDegrees": 100.0,
+          "cue": "Both hands go up together.",
+          "why": "She meets the ball with her palms on its surface, so the wrist sits about 14.5 cm inside the ball's centre, which is where this band first put it. A two hand catch on a size 5 netball at the edge of the reach measures about 64 degrees of elbow flexion, and 40 was not reachable at all. The lower bound now guards the real fault at the other end: an arm caught straight cannot give with the ball.",
+          "wasBand": "0 to 45"
+        }
+      ]
+    },
+    {
+      "name": "pull_in",
+      "atPhase": 0.82,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 105.0,
+          "maximumDegrees": 150.0,
+          "cue": "As soon as you catch it, pull the ball in to your chest.",
+          "why": "The athlete is holding the ball here, so her wrists are on its surface rather than at its centre. That is about 14.5 cm nearer the shoulder than the geometry this band was first written against, and roughly 45 degrees more elbow flexion. The lower bound is the coaching point: below it she has not brought the ball in. The upper bound is anatomy rather than technique, and the range of motion check already guards it.",
+          "wasBand": "55 to 135"
+        },
+        {
+          "measure": "rightElbowFlexionDegrees",
+          "minimumDegrees": 105.0,
+          "maximumDegrees": 150.0,
+          "cue": "Two hands bring it in. Secure it before you land.",
+          "why": "The athlete is holding the ball here, so her wrists are on its surface rather than at its centre. That is about 14.5 cm nearer the shoulder than the geometry this band was first written against, and roughly 45 degrees more elbow flexion. The lower bound is the coaching point: below it she has not brought the ball in. The upper bound is anatomy rather than technique, and the range of motion check already guards it.",
+          "wasBand": "55 to 135"
+        }
+      ]
+    },
+    {
+      "name": "release",
+      "atPhase": 1.0,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 50.0,
+          "maximumDegrees": 120.0,
+          "cue": "Use the momentum of the catch. Release as quick as you caught it.",
+          "why": "Shifted by the same 45 degrees as every other elbow band in this library, for the same reason. These numbers were authored against a solve in which the ball was drawn at the midpoint of the wrists, so the wrist occupied the ball's centre. A hand holding a ball is on its surface, which is 14.5 cm nearer the shoulder, and at these ranges that is worth about 45 degrees of elbow flexion. The shift is uniform and the width of the band is unchanged, so what the band asks of the athlete is the same; only the geometry it was measured against has been corrected.",
+          "wasBand": "5 to 75"
+        },
+        {
+          "measure": "trunkLeanDegrees",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 16.0,
+          "cue": "Land balanced, ready to pass.",
+          "why": "A landing that is off balance delays the pass the drill exists to train."
+        }
+      ]
+    }
+  ]
+}
