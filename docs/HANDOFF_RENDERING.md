@@ -207,7 +207,31 @@ Ignoring these will cost hours. Each one already did.
 12. **An `Icosphere` of 42 vertices appears when you re-import a GLB.** It is
     not in the exported file, which contains seven meshes and none of them is
     it. It is an artefact of the import and reaches nothing downstream. Do not
-    chase it.
+    chase it. It does sit a metre below the floor, so leave it out of any
+    bounding box you frame a camera from.
+
+13. **Do not pass the eyes to `set_alpha`.** The eye mesh is named
+    `high-poly` and it carries a transparent cornea over the iris. Opaque
+    paints the sclera across the whole eye and she arrives with two blank
+    white discs and no pupil. Pass the body and the kit only.
+
+14. **`spikes/mhr-assets/` is gitignored and is 4.5 GB.** A new worktree has
+    no copy, and the first command that loads the character fails with
+    `Error reading FBX file`. Link it, rather than downloading it again.
+
+    ```bash
+    New-Item -ItemType Junction -Path "<new-worktree>\spikes\mhr-assets" -Target "<existing-worktree>\spikes\mhr-assets"
+    ```
+
+    A recursive `grep` or `du` over `spikes/` then walks 4.5 GB and stalls.
+    Use `git grep`, or scope the search.
+
+15. **This lane and the movement lane break each other without a git
+    conflict.** `blender_movement_render.py` imports fourteen helpers from
+    `blender_mpfb_reference_catch.py`. When a signature changes on one branch
+    and the caller stays on another, no file collides, the merge is clean and
+    Blender fails at load. `tests/test_blender_sources.py` now compares both
+    sides with the AST and needs no Blender.
 
 ## Do not grow the rasteriser
 
@@ -237,31 +261,36 @@ path removes that risk, and it is in "Known defects" below.
 
 Ordered by how much they cost.
 
-1. **`blender_mpfb_reference_catch.py` exports without `export_apply=True`.**
-   Its GLB has the helper geometry and the unclipped body. Anything consuming
-   those files gets it. The fix is one argument, but that module is the
-   validated path, so its receipts and `scripts/test-blender.ps1` need checking
-   after the change.
-
-2. **The manual page still draws the SMPL-X figure.** `export_manual_page.py`
+1. **The manual page still draws the SMPL-X figure.** `export_manual_page.py`
    uses the rasteriser. Moving it to Blender stills gives it materials, kit and
    shadows, and removes the research licence from the product path.
 
-3. **The kit is not netball kit.** `female_casualsuit02` is a grey t-shirt and
+2. **The kit is not netball kit.** `female_casualsuit02` is a grey t-shirt and
    shorts. A bib in team colours is what a netball manual shows.
 
-4. **The ball is a coral sphere.** It is the right size, 0.11 m radius, and it
-   does not look like a netball.
-
-5. **No transparent background or shadow catcher.** A manual page usually wants
+3. **No transparent background or shadow catcher.** A manual page usually wants
    the figure cut out with a contact shadow, not a grey room.
 
-6. **Only one drill has been through the pipeline.** There are eight. The
+4. **Only one drill has been through the pipeline.** There are eight. The
    batch does not exist.
 
-7. **The viewer plays two animation clips.** Blender exports the athlete and
+5. **The viewer plays two animation clips.** Blender exports the athlete and
    the ball separately. The viewer plays both, which is correct, but a reader
    that plays only the first shows the ball standing still.
+
+6. **`delete_helper_geometry` in `blender_movement_render.py` is dead.** It
+   deleted the helper vertices by hand before `export_apply` existed. Nothing
+   calls it, and its docstring still reads as live guidance. `HELPER_GROUPS`
+   is unused with it.
+
+### Closed
+
+- **`blender_mpfb_reference_catch.py` exported without `export_apply=True`.**
+  Fixed. Its GLB carried the helper geometry: 21833 body vertices and 22.7 MB
+  against 10256 and 12.3 MB now. The 48 shape keys are baked first, because
+  `export_apply` disables shape key export.
+- **The ball was a coral sphere.** Fixed. `blender_movement_render.py` now
+  calls `create_panelled_netball`, which the reference generator already had.
 
 ## What the other lane is fixing
 
@@ -283,10 +312,15 @@ braces rather than a correction, and it can stay.
 
 ## State
 
-Verified on 2026-08-19, on `claude/repo-onboarding-6c4df5`.
+Verified on 2026-08-19, on `claude/handoff-rendering-docs-0c5db3`. That branch
+merged `claude/repo-onboarding-6c4df5` into the six commits `main` carried.
 
 - The pipeline runs end to end on `netball_two_hand_snatch_pull_in`.
-- Four phases, three views each, plus a twelve angle turntable.
-- An animated GLB of 49 frames at 30 fps, 10.5 MB, and an MP4.
-- The exported GLB re-imports into a clean Blender and renders correctly.
-- 34 repository tests and 201 spike tests pass.
+- Four phases, three views each. The turntable is unchanged and untested since.
+- The animated GLB and the MP4 both build. Verified at 5 frames, not at 49.
+- Both exported GLB files re-import into a clean Blender and render correctly.
+  The body arrives at 10256 vertices with no shape keys.
+- The reference generator passes: elbows 106.67 and 114.73 degrees, 30 finger
+  bones weighted.
+- 55 repository tests and 201 spike tests pass. 17 of the repository tests skip
+  without Blender.
