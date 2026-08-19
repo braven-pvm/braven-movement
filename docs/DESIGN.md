@@ -1,6 +1,20 @@
 # Design — Braven Movement
 
-Written 2026-08-19, at the end of the spike phase.
+Written 2026-08-19.
+
+> **Status: candidate, not agreed.** This was written before any requirement
+> existed, which is the wrong order. `REQUIREMENTS.md` came after it and is
+> the document that decides what gets built. Read that first, then read this
+> as a proposal to be checked against it.
+>
+> Two things in here are already known to be ahead of the requirements. The
+> physics layer in section 5 is deferred: the trust bar is agreement with
+> coaches, and a joint moment says nothing about that. The capture path is
+> deferred too, because manual content has no camera in it. Both stay in the
+> design so they are not blocked. Neither is built now.
+>
+> Section 6, on what the physics may and may not claim, holds whenever physics
+> is built.
 
 ## 1. What this is
 
