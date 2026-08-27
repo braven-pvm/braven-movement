@@ -1,5 +1,11 @@
 # Known issues
 
+Sectioned by lane. The rendering and modelling lane owns the athlete a person
+looks at; the movement lane owns the engine, the anatomy, the solver and the
+grading. An entry belongs to whichever lane can fix it.
+
+# Rendering and modelling
+
 ## Reference catch is not yet a final coaching sample
 
 The current MPFB catch render remains a review artifact. Its hand orientation in the locked
@@ -35,3 +41,94 @@ configuration after coaching acceptance.
 
 The source photograph is not committed because publication rights have not been established. The
 configuration records its SHA-256 and dimensions so an authorised local copy can be verified.
+
+# Movement
+
+## Three coaching phases cannot fail
+
+`build_library.py` reports these in every receipt under `phaseSeparation`, and
+flags the movement rather than calling it ok.
+
+| drill | phase | its measures move |
+|---|---|---|
+| Double Foot Landing | land | 0.33 |
+| 1 Hand Snatches to Other Hand | reach | 0.21 |
+| 2 Hand Snatches and Pull In | react | 0.17 |
+
+A checkpoint grades a measure at a phase. If that measure reads the same as at
+the previous phase, the checkpoint cannot tell them apart, so it cannot fail.
+It passes whatever the athlete does. The library still meets every coaching
+checkpoint; three of those meetings are unearned.
+
+This matters for P1. Agreement between engine and coach is the trust bar, and
+a check that always passes agrees with a coach for free. The P1 result is
+computed twice, with and without these three, for that reason.
+
+Two causes, and only one is a timing problem.
+
+**Wrong moment.** Both snatch drills grade before the ball is doing anything.
+`react` sits at phase 0.30 and the pass is not released until 0.3782. Their
+own measures first move five degrees at 0.45 and 0.48.
+
+**Wrong measure.** `land` is correctly timed. Its checkpoints are
+`footHeightGapCm`, 0.01 to 0.01, and `trunkLeanDegrees`, 2.20 to 1.87. Both
+are genuinely static across a landing: the feet are together in flight and on
+the floor, and she does not lean. Knee flexion would distinguish it, and the
+`absorb` phase already uses it.
+
+Nothing is retimed and no checkpoint is changed, deliberately. Retiming a
+phase to a number the engine chose is the engine marking its own homework, and
+what a coach checks at a landing is coaching judgement. Both wait for the
+coach review, whose marks and notes on exactly these phases are the evidence
+the fix needs. The pack does not mark them as suspect, because that would
+steer the coaches being measured.
+
+Event-anchored phases are the durable fix, queued as their own pack: anchoring
+`react` to release rather than to 0.30 survives a change in ball timing, where
+a fixed fraction does not.
+
+## The library is not smooth enough to animate
+
+Worst per-frame upper arm swing, in degrees, at 60 frames a second:
+
+| drill | before the aim term | after |
+|---|---|---|
+| hooks outside hand | 44.8 | 48.1 |
+| one hand snatch to other hand | 20.3 | 26.0 |
+| the other six | | all improved or unchanged |
+
+A joint swinging 48 degrees between two frames is not a movement a person
+makes, on either number. The aim term aggravated two drills and improved five;
+independent review judged the regressions aggravated rather than caused, on
+the same frame and the same arm as before.
+
+It is invisible in a phase figure and ruinous in a clip, so it must be fixed
+before the library ships as animation. Ordering agreed: the tactics spike
+proves the contract on one clip, this is fixed, then clips ship.
+
+Starting points, recorded so they are not rediscovered:
+
+1. Whether the extra 3.3 degrees on `hooks outside hand` is the aim term
+   interacting with the mid-movement second-hand join, or noise on a solve
+   already three times rougher than any other drill.
+2. Whether the aim term steers the free arm on one-handed drills more firmly
+   than the grip does.
+3. A six degree trunk-twist step between frames 41 and 42 of
+   `netball_two_hand_snatch_pull_in`, found by the tactics lane.
+
+When a coach number arrives for the chest catches, the 25 cm threshold in
+`test_upper_arm_aim.py` needs rework alongside it: the `technique.py` comment
+argues for a folded posture that the test currently forbids, so the two must
+move together.
+
+## Centimetres are stored in a field called degrees
+
+`footHeightGapCm` is a checkpoint measure in centimetres, and its band is held
+in `minimumDegrees` and `maximumDegrees`. Three occurrences across the
+library.
+
+Nothing is wrong today: the same numbers are compared against each other, and
+the phase separation guard's threshold is far from the values it judges, so
+all three dead phases are dead in either unit. It is recorded because a name
+that does not say what it holds is how `fingerBaseDeviation` came to bound a
+flexion axis, and that cost a day.
