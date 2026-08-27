@@ -61,6 +61,8 @@ other.
 schemaVersion, movementId, skill, sport
 anatomyLimitsDegrees   forearmRoll, wristBend, fingerJointBend,
                        fingerBaseDeviation
+fingerBaseFlexionDegrees   index, middle, ring, pinky. Refer to the note
+                       below before consuming it
 views                  front, quarter, side
                        resolutionPx, locationM, targetM, lensMm, sensorWidthMm
 framesPerSecond, frameStep
@@ -91,6 +93,49 @@ grip.{l,r}.outward             present only when holding. Unit vector from the
 grip.{l,r}.wristFromSurfaceInArms   how far outside the ball surface the wrist
                                sits, in arm lengths
 ```
+
+### fingerBaseFlexionDegrees, and what it is not
+
+**The quantity is GEOMETRIC BEND: the angle between wrist-to-knuckle and
+knuckle-to-phalanx.**
+
+Never the word metacarpal. Neither rig has one. MPFB has 30 finger bones and
+no metacarpal, and MHR's equivalent segment is wrist-to-knuckle, so both rigs
+already measure a hand-origin-to-knuckle vector. Naming it metacarpal would be
+naming a bone that does not exist in either model.
+
+**Never a joint rotation.** A rotation only means something against the rest
+pose it was measured in, and the two rigs do not share one. Subtract your own
+rest offset to get your own rotation. The rest bends differ per digit AND per
+rig, which is why this field is per digit:
+
+| digit | MHR rest bend | MPFB rest bend | difference |
+|---|---|---|---|
+| index | 18.5 | 13.80 | 4.7 |
+| middle | 8.0 | 19.39 | 11.4 |
+| ring | 1.2 | 16.78 | 15.6 |
+| pinky | 14.6 | 18.34 | 3.7 |
+
+A single shared offset would be wrong by 15.6 degrees on the ring finger
+alone, which is most of the gap this field exists to close.
+
+**A cautionary example, because the next person will make this mistake.** The
+rest bend and the rotation limit do not add. The index rests at 18.5 and its
+rotation limit is 90, and the geometric bend at that limit is 90.0, not 108.5.
+The values are measured by driving each parameter to its limit, never
+computed by addition. Likewise, an index reading 96.4 of geometric bend at
+contact is not an over-rotated joint: it is a legal 78 of rotation, and the
+extra comes from the other two knuckle axes contributing.
+
+**It is a flexion licence, not a ceiling on the visible angle.** These are pure
+flexion, with the other two knuckle axes at zero. The full envelope with all
+three helping reaches 91 to 103, and the solve does use it.
+
+**Why it exists.** `fingerBaseDeviation` was being used to bound knuckle
+flexion. They are different axes: this model licenses plus or minus 45.8 of
+deviation and up to 90 of flexion. A deviation-sized 40 was capping a flexion
+axis, and the fingers stopped 26 to 35 mm short of the ball. `fingerBaseDeviation`
+is unchanged and still means deviation.
 
 **Reaching and holding are different, and the difference is the whole
 possession model.** Before contact the arm decides where the hand goes, so use

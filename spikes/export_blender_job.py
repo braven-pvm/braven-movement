@@ -32,7 +32,13 @@ sys.path.insert(0, str(SPIKE_DIR))
 
 from ball_track import has_ball  # noqa: E402
 from movement_definition import load as load_definition  # noqa: E402
-from movement_engine import definition_path, library, load_character  # noqa: E402
+from athlete import minmax_limits  # noqa: E402
+from movement_engine import (  # noqa: E402
+    definition_path,
+    joint_positions,
+    library,
+    load_character,
+)
 from possession_solve import solve_movement  # noqa: E402
 from technique import has_technique, load_technique, technique_path  # noqa: E402
 
@@ -55,12 +61,73 @@ VIEW_TARGET = [0.0, -0.15, 0.95]
 
 # Carried over from config/reference_catch.v1.json, which measured them against
 # a photograph of a real athlete.
+#
+# These are a calibration of one authored pose, not anatomical limits, and
+# fingerBaseDeviation was being used on the receiving side to bound knuckle
+# FLEXION. Deviation and flexion are different axes: this model licenses plus
+# or minus 45.8 of deviation and up to 90 of flexion, so a deviation-sized
+# number was capping a flexion axis and the fingers stopped 26 to 35 mm short
+# of the ball. fingerBaseFlexionDegrees below is the replacement. This block is
+# left exactly as it was, because deviation still means deviation.
 ANATOMY_LIMITS = {
     "forearmRoll": 75.0,
     "wristBend": 45.0,
     "fingerJointBend": 25.0,
     "fingerBaseDeviation": 40.0,
 }
+
+FINGERS = ("index", "middle", "ring", "pinky")
+
+
+def knuckle_flexion_limits(character) -> dict[str, float]:
+    """How far each knuckle bends, measured rather than stated.
+
+    The quantity is the GEOMETRIC bend: the angle between wrist-to-knuckle and
+    knuckle-to-phalanx. Not a joint rotation. A rotation only means something
+    against the rest pose it was measured in, and the two rigs do not share
+    one, so a rotation would be a number whose meaning depends on the body.
+    The receiving rig subtracts its own rest offset.
+
+    Derived by driving each knuckle's own curl parameter to its limit and
+    measuring what the hand does, because the two do not simply add: the rest
+    bend is 18.5 on the index and its rotation limit is 90, and the result is
+    90.0 rather than 108.5.
+
+    Pure flexion, with the other two knuckle axes at zero. The full envelope
+    with all three axes helping reaches 91 to 103, and the solve does use it -
+    the index reaches 96.4 at contact on the one-handed drills. So this is a
+    flexion licence and not a hard ceiling on the visible angle.
+    """
+    names = list(character.parameter_transform.names)
+    limits = minmax_limits(character)
+    index = {n: i for i, n in enumerate(character.skeleton.joint_names)}
+    zero = np.zeros(character.parameter_transform.size, dtype=np.float32)
+
+    def bend(points, a, b, c):
+        first = points[index[b]] - points[index[a]]
+        second = points[index[c]] - points[index[b]]
+        cosine = np.dot(first, second) / (
+            np.linalg.norm(first) * np.linalg.norm(second)
+        )
+        return float(np.degrees(np.arccos(np.clip(cosine, -1.0, 1.0))))
+
+    found: dict[str, float] = {}
+    for finger in FINGERS:
+        parameter = f"l_{finger}1_rz"
+        if parameter not in limits or parameter not in names:
+            continue
+        posed = zero.copy()
+        posed[names.index(parameter)] = limits[parameter][1]
+        found[finger] = round(
+            bend(
+                joint_positions(character, posed),
+                "l_wrist",
+                f"l_{finger}1",
+                f"l_{finger}2",
+            ),
+            1,
+        )
+    return found
 
 
 def to_blender(point) -> np.ndarray:
@@ -231,6 +298,16 @@ def build(character, movement_id: str, every: int = 0) -> dict:
         "skill": definition.skill,
         "sport": definition.sport,
         "anatomyLimitsDegrees": dict(ANATOMY_LIMITS),
+        # Additive. A reader that does not know this field keeps working on
+        # the block above; a reader that does should prefer it for the
+        # knuckle, because the block above has no flexion number in it.
+        #
+        # GEOMETRIC BEND, per digit: the angle between wrist-to-knuckle and
+        # knuckle-to-phalanx. Never the word metacarpal, because neither rig
+        # has one. Never a joint rotation, because a rotation only means
+        # something against the rest pose it was measured in. Subtract your own
+        # rest offset to get your own rotation.
+        "fingerBaseFlexionDegrees": knuckle_flexion_limits(character),
         "views": {
             name: {
                 "resolutionPx": list(VIEW_RESOLUTION),
