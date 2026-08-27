@@ -150,6 +150,27 @@ class BlenderSourceContractTest(unittest.TestCase):
         self.assertIn("return produced[-1]", source)
         self.assertIn("path.parent.glob(", source)
 
+    def test_the_scene_rate_is_set_before_the_animation_is_exported(self):
+        """glTF stores animation in seconds, so the scene rate sets the timebase.
+
+        render_movie sets it, and render_movie runs AFTER the export. So the
+        first drill of a session exported against Blender's default rate and
+        every later drill inherited the previous drill's movie rate. Two drills
+        in one session came back as 49 frames and 40: the same poses, played
+        too fast. The rate must be set before the exporter reads it.
+        """
+        source = (MODULE_DIR / "blender_movement_render.py").read_text(
+            encoding="utf-8"
+        )
+
+        set_rate = source.index("bpy.context.scene.render.fps = fps")
+        exported = source.index("bpy.ops.export_scene.gltf(")
+        self.assertLess(
+            set_rate,
+            exported,
+            "the scene rate must be set before the glTF export reads it",
+        )
+
     def test_movement_renderer_calls_match_the_reference_helper_signatures(self):
         """The posing helpers are shared, and only Blender links the two sides.
 

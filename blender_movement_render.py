@@ -488,6 +488,14 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
         scene.frame_start = 1
         scene.frame_end = len(frames)
         fps = max(1, round(job["framesPerSecond"] / max(job["frameStep"], 1)))
+        # Set this BEFORE the glTF export, not only inside render_movie. glTF
+        # stores animation in seconds, so the scene's rate is what turns frames
+        # into times. render_movie used to be the only thing that set it, and
+        # it runs after the export, so the first drill of a session exported
+        # against Blender's default rate and every later drill inherited the
+        # previous drill's movie rate. Two drills in one session came back as
+        # 49 frames and 40: the same poses, played too fast.
+        bpy.context.scene.render.fps = fps
         # Set the frame before posing. Once keys exist, changing the frame
         # evaluates them and would replace whatever was posed first.
         for number, frame in enumerate(frames, start=1):
