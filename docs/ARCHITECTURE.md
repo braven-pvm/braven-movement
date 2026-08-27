@@ -12,11 +12,12 @@ must not need Blender, Cascadeur, MPFB, pose logic, or reference landmarks at ru
 authorised reference image
         +
 versioned JSON movement config
+  (athlete + pose + presentation)
         |
         v
 Blender + MPFB pose generator
         |
-        +--> diagnostic PNG views
+        +--> deterministic studio PNG views
         +--> neutral and posed FBX
         +--> animated GLB
         +--> JSON receipt with hashes and anatomy/calibration evidence
@@ -32,7 +33,7 @@ Blender renderer consumes that job without knowing the source scene.
 | `reference_pose_config.py` | Load and validate versioned movement configuration. | Python standard library |
 | `reference_pose_calibration.py` | Pixel-landmark comparison and calibration math. | Python standard library |
 | `reference_pose_contract.py` | Validate generated pose receipts. | Python standard library |
-| `blender_mpfb_reference_catch.py` | Create, pose, render, and export the MPFB athlete. | Blender Python and MPFB |
+| `blender_mpfb_reference_catch.py` | Create, pose, express, render, and export the MPFB athlete. | Blender Python, MPFB, and Faceunits 01 |
 | `movement_contract.py` | Inspect GLB files and validate render/job evidence. | Python standard library |
 | `cascadeur_glb_export.py` | Communicate with Cascadeur's local script server. | Running Cascadeur script server |
 | `blender_glb_render.py` | Render an inspected GLB job. | Blender Python |
@@ -46,8 +47,13 @@ Blender renderer consumes that job without knowing the source scene.
 4. Input media is supplied explicitly or resolved beneath `references/`; it is not silently copied
    from temporary attachment locations.
 5. Generated artifacts go to a caller-supplied directory and are never treated as source.
-6. A generated receipt records the configuration hash and the hashes of exported artifacts.
-7. Anatomical and visual acceptance are separate gates. Passing numeric limits does not make a
+6. Athlete phenotype, readiness, expression, pose, camera, material colours, ball construction,
+   studio colours, and lighting remain versioned configuration or deterministic generator code;
+   they are not manual `.blend` edits.
+7. A generated receipt records the configuration hash, athlete measurements, active expression,
+   source-asset hashes (including the Faceunits pack manifest), presentation facts, and the hashes
+   of exported artifacts.
+8. Anatomical and visual acceptance are separate gates. Passing numeric limits does not make a
    pose coaching-approved.
 
 ## Testing layers

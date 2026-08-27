@@ -53,7 +53,7 @@ print(json.dumps({
                 "schemaVersion": 1,
                 "movementId": "drill_double_hand_snatches_first_contact",
                 "framePx": [769, 665],
-                "ballRadiusM": 0.1,
+                "ballRadiusM": 0.111,
                 "rightThumbPx": [318.0, 216.0],
                 "maxWristBendDegrees": 45.0,
             },
@@ -88,15 +88,22 @@ print(json.dumps({
         )
         self.assertEqual(
             getattr(config, "ball_centre_m", None),
-            (-0.13599849, -0.42538727, 1.56684754),
+            (0.01131759, -0.58264951, 1.58630682),
         )
         self.assertEqual(
             getattr(config, "wrist_targets_m", None)["r"],
-            (0.00722232, -0.39154312, 1.42121658),
+            (0.00722232, -0.39154312, 1.46621658),
         )
         self.assertEqual(
             getattr(config, "arm_poles", None)["l"],
-            (-0.01757413, -0.97669545, -0.2139092),
+            (0.44466336, -0.3580064, -0.82103953),
+        )
+        self.assertEqual(
+            getattr(config, "shoulder_targets_m", None),
+            {
+                "l": (0.19698041, -0.095636, 1.294625),
+                "r": (-0.13873358, -0.045103, 1.314874),
+            },
         )
         self.assertEqual(
             getattr(config, "hand_targets", None)["r"].finger_direction,
@@ -107,9 +114,44 @@ print(json.dumps({
             (769, 665),
         )
         self.assertEqual(
+            getattr(config, "views", None)["referenceMatch"].location_m,
+            (2.818, -2.329, 1.92),
+        )
+        self.assertEqual(
             getattr(config, "views", None)["fullBody"].lens_mm,
             82.0,
         )
+
+    def test_exposes_the_portable_coaching_studio_presentation(self):
+        config = load_reference_catch_config()
+
+        presentation = getattr(config, "presentation", None)
+        self.assertIsNotNone(presentation)
+        self.assertEqual(presentation.style, "premium_coaching_studio")
+        self.assertEqual(presentation.ball.seam_loop_count, 6)
+        self.assertEqual(presentation.ball.grip_scale, 180.0)
+        self.assertEqual(
+            presentation.ball.accent_color,
+            (0.94, 0.92, 0.82, 1.0),
+        )
+        self.assertEqual(presentation.kit.base_color, (0.018, 0.024, 0.036, 1.0))
+        self.assertEqual(len(presentation.lights), 4)
+        self.assertEqual(presentation.lights[0].name, "BRAVEN_Key")
+
+    def test_exposes_the_focused_pro_athlete_direction(self):
+        config = load_reference_catch_config()
+
+        athlete = getattr(config, "athlete", None)
+        self.assertIsNotNone(athlete)
+        self.assertGreaterEqual(athlete.phenotype.muscle, 0.78)
+        self.assertLessEqual(athlete.phenotype.weight, 0.35)
+        self.assertGreaterEqual(athlete.phenotype.firmness, 0.75)
+        self.assertGreaterEqual(athlete.readiness.hip_hinge_degrees, 7.0)
+        self.assertGreaterEqual(athlete.readiness.chest_lift_degrees, 2.0)
+        self.assertEqual(athlete.expression.name, "focused_concentration")
+        self.assertGreater(athlete.expression.face_units["browDownLeft"], 0.0)
+        self.assertGreater(athlete.expression.face_units["eyeSquintRight"], 0.0)
+        self.assertGreater(athlete.expression.face_units["mouthPressLeft"], 0.0)
 
     def test_rejects_a_pose_vector_with_the_wrong_dimension(self):
         data = json.loads(DEFAULT_CONFIG_PATH.read_text(encoding="utf-8"))
@@ -129,6 +171,39 @@ print(json.dumps({
             path.write_text(json.dumps(data), encoding="utf-8")
 
             with self.assertRaisesRegex(ReferencePoseConfigError, "handTargets.*r"):
+                load_reference_catch_config(path)
+
+    def test_rejects_pose_configuration_without_both_shoulders(self):
+        data = json.loads(DEFAULT_CONFIG_PATH.read_text(encoding="utf-8"))
+        data["pose"]["shoulderTargetsM"] = {
+            "l": [0.1469, 0.00423, 1.2762],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "reference.json"
+            path.write_text(json.dumps(data), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ReferencePoseConfigError,
+                "shoulderTargetsM.*r",
+            ):
+                load_reference_catch_config(path)
+
+    def test_rejects_an_incomplete_finger_curl_configuration(self):
+        data = json.loads(DEFAULT_CONFIG_PATH.read_text(encoding="utf-8"))
+        data["pose"]["fingerCurlDegrees"] = {
+            "thumb": [6.0, 8.0],
+            "index": [8.0, 12.0],
+            "middle": [8.0, 12.0],
+            "ring": [8.0, 12.0],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "reference.json"
+            path.write_text(json.dumps(data), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ReferencePoseConfigError,
+                "fingerCurlDegrees.*pinky",
+            ):
                 load_reference_catch_config(path)
 
 

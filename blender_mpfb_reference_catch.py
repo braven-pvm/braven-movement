@@ -25,7 +25,10 @@ from reference_pose_calibration import (  # noqa: E402
     validate_pixel_calibration,
 )
 from reference_pose_config import (  # noqa: E402
+    AthleteConfig,
+    BallPresentation,
     DEFAULT_CONFIG_PATH,
+    PresentationConfig,
     ReferenceCatchConfig,
     ViewConfig,
     load_reference_catch_config,
@@ -33,6 +36,8 @@ from reference_pose_config import (  # noqa: E402
 from reference_pose_contract import validate_reference_catch_receipt  # noqa: E402
 
 from bl_ext.blender_org.mpfb.services.humanservice import HumanService  # noqa: E402
+from bl_ext.blender_org.mpfb.services.faceservice import FaceService  # noqa: E402
+from bl_ext.blender_org.mpfb.services.targetservice import TargetService  # noqa: E402
 
 
 ASSET_DATA = (
@@ -149,12 +154,28 @@ def elbow_for_target(
 def pose_power_stance(
     armature: bpy.types.Object,
     baseline: dict[str, Matrix],
+    athlete: AthleteConfig,
 ) -> dict[str, list[float]]:
     ankle_targets = {
         side: world_head(armature, f"foot_{side}").copy()
         for side in ("l", "r")
     }
-    translate_bone_world(armature, "pelvis", Vector((0.0, 0.018, -0.050)))
+    translate_bone_world(
+        armature,
+        "pelvis",
+        Vector(athlete.readiness.pelvis_translation_m),
+    )
+    pelvis_pivot = world_head(armature, "pelvis")
+    apply_world_rotation(
+        armature,
+        "pelvis",
+        pelvis_pivot,
+        Matrix.Rotation(
+            math.radians(athlete.readiness.hip_hinge_degrees),
+            3,
+            "X",
+        ),
+    )
     result: dict[str, list[float]] = {}
     for side in ("l", "r"):
         thigh = f"thigh_{side}"
@@ -176,6 +197,37 @@ def pose_power_stance(
         bpy.context.view_layer.update()
         result[side] = list(world_head(armature, calf))
     return result
+
+
+def pose_athletic_torso(
+    armature: bpy.types.Object,
+    athlete: AthleteConfig,
+) -> None:
+    for bone_name, share in (("spine_02", 0.44), ("spine_03", 0.56)):
+        pivot = world_head(armature, bone_name)
+        apply_world_rotation(
+            armature,
+            bone_name,
+            pivot,
+            Matrix.Rotation(
+                math.radians(-athlete.readiness.chest_lift_degrees * share),
+                3,
+                "X",
+            ),
+        )
+
+
+def pose_shoulder_girdle(
+    armature: bpy.types.Object,
+    shoulder_targets: dict[str, Vector],
+) -> None:
+    for side in ("l", "r"):
+        rotate_bone_toward(
+            armature,
+            f"clavicle_{side}",
+            f"upperarm_{side}",
+            shoulder_targets[side],
+        )
 
 
 def pose_arm(
@@ -219,6 +271,9 @@ def hand_basis(
     )
     lateral -= finger * lateral.dot(finger)
     lateral.normalize()
+    # The signed cross product is part of the mirrored MPFB rig convention.
+    # Do not force both hands to the same sign: the approved reference view
+    # depends on this exact projection of the two thumbs.
     return finger, lateral, finger.cross(lateral).normalized()
 
 
@@ -300,6 +355,7 @@ def pose_articulated_hand(
     *,
     side: str,
     ball_centre: Vector,
+    finger_curl_degrees: dict[str, tuple[float, float]],
 ) -> dict[str, list[list[float]]]:
     result: dict[str, list[list[float]]] = {}
     wrist = world_head(armature, f"hand_{side}")
@@ -313,12 +369,32 @@ def pose_articulated_hand(
     lateral.normalize()
     splay = {"index": 0.28, "middle": 0.08, "ring": -0.08, "pinky": -0.22}
 
+    def curved_directions(
+        base_direction: Vector,
+        digit: str,
+    ) -> list[Vector]:
+        base = base_direction.normalized()
+        bend = toward_ball - base * toward_ball.dot(base)
+        if bend.length < 1e-8:
+            raise RuntimeError(f"cannot establish {side} {digit} curl plane")
+        bend.normalize()
+        first, second = finger_curl_degrees[digit]
+        cumulative = (0.0, first, first + second)
+        return [
+            (
+                base * math.cos(math.radians(angle))
+                + bend * math.sin(math.radians(angle))
+            ).normalized()
+            for angle in cumulative
+        ]
+
     for digit, spread in splay.items():
         chain = [f"{digit}_{index:02d}_{side}" for index in (1, 2, 3)]
-        direction = (
+        base_direction = (
             palm_direction + lateral * spread + toward_ball * 0.04
         ).normalized()
-        for index, name in enumerate(chain):
+        directions = curved_directions(base_direction, digit)
+        for index, (name, direction) in enumerate(zip(chain, directions)):
             if index + 1 < len(chain):
                 rotate_bone_toward(
                     armature,
@@ -338,10 +414,13 @@ def pose_articulated_hand(
         ]
 
     thumb_chain = [f"thumb_{index:02d}_{side}" for index in (1, 2, 3)]
-    thumb_direction = (
+    thumb_base_direction = (
         palm_direction * 0.50 + lateral * 0.72 + toward_ball * 0.12
     ).normalized()
-    for index, name in enumerate(thumb_chain):
+    thumb_directions = curved_directions(thumb_base_direction, "thumb")
+    for index, (name, thumb_direction) in enumerate(
+        zip(thumb_chain, thumb_directions)
+    ):
         if index + 1 < len(thumb_chain):
             rotate_bone_toward(
                 armature,
@@ -362,8 +441,8 @@ def pose_articulated_hand(
     return result
 
 
-def max_finger_joint_bend_degrees(armature: bpy.types.Object) -> float:
-    maximum = 0.0
+def finger_joint_bends_degrees(armature: bpy.types.Object) -> list[float]:
+    bends: list[float] = []
     for side in ("l", "r"):
         for digit in ("thumb", "index", "middle", "ring", "pinky"):
             directions = [
@@ -373,12 +452,11 @@ def max_finger_joint_bend_degrees(armature: bpy.types.Object) -> float:
                 ).normalized()
                 for index in (1, 2, 3)
             ]
-            maximum = max(
-                maximum,
-                *(math.degrees(directions[index].angle(directions[index + 1]))
-                  for index in (0, 1)),
+            bends.extend(
+                math.degrees(directions[index].angle(directions[index + 1]))
+                for index in (0, 1)
             )
-    return round(maximum, 2)
+    return bends
 
 
 def max_finger_base_deviation_degrees(armature: bpy.types.Object) -> float:
@@ -415,6 +493,28 @@ def palm_centre(armature: bpy.types.Object, side: str) -> Vector:
         f"pinky_01_{side}",
     ]
     return sum((world_head(armature, name) for name in names), Vector()) / len(names)
+
+
+def hand_depth_range(
+    armature: bpy.types.Object,
+    side: str,
+    camera_location: Vector,
+    camera_axis: Vector,
+) -> tuple[float, float]:
+    names = [f"hand_{side}"] + [
+        f"{digit}_{index:02d}_{side}"
+        for digit in ("thumb", "index", "middle", "ring", "pinky")
+        for index in (1, 2, 3)
+    ]
+    depths = [
+        (point - camera_location).dot(camera_axis)
+        for name in names
+        for point in (
+            world_head(armature, name),
+            world_tail(armature, name),
+        )
+    ]
+    return min(depths), max(depths)
 
 
 def projected_pixel(
@@ -474,6 +574,140 @@ def make_material(
     return material
 
 
+def make_fabric_material(
+    presentation: PresentationConfig,
+) -> bpy.types.Material:
+    material = bpy.data.materials.new("BRAVEN_Graphite_Training_Kit")
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    shader = nodes.get("Principled BSDF")
+    shader.inputs["Base Color"].default_value = presentation.kit.base_color
+    shader.inputs["Roughness"].default_value = presentation.kit.roughness
+    sheen = shader.inputs.get("Sheen Weight")
+    if sheen is not None:
+        sheen.default_value = 0.08
+
+    coordinates = nodes.new("ShaderNodeTexCoord")
+    weave = nodes.new("ShaderNodeTexNoise")
+    weave.inputs["Scale"].default_value = 150.0
+    weave.inputs["Detail"].default_value = 2.0
+    weave.inputs["Roughness"].default_value = 0.42
+    bump = nodes.new("ShaderNodeBump")
+    bump.inputs["Strength"].default_value = 0.045
+    bump.inputs["Distance"].default_value = 0.0007
+    links.new(coordinates.outputs["Generated"], weave.inputs["Vector"])
+    links.new(weave.outputs["Fac"], bump.inputs["Height"])
+    links.new(bump.outputs["Normal"], shader.inputs["Normal"])
+    return material
+
+
+def make_netball_material(ball_style: BallPresentation) -> bpy.types.Material:
+    material = bpy.data.materials.new("BRAVEN_Netball_Panel_Surface")
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    shader = nodes.get("Principled BSDF")
+    shader.inputs["Roughness"].default_value = ball_style.roughness
+
+    coordinates = nodes.new("ShaderNodeTexCoord")
+    graphic = nodes.new("ShaderNodeTexWave")
+    graphic.wave_type = "BANDS"
+    graphic.bands_direction = "X"
+    graphic.inputs["Scale"].default_value = 0.72
+    graphic.inputs["Distortion"].default_value = 3.0
+    graphic.inputs["Detail"].default_value = 2.5
+    graphic.inputs["Detail Scale"].default_value = 1.8
+    graphic.inputs["Detail Roughness"].default_value = 0.48
+    colours = nodes.new("ShaderNodeValToRGB")
+    colours.color_ramp.interpolation = "CONSTANT"
+    colours.color_ramp.elements[0].position = 0.0
+    colours.color_ramp.elements[0].color = ball_style.primary_color
+    accent = colours.color_ramp.elements.new(0.38)
+    accent.color = ball_style.accent_color
+    secondary = colours.color_ramp.elements.new(0.52)
+    secondary.color = ball_style.secondary_color
+    colours.color_ramp.elements[1].position = 0.74
+    colours.color_ramp.elements[1].color = ball_style.primary_color
+
+    grip = nodes.new("ShaderNodeTexNoise")
+    grip.inputs["Scale"].default_value = ball_style.grip_scale
+    grip.inputs["Detail"].default_value = 1.6
+    grip.inputs["Roughness"].default_value = 0.62
+    bump = nodes.new("ShaderNodeBump")
+    bump.inputs["Strength"].default_value = 0.2
+    bump.inputs["Distance"].default_value = 0.0014
+
+    links.new(coordinates.outputs["Generated"], graphic.inputs["Vector"])
+    links.new(graphic.outputs["Fac"], colours.inputs["Fac"])
+    links.new(colours.outputs["Color"], shader.inputs["Base Color"])
+    links.new(coordinates.outputs["Generated"], grip.inputs["Vector"])
+    links.new(grip.outputs["Fac"], bump.inputs["Height"])
+    links.new(bump.outputs["Normal"], shader.inputs["Normal"])
+    return material
+
+
+def create_panelled_netball(
+    centre: Vector,
+    radius: float,
+    presentation: PresentationConfig,
+) -> tuple[bpy.types.Object, list[bpy.types.Object]]:
+    bpy.ops.mesh.primitive_uv_sphere_add(
+        segments=96,
+        ring_count=64,
+        radius=radius,
+        location=centre,
+    )
+    ball = bpy.context.active_object
+    ball.name = "BRAVEN_Netball"
+    ball.data.materials.append(make_netball_material(presentation.ball))
+    for polygon in ball.data.polygons:
+        polygon.use_smooth = True
+
+    seam_material = make_material(
+        "BRAVEN_Netball_Embossed_Seams",
+        presentation.ball.seam_color,
+        0.64,
+    )
+    seam_normals = (
+        Vector((0.0, 0.0, 1.0)),
+        Vector((1.0, 0.0, 0.0)),
+        Vector((0.5, 0.8660254, 0.0)),
+        Vector((-0.5, 0.8660254, 0.0)),
+        Vector((0.24, -0.16, 1.0)).normalized(),
+        Vector((-0.2, 0.3, 1.0)).normalized(),
+    )
+    seams: list[bpy.types.Object] = []
+    for index, normal in enumerate(
+        seam_normals[: presentation.ball.seam_loop_count],
+        start=1,
+    ):
+        bpy.ops.mesh.primitive_torus_add(
+            align="WORLD",
+            major_segments=128,
+            minor_segments=12,
+            location=centre,
+            major_radius=radius * 1.0005,
+            minor_radius=0.00155,
+        )
+        seam = bpy.context.active_object
+        seam.name = f"BRAVEN_Netball_Seam_{index:02d}"
+        seam.rotation_mode = "QUATERNION"
+        seam.rotation_quaternion = Vector((0.0, 0.0, 1.0)).rotation_difference(
+            normal
+        )
+        seam.data.materials.append(seam_material)
+        for polygon in seam.data.polygons:
+            polygon.use_smooth = True
+        world_matrix = seam.matrix_world.copy()
+        seam.parent = ball
+        seam.matrix_world = world_matrix
+        seams.append(seam)
+    ball.rotation_mode = "XYZ"
+    ball.rotation_euler = tuple(math.radians(value) for value in (18.0, -14.0, 24.0))
+    return ball, seams
+
+
 def asset_path(*parts: str) -> Path:
     path = ASSET_DATA.joinpath(*parts)
     if not path.is_file():
@@ -481,18 +715,21 @@ def asset_path(*parts: str) -> Path:
     return path
 
 
-def create_athlete() -> tuple[bpy.types.Object, bpy.types.Object, list[bpy.types.Object], list[Path]]:
+def create_athlete(
+    athlete: AthleteConfig,
+    presentation: PresentationConfig,
+) -> tuple[bpy.types.Object, bpy.types.Object, list[bpy.types.Object], list[Path]]:
     bpy.ops.wm.read_factory_settings(use_empty=True)
     macro = {
-        "age": 0.32,
-        "cupsize": 0.30,
-        "firmness": 0.65,
-        "gender": 0.0,
-        "height": 0.72,
-        "muscle": 0.66,
-        "proportions": 0.52,
-        "race": {"african": 0.0, "asian": 0.0, "caucasian": 1.0},
-        "weight": 0.38,
+        "age": athlete.phenotype.age,
+        "cupsize": athlete.phenotype.cupsize,
+        "firmness": athlete.phenotype.firmness,
+        "gender": athlete.phenotype.gender,
+        "height": athlete.phenotype.height,
+        "muscle": athlete.phenotype.muscle,
+        "proportions": athlete.phenotype.proportions,
+        "race": athlete.phenotype.race,
+        "weight": athlete.phenotype.weight,
     }
     human = HumanService.create_human(
         mask_helpers=True,
@@ -503,16 +740,42 @@ def create_athlete() -> tuple[bpy.types.Object, bpy.types.Object, list[bpy.types
         macro_detail_dict=macro,
     )
     human.name = "BRAVEN_Athlete"
+    if not FaceService.is_faceunits01_installed(force_recheck=True):
+        raise RuntimeError(
+            "MPFB faceunits01 asset pack is required for the focused athlete"
+        )
+    FaceService.set_expression(human, athlete.expression.face_units)
     rig = HumanService.add_builtin_rig(human, "game_engine", import_weights=True)
     rig.name = "BRAVEN_Athlete_Rig"
 
     skin = asset_path("skins", "young_caucasian_female", "young_caucasian_female.mhmat")
     suit = asset_path("clothes", "female_casualsuit02", "female_casualsuit02.mhclo")
+    trainers = asset_path("clothes", "shoes05", "shoes05.mhclo")
     hair = asset_path("hair", "ponytail01", "ponytail01.mhclo")
     eyes = asset_path("eyes", "high-poly", "high-poly.mhclo")
     brows = asset_path("eyebrows", "eyebrow006", "eyebrow006.mhclo")
     lashes = asset_path("eyelashes", "eyelashes01", "eyelashes01.mhclo")
-    source_assets = [skin, suit, hair, eyes, brows, lashes]
+    face_targets = [
+        Path(target_path)
+        for name in athlete.expression.face_units
+        if (target_path := TargetService.target_full_path(name)) is not None
+    ]
+    face_pack_manifest = ASSET_DATA / "packs" / "faceunits01.json"
+    if not face_pack_manifest.is_file():
+        raise FileNotFoundError(
+            f"MPFB faceunits01 manifest is missing: {face_pack_manifest}"
+        )
+    source_assets = [
+        skin,
+        suit,
+        trainers,
+        hair,
+        eyes,
+        brows,
+        lashes,
+        face_pack_manifest,
+        *face_targets,
+    ]
 
     HumanService.set_character_skin(
         str(skin),
@@ -530,6 +793,7 @@ def create_athlete() -> tuple[bpy.types.Object, bpy.types.Object, list[bpy.types
         )
         for path, asset_type in (
             (suit, "Clothes"),
+            (trainers, "Clothes"),
             (hair, "Hair"),
             (eyes, "Eyes"),
             (brows, "Eyebrows"),
@@ -538,9 +802,7 @@ def create_athlete() -> tuple[bpy.types.Object, bpy.types.Object, list[bpy.types
     ]
     sportswear = assets[0]
     sportswear.data.materials.clear()
-    sportswear.data.materials.append(
-        make_material("BRAVEN_Black_Training_Kit", (0.018, 0.022, 0.032, 1.0), 0.72)
-    )
+    sportswear.data.materials.append(make_fabric_material(presentation))
     return human, rig, assets, source_assets
 
 
@@ -570,30 +832,75 @@ def point_at(camera: bpy.types.Object, target: Vector) -> None:
     camera.rotation_euler = (target - camera.location).to_track_quat("-Z", "Y").to_euler()
 
 
-def add_camera_and_lights() -> bpy.types.Object:
+def add_camera_and_lights(
+    presentation: PresentationConfig,
+) -> tuple[bpy.types.Object, list[bpy.types.Object]]:
     bpy.ops.object.camera_add()
     camera = bpy.context.active_object
     camera.name = "BRAVEN_Reference_Camera"
     bpy.context.scene.camera = camera
 
-    for name, light_type, location, energy, size, colour in (
-        ("BRAVEN_Key", "AREA", (3.0, -3.8, 4.5), 900.0, 3.2, (1.0, 0.91, 0.82)),
-        ("BRAVEN_Fill", "AREA", (-3.2, -2.2, 2.8), 520.0, 3.8, (0.72, 0.86, 1.0)),
-        ("BRAVEN_Rim", "AREA", (0.3, 2.6, 3.6), 760.0, 2.4, (0.72, 0.82, 1.0)),
-    ):
-        data = bpy.data.lights.new(name, type=light_type)
-        data.energy = energy
+    lights: list[bpy.types.Object] = []
+    target = Vector(presentation.studio.light_target_m)
+    for light in presentation.lights:
+        data = bpy.data.lights.new(light.name, type="AREA")
+        data.energy = light.energy
         data.shape = "DISK"
-        data.size = size
-        data.color = colour
-        item = bpy.data.objects.new(name, data)
+        data.size = light.size_m
+        data.color = light.color
+        item = bpy.data.objects.new(light.name, data)
         bpy.context.collection.objects.link(item)
-        item.location = location
-        item.rotation_euler = (Vector((0.0, -0.15, 1.1)) - item.location).to_track_quat("-Z", "Y").to_euler()
-    return camera
+        item.location = light.location_m
+        item.rotation_euler = (target - item.location).to_track_quat(
+            "-Z", "Y"
+        ).to_euler()
+        lights.append(item)
+    return camera, lights
 
 
-def configure_render(path: Path, resolution: tuple[int, int]) -> None:
+def add_studio_environment(
+    presentation: PresentationConfig,
+) -> bpy.types.Object:
+    profile = [(-3.2, 0.0), (1.0, 0.0)]
+    profile.extend(
+        (
+            1.0 + math.cos(math.radians(angle)),
+            1.0 + math.sin(math.radians(angle)),
+        )
+        for angle in (-75, -60, -45, -30, -15, 0)
+    )
+    profile.append((2.0, 4.2))
+    vertices = [
+        (x, y, z)
+        for y, z in profile
+        for x in (-10.0, 10.0)
+    ]
+    faces = [
+        (index * 2, index * 2 + 1, index * 2 + 3, index * 2 + 2)
+        for index in range(len(profile) - 1)
+    ]
+    mesh = bpy.data.meshes.new("BRAVEN_Studio_Cyclorama_Mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update()
+    cyclorama = bpy.data.objects.new("BRAVEN_Studio_Cyclorama", mesh)
+    bpy.context.collection.objects.link(cyclorama)
+    cyclorama.data.materials.append(
+        make_material(
+            "BRAVEN_Studio_Navy",
+            presentation.studio.cyclorama_color,
+            presentation.studio.cyclorama_roughness,
+        )
+    )
+    for polygon in cyclorama.data.polygons:
+        polygon.use_smooth = True
+    return cyclorama
+
+
+def configure_render(
+    path: Path,
+    resolution: tuple[int, int],
+    world_colour: tuple[float, float, float],
+) -> None:
     scene = bpy.context.scene
     scene.render.engine = "BLENDER_EEVEE_NEXT"
     scene.render.resolution_x, scene.render.resolution_y = resolution
@@ -605,7 +912,10 @@ def configure_render(path: Path, resolution: tuple[int, int]) -> None:
     scene.render.use_file_extension = True
     if scene.world is None:
         scene.world = bpy.data.worlds.new("BRAVEN_Reference_World")
-    scene.world.color = (0.012, 0.016, 0.024)
+    scene.world.use_nodes = True
+    background = scene.world.node_tree.nodes.get("Background")
+    background.inputs["Color"].default_value = (*world_colour, 1.0)
+    background.inputs["Strength"].default_value = 0.22
 
 
 def render_view(
@@ -617,17 +927,33 @@ def render_view(
     target: Vector,
     lens: float,
     sensor_width: float,
+    world_colour: tuple[float, float, float],
 ) -> dict[str, object]:
     camera.data.type = "PERSP"
     camera.data.lens = lens
     camera.data.sensor_width = sensor_width
     camera.location = location
     point_at(camera, target)
-    configure_render(path, resolution)
+    configure_render(path, resolution, world_colour)
     path.unlink(missing_ok=True)
     bpy.ops.render.render(write_still=True)
     image = bpy.data.images.load(str(path), check_existing=False)
     maximum_alpha = max_rgba_alpha(image.pixels)
+    width, height = (int(value) for value in image.size)
+
+    def corner_rgb(x: int, y: int) -> list[float]:
+        offset = (y * width + x) * 4
+        return [
+            round(float(image.pixels[offset + channel]), 4)
+            for channel in range(3)
+        ]
+
+    corners = {
+        "bottomLeft": corner_rgb(0, 0),
+        "bottomRight": corner_rgb(width - 1, 0),
+        "topLeft": corner_rgb(0, height - 1),
+        "topRight": corner_rgb(width - 1, height - 1),
+    }
     bpy.data.images.remove(image)
     return {
         "path": str(path),
@@ -638,6 +964,7 @@ def render_view(
         "cameraType": "PERSP",
         "lens": lens,
         "maxAlpha": maximum_alpha,
+        "cornerRgb": corners,
     }
 
 
@@ -669,13 +996,24 @@ def main() -> None:
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
 
-    human, rig, assets, source_assets = create_athlete()
+    human, rig, assets, source_assets = create_athlete(
+        config.athlete,
+        config.presentation,
+    )
     character_objects = [rig, human, *assets]
     neutral_fbx = output / "braven_mpfb_athlete_neutral.fbx"
     export_fbx(neutral_fbx, character_objects, animation=False)
 
     baseline = {bone.name: bone.matrix.copy() for bone in rig.pose.bones}
-    knees = pose_power_stance(rig, baseline)
+    knees = pose_power_stance(rig, baseline, config.athlete)
+    pose_athletic_torso(rig, config.athlete)
+    pose_shoulder_girdle(
+        rig,
+        {
+            side: Vector(point)
+            for side, point in config.shoulder_targets_m.items()
+        },
+    )
     ball_centre = Vector(config.ball_centre_m)
     wrist_targets = {
         side: Vector(point) for side, point in config.wrist_targets_m.items()
@@ -713,12 +1051,42 @@ def main() -> None:
         ),
     }
     finger_directions = {
-        side: pose_articulated_hand(rig, side=side, ball_centre=ball_centre)
+        side: pose_articulated_hand(
+            rig,
+            side=side,
+            ball_centre=ball_centre,
+            finger_curl_degrees=config.finger_curl_degrees,
+        )
         for side in ("l", "r")
     }
-    max_finger_joint_bend = max_finger_joint_bend_degrees(rig)
+    finger_joint_bends = finger_joint_bends_degrees(rig)
+    min_finger_joint_bend = round(min(finger_joint_bends), 2)
+    max_finger_joint_bend = round(max(finger_joint_bends), 2)
     max_finger_base_deviation = max_finger_base_deviation_degrees(rig)
     orient_head_to_ball(rig, ball_centre)
+
+    knee_flexion_degrees = {
+        side: round(
+            180.0
+            - joint_angle_degrees(
+                world_head(rig, f"thigh_{side}"),
+                world_head(rig, f"calf_{side}"),
+                world_head(rig, f"foot_{side}"),
+            ),
+            2,
+        )
+        for side in ("l", "r")
+    }
+    torso_axis = world_head(rig, "neck_01") - world_head(rig, "pelvis")
+    torso_lean_degrees = round(
+        math.degrees(math.atan2(-torso_axis.y, torso_axis.z)),
+        2,
+    )
+    expression_shape_keys = [
+        key
+        for key in human.data.shape_keys.key_blocks
+        if key.name.startswith("!ex-") and key.value > 0.0
+    ]
 
     for side, values in arm_receipt.items():
         values["elbowDegrees"] = round(
@@ -730,17 +1098,12 @@ def main() -> None:
             2,
         )
 
-    bpy.ops.mesh.primitive_uv_sphere_add(
-        segments=64,
-        ring_count=32,
-        radius=config.ball_radius_m,
-        location=ball_centre,
+    ball, ball_seams = create_panelled_netball(
+        ball_centre,
+        config.ball_radius_m,
+        config.presentation,
     )
-    ball = bpy.context.active_object
-    ball.name = "BRAVEN_Netball"
-    ball.data.materials.append(
-        make_material("BRAVEN_Netball_Coral", (0.88, 0.16, 0.11, 1.0), 0.48)
-    )
+    ball_objects = [ball, *ball_seams]
     keyframe_pose(rig, ball)
 
     finger_names = [
@@ -759,7 +1122,37 @@ def main() -> None:
         for side in ("l", "r")
     }
 
-    camera = add_camera_and_lights()
+    reference_view: ViewConfig = config.views["referenceMatch"]
+    reference_camera_location = Vector(reference_view.location_m)
+    reference_camera_axis = (
+        Vector(reference_view.target_m) - reference_camera_location
+    ).normalized()
+    _, foreground_hand_back_depth = hand_depth_range(
+        rig,
+        "l",
+        reference_camera_location,
+        reference_camera_axis,
+    )
+    rear_hand_front_depth, _ = hand_depth_range(
+        rig,
+        "r",
+        reference_camera_location,
+        reference_camera_axis,
+    )
+    ball_depth_ordering = {
+        "foregroundHandSide": "left",
+        "rearHandSide": "right",
+        "foregroundHandBackDepthM": round(foreground_hand_back_depth, 5),
+        "ballCentreDepthM": round(
+            (ball_centre - reference_camera_location).dot(reference_camera_axis),
+            5,
+        ),
+        "rearHandFrontDepthM": round(rear_hand_front_depth, 5),
+    }
+
+    studio = add_studio_environment(config.presentation)
+    camera, lights = add_camera_and_lights(config.presentation)
+    world_colour = config.presentation.studio.world_color
     crop_view: ViewConfig = config.views["referenceCrop"]
     crop = render_view(
         camera,
@@ -769,8 +1162,8 @@ def main() -> None:
         target=Vector(crop_view.target_m),
         lens=crop_view.lens_mm,
         sensor_width=crop_view.sensor_width_mm,
+        world_colour=world_colour,
     )
-    reference_view: ViewConfig = config.views["referenceMatch"]
     calibration_view = render_view(
         camera,
         path=output / "braven_mpfb_reference_match.png",
@@ -779,6 +1172,7 @@ def main() -> None:
         target=Vector(reference_view.target_m),
         lens=reference_view.lens_mm,
         sensor_width=reference_view.sensor_width_mm,
+        world_colour=world_colour,
     )
     projected_landmarks = project_pose_landmarks(
         rig,
@@ -820,12 +1214,13 @@ def main() -> None:
         target=Vector(full_view.target_m),
         lens=full_view.lens_mm,
         sensor_width=full_view.sensor_width_mm,
+        world_colour=world_colour,
     )
 
     posed_fbx = output / "braven_mpfb_reference_catch.fbx"
-    export_fbx(posed_fbx, [*character_objects, ball], animation=True)
+    export_fbx(posed_fbx, [*character_objects, *ball_objects], animation=True)
     posed_glb = output / "braven_mpfb_reference_catch.glb"
-    select_only([*character_objects, ball])
+    select_only([*character_objects, *ball_objects])
     bpy.ops.export_scene.gltf(
         filepath=str(posed_glb),
         export_format="GLB",
@@ -866,6 +1261,7 @@ def main() -> None:
             "leftPalmToBallSurfaceM": round(palm_distances["l"], 5),
             "rightPalmToBallSurfaceM": round(palm_distances["r"], 5),
             "ballCentreM": list(ball_centre),
+            "ballDepthOrdering": ball_depth_ordering,
             "kneesM": knees,
             "armsM": arm_receipt,
             "fingerDirections": finger_directions,
@@ -874,6 +1270,44 @@ def main() -> None:
             "type": "PERSP",
             "width": crop_view.resolution_px[0],
             "height": crop_view.resolution_px[1],
+        },
+        "athlete": {
+            "phenotype": {
+                "muscle": config.athlete.phenotype.muscle,
+                "weight": config.athlete.phenotype.weight,
+                "firmness": config.athlete.phenotype.firmness,
+            },
+            "readiness": {
+                "hipHingeDegrees": config.athlete.readiness.hip_hinge_degrees,
+                "chestLiftDegrees": config.athlete.readiness.chest_lift_degrees,
+                "torsoLeanDegrees": torso_lean_degrees,
+                "kneeFlexionDegrees": knee_flexion_degrees,
+            },
+            "expression": {
+                "name": config.athlete.expression.name,
+                "faceUnitsInstalled": FaceService.is_faceunits01_installed(),
+                "activeShapeKeys": len(expression_shape_keys),
+                "faceUnits": config.athlete.expression.face_units,
+            },
+        },
+        "presentation": {
+            "style": config.presentation.style,
+            "kit": {
+                "material": "procedural_fabric",
+                "roughness": config.presentation.kit.roughness,
+                "footwear": "sports_trainers",
+            },
+            "ball": {
+                "type": "panelled_netball",
+                "diameterM": round(config.ball_radius_m * 2.0, 3),
+                "seamLoops": len(ball_seams),
+                "surface": "procedural_dimple_grip",
+                "graphic": "clean_three_colour_panel_graphic",
+            },
+            "studio": {
+                "cyclorama": studio.name == "BRAVEN_Studio_Cyclorama",
+                "lightCount": len(lights),
+            },
         },
         "visualQa": {"referenceCompared": bool(args.reference_compared)},
         "calibration": {
@@ -890,6 +1324,7 @@ def main() -> None:
             "rightWristBendDegrees": hand_anatomy["r"]["wristBendDegrees"],
             "leftForearmRollDegrees": hand_anatomy["l"]["forearmRollDegrees"],
             "rightForearmRollDegrees": hand_anatomy["r"]["forearmRollDegrees"],
+            "minimumFingerJointBendDegrees": min_finger_joint_bend,
             "maxFingerJointBendDegrees": max_finger_joint_bend,
             "maxFingerBaseDeviationDegrees": max_finger_base_deviation,
             "leftPalmNormalErrorDegrees": hand_anatomy["l"]["palmNormalErrorDegrees"],
