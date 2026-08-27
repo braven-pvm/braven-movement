@@ -255,6 +255,25 @@ class BlenderSourceContractTest(unittest.TestCase):
         retreat = catch.index("retreat_into_limits(digit, best_angle)")
         self.assertLess(applied, retreat)
 
+    def test_a_grip_is_read_per_hand_and_never_per_phase(self):
+        """A one handed catch grips with one hand and leaves the other free.
+
+        The job carries grip for the CATCHING hand only on those drills, so a
+        phase can be holding while this hand is not. Reading the phase's grip
+        as "both hands hold it" raised KeyError: 'l' on two drills the moment
+        the movement lane stopped exporting a grip for a hand that was not
+        gripping.
+        """
+        source = (MODULE_DIR / "blender_movement_render.py").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("holds = bool(grip) and side in grip", source)
+        self.assertIn("if not holds:", source)
+        self.assertIn("radius if (grip and side in grip) else None", source)
+        # Indexing a side without checking it is present is the defect itself.
+        self.assertNotIn("if grip is None:", source)
+
     def test_movement_renderer_calls_match_the_reference_helper_signatures(self):
         """The posing helpers are shared, and only Blender links the two sides.
 

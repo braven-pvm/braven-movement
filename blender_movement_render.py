@@ -328,13 +328,20 @@ def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
         reach = bone_chain_length(
             rig, f"upperarm_{side}", f"lowerarm_{side}", f"hand_{side}"
         )
-        if grip is None:
-            # Still reaching for it. The arm says where the hand goes.
+        # Per HAND, not per phase. A one handed catch carries a grip for the
+        # catching hand only, so a phase can be holding while this hand is
+        # free. Reading the phase's grip as "both hands hold it" raised
+        # KeyError: 'l' on the two one handed drills the moment the movement
+        # lane stopped exporting a grip for a hand that was not gripping.
+        holds = bool(grip) and side in grip
+        if not holds:
+            # Free, whether or not the other hand has the ball. The arm says
+            # where this hand goes.
             target = shoulder + Vector(wanted["direction"]) * (
                 wanted["reachFraction"] * reach
             )
         else:
-            # She has it. The ball says where the hand goes.
+            # This hand has it. The ball says where the hand goes.
             target = ball_centre + Vector(grip[side]["outward"]) * (
                 radius + grip[side]["wristFromSurfaceInArms"] * reach
             )
@@ -364,7 +371,7 @@ def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
             side=side,
             ball_centre=ball_centre,
             finger_curl_degrees=finger_curl_degrees,
-            ball_radius=radius if grip else None,
+            ball_radius=radius if (grip and side in grip) else None,
             knuckle_limits=knuckle_limits,
         )
         # Millimetres from the ball surface, negative inside it. A fingertip
