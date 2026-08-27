@@ -137,6 +137,9 @@ framesPerSecond          the rate it was solved at
 hit                      where the moment is, 0 to 1
 hitPhase                 which phase that moment is
 
+ballRadiusM              absolute. A netball is a netball
+ball[]                   one entry per frame. Refer to section 8
+
 inPlace                  whether the root stays where it is
 rootTravelM              how far the root goes, whether or not it stays
 travelsUnderItsOwnPower  whether that travel is locomotion or noise
@@ -300,6 +303,29 @@ swung past vertical otherwise steps from +154 degrees to -103 in one frame, and
 a consumer interpolating between stored frames turns ten degrees of arm into two
 hundred and fifty seven degrees of windmill.
 
+### The ball, alongside the pose
+
+`ball[]` is one entry per frame, the same length as `frames[]`, and a consumer
+that does not read it loses nothing.
+
+| Index | Meaning |
+|---|---|
+| 0 | Forward from the shoulder midpoint, in arm lengths |
+| 1 | Up from the shoulder midpoint, in arm lengths |
+| 2 | Sideways from the shoulder midpoint, in arm lengths |
+| 3 | 1 while she has it, 0 while she does not |
+
+`ballRadiusM` is declared once for the clip, in metres, because a netball is a
+netball on every body. The offset is in arm lengths for the same reason
+everything else is: the athlete this was solved on is not the size of the body it
+will be drawn on.
+
+It is a separate array rather than four more channels on a frame. Inserting a
+number into a positional fifteen would silently change every clip already
+written, which is drift risk 2 in section 14.
+
+Read section 12 for what it is for.
+
 ## 9. The rig rendition
 
 Specified, not built. A consumer that needs a real skeleton receives a GLB.
@@ -387,7 +413,54 @@ person.
 see the grip looks at a manual figure rendered in Blender, where the grip
 survives.
 
-## 12. What Braven Tactics must change to consume this
+## 12. The open finding: a carried ball has no gather
+
+Measured on the board, on 2026-08-27, and recorded here because it decides how
+much of a catching technique a coach can actually see.
+
+**From the instant the ball arrives, the technique's arms are replaced.**
+Braven Tactics puts the hands wherever the model says the ball is, at full
+weight, for as long as she holds it. Its model carries a ball at one fixed point
+in front of the chest — `CARRY_OFFSET` 0.42 m, `CARRY_HEIGHT` 1.05 m — and that
+point never moves. So the arms stop moving with it.
+
+| | Technique | Drawn on the board |
+|---|---|---|
+| Elbow at the ready position | 75 degrees | 71 degrees |
+| Elbow at contact | 79 degrees | 71 degrees |
+| Elbow at the pull-in | 126 degrees | 71 degrees |
+| Shoulder at contact | 61 degrees | 7 degrees |
+
+The manual's contact checkpoint asks for 50 to 140 degrees of shoulder
+elevation, and the drawn body shows 7. The pull-in checkpoint asks for 105 to
+150 degrees of elbow, and the drawn body shows 71 for the whole movement.
+
+**This is not a fault in the consumer's hand solver.** That is its first
+invariant working: one definition of where the ball is, and nothing keeping a
+second copy. A pose that folded her arms to her chest while the model drew the
+ball 42 cm in front of them would be a ball floating beside a pair of hands,
+which is the defect that solver was written to end.
+
+**The disagreement is with the ball model, and the ball model has no answer.** A
+netball catch has a gather. Measured on this technique, the ball travels from
+0.93 arm lengths in front of the shoulder and 0.27 above it, in to 0.45 in front
+and level — about 25 cm of travel on this athlete, over three quarters of a
+second. A carry point with one offset and one height cannot express any of it.
+
+**So the clip declares where the ball is on every frame.** That is the `ball[]`
+channel in section 8. It is what a consumer needs in order to move the ball
+instead of pinning it, and it is written whether or not anybody reads it yet.
+
+**What is drawn correctly meanwhile.** Everything before the ball arrives, which
+is the ready position and the reach, and the trunk and the legs throughout. That
+is most of what a coach reads about a stance, and it is why the technique is
+worth shipping while this is open.
+
+The finding is held as a test rather than only as this paragraph:
+`src/engine/techniqueBall.test.ts` in Braven Tactics fails the day any of the
+four numbers above changes.
+
+## 13. What Braven Tactics must change to consume this
 
 Small, and each part is separable.
 
@@ -404,7 +477,7 @@ Small, and each part is separable.
 3. **Nothing else.** The sampling, the blending over the stride, the easing at
    both ends of the window and the determinism are all built and tested.
 
-## 13. Drift risks
+## 14. Drift risks
 
 - **The class vocabulary is copied, not shared.** The two repositories do not
   share a build, so `TACTICS_VOCABULARY` in
@@ -421,7 +494,7 @@ Small, and each part is separable.
   distances do not, which is why `bob` is the only absolute number in a frame
   and why nothing else in the format has a unit.
 
-## 14. Producing a clip
+## 15. Producing a clip
 
 ```bash
 cd spikes && "$USERPROFILE/.pixi/bin/pixi.exe" run python export_tactics_clip.py netball_two_hand_snatch_pull_in

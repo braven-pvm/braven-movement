@@ -225,6 +225,43 @@ def read_frame(points, index, axes, sides, chest) -> dict:
     }
 
 
+def read_ball(points, index, held, axes) -> list:
+    """Where the ball is, from the shoulder midpoint, in arm lengths.
+
+    A separate channel from the pose, and separate on purpose. The pose is fifteen
+    numbers in a fixed order and inserting a sixteenth would silently change
+    every clip already written. This rides alongside it, the same length, and a
+    consumer that does not read it loses nothing.
+
+    In arm lengths rather than metres, which is the same unit discipline the
+    Blender boundary uses: the athlete this was solved on is not the size of the
+    body it will be drawn on, and an absolute offset measured on one lands in the
+    wrong place on the other. The ball's own size is absolute, because a netball
+    is a netball, and it is declared once for the clip.
+
+    Why it exists: Braven Tactics carries a ball at one fixed point in front of
+    the chest for as long as a player holds it, so a catch has no gather. Her
+    hands are solved onto that point, which overrides the arms of any technique
+    laid over it. This is what a consumer needs in order to move the ball
+    instead. Refer to section 12 of docs/TACTICS_CLIP_CONTRACT.md.
+    """
+    up, forward, lateral = axes
+    at = lambda name: np.asarray(points[index[name]], dtype=np.float64)  # noqa: E731
+
+    shoulders = (at("l_uparm") + at("r_uparm")) / 2.0
+    elbow = at("l_lowarm")
+    arm = float(
+        np.linalg.norm(elbow - at("l_uparm")) + np.linalg.norm(at("l_wrist") - elbow)
+    )
+    offset = (np.asarray(held.centre, dtype=np.float64) - shoulders) / arm
+    return [
+        round(float(np.dot(offset, forward)), 4),
+        round(float(np.dot(offset, up)), 4),
+        round(float(np.dot(offset, lateral)), 4),
+        1 if held.holding else 0,
+    ]
+
+
 def rest_median(values: list[float]) -> float:
     ordered = sorted(values)
     return ordered[len(ordered) >> 1] if ordered else 0.0
@@ -281,6 +318,10 @@ def build(character, movement_id: str) -> dict:
     }
 
     frames = [read_frame(points[i], index, axes, sides, chest) for i in range(count)]
+    ball = [
+        read_ball(points[i], index, result["possession"].frames[i], axes)
+        for i in range(count)
+    ]
 
     # How far she travels over the ground, and whether that is travel at all.
     hips = np.stack([np.asarray(points[i][index["root"]]) for i in range(count)])
@@ -308,15 +349,39 @@ def build(character, movement_id: str) -> dict:
 
     unwrap(frames)
 
+    # The grading, carried with the clip.
+    #
+    # `docs/REQUIREMENTS.md` R2 asks that every figure states whether its
+    # movement met every coaching checkpoint. A clip is a figure that moves, so
+    # it carries the same statement. A consumer that shows a technique to a
+    # coach can then say which one it is showing, and a technique that failed
+    # its own definition can be excluded rather than quietly drawn.
+    measurements = result["measurements"]
+    assessment = definition.assess(measurements)
+
     phases = []
     for phase in definition.phases:
         frame = max(0, min(count - 1, round(phase.at_phase * (count - 1))))
+        checkpoints = []
+        for checkpoint in phase.checkpoints:
+            measured = float(measurements[frame][checkpoint.measure])
+            checkpoints.append(
+                {
+                    "measure": checkpoint.measure,
+                    "measuredDegrees": round(measured, 2),
+                    "minimumDegrees": checkpoint.minimum_degrees,
+                    "maximumDegrees": checkpoint.maximum_degrees,
+                    "verdict": checkpoint.assess(measured).verdict,
+                    "cue": checkpoint.cue,
+                }
+            )
         phases.append(
             {
                 "name": phase.name,
                 "at": round(frame / max(1, count), 4),
                 "frame": frame,
                 "cues": [checkpoint.cue for checkpoint in phase.checkpoints],
+                "checkpoints": checkpoints,
             }
         )
 
@@ -348,6 +413,9 @@ def build(character, movement_id: str) -> dict:
         "movementId": movement_id,
         "skill": definition.skill,
         "source": definition.source if hasattr(definition, "source") else None,
+        # Whether this technique met every coaching checkpoint it was graded
+        # against. A consumer may refuse to draw a technique that did not.
+        "graded": bool(assessment.correct),
         # Metres of ground one loop covers, and zero for anything that is not a
         # locomotion cycle. Tactics reads this to decide which clock plays the
         # clip: a stride is periodic in distance and a one-shot action is not.
@@ -366,6 +434,11 @@ def build(character, movement_id: str) -> dict:
         "framesPerSecond": fps,
         "contactFrame": contact_frame,
         "phases": phases,
+        # The ball's own size is absolute. A netball is a netball on every body.
+        "ballRadiusM": round(float(result["radiusCm"]) / 100.0, 4),
+        # One entry per frame: forward, up and lateral from the shoulder midpoint
+        # in arm lengths, then whether she has it. Refer to `read_ball`.
+        "ball": ball,
         "frames": [
             [
                 round(f["bob"], 3),
