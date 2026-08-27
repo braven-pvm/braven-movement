@@ -828,6 +828,76 @@ def export_fbx(path: Path, objects: list[bpy.types.Object], *, animation: bool) 
     )
 
 
+def set_alpha(objects: list[bpy.types.Object], mode: str) -> list[str]:
+    """Choose how each material's transparency is drawn.
+
+    MPFB gives the skin a texture alpha and hides two things behind it: the
+    fitting helpers, and the body under the clothes. `export_apply=True` applies
+    the mask modifiers that do the same job, so once it is set the alpha has
+    nothing left to hide and only dithers, in angular patches over the legs,
+    the arms and the face wherever it is neither one nor zero.
+
+    So the skin is opaque. Clipping it instead punches holes through her legs,
+    because the texture alpha is not a clean binary mask and a hard threshold
+    cuts it in the wrong places.
+
+    Pass the body and the kit only. Hair, lashes and brows are cut-out cards
+    with a real silhouette in their alpha. The eyes carry a transparent cornea
+    over the iris, and making that opaque paints the sclera across the whole
+    eye: she arrives with two blank white discs and no pupil.
+    """
+    changed = []
+    for item in objects:
+        for slot in item.material_slots:
+            material = slot.material
+            if material is None:
+                continue
+            material.blend_method = mode
+            if mode == "CLIP":
+                material.alpha_threshold = 0.5
+            elif material.use_nodes:
+                for node in material.node_tree.nodes:
+                    if node.type != "BSDF_PRINCIPLED":
+                        continue
+                    alpha = node.inputs["Alpha"]
+                    for link in list(alpha.links):
+                        material.node_tree.links.remove(link)
+                    alpha.default_value = 1.0
+            changed.append(f"{material.name}={mode.lower()}")
+    return changed
+
+
+def bake_shape_keys(objects: list[bpy.types.Object]) -> list[str]:
+    """Write the shape key mix into the vertices and remove the keys.
+
+    MPFB builds a body from shape keys, and the exporter turns them into glTF
+    morph targets: thirty eight of them on this athlete. three.js applies them,
+    so the file looked correct in the viewer written next to it, and most other
+    programs do not, because the format only guarantees a handful. They drop
+    them or mix them wrongly, and the body arrives deformed.
+
+    Baking is also required rather than merely wanted, because `export_apply`
+    disables shape key export. Without the bake the body reverts to the base
+    MakeHuman shape. It costs nothing: the shape is decided when the athlete is
+    made and is never animated, so a morph target carries no information the
+    vertices cannot carry themselves.
+    """
+    baked = []
+    for item in objects:
+        mesh = getattr(item, "data", None)
+        if mesh is None or not getattr(mesh, "shape_keys", None):
+            continue
+        count = len(mesh.shape_keys.key_blocks)
+        item.shape_key_add(name="_baked", from_mix=True)
+        mixed = [point.co.copy()
+                 for point in mesh.shape_keys.key_blocks["_baked"].data]
+        item.shape_key_clear()
+        for vertex, position in zip(mesh.vertices, mixed):
+            vertex.co = position
+        baked.append(f"{item.name}:{count}")
+    return baked
+
+
 def point_at(camera: bpy.types.Object, target: Vector) -> None:
     camera.rotation_euler = (target - camera.location).to_track_quat("-Z", "Y").to_euler()
 
@@ -1220,6 +1290,16 @@ def main() -> None:
     posed_fbx = output / "braven_mpfb_reference_catch.fbx"
     export_fbx(posed_fbx, [*character_objects, *ball_objects], animation=True)
     posed_glb = output / "braven_mpfb_reference_catch.glb"
+    # The FBX above is written first and keeps its shape keys. Everything from
+    # here changes the mesh and the materials for the exporter, and the .blend
+    # saved below therefore records the scene that this GLB was made from.
+    solid = [human] + [
+        item for item in assets if "casualsuit" in item.name
+    ]
+    print(f"[reference-catch] alpha: {', '.join(set_alpha(solid, 'OPAQUE'))}")
+    baked = bake_shape_keys([human, *assets])
+    if baked:
+        print(f"[reference-catch] baked shape keys: {', '.join(baked)}")
     select_only([*character_objects, *ball_objects])
     bpy.ops.export_scene.gltf(
         filepath=str(posed_glb),
@@ -1227,6 +1307,13 @@ def main() -> None:
         use_selection=True,
         export_animations=True,
         export_frame_range=True,
+        # MPFB hides the fitting helpers and the body under the clothes with
+        # two mask modifiers. The exporter ignores modifiers unless it is
+        # asked, so both masks were dropped and the athlete arrived wearing a
+        # skirt of helper geometry with her chest through her shirt. This is
+        # what applies them. It also disables shape key export, which is why
+        # they are baked first.
+        export_apply=True,
     )
     glb = inspect_glb(posed_glb)
 

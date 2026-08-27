@@ -20,9 +20,10 @@ import numpy as np
 SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
 
+import pymomentum.geometry as geometry  # noqa: E402
+
 import smplx_body  # noqa: E402
 import smplx_retarget  # noqa: E402
-from export_manual_page import figure  # noqa: E402
 from movement_definition import load as load_definition  # noqa: E402
 from movement_engine import (  # noqa: E402
     definition_path,
@@ -44,6 +45,53 @@ DEFAULT = "netball_two_hand_snatch_pull_in"
 # constraint it is for the manual.
 GRID_CM = None
 VERTEX_SCALE = 5
+
+
+def figure(
+    character, result: dict, phase: float, body=None, scale: int = 1
+) -> dict:
+    """The athlete, skinned, at one coaching phase.
+
+    Vertices come back as integers in units of 1/scale centimetres. The
+    drawing divides by the same number.
+
+    This lived in export_manual_page.py, which drew the same figure. The
+    manual page now shows Blender stills, so this is the only caller and the
+    only place SMPL-X still reaches a page. Refer to LICENCE-RISK.md.
+    """
+    frames = len(result["points"])
+    number = max(0, min(frames - 1, round(phase * (frames - 1))))
+    fit_error = None
+    if body is None:
+        state = geometry.model_parameters_to_skeleton_state(
+            character, np.asarray(result["motion"][number], dtype=np.float32)
+        )
+        skin = np.asarray(character.skin_points(state), dtype=np.float64)
+    else:
+        model, shape, merge = body
+        theta, translation, worst, mean, shaped, rest = smplx_retarget.fit(
+            model, result["points"][number], result["index"], shape=shape
+        )
+        skin = smplx_retarget.skin(model, shaped, rest, theta, translation)
+        # The same merge every frame, so the faces stay valid.
+        merged = np.zeros((int(merge.max()) + 1, 3), dtype=np.float64)
+        np.add.at(merged, merge, skin)
+        counts = np.bincount(merge, minlength=len(merged)).reshape(-1, 1)
+        skin = merged / np.maximum(counts, 1)
+        fit_error = {"worstCm": round(worst, 2), "meanCm": round(mean, 2)}
+    held = result["possession"].frames[number]
+    return {
+        "frame": number,
+        # Integers, in units of 1/scale centimetres. A manual figure is drawn
+        # at about two pixels per centimetre, where whole centimetres cost
+        # half a pixel. A full size figure is drawn at five, where whole
+        # centimetres snap every vertex to a five pixel grid and the smooth
+        # normals come out faceted.
+        "v": [round(float(value) * scale) for value in skin.reshape(-1)],
+        "ball": [round(float(value), 1) for value in held.centre],
+        "holding": held.holding,
+        "fit": fit_error,
+    }
 
 
 def main(argv: list[str]) -> int:

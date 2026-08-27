@@ -31,9 +31,15 @@ MODULE_DIR = Path(__file__).resolve().parent
 if str(MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(MODULE_DIR))
 
+from reference_pose_config import (  # noqa: E402
+    DEFAULT_CONFIG_PATH,
+    load_reference_catch_config,
+)
 from blender_mpfb_reference_catch import (  # noqa: E402
     add_camera_and_lights,
+    bake_shape_keys,
     create_athlete,
+    create_panelled_netball,
     elbow_for_target,
     make_material,
     orient_hand,
@@ -43,6 +49,7 @@ from blender_mpfb_reference_catch import (  # noqa: E402
     render_view,
     rotate_bone_toward,
     select_only,
+    set_alpha,
     sha256,
     translate_bone_world,
     world_head,
@@ -116,71 +123,6 @@ def delete_helper_geometry(human) -> str:
     return f"{was} to {len(mesh.vertices)} vertices"
 
 
-def set_alpha(objects, mode: str) -> list[str]:
-    """Choose how each material's transparency is drawn.
-
-    The skin blends on a hashed mask, which dithers: blotches over the legs,
-    arms and face wherever the texture alpha is neither one nor zero. That mask
-    does two jobs. It hid the helper geometry, which is deleted now, and it
-    hides the body under the clothes, which still matters. Make the skin fully
-    opaque and she wears her own chest over her shirt.
-
-    So the skin is clipped rather than blended: a hard cut at the threshold,
-    which the format stores as a mask and every reader handles the same way.
-    The kit and the eyes have nothing to hide and are opaque. Hair, lashes and
-    brows keep their blending, because they are flat cards with cut-out shapes
-    and a hard edge on a hair card looks like cardboard.
-    """
-    changed = []
-    for item in objects:
-        for slot in item.material_slots:
-            material = slot.material
-            if material is None:
-                continue
-            material.blend_method = mode
-            if mode == "CLIP":
-                material.alpha_threshold = 0.5
-            elif material.use_nodes:
-                for node in material.node_tree.nodes:
-                    if node.type != "BSDF_PRINCIPLED":
-                        continue
-                    alpha = node.inputs["Alpha"]
-                    for link in list(alpha.links):
-                        material.node_tree.links.remove(link)
-                    alpha.default_value = 1.0
-            changed.append(f"{material.name}={mode.lower()}")
-    return changed
-
-
-def bake_shape_keys(objects) -> list[str]:
-    """Write the shape key mix into the vertices and remove the keys.
-
-    MPFB builds a body from shape keys, and the exporter turns them into
-    glTF morph targets: thirty seven of them on this athlete. three.js applies
-    them, so the file looked correct in the viewer written next to it, and most
-    other programs do not, because the format only guarantees a handful. They
-    drop them or mix them wrongly, and the body arrives deformed.
-
-    Baking costs nothing here. The shape is decided when the athlete is made
-    and never animated, so a morph target carries no information the vertices
-    cannot carry themselves.
-    """
-    baked = []
-    for item in objects:
-        mesh = getattr(item, "data", None)
-        if mesh is None or not getattr(mesh, "shape_keys", None):
-            continue
-        count = len(mesh.shape_keys.key_blocks)
-        item.shape_key_add(name="_baked", from_mix=True)
-        mixed = [point.co.copy()
-                 for point in mesh.shape_keys.key_blocks["_baked"].data]
-        item.shape_key_clear()
-        for vertex, position in zip(mesh.vertices, mixed):
-            vertex.co = position
-        baked.append(f"{item.name}:{count}")
-    return baked
-
-
 def bake_action(rig, first: int, last: int) -> None:
     """Rewrite the action by visual keying, for the exporter.
 
@@ -217,8 +159,12 @@ def bake_action(rig, first: int, last: int) -> None:
 def parse_args() -> argparse.Namespace:
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     parser = argparse.ArgumentParser()
-    parser.add_argument("--job", type=Path, required=True)
+    # Repeatable. Building the athlete costs about two minutes and the phases
+    # cost fifteen seconds each, so eight drills in one session are far
+    # cheaper than eight sessions.
+    parser.add_argument("--job", type=Path, required=True, action="append")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     parser.add_argument("--phase", action="append", default=None)
     parser.add_argument("--turntable", type=int, default=0)
     parser.add_argument("--animate", action="store_true")
@@ -342,7 +288,8 @@ def pose_stance(rig, stance: dict, foot_baseline: dict) -> dict:
     return placed
 
 
-def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict):
+def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
+               finger_curl_degrees: dict):
     reset_pose(rig, basis)
     stance = pose_stance(rig, phase["stance"], foot_baseline)
 
@@ -389,44 +336,66 @@ def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict)
             palm_normal=Vector(phase["hands"][side]["palmNormal"]),
             max_forearm_roll_degrees=limits["forearmRoll"],
         )
-        pose_articulated_hand(rig, side=side, ball_centre=ball_centre)
+        pose_articulated_hand(
+            rig,
+            side=side,
+            ball_centre=ball_centre,
+            finger_curl_degrees=finger_curl_degrees,
+        )
     orient_head_to_ball(rig, ball_centre)
     return ball_centre, {"stance": stance, "arms": arms, "hands": hands}
 
 
-def main() -> None:
-    args = parse_args()
-    job = json.loads(args.job.read_text(encoding="utf-8"))
-    output = args.output.resolve()
-    output.mkdir(parents=True, exist_ok=True)
+class Studio:
+    """The athlete and the room. Built once, then posed for every job."""
+
+    def __init__(self, config):
+        self.config = config
+        self.world_colour = config.presentation.studio.world_color
+        (
+            self.human,
+            self.rig,
+            self.assets,
+            self.source_assets,
+        ) = create_athlete(config.athlete, config.presentation)
+        self.basis = {
+            bone.name: bone.matrix_basis.copy() for bone in self.rig.pose.bones
+        }
+        self.foot_baseline = {
+            f"foot_{side}": self.rig.pose.bones[f"foot_{side}"].matrix.copy()
+            for side in ("l", "r")
+        }
+        self.camera, self.lights = add_camera_and_lights(config.presentation)
+        add_floor()
+        self.ball = None
+        self.ball_seams = []
+
+    def add_ball(self, radius: float) -> None:
+        # The reference generator builds the ball a coach recognises: panels,
+        # a seam colour and six embossed seam loops. This drew a plain coral
+        # sphere of its own. The seams are parented to the ball, so moving the
+        # ball still moves the whole thing.
+        self.ball, self.ball_seams = create_panelled_netball(
+            Vector((0.0, 0.0, 0.0)), radius, self.config.presentation
+        )
+
+
+def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) -> None:
+    config, world_colour = studio.config, studio.world_colour
+    rig, human, assets = studio.rig, studio.human, studio.assets
+    basis, foot_baseline = studio.basis, studio.foot_baseline
+    camera, ball, ball_seams = studio.camera, studio.ball, studio.ball_seams
 
     wanted = args.phase or [phase["name"] for phase in job["phases"]]
     phases = [phase for phase in job["phases"] if phase["name"] in wanted]
     if not phases:
         raise SystemExit(f"no phase of {job['movementId']} matches {wanted}")
 
-    human, rig, assets, source_assets = create_athlete()
-    basis = {bone.name: bone.matrix_basis.copy() for bone in rig.pose.bones}
-    foot_baseline = {
-        f"foot_{side}": rig.pose.bones[f"foot_{side}"].matrix.copy()
-        for side in ("l", "r")
-    }
-    camera = add_camera_and_lights()
-    add_floor()
-
-    bpy.ops.mesh.primitive_uv_sphere_add(
-        segments=64, ring_count=32, radius=job["phases"][0]["ball"]["radiusM"]
-    )
-    ball = bpy.context.active_object
-    ball.name = "BRAVEN_Netball"
-    ball.data.materials.append(
-        make_material("BRAVEN_Netball_Coral", (0.88, 0.16, 0.11, 1.0), 0.48)
-    )
-
     rendered = []
     for phase in phases if not args.no_stills else []:
         centre, receipt = pose_phase(
-            rig, phase, job["anatomyLimitsDegrees"], basis, foot_baseline
+            rig, phase, job["anatomyLimitsDegrees"], basis, foot_baseline,
+            config.finger_curl_degrees,
         )
         ball.location = centre
         bpy.context.view_layer.update()
@@ -442,6 +411,7 @@ def main() -> None:
                 target=Vector(view["targetM"]),
                 lens=view["lensMm"],
                 sensor_width=view["sensorWidthMm"],
+                world_colour=world_colour,
             )
         receipt["name"] = phase["name"]
         receipt["frame"] = phase["frame"]
@@ -464,6 +434,7 @@ def main() -> None:
                     target=target,
                     lens=job["views"]["front"]["lensMm"],
                     sensor_width=job["views"]["front"]["sensorWidthMm"],
+                    world_colour=world_colour,
                 )
         receipt["views"] = images
         rendered.append(receipt)
@@ -488,7 +459,8 @@ def main() -> None:
         for number, frame in enumerate(frames, start=1):
             scene.frame_set(number)
             centre, _ = pose_phase(
-                rig, frame, job["anatomyLimitsDegrees"], basis, foot_baseline
+                rig, frame, job["anatomyLimitsDegrees"], basis, foot_baseline,
+                config.finger_curl_degrees,
             )
             ball.location = centre
             keyframe(rig, ball, number)
@@ -498,15 +470,16 @@ def main() -> None:
         # With the masks applied the skin's texture alpha has nothing left to
         # hide, and all it does is dither: angular patches over the legs, arms
         # and face wherever it is neither one nor zero. Hair, lashes and brows
-        # keep theirs, because they are cut-out cards.
-        solid = [human] + [a for a in assets
-                           if "casualsuit" in a.name or "high-poly" in a.name]
+        # keep theirs, because they are cut-out cards. So do the eyes, whose
+        # cornea is transparent over the iris: opaque gives her blank white
+        # discs and no pupil.
+        solid = [human] + [a for a in assets if "casualsuit" in a.name]
         print(f"[movement-render] alpha: {', '.join(set_alpha(solid, 'OPAQUE'))}")
         glb = output / f"{job['movementId']}.glb"
         baked = bake_shape_keys([human, *assets])
         if baked:
             print(f"[movement-render] baked shape keys: {', '.join(baked)}")
-        select_only([rig, human, *assets, ball])
+        select_only([rig, human, *assets, ball, *ball_seams])
         bpy.ops.export_scene.gltf(
             filepath=str(glb),
             export_format="GLB",
@@ -552,8 +525,8 @@ def main() -> None:
             {
                 "movementId": job["movementId"],
                 "skill": job["skill"],
-                "jobSha256": sha256(args.job),
-                "sourceAssets": [str(path) for path in source_assets],
+                "jobSha256": sha256(job_path),
+                "sourceAssets": [str(path) for path in studio.source_assets],
                 "animation": animation,
                 "phases": rendered,
             },
@@ -562,6 +535,29 @@ def main() -> None:
         encoding="utf-8",
     )
     print(f"[movement-render] PASS receipt={receipt_path}")
+
+
+def main() -> None:
+    args = parse_args()
+    output = args.output.resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    jobs = [json.loads(path.read_text(encoding="utf-8")) for path in args.job]
+
+    if args.animate and len(jobs) > 1:
+        # The export bakes the shape keys away and sets the materials opaque,
+        # so a second job would export an athlete already baked.
+        raise SystemExit("--animate takes one --job. Run the others separately.")
+
+    radii = {job["phases"][0]["ball"]["radiusM"] for job in jobs}
+    if len(radii) > 1:
+        raise SystemExit(f"the jobs disagree about the ball radius: {sorted(radii)}")
+
+    studio = Studio(load_reference_catch_config(args.config))
+    studio.add_ball(radii.pop())
+
+    for number, (job, path) in enumerate(zip(jobs, args.job), start=1):
+        print(f"[movement-render] {number}/{len(jobs)} {job['movementId']}")
+        render_job(studio, job, path, args, output)
 
 
 if __name__ == "__main__":
