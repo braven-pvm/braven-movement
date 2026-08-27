@@ -33,6 +33,7 @@ from contact_solve import (  # noqa: E402
     contact_constraints,
     contact_miss,
     elbow_poles,
+    upper_arm_aim,
     foot_constraints,
     measure_contact,
     pinned_parameters,
@@ -267,6 +268,10 @@ def solve_movement(
                 ),
                 elbow_poles(
                     character, index, placed[number], targets, reach_cm, sides
+                ),
+                upper_arm_aim(
+                    character, index, placed[number], targets, reach_cm, sides,
+                    method.elbow_width,
                 ),
                 continuity,
                 solver2.LimitErrorFunction(character, weight=LIMIT_WEIGHT),
