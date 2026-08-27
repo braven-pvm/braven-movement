@@ -134,6 +134,22 @@ class BlenderSourceContractTest(unittest.TestCase):
             self.assertIn(f'"{key}"', catch, f"the clearance profile lost {key}")
         self.assertNotIn('nearest["worst"]', catch)
 
+    def test_the_receipt_names_the_movie_that_was_actually_written(self):
+        """Blender appends the frame range to a movie's name.
+
+        Asking for <movement>.mp4 produces <movement>0001-0049.mp4, so a
+        receipt that records the name it asked for carries a path to nothing
+        and a size of zero. Anyone consuming those paths, and the coach pack
+        does, gets a broken list.
+        """
+        source = (MODULE_DIR / "blender_movement_render.py").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("movie = render_movie(", source)
+        self.assertIn("return produced[-1]", source)
+        self.assertIn("path.parent.glob(", source)
+
     def test_movement_renderer_calls_match_the_reference_helper_signatures(self):
         """The posing helpers are shared, and only Blender links the two sides.
 

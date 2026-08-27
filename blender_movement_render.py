@@ -204,7 +204,7 @@ def keyframe(rig, ball, frame: int) -> None:
 
 
 def render_movie(camera, *, path: Path, resolution, location, target, lens,
-                 sensor_width, fps: int) -> None:
+                 sensor_width, fps: int) -> Path:
     scene = bpy.context.scene
     camera.data.type = "PERSP"
     camera.data.lens = lens
@@ -224,6 +224,19 @@ def render_movie(camera, *, path: Path, resolution, location, target, lens,
     scene.render.filepath = str(path.with_suffix(""))
     scene.render.use_file_extension = True
     bpy.ops.render.render(animation=True)
+
+    # Blender appends the frame range to a movie's name, so asking for
+    # <movement>.mp4 produces <movement>0001-0049.mp4. The receipt used to
+    # record the name that was asked for, which is a path to a file that does
+    # not exist and a size of zero. Report what was actually written.
+    stem = path.with_suffix("").name
+    produced = sorted(
+        item for item in path.parent.glob(f"{stem}*")
+        if item.suffix.lower() == path.suffix.lower()
+    )
+    if not produced:
+        raise SystemExit(f"the movie render wrote no file matching {stem}*{path.suffix}")
+    return produced[-1]
 
 
 def bone_chain_length(rig, *bones: str) -> float:
@@ -517,7 +530,7 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
         )
         movie = output / f"{job['movementId']}.mp4"
         view = job["views"]["quarter"]
-        render_movie(
+        movie = render_movie(
             camera,
             path=movie,
             resolution=tuple(view["resolutionPx"]),
