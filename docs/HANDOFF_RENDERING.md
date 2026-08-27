@@ -465,15 +465,37 @@ braces rather than a correction, and it can stay.
 
 ## State
 
-Verified on 2026-08-19, on `claude/handoff-rendering-docs-0c5db3`. That branch
-merged `claude/repo-onboarding-6c4df5` into the six commits `main` carried.
+Measured on 2026-08-27, on `lane/rendering`, which carries `main` at `828bf6c`
+including the upper arm aim fix.
 
-- The pipeline runs end to end on `netball_two_hand_snatch_pull_in`.
-- Four phases, three views each. The turntable is unchanged and untested since.
-- The animated GLB and the MP4 both build. Verified at 5 frames, not at 49.
-- Both exported GLB files re-import into a clean Blender and render correctly.
-  The body arrives at 10256 vertices with no shape keys.
-- The reference generator passes: elbows 106.67 and 114.73 degrees, 30 finger
-  bones weighted.
-- 55 repository tests and 201 spike tests pass. 17 of the repository tests skip
+**Verified.**
+
+- All eight drills render in ONE Blender session: 33 phases, 99 images, 8
+  receipts, every one PASS. The athlete is built once.
+- The manual page assembles all eight from those receipts: 33 figures, 642 KB,
+  7 of 8 quoting the coaches manual directly. Checked in a browser at 1265 px
+  and at 375 px, in both themes. Every figure decodes, nothing overflows.
+- The reference generator passes unchanged by the knuckle fix: elbows 106.67
+  and 114.73 degrees, 30 finger bones weighted. Its receipt was diffed against
+  the pre-fix one and the largest difference anywhere is 2.265e-06, which is
+  0.0004 mm of fingertip travel. Float32 rounding, not a pose change.
+- 56 repository tests and 209 spike tests pass. 17 of the repository tests skip
   without Blender.
+
+**Not verified, and do not report otherwise.**
+
+- Animation batching. Several drills in one session is implemented but proven
+  on nothing yet. The test is two drills in one session, then both GLB files
+  re-imported into a clean Blender with their ball paths compared, because
+  both jobs carry 49 frames and an equal frame count discriminates nothing.
+  Frame count catches only interleaving, which would read 98.
+- The turntable. Unchanged and untouched since it was written.
+
+**Known limits of the 2026-08-27 batch.**
+
+Its 66 hands carry no usable grip measurement. The render began before the
+per segment clearance profile existed, so those receipts hold the older single
+number per digit, which is a minimum sitting on the base knuckle. It says
+nothing about whether a finger closed. `scripts/report_clearance.py` names
+them unreadable rather than guessing. That batch proves pipeline mechanics and
+nothing about hands.
