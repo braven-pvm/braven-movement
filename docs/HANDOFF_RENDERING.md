@@ -300,12 +300,44 @@ Ordered by how much they cost.
 
    The renderer places the wrists exactly where the job asks: 14.8 cm from the
    ball centre against 14.8 cm asked for, symmetric, 3.8 cm outside an 11 cm
-   surface. It achieves the palm normal to within 0.5 degrees. So the wrist is
-   not the fault. `pose_articulated_hand` then curls each joint by a fixed 8
-   and 12 degrees from `config.finger_curl_degrees`. Twenty degrees over a
-   finger of about 85 mm cannot close a 38 mm gap, so the fingers stop short.
-   A fixed curl cannot wrap a surface whose distance changes from one grip to
-   the next.
+   surface. It achieves the palm normal to within 0.5 degrees. So the renderer
+   is doing what it is told.
+
+   **This lane cannot fix it, and the experiment is done. Do not repeat it.**
+   Two levers were measured per digit on the two hand snatch at contact:
+
+   | aim | thumb | index | middle | ring | pinky | base deviation |
+   |---|---|---|---|---|---|---|
+   | 0.04, as authored | +32.9 | +46.4 | +46.7 | +45.5 | +41.3 | 5 to 16 |
+   | 1.00 | −36.9 | +35.9 | +35.0 | +30.8 | +26.8 | 38 to 39 |
+   | 3.00 | −48.5 | +9.3 | +4.6 | +3.1 | +8.0 | 59 |
+
+   - **Curl does nothing.** It rotates each bone about the knuckle above it,
+     and that knuckle is the part of the finger nearest the ball. Taking every
+     joint from 12 degrees to 24, hard against the 25 degree limit, moves the
+     clearance by 0.00 mm. It still moves it by 0.00 mm with the wrist placed
+     inside the ball.
+   - **Aim runs out of anatomy.** `fingerBaseDeviation` allows 40 degrees. At
+     that limit the nearest finger is still 27 mm short. The fingers only
+     arrive at aim 3.0, half again over the limit.
+   - **Solving one aim for the whole hand is worse.** The thumb leans three
+     times as fast, reaches the ball alone, and the search stops with the other
+     four untouched at 41 to 47 mm. A thumb on the ball and four fingers
+     splayed off it reads worse than the gap does.
+
+   **This belongs to the movement lane.** The gap is
+   `grip.{l,r}.wristFromSurfaceInArms`, which the job carries at 0.078 to
+   0.082. Sweeping it while holding everything else fixed:
+
+   | wristFromSurfaceInArms | wrist from surface | nearest finger |
+   |---|---|---|
+   | 0.082, as exported | 39.7 mm | +34.6 mm |
+   | 0.040 | 19.4 mm | +15.2 mm |
+   | 0.020 | 9.7 mm | +6.2 mm |
+   | 0.000 | 0.0 mm | −2.8 mm |
+
+   About **0.02** is where the hand meets the ball. Nothing in the renderer
+   needs to change once the job says that.
 
    **A previous version of this document said the fingers go through the ball.
    That was wrong, and it was wrong because it was read off a picture and never
