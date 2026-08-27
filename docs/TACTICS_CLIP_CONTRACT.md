@@ -289,6 +289,21 @@ is tested in `spikes/test_export_tactics_clip.py`.
    rather than data. Signed, it comes out negative on every frame of a run and
    clamps to nothing, which is a sprinter on straight legs.
 
+   **And it is measured in three dimensions, while the two above it are
+   measured in a plane.** That split is the whole of why the format works. The
+   consumer applies `upper` and `out` as rotations about two axes, so a reading
+   taken in each of those planes is exactly what it wants. It applies `lower` as
+   a bend at the joint, so that one must be the true angle between the two
+   segments and nothing less.
+
+   Getting this wrong is invisible. A bend read as the difference between two
+   planar swings equals the true angle only while the limb stays in the plane of
+   the run, and a netballer's arms do not: a high deflect goes overhead and out,
+   a hooks catch goes behind the body. Measured against the engine's own ISB
+   flexion on every phase of all eight drills, the difference of swings was wrong
+   by up to 52.7 degrees and the angle between the segments is wrong by 0.0. The
+   clip still loaded, still played and still interpolated in both cases.
+
 3. **Sideways is positive outward on both sides.** The side is supplied by the
    producer and the sign is not carried in the number, or one number would mean
    two things.

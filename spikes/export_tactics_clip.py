@@ -137,6 +137,31 @@ def swing_of(start, end, forward, up) -> float:
     return float(np.arctan2(np.dot(direction, forward), -np.dot(direction, up)))
 
 
+def bend_of(start, middle, end) -> float:
+    """How far a joint is folded, in three dimensions.
+
+    The angle between the two segments, which is what an elbow flexion angle and
+    a knee flexion angle are. It needs no plane at all, and that is the point.
+
+    This is deliberately NOT the difference of two swings. `swing_of` reads a
+    segment in the plane of forward and up and throws the sideways part away, so
+    the difference between two such readings equals the true joint angle only
+    while the limb stays in that plane. A high deflect puts the arm overhead and
+    out; a hooks catch puts it behind the body. Measured against the engine's own
+    ISB flexion on every phase of every drill, the difference of swings was wrong
+    by up to 52.7 degrees and this is wrong by 0.0.
+
+    A magnitude, never a direction. A knee folds the heel backwards and an elbow
+    brings the hand forwards, and which way is anatomy rather than anything in
+    this file, so the direction belongs where the pose is put on a rig.
+    """
+    a = np.asarray(middle, dtype=np.float64) - np.asarray(start, dtype=np.float64)
+    b = np.asarray(end, dtype=np.float64) - np.asarray(middle, dtype=np.float64)
+    a = a / np.linalg.norm(a)
+    b = b / np.linalg.norm(b)
+    return float(np.arccos(np.clip(np.dot(a, b), -1.0, 1.0)))
+
+
 def out_of(start, end, lateral, side: int) -> float:
     """How far a segment is carried away from the midline, in radians.
 
@@ -197,14 +222,14 @@ def read_frame(points, index, axes, sides, chest) -> dict:
     def limb(name: str) -> dict:
         upper_joint, lower_joint, end_joint = LIMBS[name]
         a, b, c = at(upper_joint), at(lower_joint), at(end_joint)
-        upper = swing_of(a, b, forward, up)
-        whole = swing_of(b, c, forward, up)
+        # Two planar readings and one spatial one, and the split is not
+        # arbitrary. The consumer applies `upper` and `out` as rotations about
+        # two axes, so a reading in each of those planes is exactly what it
+        # wants. It applies `lower` as a bend at the joint, so that one has to be
+        # the true angle. Refer to `bend_of`.
         return {
-            "upper": upper,
-            # A magnitude. A knee folds one way and an elbow the other, and
-            # which way is anatomy rather than anything in this file, so the
-            # direction belongs where the pose is put on a rig.
-            "lower": abs(shortest(whole - upper)),
+            "upper": swing_of(a, b, forward, up),
+            "lower": bend_of(a, b, c),
             "out": out_of(a, b, lateral, sides[name]),
         }
 

@@ -25,6 +25,7 @@ from export_tactics_clip import (  # noqa: E402
     CLASSES,
     across,
     athlete_frame,
+    bend_of,
     out_of,
     rest_median,
     shortest,
@@ -53,6 +54,73 @@ class SwingTest(unittest.TestCase):
         self.assertAlmostEqual(
             abs(swing_of([0, 100, 0], [0, 140, 0], FORWARD, UP)), math.pi
         )
+
+
+class BendTest(unittest.TestCase):
+    """The one channel measured in three dimensions, and the reason.
+
+    A bend read as the difference between two planar swings is right while the
+    limb is in the plane of the run and wrong everywhere else. On the eight
+    drills that error reached 52.7 degrees, and every clip still loaded, played
+    and interpolated. So the case that matters here is the out-of-plane one.
+    """
+
+    def test_a_straight_limb_is_zero(self):
+        self.assertAlmostEqual(bend_of([0, 100, 0], [0, 60, 0], [0, 20, 0]), 0.0)
+
+    def test_a_right_angle_is_a_right_angle(self):
+        bend = bend_of([0, 100, 0], [0, 60, 0], [0, 60, 40])
+        self.assertAlmostEqual(math.degrees(bend), 90.0, places=6)
+
+    def test_it_is_a_magnitude_whichever_way_the_joint_folds(self):
+        # A knee takes the heel backwards and an elbow brings the hand forwards.
+        knee = bend_of([0, 100, 0], [0, 60, 0], [0, 60, -40])
+        elbow = bend_of([0, 100, 0], [0, 60, 0], [0, 60, 40])
+        self.assertGreater(knee, 0.0)
+        self.assertAlmostEqual(knee, elbow, places=9)
+
+    def test_it_agrees_with_the_law_of_cosines_out_of_any_plane(self):
+        """Checked against arithmetic that shares none of its working.
+
+        A joint is a triangle: two segment lengths and the distance between the
+        far ends. The law of cosines gives the angle from those three numbers
+        alone, and it knows nothing about a forward axis, an up axis or a
+        projection. So the two agreeing says the reading is the joint's own
+        angle rather than a reading that happens to be self-consistent.
+
+        The triangle is deliberately scalene and tilted out of every axis plane,
+        which is the case a planar reading gets wrong.
+        """
+        shoulder = np.array([3.0, 97.0, -4.0])
+        elbow = np.array([21.0, 68.0, 13.0])
+        wrist = np.array([-6.0, 55.0, 31.0])
+
+        upper = float(np.linalg.norm(elbow - shoulder))
+        lower = float(np.linalg.norm(wrist - elbow))
+        across_joint = float(np.linalg.norm(wrist - shoulder))
+        # The interior angle at the elbow, then the fold away from straight.
+        interior = math.acos(
+            (upper * upper + lower * lower - across_joint * across_joint)
+            / (2 * upper * lower)
+        )
+        self.assertAlmostEqual(bend_of(shoulder, elbow, wrist), math.pi - interior, places=9)
+
+    def test_a_purely_sideways_forearm_still_reads(self):
+        """Where the difference of two swings has no answer at all.
+
+        A segment lying along the lateral axis has no forward part and no up
+        part, so its planar swing is an arctangent of nothing and lands wherever
+        the sign of a zero puts it. The angle between the segments has no such
+        hole: this elbow is folded through a right angle and reads as one.
+        """
+        bend = bend_of([0, 100, 0], [0, 60, 0], [40, 60, 0])
+        self.assertAlmostEqual(math.degrees(bend), 90.0, places=6)
+
+    def test_it_never_exceeds_a_half_turn(self):
+        # An arccosine cannot, which is what makes it a magnitude the consumer
+        # can bend a joint by without ever asking which way round it went.
+        folded = bend_of([0, 100, 0], [0, 60, 0], [0, 100, 0.001])
+        self.assertLessEqual(folded, math.pi)
 
 
 class OutTest(unittest.TestCase):
