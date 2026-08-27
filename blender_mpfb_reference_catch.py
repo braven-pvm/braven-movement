@@ -414,10 +414,18 @@ def finger_surface_clearance(
 
 
 
-# A grip flexes the knuckle hardest. This is the ceiling the solve searches
-# under; `fingerBaseDeviation` in the job then bounds what actually survives.
-KNUCKLE_FLEXION_CEILING_DEGREES = 80.0
+# The search ceiling only. What actually stops the solve is the job's
+# knuckleLimitsDegrees, resolved per axis. This number was 80 and used as the
+# limit itself, which sat 23 degrees above the model's 57.3 licence for the
+# thumb: over-permitting, not constraining.
+KNUCKLE_SEARCH_CEILING_DEGREES = 95.0
 KNUCKLE_ITERATIONS = 14
+
+# Which component of a knuckle's local rotation is flexion on this rig,
+# measured by rotating each local axis and keeping the one that curls the
+# fingertip toward the palm. The four fingers curl about local X and the thumb
+# about local Z. The sign mirrors between hands, so magnitudes are compared.
+FLEXION_AXIS = {"index": 0, "middle": 0, "ring": 0, "pinky": 0, "thumb": 2}
 # The bone sits inside the flesh, so a bone clearance of about 8 mm puts the
 # skin on the surface. Contact, not a dent.
 CONTACT_CLEARANCE_M = 0.008
@@ -432,7 +440,7 @@ def pose_articulated_hand(
     finger_curl_degrees: dict[str, tuple[float, float]],
     finger_aim: float | None = None,
     ball_radius: float | None = None,
-    base_deviation_limit_degrees: float = 40.0,
+    knuckle_limits: dict[str, dict] | None = None,
 ) -> dict[str, list[list[float]]]:
     """Close one hand's fingers onto the ball.
 
@@ -521,22 +529,50 @@ def pose_articulated_hand(
         tail = world_tail(armature, f"{digit}_03_{side}")
         return (tail - ball_centre).length - ball_radius
 
-    def deviation(digit: str) -> float:
-        """How far this finger's first bone leaves the palm.
+    def within_limits(digit: str) -> bool:
+        """Is this knuckle inside what the joint is licensed to do?
 
-        The thumb is exempt, exactly as `max_finger_base_deviation_degrees` is:
-        it leaves the palm by about 54 degrees before anything is posed,
-        because that is where a thumb sits. Holding it to the four fingers'
-        limit drove its knuckle flexion straight to zero and left it pointing
-        away from the ball while the fingers closed.
+        The rotation is resolved into the joint's own frame and split, because
+        the poser turns each finger in the plane that points it at the BALL,
+        and that axis sits 8 to 16 degrees off flexion on a finger and 47 to 61
+        off it on the thumb. One rotation therefore spends both budgets, so
+        bounding the scalar by the flexion licence permits a deviation the
+        joint does not have.
+
+        What this replaces bounded the total angle from the palm axis against
+        one number. That summed the rest bend, the flexion and the deviation,
+        and stopped the fingers at about 30 degrees of real flexion out of 90.
         """
-        if digit == "thumb":
-            return 0.0
-        first = f"{digit}_01_{side}"
-        direction = (
-            world_tail(armature, first) - world_head(armature, first)
-        ).normalized()
-        return math.degrees(palm_direction.angle(direction))
+        limits = knuckle_limits.get(digit) if knuckle_limits else None
+        if not limits:
+            return True
+        rotation = armature.pose.bones[f"{digit}_01_{side}"].matrix_basis.to_euler(
+            "XYZ"
+        )
+        parts = [math.degrees(rotation.x), math.degrees(rotation.y),
+                 math.degrees(rotation.z)]
+        axis = FLEXION_AXIS[digit]
+        flexion = abs(parts[axis])
+        deviation = math.hypot(
+            *[value for index, value in enumerate(parts) if index != axis]
+        )
+        flexion_limit = limits.get("flexion") or {}
+        deviation_limit = limits.get("deviation") or {}
+        # The solve only ever curls toward the ball, so magnitudes are compared
+        # against the permitted extremes rather than tracking the sign.
+        widest_flexion = max(
+            abs(float(flexion_limit.get("min", 0.0))),
+            abs(float(flexion_limit.get("max", 0.0))),
+        )
+        widest_deviation = max(
+            abs(float(deviation_limit.get("min", 0.0))),
+            abs(float(deviation_limit.get("max", 0.0))),
+        )
+        if widest_flexion and flexion > widest_flexion:
+            return False
+        if widest_deviation and deviation > widest_deviation:
+            return False
+        return True
 
     for digit in FINGER_DIGITS:
         apply(digit, 0.0)
@@ -547,25 +583,30 @@ def pose_articulated_hand(
     # Flex each knuckle until that fingertip reaches the surface. The tip is
     # the control, not a minimum over the hand: a minimum sits on the base
     # knuckle, which this rotates about and so cannot move.
+    def retreat_into_limits(digit: str, angle: float) -> float:
+        """Back a knuckle off a degree at a time until the joint permits it."""
+        while angle > 0.0 and not within_limits(digit):
+            angle = max(0.0, angle - 1.0)
+            apply(digit, angle)
+        return angle
+
     for digit in FINGER_DIGITS:
         if tip_clearance(digit) <= CONTACT_CLEARANCE_M:
             continue
-        low, high = 0.0, KNUCKLE_FLEXION_CEILING_DEGREES
+        low, high = 0.0, KNUCKLE_SEARCH_CEILING_DEGREES
         apply(digit, high)
         if tip_clearance(digit) > CONTACT_CLEARANCE_M:
-            # It cannot reach even fully flexed. Leave the finger at the
-            # furthest flexion the anatomy allows rather than straight, and
-            # let the receipt report the residual.
-            while high > 0.0 and deviation(digit) > base_deviation_limit_degrees:
-                high -= 1.0
-                apply(digit, high)
+            # It cannot reach even fully flexed. Leave it at the furthest the
+            # joint permits rather than straight, and let the receipt report
+            # the residual.
+            retreat_into_limits(digit, high)
             continue
 
         for _ in range(KNUCKLE_ITERATIONS):
             middle = 0.5 * (low + high)
             apply(digit, middle)
             gap = tip_clearance(digit)
-            if gap > CONTACT_CLEARANCE_M:
+            if gap > CONTACT_CLEARANCE_M or not within_limits(digit):
                 low = middle
             else:
                 high = middle
@@ -573,9 +614,7 @@ def pose_articulated_hand(
                 break
         # Land on the near side of contact, never inside it.
         apply(digit, high)
-        while high > 0.0 and deviation(digit) > base_deviation_limit_degrees:
-            high -= 1.0
-            apply(digit, high)
+        retreat_into_limits(digit, high)
 
     return result
 

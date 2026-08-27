@@ -303,7 +303,7 @@ def pose_stance(rig, stance: dict, foot_baseline: dict) -> dict:
 
 
 def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
-               finger_curl_degrees: dict):
+               finger_curl_degrees: dict, knuckle_limits: dict | None = None):
     reset_pose(rig, basis)
     stance = pose_stance(rig, phase["stance"], foot_baseline)
 
@@ -359,7 +359,7 @@ def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
             ball_centre=ball_centre,
             finger_curl_degrees=finger_curl_degrees,
             ball_radius=radius,
-            base_deviation_limit_degrees=limits["fingerBaseDeviation"],
+            knuckle_limits=knuckle_limits,
         )
         # Millimetres from the ball surface, negative inside it. A fingertip
         # out of the top of the ball is the only symptom a coach sees, so the
@@ -420,7 +420,7 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
     for phase in phases if not args.no_stills else []:
         centre, receipt = pose_phase(
             rig, phase, job["anatomyLimitsDegrees"], basis, foot_baseline,
-            config.finger_curl_degrees,
+            config.finger_curl_degrees, job.get("knuckleLimitsDegrees"),
         )
         ball.location = centre
         bpy.context.view_layer.update()
@@ -502,7 +502,7 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
             scene.frame_set(number)
             centre, _ = pose_phase(
                 rig, frame, job["anatomyLimitsDegrees"], basis, foot_baseline,
-                config.finger_curl_degrees,
+                config.finger_curl_degrees, job.get("knuckleLimitsDegrees"),
             )
             ball.location = centre
             keyframe(rig, ball, number)
