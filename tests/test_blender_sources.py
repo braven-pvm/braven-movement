@@ -171,6 +171,27 @@ class BlenderSourceContractTest(unittest.TestCase):
             "the scene rate must be set before the glTF export reads it",
         )
 
+    def test_a_session_does_not_carry_the_previous_drill_s_animation(self):
+        """Clearing animation data off the objects does not delete the action.
+
+        It survives in bpy.data.actions, and the glTF exporter writes every
+        action it finds. The second drill of a session shipped 1063 curves
+        against the first drill's 533, carrying both movements, and an
+        importer binds the first action it meets. Every later drill played the
+        first one's movement while looking like a correct file.
+        """
+        source = (MODULE_DIR / "blender_movement_render.py").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("item.animation_data_clear()", source)
+        self.assertIn("bpy.data.actions.remove(action)", source)
+        self.assertIn("action.use_fake_user = False", source)
+
+        purge = source.index("bpy.data.actions.remove(action)")
+        exported = source.index("bpy.ops.export_scene.gltf(")
+        self.assertLess(purge, exported, "purge the actions before exporting")
+
     def test_movement_renderer_calls_match_the_reference_helper_signatures(self):
         """The posing helpers are shared, and only Blender links the two sides.
 

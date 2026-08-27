@@ -475,14 +475,19 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
             raise SystemExit(
                 "the job carries no frames. Export it with --every=N."
             )
-        # Every job keyframes the same rig, so the previous drill's action
-        # has to go or the two movements interleave on one timeline. This is
-        # the only thing that stopped several drills sharing a session: the
-        # shape key bake is idempotent, because the athlete's shape is the
-        # same for every drill and the second bake finds nothing left to do,
-        # and setting the materials opaque is idempotent too.
+        # Every job keyframes the same rig, so the previous drill's animation
+        # has to go. Clearing it off the OBJECTS is not enough: the action
+        # itself survives in bpy.data.actions, and the glTF exporter writes
+        # every action it finds there, not only the assigned one. The second
+        # drill of a session therefore shipped 1063 curves against the first
+        # drill's 533, carrying both movements, and an importer binds the
+        # first action it meets. Every later drill played the first one's
+        # movement while looking like a correct file.
         for item in (rig, ball):
             item.animation_data_clear()
+        for action in list(bpy.data.actions):
+            action.use_fake_user = False
+            bpy.data.actions.remove(action)
 
         scene = bpy.context.scene
         scene.frame_start = 1
