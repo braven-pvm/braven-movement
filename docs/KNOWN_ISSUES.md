@@ -398,20 +398,54 @@ enforced by anything.
 The practical consequence for this project: when a comment states a behaviour,
 that is a candidate for a test, not evidence that the behaviour happens.
 
-## The free arm flips as it comes round her
+## The free arm starts 46 degrees off and snaps through 41 frames later
 
-`netball_hooks_outside_hand`, frame 47, left upper arm, 21.7 degrees between
-two frames while the left wrist moves 0.13 cm. A large rotation with almost no
-translation is a solver mode flip: the arm changes configuration rather than
-moving.
+`netball_hooks_outside_hand`, frame 41, left arm, 19.3 degrees on the upper and
+18.6 on the forearm between two frames while the wrist moves 1.15 cm. It is the
+largest step left anywhere in the library.
 
-It is a different event from the 19.9 cm contact teleport fixed in this pack,
-which was the RIGHT arm two frames earlier, and the two were recorded as one
-until they were measured apart. The pole angle reduced it to 19.3 degrees but
-did not remove it.
+**The cause is the first frame, not frame 41.** The free arm's elbow angle about
+the shoulder-to-wrist axis, against the 34.6 degrees the pole asks for:
 
-This is the free arm crossing her body to join the ball, and it is now the
-worst step anywhere in the library. It belongs to the smoothness entry above.
+| frame | 0 | 10 | 20 | 30 | 40 | **41** | 42 | 50 | 60 | 95 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| angle | 81 | 84 | 84 | 72 | 66 | **12** | −13 | 20 | 28 | 30 |
+
+It starts 46 degrees away and every one of the 41 frames before the snap sits
+more than 20 degrees off. Then it crosses the whole gap in one frame,
+overshoots, and settles at 28 to 30 for the remaining 57 frames. The catching
+arm starts at 27.2 and stays between 27 and 30 throughout.
+
+Before contact the free hand's only positional target is `waiting`, which
+barely constrains the elbow's rotation about the reach axis. So the first
+solve leaves the elbow almost straight out to her side, the continuity term
+carries that faithfully, and the pole wins abruptly rather than gradually.
+
+The trunk goes with it. The shoulder line jerks −2.26 degrees at that frame
+against a steady +0.85 either side, and this drill has no authored turn at all,
+so that rotation is entirely emergent.
+
+**This is a snap-through, not a mode flip:** a term that is correct, opposed by
+continuity, winning all at once. The fix belongs at frame 0.
+
+**An earlier version of this entry was wrong** and said the pole pack reduced a
+21.7 degree flip at frame 47 to 19.3. The frame-47 flip has gone: it is now
+under 8 degrees. The 19.3 is a different event at a different frame, and the
+two were conflated by reading a per-drill worst without asking where it was.
+
+## What is left above 10 degrees, in full
+
+So the remaining surface is small enough to name completely:
+
+| drill | frame | segment | step |
+|---|---|---|---|
+| hooks outside hand | 41 | left upper, left fore | 19.3, 18.6 |
+| deflect high | 37 | right upper, right fore | 11.5, 12.4 |
+| deflect high | 71 to 73 | both forearms | 10.2 to 12.1 |
+
+Nothing else in the library exceeds 10 degrees on any arm segment on any frame.
+Frame 37 on the deflect is its contact frame, so that one is the contact join.
+Frames 71 to 73 are its follow-through.
 
 ## How wide the elbows sit with the ball at the chest
 
