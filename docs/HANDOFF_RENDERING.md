@@ -274,6 +274,44 @@ Ignoring these will cost hours. Each one already did.
     running, stop both and start exactly one, rather than reasoning about
     which output belongs to which.
 
+17. **The poser's bend axis is not the joint's flexion axis, and a joint limit
+    cannot be applied to it directly.** `pose_articulated_hand` rotates each
+    finger in whatever plane points it at the ball:
+
+    ```
+    bend = toward_ball - base * toward_ball.dot(base)
+    ```
+
+    The rotation axis is `base` crossed with `bend`, chosen by where the ball
+    sits and not by the knuckle. Measured against each joint's own flexion
+    axis, found by rotating each local axis a little and keeping the one that
+    curls the fingertip toward the palm:
+
+    | digit | contact | pull_in | flexion axis |
+    |---|---|---|---|
+    | index | 10.1 | 9.2 | -X |
+    | middle | 8.3 | 10.9 | -X |
+    | ring | 10.3 | 8.3 | -X |
+    | pinky | 1.3 | 16.2 | -X |
+    | thumb | 46.7 | 60.7 | -Z |
+
+    Both hands agree within 0.3 degrees, so it is geometry and not noise, and
+    the tilt changes with the pose: the pinky is 1.3 degrees off axis at
+    contact and 16.2 at pull in.
+
+    So a rotation here spends BOTH budgets. To first order it costs
+    `theta * cos(tilt)` of flexion and `theta * sin(tilt)` of deviation.
+    Spending a 90 degree flexion licence through this axis adds about 25
+    degrees of deviation on the pinky, on top of the 28 it already carries at
+    rest, which is past the 40 degree limit while the other three fingers stay
+    inside it. Bounding one scalar by one limit passes that silently.
+
+    Anything that consumes a per axis joint limit must decompose the rotation
+    into flexion and deviation and bound each by its own number. Do not clip
+    the visible angle between segments either: that is a third quantity again,
+    and the solve legally reaches 96.4 degrees of visible bend on the index in
+    the one handed drills.
+
 ## Do not grow the rasteriser
 
 `spikes/render_figure.py` draws a figure with a depth buffer in numpy. It was
