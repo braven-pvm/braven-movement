@@ -459,6 +459,45 @@ def finger_joint_bends_degrees(armature: bpy.types.Object) -> list[float]:
     return bends
 
 
+FINGER_DIGITS = ("thumb", "index", "middle", "ring", "pinky")
+
+
+def finger_surface_clearance(
+    armature: bpy.types.Object,
+    *,
+    side: str,
+    ball_centre: Vector,
+    radius: float,
+    samples: int = 6,
+) -> dict[str, float]:
+    """How near each finger comes to the ball, and whether it went inside.
+
+    Clearance is the distance from the ball surface: zero is contact, positive
+    is a gap, negative is the finger inside the ball. A rendered figure with a
+    fingertip out of the top of the ball is the only symptom anyone sees, so
+    this is what proves the wrap.
+
+    The whole bone is sampled, not only the tip. A finger can straddle the
+    surface with its middle phalanx inside while both ends sit outside it.
+    """
+    nearest = {}
+    for digit in FINGER_DIGITS:
+        best = None
+        for index in (1, 2, 3):
+            name = f"{digit}_{index:02d}_{side}"
+            head = world_head(armature, name)
+            tail = world_tail(armature, name)
+            for step in range(samples + 1):
+                point = head.lerp(tail, step / samples)
+                distance = (point - ball_centre).length - radius
+                best = distance if best is None else min(best, distance)
+        nearest[digit] = round(best * 1000.0, 2)
+    nearest["worst"] = min(
+        nearest[digit] for digit in FINGER_DIGITS
+    )
+    return nearest
+
+
 def max_finger_base_deviation_degrees(armature: bpy.types.Object) -> float:
     maximum = 0.0
     for side in ("l", "r"):

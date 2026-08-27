@@ -41,6 +41,7 @@ from blender_mpfb_reference_catch import (  # noqa: E402
     create_athlete,
     create_panelled_netball,
     elbow_for_target,
+    finger_surface_clearance,
     make_material,
     orient_hand,
     orient_head_to_ball,
@@ -341,6 +342,12 @@ def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
             side=side,
             ball_centre=ball_centre,
             finger_curl_degrees=finger_curl_degrees,
+        )
+        # Millimetres from the ball surface, negative inside it. A fingertip
+        # out of the top of the ball is the only symptom a coach sees, so the
+        # receipt carries the number that proves it did not happen.
+        hands[side]["surfaceClearanceMm"] = finger_surface_clearance(
+            rig, side=side, ball_centre=ball_centre, radius=radius
         )
     orient_head_to_ball(rig, ball_centre)
     return ball_centre, {"stance": stance, "arms": arms, "hands": hands}

@@ -285,26 +285,37 @@ Blender.
 
 Ordered by how much they cost.
 
-1. **The fingers go through the ball.** On every phase where she holds it, two
-   or three fingertips of the far hand come out of the top of the ball, and the
-   near hand does not appear to touch it. This is the first thing a coach will
-   see, and it is on every manual figure.
+1. **She does not grip the ball. No finger touches it.** The ball floats beside
+   a nearly open hand. This is the first thing a coach will see, and it is on
+   every manual figure of a held phase.
 
-   Measured on `netball_two_hand_snatch_pull_in`, contact phase. The renderer
-   is placing the wrists exactly where the job asks: both 14.8 cm from the ball
-   centre against 14.8 cm asked for, symmetric, 3.8 cm outside an 11 cm
+   Measured with `finger_surface_clearance`, and against the evaluated skin
+   mesh, on three phases across two drills:
+
+   | Drill and phase | Nearest finger bone | Nearest skin | Vertices inside |
+   |---|---|---|---|
+   | two_hand_snatch_pull_in, contact | 32.9 mm | +8.8 mm | 0 |
+   | two_hand_snatch_pull_in, pull_in | 27.4 mm | +6.2 mm | 0 |
+   | double_foot_landing, land | 32.8 mm | +8.2 mm | 0 |
+
+   The renderer places the wrists exactly where the job asks: 14.8 cm from the
+   ball centre against 14.8 cm asked for, symmetric, 3.8 cm outside an 11 cm
    surface. It achieves the palm normal to within 0.5 degrees. So the wrist is
-   not the fault.
+   not the fault. `pose_articulated_hand` then curls each joint by a fixed 8
+   and 12 degrees from `config.finger_curl_degrees`. Twenty degrees over a
+   finger of about 85 mm cannot close a 38 mm gap, so the fingers stop short.
+   A fixed curl cannot wrap a surface whose distance changes from one grip to
+   the next.
 
-   The finger direction sits 76 degrees off the line into the centre, which is
-   nearly tangential and right. What follows it is `pose_articulated_hand`,
-   which curls each joint by a fixed number of degrees from
-   `config.finger_curl_degrees`. A fixed curl cannot wrap a ball whose surface
-   is a different distance away from one grip to the next. Suspect that before
-   the grip.
+   **A previous version of this document said the fingers go through the ball.
+   That was wrong, and it was wrong because it was read off a picture and never
+   measured.** What looks like a fingertip emerging from the top of the ball is
+   the far hand behind the ball, correctly occluded. Zero vertices of any mesh
+   are inside the ball on any phase measured. The receipt now carries
+   `hands.{l,r}.surfaceClearanceMm` so nobody has to judge this by eye again.
 
    The two palm normals point in opposite senses relative to the ball, 13.8
-   and 166.2 degrees. **That is correct and is not the defect.** `hand_basis`
+   and 166.2 degrees. **That is correct and is not a defect.** `hand_basis`
    uses `finger` crossed with `index - pinky`, and the lateral axis mirrors
    between hands, so the sign flips by design. The comment there says so. Do
    not "fix" it.
