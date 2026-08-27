@@ -17,6 +17,7 @@ test = "python -m unittest discover -s . -p \"test_*.py\""
 library = "python build_library.py"
 limits = "python check_joint_limits.py"
 proof = "python proof.py"
+seeds = "python measure_seed_variety.py"
 
 [dependencies]
 python = "3.12.*"

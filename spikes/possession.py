@@ -346,7 +346,22 @@ def resolve(
         )
 
     def toward(number: int, target: np.ndarray, distance_cm: float) -> np.ndarray:
-        """A point on the line to the target, no further out than she reaches."""
+        """A point on the line to the target, at most `distance_cm` from the
+        MIDPOINT of her shoulders.
+
+        That is not the same as "no further out than she reaches", which is
+        what this said until the waiting-distance pack proved otherwise. For a
+        square athlete the two agree, because both shoulders are equidistant
+        from the middle. For a turned one they do not: on a drill starting at
+        -44 degrees the same point sat 66.4 cm from one shoulder and 39.1 cm
+        from the other, against a 52.7 cm arm.
+
+        `within_every_shoulder` is what makes the reach guarantee true, and
+        only `ready_point` wraps this in it. The two remaining callers are the
+        released follow-through, where extending through the ball is the point.
+        Refer to "Two callers still measure the reach from the midpoint" in
+        docs/KNOWN_ISSUES.md before adding a third.
+        """
         shoulder = np.asarray(shoulder_mids[number], dtype=np.float64)
         along = np.asarray(target, dtype=np.float64) - shoulder
         span = float(np.linalg.norm(along))

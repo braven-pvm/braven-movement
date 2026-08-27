@@ -555,15 +555,31 @@ So the cold start's "best of four" has never been able to choose which side the
 elbow goes. `{side}_uparm_twist`, at the shoulder, does select it: the same
 values move the wrist by up to 44 cm.
 
-**Measured and then dropped from the pack that found it.** Twenty seeds varying
-`uparm_twist` per side, plus the pole's error joining the seed score, were
-built and measured on top of the waiting-distance correction. They move the
-flip counts by one step at the 5 degree threshold and the contact mean by
-0.02 cm, at five times the cold-start cost. Nothing today needs them.
+**Measured and then dropped from the pack that found it**, and the numbers
+here are corrected against `spikes/measure_seed_variety.py`, which is the
+committed way to reproduce them:
 
-It is recorded because the search is nominal rather than real, and the next
-cold-start pathology will find that out. The scratchpad script that applies it
-exists; the evidence for turning it on does not yet.
+| | >5 | >10 | >15 | >20 | >30 | worst | contact |
+|---|---|---|---|---|---|---|---|
+| the shipped four seeds | 112 | 8 | 0 | 0 | 0 | 12.4 | 38.58 |
+| twenty, with humeral twist per side | 112 | 8 | 0 | 0 | 0 | 12.4 | 38.58 |
+
+**Identical.** Not "nearly": every column, the worst step, and the contact mean
+to two decimals. Wall time is 5.7 seconds against 5.8, which is noise — the
+cold start is one frame out of ninety-eight, so sixteen extra candidates cost
+nothing measurable. An earlier version of this entry said "one step at the
+5 degree threshold, 0.02 cm, five times the cost". That measured the seed
+change TOGETHER WITH a second change to the cold-start score, and it read the
+cost as if the seed count were the running cost. Both are corrected here.
+
+So the honest reason for dropping it is not that it is expensive. It is that
+it fixes nothing that is currently broken, because the fault it was written for
+turned out to be the waiting distance.
+
+It is still recorded, because the search is nominal rather than real: four
+candidates identical from the shoulder to the wrist is one trial wearing four
+coats, and the next cold-start pathology will meet that wall. `pixi run seeds`
+prints the comparison above and the parameter measurements behind it.
 
 ## The waiting hand's own history
 
@@ -580,4 +596,30 @@ elbow separation moves from 30.2 cm to 37.4, against the manual's 38.6.
 **A coach may still rule that a facing-away wait belongs nearer full stretch.**
 The dial is `ready` in the technique file, the evidence of what 0.999 looked
 like is above, and the drill is one of the eight in the review pack.
+
+## Two callers still measure the reach from the midpoint
+
+`toward` places a point at a fixed distance from the MIDPOINT of the shoulders.
+`within_every_shoulder` makes that a real reach guarantee, and only
+`ready_point` wraps it. Two callers do not:
+
+- `possession.py`, the released follow-through's aim point;
+- `possession.py`, the hand target that follows it out.
+
+**Both are reach-and-release contexts, and extending through the ball is what
+the manual asks for there**, so a point at the limit of her reach is the
+intent rather than a fault. That is the reason they are left alone.
+
+**But the same geometry applies, and this records it as a decision rather than
+leaving it as an assumption.** A turned athlete releasing the ball would put
+one shoulder further from that point than the midpoint is, exactly as the
+waiting case did, and could overshoot her reach on that side.
+
+**It is latent, not active.** Measured at the release frames, all four
+releasing drills are square: the shoulder line is within 0.1 degrees of facing
+forward, so the midpoint and the shoulders agree and the approximation is
+currently exact. The hands reach 0.905 to 0.952 of the arm there, which is the
+intended extension.
+
+A drill that both turns and releases would make it active. There is none today.
 
