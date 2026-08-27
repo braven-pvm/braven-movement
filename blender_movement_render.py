@@ -41,6 +41,8 @@ from blender_mpfb_reference_catch import (  # noqa: E402
     create_athlete,
     create_panelled_netball,
     elbow_for_target,
+    body_surface_clearance,
+    finger_surface_clearance,
     make_material,
     orient_hand,
     orient_head_to_ball,
@@ -203,7 +205,7 @@ def keyframe(rig, ball, frame: int) -> None:
 
 
 def render_movie(camera, *, path: Path, resolution, location, target, lens,
-                 sensor_width, fps: int) -> None:
+                 sensor_width, fps: int) -> Path:
     scene = bpy.context.scene
     camera.data.type = "PERSP"
     camera.data.lens = lens
@@ -223,6 +225,19 @@ def render_movie(camera, *, path: Path, resolution, location, target, lens,
     scene.render.filepath = str(path.with_suffix(""))
     scene.render.use_file_extension = True
     bpy.ops.render.render(animation=True)
+
+    # Blender appends the frame range to a movie's name, so asking for
+    # <movement>.mp4 produces <movement>0001-0049.mp4. The receipt used to
+    # record the name that was asked for, which is a path to a file that does
+    # not exist and a size of zero. Report what was actually written.
+    stem = path.with_suffix("").name
+    produced = sorted(
+        item for item in path.parent.glob(f"{stem}*")
+        if item.suffix.lower() == path.suffix.lower()
+    )
+    if not produced:
+        raise SystemExit(f"the movie render wrote no file matching {stem}*{path.suffix}")
+    return produced[-1]
 
 
 def bone_chain_length(rig, *bones: str) -> float:
@@ -289,7 +304,8 @@ def pose_stance(rig, stance: dict, foot_baseline: dict) -> dict:
 
 
 def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
-               finger_curl_degrees: dict):
+               finger_curl_degrees: dict, knuckle_limits: dict | None = None,
+               body=None):
     reset_pose(rig, basis)
     stance = pose_stance(rig, phase["stance"], foot_baseline)
 
@@ -312,13 +328,20 @@ def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
         reach = bone_chain_length(
             rig, f"upperarm_{side}", f"lowerarm_{side}", f"hand_{side}"
         )
-        if grip is None:
-            # Still reaching for it. The arm says where the hand goes.
+        # Per HAND, not per phase. A one handed catch carries a grip for the
+        # catching hand only, so a phase can be holding while this hand is
+        # free. Reading the phase's grip as "both hands hold it" raised
+        # KeyError: 'l' on the two one handed drills the moment the movement
+        # lane stopped exporting a grip for a hand that was not gripping.
+        holds = bool(grip) and side in grip
+        if not holds:
+            # Free, whether or not the other hand has the ball. The arm says
+            # where this hand goes.
             target = shoulder + Vector(wanted["direction"]) * (
                 wanted["reachFraction"] * reach
             )
         else:
-            # She has it. The ball says where the hand goes.
+            # This hand has it. The ball says where the hand goes.
             target = ball_centre + Vector(grip[side]["outward"]) * (
                 radius + grip[side]["wristFromSurfaceInArms"] * reach
             )
@@ -336,14 +359,44 @@ def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
             palm_normal=Vector(phase["hands"][side]["palmNormal"]),
             max_forearm_roll_degrees=limits["forearmRoll"],
         )
+        # The radius closes the knuckles onto the surface, so it is passed
+        # ONLY when she is holding the ball. Passing it always sent every
+        # finger chasing a ball still in flight metres away: unreachable, so
+        # each one flexed to the limit of its joint and stopped there, and the
+        # ready phase came out with a hand mangled across her face. Before
+        # contact the arm decides where the hand goes, which is the same rule
+        # the possession model states for the wrist.
         pose_articulated_hand(
             rig,
             side=side,
             ball_centre=ball_centre,
             finger_curl_degrees=finger_curl_degrees,
+            ball_radius=radius if (grip and side in grip) else None,
+            knuckle_limits=knuckle_limits,
+        )
+        # Millimetres from the ball surface, negative inside it. A fingertip
+        # out of the top of the ball is the only symptom a coach sees, so the
+        # receipt carries the number that proves it did not happen.
+        hands[side]["surfaceClearanceMm"] = finger_surface_clearance(
+            rig, side=side, ball_centre=ball_centre, radius=radius
         )
     orient_head_to_ball(rig, ball_centre)
-    return ball_centre, {"stance": stance, "arms": arms, "hands": hands}
+    receipt = {
+        # Whether she is holding it, so a reader never has to guess why a hand
+        # is 1.6 m from the ball. Without this the report called every hand on
+        # a non-holding phase "short", which reads as a defect and is not one.
+        "holding": bool(grip),
+        "stance": stance,
+        "arms": arms,
+        "hands": hands,
+    }
+    if body is not None:
+        # The second instrument. The per digit table says whether the fingers
+        # met the surface; this says whether anything else is inside the ball.
+        receipt["bodyClearanceMm"] = body_surface_clearance(
+            body, ball_centre=ball_centre, radius=radius
+        )
+    return ball_centre, receipt
 
 
 class Studio:
@@ -395,7 +448,8 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
     for phase in phases if not args.no_stills else []:
         centre, receipt = pose_phase(
             rig, phase, job["anatomyLimitsDegrees"], basis, foot_baseline,
-            config.finger_curl_degrees,
+            config.finger_curl_degrees, job.get("knuckleLimitsDegrees"),
+            studio.human,
         )
         ball.location = centre
         bpy.context.view_layer.update()
@@ -450,17 +504,39 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
             raise SystemExit(
                 "the job carries no frames. Export it with --every=N."
             )
+        # Every job keyframes the same rig, so the previous drill's animation
+        # has to go. Clearing it off the OBJECTS is not enough: the action
+        # itself survives in bpy.data.actions, and the glTF exporter writes
+        # every action it finds there, not only the assigned one. The second
+        # drill of a session therefore shipped 1063 curves against the first
+        # drill's 533, carrying both movements, and an importer binds the
+        # first action it meets. Every later drill played the first one's
+        # movement while looking like a correct file.
+        for item in (rig, ball):
+            item.animation_data_clear()
+        for action in list(bpy.data.actions):
+            action.use_fake_user = False
+            bpy.data.actions.remove(action)
+
         scene = bpy.context.scene
         scene.frame_start = 1
         scene.frame_end = len(frames)
         fps = max(1, round(job["framesPerSecond"] / max(job["frameStep"], 1)))
+        # Set this BEFORE the glTF export, not only inside render_movie. glTF
+        # stores animation in seconds, so the scene's rate is what turns frames
+        # into times. render_movie used to be the only thing that set it, and
+        # it runs after the export, so the first drill of a session exported
+        # against Blender's default rate and every later drill inherited the
+        # previous drill's movie rate. Two drills in one session came back as
+        # 49 frames and 40: the same poses, played too fast.
+        bpy.context.scene.render.fps = fps
         # Set the frame before posing. Once keys exist, changing the frame
         # evaluates them and would replace whatever was posed first.
         for number, frame in enumerate(frames, start=1):
             scene.frame_set(number)
             centre, _ = pose_phase(
                 rig, frame, job["anatomyLimitsDegrees"], basis, foot_baseline,
-                config.finger_curl_degrees,
+                config.finger_curl_degrees, job.get("knuckleLimitsDegrees"),
             )
             ball.location = centre
             keyframe(rig, ball, number)
@@ -496,7 +572,7 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
         )
         movie = output / f"{job['movementId']}.mp4"
         view = job["views"]["quarter"]
-        render_movie(
+        movie = render_movie(
             camera,
             path=movie,
             resolution=tuple(view["resolutionPx"]),
@@ -542,11 +618,6 @@ def main() -> None:
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     jobs = [json.loads(path.read_text(encoding="utf-8")) for path in args.job]
-
-    if args.animate and len(jobs) > 1:
-        # The export bakes the shape keys away and sets the materials opaque,
-        # so a second job would export an athlete already baked.
-        raise SystemExit("--animate takes one --job. Run the others separately.")
 
     radii = {job["phases"][0]["ball"]["radiusM"] for job in jobs}
     if len(radii) > 1:
