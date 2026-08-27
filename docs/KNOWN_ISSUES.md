@@ -465,3 +465,75 @@ removed is the artificial amplification on top of that, worth about 10 cm.
 A coach looking at the pull-in should be asked whether 52.7 cm is right. If it
 is not, `elbowAngleDegrees` in the technique file is the dial, in degrees, and
 it now reaches the mechanism that decides the answer.
+
+## The pole's frame is not orthogonal, so the target is not always reachable
+
+`elbow_poles` builds its frame by projecting `out` and `down` off the reach
+axis. It never orthogonalises them against each other. On a reach that is
+oblique to both they are not perpendicular, `down * cos + out * sin` is not a
+unit vector, and the target leaves the circle the elbow can occupy.
+
+Measured over a spread of reach directions, worst deviation **10.2 cm**, where
+the hand sits nearly below the shoulder and `out . down` reaches −0.963. On
+that family the point target does argue with the reach — the one thing the
+angle form was chosen to avoid.
+
+**The calibration survives and the stated property does not.** 34.6 degrees was
+bisected through the whole solve, not derived from the geometry, so it already
+absorbs whatever the basis does. Every gate is green with the basis as it is.
+What was wrong is the claim in the comment and the name of the test.
+
+The guard exercises reaches along one axis, where `out . down` is exactly zero,
+so it tests the family the defect cannot reach. It is left that way on purpose:
+widening it turns the branch red for a defect whose fix moves figures.
+
+**Filed as follow-up, after the render window:** an orthonormal basis by
+Gram-Schmidt, then re-read the angle, then regenerate every table that depends
+on it. It is not urgent, because nothing measured is wrong. It is not optional,
+because the code claims a property it does not have.
+
+## The dial was wired to a term that could not honour it
+
+`elbowWidth` was a technique property, named for the case where a chest catch
+folds the elbows where a snatch spreads them. It scaled the aim vector in
+`upper_arm_aim`.
+
+Sweeping that term's weight from 2.0 down to 0.0 moved folded elbow separation
+by **0.2 cm**, from 65.4 to 65.6. So a coach could have set that dial to
+anything and the athlete's elbows would not have moved.
+
+No technique file ever authored it, which is the only reason no harm was done.
+Had a coach been asked for a number at the review morning, the number would
+have been recorded, honoured in the file, and ignored by the engine.
+
+It is now `elbowAngleDegrees` on the elbow pole, which does control separation,
+and it is in degrees rather than in multiples of nothing.
+
+**The general shape, worth more than the instance:** a dial is not connected to
+what its name says until something measures the connection. Before asking a
+coach for any number, sweep the parameter it will feed and confirm the athlete
+moves.
+
+## The snap check flags the wrong frame, and there is a real hitch to find
+
+Adjudicated during the pole pack's review. Both halves stand.
+
+**The instrument is faulty.** `spike_report` divides a step by the mean of its
+two immediate neighbours. A two-value mean has a breakdown point of zero, so
+one small neighbour drags the ratio however it likes: a perfectly normal step
+beside a stall is flagged, and a snap out of stillness cannot be seen at all
+because the skip-gate exempts it. Filed as follow-up: a median over a window of
+two or three either side, excluding the frame itself, with a floored
+denominator in place of the skip-gate, and possibly a second-difference
+statistic that names a hitch at its own frame. `SNAP_RATIO` recalibrates once
+the denominator is robust, and not before.
+
+**And there is a real hitch.** On the `wide` variant of
+`netball_two_hand_snatch_pull_in` the elbow steps 8.50, then 0.19 at the
+contact frame, then 4.41. That one-frame stall was introduced by the pole pack.
+It is the same family as `netball_deflect_high` at frame 37: a discontinuity
+where the approach hands over to the carry.
+
+So the red row is honest about there being something wrong, and dishonest about
+where and by how much. Neither half excuses the other.
+

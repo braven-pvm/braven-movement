@@ -97,12 +97,26 @@ class ThePoleTargetSitsWhereTheElbowCanReach(unittest.TestCase):
             contact_solve.solver2.PositionErrorFunction = real
         return found, shoulder
 
-    def test_the_target_is_always_on_the_elbow_circle(self) -> None:
-        """The whole design in one assertion.
+    def test_the_target_is_on_the_elbow_circle_where_the_basis_is_orthogonal(
+        self,
+    ) -> None:
+        """What this proves, and what it does not.
 
-        The target is exactly one upper arm from the shoulder and one forearm
-        from the wrist, at every angle and every reachable span. So it never
-        asks the wrist to be anywhere, which is why the slack gate is gone.
+        It proves the target is exactly one upper arm from the shoulder and one
+        forearm from the wrist, at every angle and every reachable span, FOR
+        REACHES ALONG THE AXIS FAMILY BELOW.
+
+        It does NOT prove that in general, and the name now says so. Review
+        found that `out` and `down` are each projected off the reach axis but
+        never orthogonalised against each other, so on an oblique reach they
+        are not perpendicular and the target lands up to 10.2 cm off the
+        circle. Every case here reaches along +Z, where `out . down` is exactly
+        0.000 and the flaw vanishes — so this test exercises precisely the
+        family the defect cannot reach.
+
+        It is left as it is deliberately. Widening it would turn the branch red
+        for a defect whose fix moves figures, and that fix is filed as
+        follow-up. The dishonesty was the name and the claim, not the coverage.
         """
         shoulder = np.array([20.0, 140.0, 0.0])
         checked = 0
