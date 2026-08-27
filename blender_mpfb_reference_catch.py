@@ -350,116 +350,13 @@ def orient_hand(
     }
 
 
-def pose_articulated_hand(
-    armature: bpy.types.Object,
-    *,
-    side: str,
-    ball_centre: Vector,
-    finger_curl_degrees: dict[str, tuple[float, float]],
-) -> dict[str, list[list[float]]]:
-    result: dict[str, list[list[float]]] = {}
-    wrist = world_head(armature, f"hand_{side}")
-    palm_direction = (palm_centre(armature, side) - wrist).normalized()
-    toward_ball = (ball_centre - wrist).normalized()
-    lateral = (
-        world_head(armature, f"index_01_{side}")
-        - world_head(armature, f"pinky_01_{side}")
-    )
-    lateral -= palm_direction * lateral.dot(palm_direction)
-    lateral.normalize()
-    splay = {"index": 0.28, "middle": 0.08, "ring": -0.08, "pinky": -0.22}
-
-    def curved_directions(
-        base_direction: Vector,
-        digit: str,
-    ) -> list[Vector]:
-        base = base_direction.normalized()
-        bend = toward_ball - base * toward_ball.dot(base)
-        if bend.length < 1e-8:
-            raise RuntimeError(f"cannot establish {side} {digit} curl plane")
-        bend.normalize()
-        first, second = finger_curl_degrees[digit]
-        cumulative = (0.0, first, first + second)
-        return [
-            (
-                base * math.cos(math.radians(angle))
-                + bend * math.sin(math.radians(angle))
-            ).normalized()
-            for angle in cumulative
-        ]
-
-    for digit, spread in splay.items():
-        chain = [f"{digit}_{index:02d}_{side}" for index in (1, 2, 3)]
-        base_direction = (
-            palm_direction + lateral * spread + toward_ball * 0.04
-        ).normalized()
-        directions = curved_directions(base_direction, digit)
-        for index, (name, direction) in enumerate(zip(chain, directions)):
-            if index + 1 < len(chain):
-                rotate_bone_toward(
-                    armature,
-                    name,
-                    chain[index + 1],
-                    world_head(armature, name) + direction,
-                )
-            else:
-                rotate_bone_tail_toward(
-                    armature,
-                    name,
-                    world_head(armature, name) + direction,
-                )
-        result[digit] = [
-            list((world_tail(armature, name) - world_head(armature, name)).normalized())
-            for name in chain
-        ]
-
-    thumb_chain = [f"thumb_{index:02d}_{side}" for index in (1, 2, 3)]
-    thumb_base_direction = (
-        palm_direction * 0.50 + lateral * 0.72 + toward_ball * 0.12
-    ).normalized()
-    thumb_directions = curved_directions(thumb_base_direction, "thumb")
-    for index, (name, thumb_direction) in enumerate(
-        zip(thumb_chain, thumb_directions)
-    ):
-        if index + 1 < len(thumb_chain):
-            rotate_bone_toward(
-                armature,
-                name,
-                thumb_chain[index + 1],
-                world_head(armature, name) + thumb_direction,
-            )
-        else:
-            rotate_bone_tail_toward(
-                armature,
-                name,
-                world_head(armature, name) + thumb_direction,
-            )
-    result["thumb"] = [
-        list((world_tail(armature, name) - world_head(armature, name)).normalized())
-        for name in thumb_chain
-    ]
-    return result
-
-
-def finger_joint_bends_degrees(armature: bpy.types.Object) -> list[float]:
-    bends: list[float] = []
-    for side in ("l", "r"):
-        for digit in ("thumb", "index", "middle", "ring", "pinky"):
-            directions = [
-                (
-                    world_tail(armature, f"{digit}_{index:02d}_{side}")
-                    - world_head(armature, f"{digit}_{index:02d}_{side}")
-                ).normalized()
-                for index in (1, 2, 3)
-            ]
-            bends.extend(
-                math.degrees(directions[index].angle(directions[index + 1]))
-                for index in (0, 1)
-            )
-    return bends
-
-
 FINGER_DIGITS = ("thumb", "index", "middle", "ring", "pinky")
+
+# How much each finger's base direction leans off the palm and toward the ball,
+# before any curl. It is the renderer's own number and not the job's: the job
+# says where the wrist goes and which way the hand faces, this says how the
+# fingers are held. Bounded in practice by fingerBaseDeviation, 40 degrees.
+FINGER_AIM = 0.04
 
 
 def finger_surface_clearance(
@@ -496,6 +393,122 @@ def finger_surface_clearance(
         nearest[digit] for digit in FINGER_DIGITS
     )
     return nearest
+
+
+
+
+def pose_articulated_hand(
+    armature: bpy.types.Object,
+    *,
+    side: str,
+    ball_centre: Vector,
+    finger_curl_degrees: dict[str, tuple[float, float]],
+    finger_aim: float | None = None,
+) -> dict[str, list[list[float]]]:
+    """Curl one hand's fingers toward the ball.
+
+    This cannot make her grip a ball the wrist is not near. Two levers were
+    measured against the two hand snatch, where the job puts the wrist 38 mm
+    outside the surface:
+
+    - Curl does nothing. It rotates each bone about the knuckle above it, and
+      that knuckle is the part of the finger nearest the ball. Taking every
+      joint from 12 degrees to 24, hard against the 25 degree limit, moves the
+      clearance by 0.00 mm.
+    - Aim runs out of anatomy. At `fingerBaseDeviation` of 40 degrees, which is
+      about aim 1.0, the nearest finger is still 27 mm short. The fingers only
+      reach at aim 3.0, where the base deviation is 59 degrees.
+
+    So the gap belongs to `grip.wristFromSurfaceInArms`, which the job carries
+    and the movement lane owns. Refer to known defect 1 in
+    docs/HANDOFF_RENDERING.md.
+    """
+    result: dict[str, list[list[float]]] = {}
+    wrist = world_head(armature, f"hand_{side}")
+    palm_direction = (palm_centre(armature, side) - wrist).normalized()
+    toward_ball = (ball_centre - wrist).normalized()
+    lateral = (
+        world_head(armature, f"index_01_{side}")
+        - world_head(armature, f"pinky_01_{side}")
+    )
+    lateral -= palm_direction * lateral.dot(palm_direction)
+    lateral.normalize()
+    splay = {"index": 0.28, "middle": 0.08, "ring": -0.08, "pinky": -0.22}
+    aim = FINGER_AIM if finger_aim is None else finger_aim
+
+    def curved_directions(
+        base_direction: Vector,
+        digit: str,
+    ) -> list[Vector]:
+        base = base_direction.normalized()
+        bend = toward_ball - base * toward_ball.dot(base)
+        if bend.length < 1e-8:
+            raise RuntimeError(f"cannot establish {side} {digit} curl plane")
+        bend.normalize()
+        first, second = finger_curl_degrees[digit]
+        cumulative = (0.0, first, first + second)
+        return [
+            (
+                base * math.cos(math.radians(angle))
+                + bend * math.sin(math.radians(angle))
+            ).normalized()
+            for angle in cumulative
+        ]
+
+    def aim_chain(digit: str, base_direction: Vector) -> None:
+        chain = [f"{digit}_{index:02d}_{side}" for index in (1, 2, 3)]
+        directions = curved_directions(base_direction, digit)
+        for index, (name, direction) in enumerate(zip(chain, directions)):
+            if index + 1 < len(chain):
+                rotate_bone_toward(
+                    armature,
+                    name,
+                    chain[index + 1],
+                    world_head(armature, name) + direction,
+                )
+            else:
+                rotate_bone_tail_toward(
+                    armature,
+                    name,
+                    world_head(armature, name) + direction,
+                )
+        result[digit] = [
+            list((world_tail(armature, name) - world_head(armature, name)).normalized())
+            for name in chain
+        ]
+
+    def base_for(digit: str) -> Vector:
+        if digit == "thumb":
+            return (
+                palm_direction * 0.50
+                + lateral * 0.72
+                + toward_ball * (aim * 3.0)
+            ).normalized()
+        return (
+            palm_direction + lateral * splay[digit] + toward_ball * aim
+        ).normalized()
+
+    for digit in FINGER_DIGITS:
+        aim_chain(digit, base_for(digit))
+    return result
+
+
+def finger_joint_bends_degrees(armature: bpy.types.Object) -> list[float]:
+    bends: list[float] = []
+    for side in ("l", "r"):
+        for digit in ("thumb", "index", "middle", "ring", "pinky"):
+            directions = [
+                (
+                    world_tail(armature, f"{digit}_{index:02d}_{side}")
+                    - world_head(armature, f"{digit}_{index:02d}_{side}")
+                ).normalized()
+                for index in (1, 2, 3)
+            ]
+            bends.extend(
+                math.degrees(directions[index].angle(directions[index + 1]))
+                for index in (0, 1)
+            )
+    return bends
 
 
 def max_finger_base_deviation_degrees(armature: bpy.types.Object) -> float:
