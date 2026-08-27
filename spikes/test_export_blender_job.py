@@ -1,6 +1,6 @@
 """Guard the boundary the rendering lane consumes.
 
-`fingerBaseFlexionDegrees` exists because a deviation-sized number was capping
+`knuckleLimitsDegrees` exists because a deviation-sized number was capping
 a flexion axis and the fingers stopped short of the ball. If this derivation
 drifts, nothing else in the suite notices: the athlete still solves, still
 grades, and the hand quietly stops gripping again on the far side of a
@@ -25,7 +25,7 @@ except ImportError:  # pragma: no cover - exercised only without the solver
 
 if SOLVER:
     # Deliberately unguarded: a failure here is a real break and must be loud.
-    from export_blender_job import FINGERS, knuckle_flexion_limits
+    from export_blender_job import DIGITS, knuckle_limits
     from movement_engine import load_character
 
 
@@ -34,30 +34,47 @@ class KnuckleFlexionLimits(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.character = load_character()
-        cls.limits = knuckle_flexion_limits(cls.character)
+        cls.limits = knuckle_limits(cls.character)
 
-    def test_every_finger_is_reported(self) -> None:
-        self.assertEqual(set(self.limits), set(FINGERS))
+    def test_every_digit_is_reported_including_the_thumb(self) -> None:
+        """The thumb was unbounded under the first scheme, and worse than
+        unbounded: the consumer's own 80 degree ceiling is above the model's
+        57.3 licence, so it was over-permitted rather than merely missing."""
+        self.assertEqual(set(self.limits), set(DIGITS))
+        self.assertIn("thumb", self.limits)
 
     def test_it_licenses_a_closed_grip(self) -> None:
         """The number that matters. The old cap was 40, and a grip needs more.
 
         Deliberately a range rather than the exact values. Pinning 90.0 would
         make this a change detector; the question is whether the licence
-        permits a hand to close, which 40 did not.
+        permits a hand to close, which 40 did not. The thumb is checked
+        separately because its licence is genuinely tighter.
         """
-        for finger, degrees in self.limits.items():
-            self.assertGreater(degrees, 60.0, f"{finger} cannot close a grip")
-            self.assertLess(degrees, 120.0, f"{finger} is past a human knuckle")
+        for digit, entry in self.limits.items():
+            most = entry["flexion"]["max"]
+            floor = 50.0 if digit == "thumb" else 60.0
+            self.assertGreater(most, floor, f"{digit} cannot close a grip")
+            self.assertLess(most, 120.0, f"{digit} is past a human knuckle")
 
-    def test_it_is_derived_and_not_the_deviation_limit(self) -> None:
-        """40 was the deviation-shaped number. None of these may be near it."""
-        for finger, degrees in self.limits.items():
-            self.assertGreater(
-                degrees,
-                50.0,
-                f"{finger} looks like the deviation limit that caused this",
+    def test_flexion_and_deviation_are_separate_axes(self) -> None:
+        """The whole defect was one bounding the other. They must not be equal
+        by accident, and both must be present."""
+        for digit, entry in self.limits.items():
+            self.assertIsNotNone(entry["deviation"], f"{digit} has no deviation")
+            self.assertNotEqual(
+                entry["flexion"], entry["deviation"], f"{digit} conflates axes"
             )
+
+    def test_extension_is_carried_and_the_pinky_differs(self) -> None:
+        """The real per-digit reason. Flexion is 90 on all four fingers, so a
+        per-digit flexion number varies for no anatomical reason; extension is
+        where they actually differ."""
+        self.assertLess(
+            self.limits["pinky"]["flexion"]["min"],
+            self.limits["index"]["flexion"]["min"],
+            "the pinky extends further than the index and must say so",
+        )
 
     def test_it_is_not_the_rest_bend_plus_the_rotation_limit(self) -> None:
         """The cautionary example in the schema note, as a test.
@@ -67,7 +84,7 @@ class KnuckleFlexionLimits(unittest.TestCase):
         measurement with addition breaks this.
         """
         self.assertLess(
-            self.limits["index"],
+            self.limits["index"]["visibleBendAtFlexionLimit"],
             100.0,
             "the index limit looks like rest bend added to rotation limit",
         )
@@ -83,7 +100,7 @@ class KnuckleFlexionLimits(unittest.TestCase):
             40.0,
             "deviation still means deviation and must not be repurposed",
         )
-        self.assertEqual(set(job["fingerBaseFlexionDegrees"]), set(FINGERS))
+        self.assertEqual(set(job["knuckleLimitsDegrees"]), set(DIGITS))
 
 
 if __name__ == "__main__":  # pragma: no cover

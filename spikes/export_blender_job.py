@@ -67,7 +67,7 @@ VIEW_TARGET = [0.0, -0.15, 0.95]
 # FLEXION. Deviation and flexion are different axes: this model licenses plus
 # or minus 45.8 of deviation and up to 90 of flexion, so a deviation-sized
 # number was capping a flexion axis and the fingers stopped 26 to 35 mm short
-# of the ball. fingerBaseFlexionDegrees below is the replacement. This block is
+# of the ball. knuckleLimitsDegrees below is the replacement. This block is
 # left exactly as it was, because deviation still means deviation.
 ANATOMY_LIMITS = {
     "forearmRoll": 75.0,
@@ -76,27 +76,30 @@ ANATOMY_LIMITS = {
     "fingerBaseDeviation": 40.0,
 }
 
-FINGERS = ("index", "middle", "ring", "pinky")
+# The thumb is included. Its knuckle is thumb1, with the same axis naming
+# as a finger, and its limits are materially tighter.
+DIGITS = ("index", "middle", "ring", "pinky", "thumb")
 
 
-def knuckle_flexion_limits(character) -> dict[str, float]:
-    """How far each knuckle bends, measured rather than stated.
+def knuckle_limits(character) -> dict[str, dict]:
+    """What each knuckle is licensed to do, measured rather than stated.
 
-    The quantity is the GEOMETRIC bend: the angle between wrist-to-knuckle and
-    knuckle-to-phalanx. Not a joint rotation. A rotation only means something
-    against the rest pose it was measured in, and the two rigs do not share
-    one, so a rotation would be a number whose meaning depends on the body.
-    The receiving rig subtracts its own rest offset.
+    ROTATIONS about the joint's own axes, per digit, in degrees. A consumer
+    must resolve its own rotation into that frame before comparing.
 
-    Derived by driving each knuckle's own curl parameter to its limit and
-    measuring what the hand does, because the two do not simply add: the rest
-    bend is 18.5 on the index and its rotation limit is 90, and the result is
-    90.0 rather than 108.5.
+    The quantity matters and the first version of this got it wrong. A POSE
+    crosses a body boundary as geometry, because a rotation only means
+    something against the rest pose it was measured in and two rigs do not
+    share one. A RANGE OF MOTION crosses as a rotation about the anatomical
+    axis, because that is an anatomical fact about the joint rather than a
+    configuration. This is a range of motion. Exporting it as visible bend
+    made it comparable to nothing a consumer computes.
 
-    Pure flexion, with the other two knuckle axes at zero. The full envelope
-    with all three axes helping reaches 91 to 103, and the solve does use it -
-    the index reaches 96.4 at contact on the one-handed drills. So this is a
-    flexion licence and not a hard ceiling on the visible angle.
+    Visible bend is still reported, clearly labelled, because it is what stops
+    someone clipping a legal pose. It is measured by driving the curl axis to
+    its limit with the other two at zero, never computed by addition: the
+    index rests at 18.5 with a rotation limit of 90 and reaches 90.0 of
+    visible bend, not 108.5.
     """
     names = list(character.parameter_transform.names)
     limits = minmax_limits(character)
@@ -111,22 +114,41 @@ def knuckle_flexion_limits(character) -> dict[str, float]:
         )
         return float(np.degrees(np.arccos(np.clip(cosine, -1.0, 1.0))))
 
-    found: dict[str, float] = {}
-    for finger in FINGERS:
-        parameter = f"l_{finger}1_rz"
+    def degrees(parameter: str) -> dict | None:
         if parameter not in limits or parameter not in names:
+            return None
+        low, high = limits[parameter]
+        return {
+            "min": round(float(np.degrees(low)), 1),
+            "max": round(float(np.degrees(high)), 1),
+        }
+
+    found: dict[str, dict] = {}
+    for digit in DIGITS:
+        curl = f"l_{digit}1_rz"
+        flexion = degrees(curl)
+        if flexion is None:
             continue
         posed = zero.copy()
-        posed[names.index(parameter)] = limits[parameter][1]
-        found[finger] = round(
-            bend(
-                joint_positions(character, posed),
-                "l_wrist",
-                f"l_{finger}1",
-                f"l_{finger}2",
+        posed[names.index(curl)] = limits[curl][1]
+        found[digit] = {
+            # About the joint's own curl axis. Resolve into that frame first.
+            "flexion": flexion,
+            # About the joint's own deviation axis, side to side.
+            "deviation": degrees(f"l_{digit}1_ry"),
+            # Informational. What the hand visibly does at the flexion limit
+            # with the other two axes at zero. Not a ceiling: the solve reaches
+            # 96.4 on the index, legally, with the other axes contributing.
+            "visibleBendAtFlexionLimit": round(
+                bend(
+                    joint_positions(character, posed),
+                    "l_wrist",
+                    f"l_{digit}1",
+                    f"l_{digit}2",
+                ),
+                1,
             ),
-            1,
-        )
+        }
     return found
 
 
@@ -300,14 +322,16 @@ def build(character, movement_id: str, every: int = 0) -> dict:
         "anatomyLimitsDegrees": dict(ANATOMY_LIMITS),
         # Additive. A reader that does not know this field keeps working on
         # the block above; a reader that does should prefer it for the
-        # knuckle, because the block above has no flexion number in it.
+        # knuckle, because the block above has no flexion number in it and
+        # bounds nothing about the thumb at all.
         #
-        # GEOMETRIC BEND, per digit: the angle between wrist-to-knuckle and
-        # knuckle-to-phalanx. Never the word metacarpal, because neither rig
-        # has one. Never a joint rotation, because a rotation only means
-        # something against the rest pose it was measured in. Subtract your own
-        # rest offset to get your own rotation.
-        "fingerBaseFlexionDegrees": knuckle_flexion_limits(character),
+        # ROTATIONS about each knuckle's OWN axes, per digit, including the
+        # thumb. Resolve your rotation into that frame before comparing. A
+        # scalar bend taken in the plane that points a finger at the ball is
+        # not this quantity: off the flexion axis it mixes flexion with
+        # deviation, and bounding the mixture by the flexion licence permits
+        # a deviation the joint does not have.
+        "knuckleLimitsDegrees": knuckle_limits(character),
         "views": {
             name: {
                 "resolutionPx": list(VIEW_RESOLUTION),
