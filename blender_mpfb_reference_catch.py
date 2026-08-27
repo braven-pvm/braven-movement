@@ -602,19 +602,33 @@ def pose_articulated_hand(
             retreat_into_limits(digit, high)
             continue
 
+        # Keep the best angle actually measured, rather than an interval end.
+        # `high` is the side where the gap is at or BELOW the target, so it is
+        # the inside. Breaking on a good `middle` and then applying `high`
+        # threw the good angle away and landed the finger up to 4 mm inside
+        # the ball, which is about 12 mm of skin.
+        best_angle, best_gap = 0.0, None
         for _ in range(KNUCKLE_ITERATIONS):
             middle = 0.5 * (low + high)
             apply(digit, middle)
             gap = tip_clearance(digit)
-            if gap > CONTACT_CLEARANCE_M or not within_limits(digit):
+            permitted = within_limits(digit)
+            if permitted and gap >= 0.0 and (
+                best_gap is None
+                or abs(gap - CONTACT_CLEARANCE_M) < abs(best_gap - CONTACT_CLEARANCE_M)
+            ):
+                best_angle, best_gap = middle, gap
+            if gap > CONTACT_CLEARANCE_M or not permitted:
                 low = middle
             else:
                 high = middle
-            if abs(gap - CONTACT_CLEARANCE_M) < CONTACT_TOLERANCE_M:
+            if best_gap is not None and (
+                abs(best_gap - CONTACT_CLEARANCE_M) < CONTACT_TOLERANCE_M
+            ):
                 break
-        # Land on the near side of contact, never inside it.
-        apply(digit, high)
-        retreat_into_limits(digit, high)
+        # Land on the best angle measured, which is never inside the ball.
+        apply(digit, best_angle)
+        retreat_into_limits(digit, best_angle)
 
     return result
 
