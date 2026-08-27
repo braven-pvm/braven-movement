@@ -132,3 +132,45 @@ the phase separation guard's threshold is far from the values it judges, so
 all three dead phases are dead in either unit. It is recorded because a name
 that does not say what it holds is how `fingerBaseDeviation` came to bound a
 flexion axis, and that cost a day.
+
+## The environment must be activated, not merely located
+
+**Reproduced, and it is not a defect in the code.** Running the suite by
+invoking the environment's interpreter directly fails:
+
+```
+.assets/pixi-env/envs/default/python.exe -m unittest discover -s . -p "test_*.py"
+```
+
+It dies at `test_grip.AxesTest.test_the_frame_is_orthonormal`, exit code 127,
+no traceback and no summary line. The same command through `pixi run` passes
+all 245 tests from the same directory, with the same `.pixi` present and the
+same code.
+
+Exit 127 with no Python traceback means the process died below Python rather
+than raising, which points at a native library that could not be loaded.
+`pixi run` sets up the environment's search paths; naming the executable does
+not. That last sentence is inference from the exit code and the absence of a
+traceback, not something measured directly.
+
+**What is exonerated.** Two earlier hypotheses are dead, both by measurement
+rather than argument. The assets are not the cause: an independent review
+reproduced the crash with `spikes/mhr-assets` junctioned and verified, and
+sixty-odd solver-dependent tests including character loads passed first.
+Missing `.pixi` state is not the cause either: it reproduces here with the
+`.pixi` junction present.
+
+**What is unresolved.** Which native library, and why those two modules rather
+than an earlier one. `test_grip` and `test_multi_camera_fit` are where it bites
+because they are the first to make the call that needs it, not necessarily
+because they are special.
+
+**Mitigated rather than left as folklore.** `spikes/pixi.toml` had an empty
+`[tasks]` section. It now defines `test`, `library`, `limits` and `proof`, so
+the correct invocation is a file that can be run and checked rather than
+knowledge someone has to be told:
+
+```
+cd spikes && pixi run test
+```
+

@@ -5,7 +5,18 @@ name = "spikes"
 platforms = ["win-64"]
 version = "0.1.0"
 
+# The correct way to run each of these, so it is a file rather than folklore.
+#
+# The interpreter must be ACTIVATED, not merely located. Invoking
+# .pixi/envs/default/python.exe by path runs, passes every pure-Python test,
+# and then dies at the first native call with exit 127 and no traceback. An
+# independent review lost time to exactly that. `pixi run` activates; a path
+# does not.
 [tasks]
+test = "python -m unittest discover -s . -p \"test_*.py\""
+library = "python build_library.py"
+limits = "python check_joint_limits.py"
+proof = "python proof.py"
 
 [dependencies]
 python = "3.12.*"
