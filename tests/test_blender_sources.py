@@ -107,6 +107,28 @@ class BlenderSourceContractTest(unittest.TestCase):
         self.assertIn("max_rgba_alpha(image.pixels)", source)
         self.assertNotIn("pixels[3::4]", source)
 
+    def test_every_rendered_phase_records_how_near_the_hands_came(self):
+        """Whether she touched the ball must be a number, not an opinion.
+
+        This lane once reported the fingers going through the ball, from a
+        picture, and it was the opposite of the truth. The receipt carries the
+        millimetres now. Anything that reads a receipt may rely on the field
+        being there for both hands of every phase.
+        """
+        renderer = (MODULE_DIR / "blender_movement_render.py").read_text(
+            encoding="utf-8"
+        )
+        catch = (MODULE_DIR / "blender_mpfb_reference_catch.py").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("def finger_surface_clearance(", catch)
+        self.assertIn("finger_surface_clearance", renderer)
+        self.assertIn('hands[side]["surfaceClearanceMm"]', renderer)
+        # Every phalanx, not only the tip: a finger can straddle the surface
+        # with its middle bone inside and both ends outside.
+        self.assertIn("for index in (1, 2, 3):", catch)
+
     def test_movement_renderer_calls_match_the_reference_helper_signatures(self):
         """The posing helpers are shared, and only Blender links the two sides.
 
