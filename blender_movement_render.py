@@ -350,15 +350,19 @@ def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
             palm_normal=Vector(phase["hands"][side]["palmNormal"]),
             max_forearm_roll_degrees=limits["forearmRoll"],
         )
-        # The radius is what lets the knuckles close on the ball. The
-        # reference generator withholds it and keeps its authored hand,
-        # because that pose is calibrated against a photograph.
+        # The radius closes the knuckles onto the surface, so it is passed
+        # ONLY when she is holding the ball. Passing it always sent every
+        # finger chasing a ball still in flight metres away: unreachable, so
+        # each one flexed to the limit of its joint and stopped there, and the
+        # ready phase came out with a hand mangled across her face. Before
+        # contact the arm decides where the hand goes, which is the same rule
+        # the possession model states for the wrist.
         pose_articulated_hand(
             rig,
             side=side,
             ball_centre=ball_centre,
             finger_curl_degrees=finger_curl_degrees,
-            ball_radius=radius,
+            ball_radius=radius if grip else None,
             knuckle_limits=knuckle_limits,
         )
         # Millimetres from the ball surface, negative inside it. A fingertip
