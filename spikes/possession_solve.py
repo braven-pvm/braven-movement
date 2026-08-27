@@ -282,11 +282,11 @@ def solve_movement(
                     ),
                 ),
                 elbow_poles(
-                    character, index, placed[number], targets, reach_cm, sides
+                    character, index, placed[number], targets, reach_cm, sides,
+                    method.elbow_angle_degrees,
                 ),
                 upper_arm_aim(
-                    character, index, placed[number], targets, reach_cm, sides,
-                    method.elbow_width,
+                    character, index, placed[number], targets, reach_cm, sides
                 ),
                 continuity,
                 solver2.LimitErrorFunction(character, weight=LIMIT_WEIGHT),
