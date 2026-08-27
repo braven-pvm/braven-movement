@@ -81,7 +81,20 @@ class BallTrackError(ValueError):
 
 @dataclass(frozen=True)
 class BallOffset:
-    """Where the ball is, in arm lengths, in the stance frame."""
+    """Where the ball is, in arm lengths, in the stance frame.
+
+    A POINT, not a per-hand position. This matters wherever an offset stands
+    in for something a person holds with two hands, because both hands are
+    then placed around this single point by the grip spread. An `across` of
+    0.3 means the point sits to her left, not that each hand sits out to its
+    own side, and two hands reaching for an off-centre point carry the far
+    one across the body.
+
+    Read `across` here as the motion track's `across` reversed: that one is
+    per hand and this one is not. A per-hand form is a recorded design
+    candidate in docs/KNOWN_ISSUES.md, deliberately not built until a second
+    drill needs it.
+    """
 
     across: float
     up: float

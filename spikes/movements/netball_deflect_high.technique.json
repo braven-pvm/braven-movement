@@ -28,10 +28,10 @@
     }
   ],
   "ready": {
-    "across": 0.3,
+    "across": 0.0,
     "up": 0.72,
     "ahead": 0.3
   },
-  "readyNote": "Hands up beside the head, which is where the manual tells the passer to put the ball. Aiming the waiting hands at a passer two metres away instead left them at her waist.",
+  "readyNote": "Hands up beside the head, which is where the manual tells the passer to put the ball. Aiming the waiting hands at a passer two metres away instead left them at her waist. across is 0.0 because this offset is a POINT, not a per-hand position: the grip spread puts one hand each side of it. At across 0.3 the point sat to her left and both hands reached for it, carrying the right hand across her face.",
   "carryUnitNote": "afterContact is measured in torso lengths, not arm lengths. Where a ball sits when it is held against the chest depends on the chest and the ball, not on how long the arm is, and in arm lengths two athletes of the same height whose reach differed by a tenth held the same ball 9 percent apart. Every number here was multiplied by 1.017053, the reference athlete's arm over her torso, so her positions are unchanged and only other bodies move."
 }

@@ -2,7 +2,7 @@
   "movementId": "netball_deflect_high",
   "sport": "netball",
   "skill": "Deflects, High",
-  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger, Catching section, page 71 to 72. The manual describes the drill as: pass the ball next to the receiver's head, where their hands are, and that player passes back across to the player next to their head where their hands are. Both players are working, both need to control the ball, one passes straight and the other across, and players swap so both do straight and cross passes. The cues are the manual's. The numeric bands are NOT, and are PROVISIONAL until a coach sets them. KNOWN GAP: the three elbow checkpoints in this drill do not yet pass. The hands reach high beside the head, and the solver answers by elevating the shoulder girdle toward the target rather than extending the elbow, so the arm stays folded at about 120 degrees. Every other skill in the library is unaffected because none of them ask for a high reach. The fix is a constraint on how far the clavicle may travel, not a change to these bands.",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger, Catching section, page 71 to 72. The manual describes the drill as: pass the ball next to the receiver's head, where their hands are, and that player passes back across to the player next to their head where their hands are. Both players are working, both need to control the ball, one passes straight and the other across, and players swap so both do straight and cross passes. The cues are the manual's. The numeric bands are NOT, and are PROVISIONAL until a coach sets them.",
   "phases": [
     {
       "name": "ready",
