@@ -301,3 +301,32 @@ def describe(track: BallTrack) -> list[str]:
             f"ahead {key.offset.ahead:5.2f}"
         )
     return lines
+
+
+GRAVITY_CM = 981.0
+
+
+def solve_launch(
+    release: np.ndarray, catch: np.ndarray, horizontal_speed_cm: float
+) -> tuple[float, np.ndarray]:
+    """Return the flight time and the launch velocity that joins two points.
+
+    Horizontal motion is straight and steady. Only the vertical is accelerated,
+    which is the whole of ballistics without drag.
+
+    This lives here rather than in the tool that authors the incoming pass,
+    because the outgoing pass is the same parabola read the other way round and
+    two copies of it would drift apart.
+    """
+    ground = np.array([catch[0] - release[0], 0.0, catch[2] - release[2]])
+    span = float(np.linalg.norm(ground))
+    if span < 1e-6:
+        raise ValueError("the passer is standing where the ball is caught")
+    if horizontal_speed_cm <= 0.0:
+        raise ValueError("a pass with no horizontal speed never arrives")
+    seconds = span / horizontal_speed_cm
+    rise = float(catch[1] - release[1])
+    vertical = (rise + 0.5 * GRAVITY_CM * seconds * seconds) / seconds
+    velocity = ground / seconds
+    velocity[1] = vertical
+    return seconds, velocity

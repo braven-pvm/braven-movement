@@ -127,6 +127,9 @@ Starting points, recorded so they are not rediscovered:
    Recorded this way because a debt entry that sends the fixer to the wrong
    frames is worse than no entry at all.
 
+The return pass adds three new instances of this, with named frames. Refer to
+"The follow-through is rough where the arm now moves".
+
 When a coach number arrives for the chest catches, the 25 cm threshold in
 `test_upper_arm_aim.py` needs rework alongside it: the `technique.py` comment
 argues for a folded posture that the test currently forbids, so the two must
@@ -226,3 +229,126 @@ knowledge someone has to be told:
 cd spikes && pixi run test
 ```
 
+
+## Four coaching checkpoints now fail, and no number was changed to stop them
+
+The engine sends a released ball back to the passer at the speed it came in,
+so the athlete now extends through the pass. She did not before: the ball
+drifted out of her hands at 0.13 to 0.57 m/s and her arms stayed folded. At
+the last frame the hand now reaches 0.93 to 0.95 of full extension, where it
+used to sit at 0.70 to 0.75.
+
+The same checkpoint fails on all four releasing drills:
+
+| drill | phase | leftElbowFlexionDegrees | band |
+|---|---|---|---|
+| Deflects, High | send_on | 35.73 | 45 to 115 |
+| Hooks, Jump and Pull In Ball | release | 49.98 | 50 to 120 |
+| 2 Hands Catch | release | 41.05 | 55 to 115 |
+| 2 Hand Snatches and Straight Back | return | 40.81 | 45 to 105 |
+
+**Nothing is tuned, in either direction.** Rewidening a band to make the engine
+pass is the engine marking its own homework. Shortening the follow-through to
+fit the band is the same act in reverse. Both were available and both were
+refused.
+
+**What the evidence says.** Every one of these bands is marked in its own file
+as authored by this project and PROVISIONAL until a coach sets it. The cue
+beside the deflect band is the manual's own words: "Extend through the ball as
+it goes." The engine now does that and the provisional number says it should
+not. The bands were also authored against a solve in which the arm never
+extended at all, so they have never been tested against a real follow-through.
+
+`Hooks, Jump and Pull In Ball` misses by 0.02 degrees, which is worth stating
+plainly: on that drill the disagreement is not a disagreement.
+
+This is exactly the question the coach review exists to settle, so it goes to
+the morning rather than to a commit.
+
+## The follow-through is rough where the arm now moves
+
+Worst per-frame upper arm swing, in degrees, on the drills the return changes:
+
+| drill | before | after |
+|---|---|---|
+| deflect high | 6.7 | **26.1** |
+| hooks jump and pull in | 6.9 | 10.6 |
+| two hand snatch straight back | 4.6 | 9.7 |
+| two hands catch chest | 10.3 | 10.3 |
+
+The other four drills are unchanged.
+
+**Aggravated, not caused.** The steps are isolated single-frame spikes, on
+`netball_deflect_high` at frames 74 and 75, with 2 to 8 degrees on either side
+of them. The ramp itself is smooth. The solver picks a different branch on
+those two frames, and it does so despite the continuity term, the elbow poles
+and the upper arm aim term, all of which run on released frames.
+
+The arm never moved here before, so the solve was never asked this question.
+Making the athlete follow through is what exposed it.
+
+This belongs to the smoothness pack above, which already owns this class of
+defect and is already queued. It is recorded separately only because these are
+new instances with known frames, and a fixer should not have to find them
+again.
+
+## A field called secondsPerFrame holds the solver's cost
+
+`possession_solve.py` puts the SOLVE time per frame in a result field named
+`secondsPerFrame`. The animation timestep is 1 over the motion track's own
+frame rate, which for this library is 60. The two differ by more than a factor
+of two, and nothing in the name says which one it is.
+
+This cost real work. A release velocity was reported from that field, then
+"corrected" to figures that were too high by 2.2 times, then corrected back.
+The wrong numbers were written into this file before they were caught.
+
+`build_library.py` reads the same field and prints it as "ms/frame", which is
+correct for what it holds and is where the meaning is visible.
+
+Renaming it to `solveSecondsPerFrame` is a small change with a handful of
+readers. It is not done here only because this pack is about the ball, and a
+rename belongs in a commit where it is the subject.
+
+This is the same shape as the entry above about centimetres in a field called
+degrees.
+
+## The deflect carry still passes close to her face
+
+`netball_deflect_high` no longer interpolates the ball through her head, but
+the worst clearance over its carry is 8.3 cm of ball surface to her eye, and
+it now sits at the authored `control` key itself at phase 0.62. Raising the
+route key's `ahead` value does not move it: 0.70 through 0.90 all give 8.3 cm.
+The control key is where the binding is.
+
+That is an authored coaching position, so it is not touched. A coach has to
+say how far in front of her face the ball is controlled. The route key added
+alongside it is marked PROVISIONAL for the same reason.
+
+Second closest in the library is `netball_two_hand_snatch_pull_in` at 7.3 cm,
+which is a different shape: its closest approach is 10.4 cm BELOW the eye
+line, a ball pulled in to the chest. Every drill except the deflect keeps the
+ball below the eyes. The deflect is the only one that holds it above, because
+the manual says the ball is controlled beside the head.
+
+**A threshold guard was measured and rejected.** The defect dipped 1.7 cm
+toward her face between its keys, while `netball_hooks_outside_hand` dips
+2.5 cm harmlessly. No distance threshold separates them, so any number chosen
+would be a change detector. `spikes/test_carry_route.py` guards the authoring
+rule instead, and does not claim to guard the clearance.
+
+## A graded phase can sit in the middle of an interpolation
+
+`netball_deflect_high` grades its control checkpoint at phase 0.70. The
+technique authors its `control` key at 0.62 and its `send_on` key at 0.80. The
+graded frame therefore falls between two authored keys and reads a position
+nobody authored.
+
+This is the same shape as the three checkpoints that cannot fail: a phase
+number chosen in the coaching definition and a phase number chosen in the
+technique are set independently, and nothing checks that they agree. There a
+checkpoint reads a measure that has not moved yet. Here a checkpoint reads a
+position that is a straight line between two authored ones.
+
+Event-anchored phases, already queued for the cannot-fail entry, would fix
+both. Recorded here so the two are fixed together rather than separately.

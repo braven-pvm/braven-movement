@@ -233,8 +233,8 @@ def _stance(points, index) -> dict:
     return {"ankleFromPelvisInLegs": ankles}
 
 
-def _grip(points, index, centre, radius: float, arm: float) -> dict:
-    """Where each hand meets the ball, measured from the ball.
+def _grip(points, index, centre, radius: float, arm: float, sides) -> dict:
+    """Where each HOLDING hand meets the ball, measured from the ball.
 
     A grip cannot cross as a direction from the shoulder. The ball is one
     absolute size on every body, so a narrower pair of shoulders needs the
@@ -244,9 +244,18 @@ def _grip(points, index, centre, radius: float, arm: float) -> dict:
 
     So the ball is placed first and the hands are placed on it, which is what
     the possession model says happens once she has it.
+
+    Only the hands that are ON the ball. This used to emit both regardless,
+    which told the receiving side that a hand still travelling toward the ball
+    was gripping it at whatever standoff it happened to have. On a one-handed
+    contact that is a lie about the athlete: `sides_at` says one hand, and the
+    other is being shaped around the point it is moving toward. Their standoffs
+    are not comparable and the second one is not a grip at all. A hand absent
+    from this block is placed from `arms`, the same way every hand is before
+    contact.
     """
     grip = {}
-    for side in ("l", "r"):
+    for side in sides:
         wrist = to_blender(points[index[f"{side}_wrist"]])
         outward = wrist - centre
         grip[side] = {
@@ -258,7 +267,7 @@ def _grip(points, index, centre, radius: float, arm: float) -> dict:
     return grip
 
 
-def phase_job(result, index, frame: int) -> dict:
+def phase_job(result, index, frame: int, method) -> dict:
     points = result["points"][frame]
     held = result["possession"].frames[frame]
 
@@ -290,12 +299,15 @@ def phase_job(result, index, frame: int) -> dict:
     # Before she has it the athlete reaches for the ball, and the arms say
     # where the hands go. After she has it the ball says where they go.
     if held.holding:
-        job["grip"] = _grip(points, index, centre, radius, arm)
+        holding = tuple(method.sides_at(held.phase))
+        if holding:
+            job["grip"] = _grip(points, index, centre, radius, arm, holding)
     return job
 
 
 def build(character, movement_id: str, every: int = 0) -> dict:
     definition = load_definition(definition_path(movement_id))
+    method = load_technique(technique_path(movement_id))
     result = solve_movement(character, movement_id)
     index = result["index"]
     frames = len(result["points"])
@@ -303,7 +315,7 @@ def build(character, movement_id: str, every: int = 0) -> dict:
     phases = []
     for phase in definition.phases:
         frame = max(0, min(frames - 1, round(phase.at_phase * (frames - 1))))
-        job = phase_job(result, index, frame)
+        job = phase_job(result, index, frame, method)
         job["name"] = phase.name
         phases.append(job)
 
@@ -312,7 +324,7 @@ def build(character, movement_id: str, every: int = 0) -> dict:
     frames_out = []
     if every > 0:
         for frame in range(0, frames, every):
-            frames_out.append(phase_job(result, index, frame))
+            frames_out.append(phase_job(result, index, frame, method))
 
     return {
         "schemaVersion": 1,

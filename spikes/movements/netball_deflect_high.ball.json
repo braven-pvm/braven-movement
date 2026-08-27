@@ -3,6 +3,7 @@
   "variant": null,
   "source": "authored by author_flight.py from a passer position and a catch point in the arm span",
   "notes": "Next to the head, where the hands are, which is what the manual asks the passer for.",
+  "returnNote": "PROVISIONAL. The return is not authored here and no coach has confirmed it. The technique releases the ball, and the engine sends it back to the passer who threw it, along the corridor it came in on and at the same horizontal speed. That reading comes from the manual's own cues on these drills, 'pass it straight back' and 'use the momentum of the catch to pass the ball back straight away'. Nothing about the return is typed: the passer's hand, the arrival point and the flight duration are all in the keys below, and possession.py solves the same parabola the other way round. A coach must confirm that she really returns it to the passer. If she does not, this is where to say so.",
   "radiusCm": 11.0,
   "radiusFraction": 0.2088,
   "release": {
