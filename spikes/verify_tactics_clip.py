@@ -34,7 +34,22 @@ moved *with* the solve, which is the only question a re-export has to settle.
     pixi run python verify_tactics_clip.py --against clip-baseline.json
     pixi run python verify_tactics_clip.py --baseline clip-baseline.json
 
-Exit code 1 if any asserted channel has left its solve, so it can gate a merge.
+What it gates on, and what it only reports
+------------------------------------------
+**It exits non-zero for one thing: a clip that no longer carries its own solve.**
+Either an asserted channel has drifted past the threshold, or the comparison
+could not be made at all.
+
+**Everything about coaching bands is reported and never gated on.** Whether a
+movement meets its checkpoints is a question about the movement, against bands
+that are still provisional and that a coach has yet to sign off. It is not a
+question about whether the clip is faithful, and the two were conjoined here
+once: four drills failing a provisional band turned the gate red under the
+message "a clip has left the solve it came from", which was not true and was not
+what had happened. A gate that cries the wrong thing is a gate somebody switches
+off, so the two answers are now separate and each says its own name.
+
+Exit code 1 for a clip that has left its solve, so it can gate a merge.
 """
 
 from __future__ import annotations
@@ -128,6 +143,26 @@ def check(character, movement_id: str) -> dict:
     # The declared moment against the frame the possession model derives. They
     # agree on a catch and must not on a landing.
     contact_at = clip["contactFrame"] / max(1, len(clip["frames"]))
+
+    # A comparison that produced nothing is not a pass.
+    #
+    # `rows` only gains an entry for a measure the engine actually reported, so a
+    # channel that quietly disappeared - renamed in the definition, dropped from
+    # the measurement set - would leave nothing to compare and a worst gap of
+    # zero. That reads as a perfect clip and is the absence of a test. This is
+    # the structural half of the gate and it is separate from the numeric half
+    # on purpose.
+    asserted = [row for row in rows if row["asserted"]]
+    structural = None
+    if not asserted:
+        structural = (
+            "no asserted channel could be compared. Either the definition stopped "
+            "reporting the measures in CHANNEL, or the clip lost the frames they "
+            "are read from."
+        )
+    elif len(clip["frames"]) < 2:
+        structural = f"the clip has {len(clip['frames'])} frames, which cannot be played."
+
     return {
         "clipId": clip["clipId"],
         "movementId": movement_id,
@@ -136,15 +171,37 @@ def check(character, movement_id: str) -> dict:
         "hit": clip["hit"],
         "hitPhase": clip["hitPhase"],
         "momentGapSeconds": round((contact_at - clip["hit"]) * clip["seconds"], 3),
-        "graded": clip["graded"],
-        "failingCheckpoints": len(failing),
         "rootTravelM": clip["rootTravelM"],
-        "worstAssertedGapDegrees": round(worst, 2),
-        "clears": worst <= THRESHOLD_DEGREES,
-        "rows": rows,
         "ballAtPhases": {
             phase["name"]: clip["ball"][phase["frame"]] for phase in clip["phases"]
         },
+        "rows": rows,
+        # ------------------------------------------------- does the clip track the solve
+        #
+        # The only question this tool gates on. It asks whether the retarget kept
+        # the movement, and nothing else.
+        "worstAssertedGapDegrees": round(worst, 2),
+        "assertedChannels": len(asserted),
+        "structuralFault": structural,
+        "tracks": structural is None and worst <= THRESHOLD_DEGREES,
+        # ------------------------------------------------- what the coaches would say
+        #
+        # Reported, never gated on. Whether a movement meets a provisional
+        # coaching band is a question about the movement and about bands a coach
+        # has still to sign off. It is not a question about whether the clip
+        # carries the movement faithfully, and a tool that conflated the two
+        # would go red on a drill that is being deliberately reworked - which is
+        # a gate that gets switched off rather than one that gets heeded.
+        "graded": clip["graded"],
+        "failingCheckpoints": len(failing),
+        "failingDetail": [
+            f"{phase['name']}/{checkpoint['measure']} "
+            f"{checkpoint['measuredDegrees']} outside "
+            f"{checkpoint['minimumDegrees']} to {checkpoint['maximumDegrees']}"
+            for phase in clip["phases"]
+            for checkpoint in phase["checkpoints"]
+            if checkpoint["verdict"] != "within"
+        ],
         "assessed": bool(definition.assess(measurements).correct),
     }
 
@@ -161,23 +218,38 @@ def main(argv: list[str]) -> int:
 
     character = load_character()
     report = {}
-    ok = True
+    drifted = []
     for movement_id in sorted(CLASSES):
         row = check(character, movement_id)
         report[row["clipId"]] = row
-        ok = ok and row["clears"] and row["failingCheckpoints"] == 0
+        if not row["tracks"]:
+            drifted.append(row)
 
-        mark = "ok  " if row["clears"] else "FAIL"
+        mark = "ok  " if row["tracks"] else "DRIFT"
         moved = ""
         if against and row["clipId"] in against:
             was = against[row["clipId"]]["worstAssertedGapDegrees"]
             moved = f"   was {was:.2f}"
         print(
-            f"{mark} {row['clipId']:36s} worst gap "
-            f"{row['worstAssertedGapDegrees']:5.2f} deg   "
-            f"{row['failingCheckpoints']} failing   "
+            f"{mark:5s}{row['clipId']:36s} worst gap "
+            f"{row['worstAssertedGapDegrees']:5.2f} deg over "
+            f"{row['assertedChannels']:2d} channels   "
             f"moment {row['hitPhase']} {row['momentGapSeconds']:+.2f} s{moved}"
         )
+        if row["structuralFault"]:
+            print(f"      {row['structuralFault']}")
+
+    # What the coaching definitions make of the movements, said separately and in
+    # its own words. A drill being reworked against provisional bands is expected
+    # to sit outside them for a while, and that is not this tool's business.
+    ungraded = [row for row in report.values() if row["failingCheckpoints"]]
+    print("\nCoaching bands, for information. This is not the clip gate.")
+    if not ungraded:
+        print("  Every drill meets every checkpoint in its definition.")
+    for row in ungraded:
+        print(f"  {row['clipId']:36s} {row['failingCheckpoints']} checkpoint(s) outside band")
+        for detail in row["failingDetail"]:
+            print(f"      {detail}")
 
     if against:
         print("\nWhat moved, per phase, against the baseline:")
@@ -199,16 +271,34 @@ def main(argv: list[str]) -> int:
         baseline.write_text(json.dumps(report, indent=2), encoding="utf-8")
         print(f"\nbaseline -> {baseline}")
 
-    print(
-        "\n"
-        + (
-            "Every clip carries the movement it was solved from, "
-            f"inside {THRESHOLD_DEGREES:.0f} degrees."
-            if ok
-            else "A clip has left the solve it came from. Read the rows above."
+    # The gate, and it answers one question: does each clip still carry the
+    # movement it was solved from. Nothing about grading reaches this line.
+    if not drifted:
+        print(
+            f"\nGATE PASSED. Every clip carries its own solve, inside "
+            f"{THRESHOLD_DEGREES:.0f} degrees."
         )
+        return 0
+
+    print("\nGATE FAILED, and here is what failed rather than a summary of it:")
+    for row in drifted:
+        if row["structuralFault"]:
+            print(f"  {row['clipId']}: {row['structuralFault']}")
+            continue
+        worst = max(
+            (r for r in row["rows"] if r["asserted"]),
+            key=lambda r: r["gapDegrees"],
+        )
+        print(
+            f"  {row['clipId']}: {worst['measure']} at {worst['phase']} reads "
+            f"{worst['clipDegrees']} in the clip against {worst['engineDegrees']} "
+            f"in the solve, {worst['gapDegrees']} degrees apart."
+        )
+    print(
+        "\nThat is the clip disagreeing with the movement it was made from, which "
+        "no viewer will show you."
     )
-    return 0 if ok else 1
+    return 1
 
 
 if __name__ == "__main__":
