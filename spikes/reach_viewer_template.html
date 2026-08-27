@@ -1,0 +1,408 @@
+<title>Can She Reach It?</title>
+<style>
+  /* An instrument panel, not a document. Cool slate ground so the one warm
+     colour on the page is the ball, and every measured number is set in the
+     mono face so a column of them reads as data rather than as prose. */
+  :root {
+    --page: #e9edf1;
+    --card: #ffffff;
+    --ink: #11161c;
+    --soft: #5c6673;
+    --line: #c9d2db;
+    --rule: #dde4ea;
+    --ball: #d2701a;
+    --out: #a8382a;
+    --in: #1c6f52;
+    --focus: #2c6fb8;
+    --shadow: 0 1px 2px rgba(17, 22, 28, .06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page: #0e1216;
+      --card: #161b21;
+      --ink: #e4e9ef;
+      --soft: #8d99a7;
+      --line: #2a323b;
+      --rule: #222a32;
+      --ball: #e8903f;
+      --out: #e07a63;
+      --in: #4cba8c;
+      --focus: #6aa9e8;
+      --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #0e1216;
+    --card: #161b21;
+    --ink: #e4e9ef;
+    --soft: #8d99a7;
+    --line: #2a323b;
+    --rule: #222a32;
+    --ball: #e8903f;
+    --out: #e07a63;
+    --in: #4cba8c;
+    --focus: #6aa9e8;
+    --shadow: none;
+  }
+
+  body {
+    background: var(--page);
+    color: var(--ink);
+    margin: 0;
+    font: 15px/1.6 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 6px; }
+  h1 {
+    font-size: 27px;
+    line-height: 1.2;
+    margin: 0;
+    letter-spacing: -0.018em;
+    text-wrap: balance;
+  }
+  .lede { color: var(--soft); margin: 0; max-width: 64ch; }
+  .lede b { color: var(--ink); font-weight: 600; }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    box-shadow: var(--shadow);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .label {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+    color: var(--soft);
+    margin: 0;
+  }
+
+  .views { display: flex; gap: 16px; flex-wrap: wrap; }
+  .views > figure { flex: 1 1 290px; min-width: 250px; margin: 0; display: flex;
+                    flex-direction: column; gap: 7px; }
+  svg { width: 100%; height: auto; display: block; }
+
+  .controls { display: flex; align-items: center; gap: 14px; }
+  button {
+    background: var(--ink);
+    color: var(--card);
+    border: 1px solid var(--ink);
+    border-radius: 3px;
+    padding: 6px 16px;
+    font: 600 13px/1 ui-monospace, "Cascadia Mono", Consolas, monospace;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    min-width: 74px;
+  }
+  input[type=range] { flex: 1; accent-color: var(--ball); min-width: 120px; }
+  :is(button, input, tr):focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .readout {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+    gap: 14px;
+    border-top: 1px solid var(--rule);
+    padding-top: 13px;
+  }
+  .readout div { display: flex; flex-direction: column; gap: 3px; }
+  .readout strong {
+    font: 500 21px/1 ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+  .out { color: var(--out); }
+  .in { color: var(--in); }
+
+  .legend {
+    color: var(--soft);
+    font-size: 13px;
+    margin: 0;
+    border-top: 1px solid var(--rule);
+    padding-top: 12px;
+  }
+  .legend p { margin: 0 0 5px; }
+  .legend p:last-child { margin: 0; }
+  .key {
+    display: inline-block; width: 9px; height: 9px; border-radius: 2px;
+    vertical-align: 1px; margin-right: 6px;
+  }
+  .key.arc { border: 1px dashed var(--soft); background: none; border-radius: 0; }
+
+  .scroll { overflow: auto; max-height: 330px; border: 1px solid var(--rule);
+            border-radius: 3px; }
+  table {
+    border-collapse: collapse; width: 100%;
+    font: 12.5px/1.5 ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  th, td { text-align: right; padding: 5px 11px; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th {
+    position: sticky; top: 0; background: var(--card); color: var(--soft);
+    font-weight: 500; font-size: 10.5px; text-transform: uppercase;
+    letter-spacing: 0.1em; border-bottom: 1px solid var(--line);
+  }
+  tbody tr { border-bottom: 1px solid var(--rule); cursor: pointer; }
+  tbody tr:last-child { border-bottom: 0; }
+  tbody tr.now { background: color-mix(in srgb, var(--ball) 15%, transparent); }
+  tbody tr.now td:first-child { box-shadow: inset 3px 0 0 var(--ball); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Can she reach it?</h1>
+    <p class="lede">The ball flies on a real parabola through a frame fixed to
+    the athlete's stance, and nothing on this page is solved against it. The
+    dashed arc is the exact set of ball centres her palm could touch, sliced
+    through the plane the ball is flying in, so <b>inside the arc means she can
+    reach it</b>.</p>
+  </header>
+
+  <section class="panel">
+    <div class="views">
+      <figure>
+        <figcaption class="label">Side &middot; she faces right</figcaption>
+        <svg id="side" viewBox="0 0 460 420" role="img"
+             aria-label="Side view of the athlete and the ball"></svg>
+      </figure>
+      <figure>
+        <figcaption class="label">Above &middot; she faces up</figcaption>
+        <svg id="top" viewBox="0 0 460 420" role="img"
+             aria-label="Overhead view of the athlete and the ball"></svg>
+      </figure>
+    </div>
+    <div class="controls">
+      <button id="play" type="button">Play</button>
+      <input id="scrub" type="range" min="0" value="0" aria-label="Frame">
+    </div>
+    <div class="readout">
+      <div><span class="label">Frame</span><strong id="frame">0</strong></div>
+      <div><span class="label">Ball</span><strong id="who">held</strong></div>
+      <div><span class="label">Reach margin</span><strong id="margin">0</strong></div>
+      <div><span class="label">In reach</span><strong id="verdict">neither</strong></div>
+    </div>
+    <div class="legend">
+      <p><span class="key" style="background:var(--ball)"></span>the ball, drawn
+      at its real radius &nbsp; <span class="key arc"></span>the reachable arc
+      &nbsp; <span class="key" style="background:var(--ink)"></span>the existing
+      solve of the existing hand keys</p>
+      <p>She is not reaching for this ball, and is not meant to be yet. The arc
+      is centred where the trunk holds the shoulder, which is what the report
+      measures from, so it sits a few centimetres from her drawn shoulder.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <p class="label">Reach margin, centimetres &middot; negative is out of reach</p>
+    <svg id="chart" viewBox="0 0 900 190" role="img"
+         aria-label="Reach margin per frame"></svg>
+  </section>
+
+  <section class="panel">
+    <p class="label">Every frame</p>
+    <div class="scroll"><table id="table"></table></div>
+  </section>
+</div>
+
+<script>
+const DATA = __DATA__;
+const F = DATA.frames;
+const LAST = F.length - 1;
+let at = 0, timer = null;
+
+const el = id => document.getElementById(id);
+
+function bounds() {
+  const lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9];
+  for (const f of F) {
+    for (const p of Object.values(f.joints).concat([f.ball])) {
+      for (let i = 0; i < 3; i++) {
+        lo[i] = Math.min(lo[i], p[i]);
+        hi[i] = Math.max(hi[i], p[i]);
+      }
+    }
+  }
+  return { lo, hi };
+}
+const B = bounds();
+
+function makeView(id, ax, ay) {
+  const W = 460, H = 420, pad = 24;
+  const spanX = Math.max(B.hi[ax] - B.lo[ax], 1);
+  const spanY = Math.max(B.hi[ay] - B.lo[ay], 1);
+  const k = Math.min((W - 2 * pad) / spanX, (H - 2 * pad) / spanY);
+  const ox = (W - spanX * k) / 2, oy = (H - spanY * k) / 2;
+  return {
+    svg: el(id), ax, ay, k,
+    X: v => ox + (v - B.lo[ax]) * k,
+    Y: v => H - oy - (v - B.lo[ay]) * k,
+  };
+}
+const SIDE = makeView('side', 2, 1);
+const TOP = makeView('top', 0, 2);
+
+function draw(view, f) {
+  const out = [];
+  // The axis this view does not show. Slicing the reachable sphere there is
+  // what makes the arc exact rather than indicative.
+  const perp = 3 - view.ax - view.ay;
+  for (const s of f.shoulders) {
+    const off = s[perp] - f.ball[perp];
+    const inside = DATA.farCm * DATA.farCm - off * off;
+    if (inside <= 0) continue;
+    const r = (Math.sqrt(inside) + DATA.ballRadiusCm) * view.k;
+    out.push(`<circle cx="${view.X(s[view.ax])}" cy="${view.Y(s[view.ay])}"
+      r="${r}" fill="none" stroke="var(--soft)" stroke-width="1"
+      stroke-dasharray="4 4" opacity=".8"/>`);
+  }
+  for (const [p, q] of DATA.bones) {
+    const a = f.joints[p], c = f.joints[q];
+    if (!a || !c) continue;
+    out.push(`<line x1="${view.X(a[view.ax])}" y1="${view.Y(a[view.ay])}"
+      x2="${view.X(c[view.ax])}" y2="${view.Y(c[view.ay])}"
+      stroke="var(--ink)" stroke-width="2.6" stroke-linecap="round"/>`);
+  }
+  for (const p of Object.values(f.joints)) {
+    out.push(`<circle cx="${view.X(p[view.ax])}" cy="${view.Y(p[view.ay])}"
+      r="2.4" fill="var(--ink)"/>`);
+  }
+  const reached = f.verdict !== 'neither';
+  out.push(`<circle cx="${view.X(f.ball[view.ax])}" cy="${view.Y(f.ball[view.ay])}"
+    r="${DATA.ballRadiusCm * view.k}" fill="var(--ball)" fill-opacity=".9"
+    stroke="${reached ? 'var(--in)' : 'var(--out)'}" stroke-width="2.4"/>`);
+  view.svg.innerHTML = out.join('');
+}
+
+function chart() {
+  const W = 900, H = 190, padL = 46, padR = 20, padT = 30, padB = 26;
+  const vals = F.map(f => f.margin);
+  const lo = Math.min(...vals), hi = Math.max(...vals);
+  const X = i => padL + i * (W - padL - padR) / LAST;
+  const Y = v => H - padB - (v - lo) * (H - padT - padB) / Math.max(hi - lo, 1);
+  const out = [];
+
+  // A faint grid at round values, so a reader can put a number on the curve.
+  const step = 50;
+  for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) {
+    out.push(`<line x1="${padL}" y1="${Y(v)}" x2="${W - padR}" y2="${Y(v)}"
+      stroke="var(--rule)" stroke-width="1"/>`);
+    out.push(`<text x="${padL - 8}" y="${Y(v) + 4}" text-anchor="end"
+      font-size="11" font-family="ui-monospace, Consolas, monospace"
+      fill="var(--soft)">${v}</text>`);
+  }
+
+  // The two structural events. Everything between them is the flight.
+  for (const [phase, name] of [[DATA.releasePhase, 'release'],
+                               [DATA.arrivalPhase, 'arrival']]) {
+    const x = X(phase * LAST);
+    out.push(`<line x1="${x}" y1="16" x2="${x}" y2="${H - padB}"
+      stroke="var(--soft)" stroke-width="1" stroke-dasharray="3 3" opacity=".7"/>`);
+    out.push(`<text x="${x + 4}" y="13" font-size="10.5"
+      font-family="ui-monospace, Consolas, monospace" letter-spacing=".08em"
+      fill="var(--soft)">${name.toUpperCase()}</text>`);
+  }
+
+  // Zero is the reach limit itself, so it is drawn as a solid rule.
+  out.push(`<line x1="${padL}" y1="${Y(0)}" x2="${W - padR}" y2="${Y(0)}"
+    stroke="var(--ink)" stroke-width="1.4"/>`);
+  out.push(`<text x="${W - padR}" y="${Y(0) - 7}" text-anchor="end"
+    font-size="10.5" font-family="ui-monospace, Consolas, monospace"
+    letter-spacing=".08em" fill="var(--ink)">REACH LIMIT</text>`);
+
+  let line = '';
+  F.forEach((f, i) => { line += (i ? 'L' : 'M') + X(i) + ' ' + Y(f.margin); });
+  out.push(`<path d="${line} L${X(LAST)} ${Y(0)} L${X(0)} ${Y(0)}Z"
+    fill="var(--out)" fill-opacity=".1"/>`);
+  out.push(`<path d="${line}" fill="none" stroke="var(--ink)" stroke-width="1.8"
+    stroke-linejoin="round"/>`);
+  F.forEach((f, i) => {
+    out.push(`<circle cx="${X(i)}" cy="${Y(f.margin)}" r="2.6"
+      fill="${f.verdict === 'neither' ? 'var(--out)' : 'var(--in)'}"/>`);
+  });
+  out.push(`<line id="cursor" x1="${X(0)}" y1="16" x2="${X(0)}"
+    y2="${H - padB}" stroke="var(--ball)" stroke-width="2"/>`);
+  el('chart').innerHTML = out.join('');
+  return X;
+}
+const CX = chart();
+
+function table() {
+  const head = ['Frame', 'Ball', 'Height cm', 'Ahead cm', 'Margin cm', 'In reach'];
+  const rows = [`<thead><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr></thead>`];
+  const body = F.map((f, i) =>
+    `<tr data-i="${i}" tabindex="0"><td>${i}</td><td>${f.state}</td>` +
+    `<td>${f.ball[1].toFixed(1)}</td><td>${f.ball[2].toFixed(1)}</td>` +
+    `<td class="${f.margin < 0 ? 'out' : 'in'}">${f.margin.toFixed(1)}</td>` +
+    `<td>${f.verdict}</td></tr>`);
+  rows.push(`<tbody>${body.join('')}</tbody>`);
+  el('table').innerHTML = rows.join('');
+}
+table();
+
+function show(i) {
+  at = i;
+  const f = F[i];
+  draw(SIDE, f);
+  draw(TOP, f);
+  el('frame').textContent = i;
+  el('who').textContent = f.state;
+  const m = el('margin');
+  m.textContent = f.margin.toFixed(1);
+  m.className = f.margin < 0 ? 'out' : 'in';
+  const v = el('verdict');
+  v.textContent = f.verdict;
+  v.className = f.verdict === 'neither' ? 'out' : 'in';
+  const cursor = el('cursor');
+  cursor.setAttribute('x1', CX(i));
+  cursor.setAttribute('x2', CX(i));
+  document.querySelectorAll('#table tr.now').forEach(r => r.classList.remove('now'));
+  const row = document.querySelector(`#table tr[data-i="${i}"]`);
+  if (row) row.classList.add('now');
+  el('scrub').value = i;
+}
+
+function stop() {
+  if (timer) { clearInterval(timer); timer = null; }
+  el('play').textContent = 'Play';
+}
+
+const scrub = el('scrub');
+scrub.max = LAST;
+scrub.addEventListener('input', event => { stop(); show(+event.target.value); });
+el('table').addEventListener('click', event => {
+  const row = event.target.closest('tr[data-i]');
+  if (row) { stop(); show(+row.dataset.i); }
+});
+el('table').addEventListener('keydown', event => {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  const row = event.target.closest('tr[data-i]');
+  if (row) { event.preventDefault(); stop(); show(+row.dataset.i); }
+});
+el('play').addEventListener('click', () => {
+  if (timer) { stop(); return; }
+  el('play').textContent = 'Pause';
+  timer = setInterval(() => show((at + 1) % F.length), 1000 / DATA.framesPerSecond);
+});
+show(0);
+</script>

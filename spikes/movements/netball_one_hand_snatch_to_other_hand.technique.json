@@ -1,0 +1,31 @@
+{
+  "movementId": "netball_one_hand_snatch_to_other_hand",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger",
+  "notes": "One hand takes it and the other joins. The manual puts this in capitals: get 2 hands on the ball as quick as possible.",
+  "hands": "right",
+  "turnToBall": false,
+  "grip": {
+    "spreadDegrees": 90,
+    "faceBall": true
+  },
+  "secondHand": {
+    "atPhase": 0.6
+  },
+  "afterContact": [
+    {
+      "atPhase": 0.6,
+      "name": "join",
+      "across": -0.06102,
+      "up": 0.36614,
+      "ahead": 0.81364
+    },
+    {
+      "atPhase": 1.0,
+      "name": "pull_in",
+      "across": 0.0,
+      "up": 0.10171,
+      "ahead": 0.55938
+    }
+  ],
+  "carryUnitNote": "afterContact is measured in torso lengths, not arm lengths. Where a ball sits when it is held against the chest depends on the chest and the ball, not on how long the arm is, and in arm lengths two athletes of the same height whose reach differed by a tenth held the same ball 9 percent apart. Every number here was multiplied by 1.017053, the reference athlete's arm over her torso, so her positions are unchanged and only other bodies move."
+}

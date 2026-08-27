@@ -1,0 +1,30 @@
+{
+  "movementId": "netball_double_foot_landing",
+  "possessionReady": true,
+  "notReadyBecause": "Switched on. It was held back while its arm wandered 30 degrees over the first six frames and the shoulder flipped 53 degrees during the landing. Raising the joint limit weight from 200 to 4000 removed both: the drill was pressing against its own limits and the soft limit term was letting it, and its worst spike against neighbouring frames fell from 9.22 to 1.08.",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger",
+  "notes": "A footwork drill with a ball in it. The manual has the player run from a line, receive a pass in the air and land in a marked circle, so the catch happens while she is off the ground.",
+  "hands": "both",
+  "turnToBall": true,
+  "grip": {
+    "spreadDegrees": 90,
+    "faceBall": true
+  },
+  "afterContact": [
+    {
+      "atPhase": 0.82,
+      "name": "land",
+      "across": 0.0,
+      "up": 0.24409,
+      "ahead": 0.71194
+    },
+    {
+      "atPhase": 1.0,
+      "name": "absorb",
+      "across": 0.0,
+      "up": 0.10171,
+      "ahead": 0.58989
+    }
+  ],
+  "carryUnitNote": "afterContact is measured in torso lengths, not arm lengths. Where a ball sits when it is held against the chest depends on the chest and the ball, not on how long the arm is, and in arm lengths two athletes of the same height whose reach differed by a tenth held the same ball 9 percent apart. Every number here was multiplied by 1.017053, the reference athlete's arm over her torso, so her positions are unchanged and only other bodies move."
+}

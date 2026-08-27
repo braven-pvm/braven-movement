@@ -1,0 +1,730 @@
+<title>Netball Catching Library</title>
+<style>
+  :root {
+    --court: #F2F4ED;
+    --bench: #FFFFFF;
+    --edge: #D8DED0;
+    --chalk: #161A12;
+    --dust: #5F6A59;
+    --ball: #D9482A;
+    --panel: #178073;
+    --met: #4E7A12;
+    --short: #A66408;
+    --bone: #5F6A59;
+    --shadow: 0 1px 2px rgba(22, 26, 18, .06), 0 8px 24px rgba(22, 26, 18, .06);
+    --display: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --data: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --court: #12160F;
+      --bench: #1B2118;
+      --edge: #2C3428;
+      --chalk: #ECF1E6;
+      --dust: #8B9784;
+      --ball: #FF6B4A;
+      --panel: #35B9A6;
+      --met: #A8D93F;
+      --short: #E9A63C;
+      --bone: #7C8A75;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px rgba(0, 0, 0, .35);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --court: #12160F;
+    --bench: #1B2118;
+    --edge: #2C3428;
+    --chalk: #ECF1E6;
+    --dust: #8B9784;
+    --ball: #FF6B4A;
+    --panel: #35B9A6;
+    --met: #A8D93F;
+    --short: #E9A63C;
+    --bone: #7C8A75;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px rgba(0, 0, 0, .35);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--court);
+    color: var(--chalk);
+    font-family: var(--display);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 32px 24px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  header { display: flex; flex-direction: column; gap: 10px; }
+
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--dust);
+    font-weight: 600;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(30px, 5vw, 46px);
+    font-weight: 800;
+    letter-spacing: -.03em;
+    line-height: 1.02;
+    text-wrap: balance;
+  }
+
+  .sub { margin: 0; color: var(--dust); max-width: 62ch; font-size: 15px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+
+  .chip {
+    font-size: 11px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 4px 9px;
+    border-radius: 3px;
+    border: 1px solid var(--edge);
+    color: var(--dust);
+  }
+
+  .chip.warn { border-color: var(--short); color: var(--short); }
+
+  .picker { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .picker button {
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--dust);
+    background: var(--bench);
+    border: 1px solid var(--edge);
+    border-radius: 4px;
+    padding: 8px 13px;
+    cursor: pointer;
+  }
+
+  .picker button[aria-pressed="true"] {
+    color: var(--court);
+    background: var(--chalk);
+    border-color: var(--chalk);
+  }
+
+  .picker button:focus-visible { outline: 2px solid var(--panel); outline-offset: 2px; }
+
+  .card.no-photo { display: none; }
+
+  main {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.05fr) minmax(0, 1.1fr);
+    gap: 20px;
+    align-items: start;
+  }
+
+  @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--bench);
+    border: 1px solid var(--edge);
+    border-radius: 6px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .card-head {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--edge);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .card-title {
+    font-size: 12px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  .card-note { font-size: 11px; color: var(--dust); }
+
+  .photo { display: block; width: 100%; height: auto; }
+
+  .photo-caption { padding: 12px 16px; font-size: 13px; color: var(--dust); }
+
+  .stage { padding: 10px 12px 2px; display: flex; flex-direction: column; gap: 6px; }
+
+  .views { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+  .view { margin: 0; display: flex; flex-direction: column; gap: 4px; }
+
+  .view figcaption {
+    font-size: 10px;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--dust);
+    text-align: center;
+  }
+
+  .ball { fill: var(--panel); stroke: var(--bench); stroke-width: 2; }
+
+  .beat {
+    margin: 0;
+    padding: 8px 2px 0;
+    font-size: 13px;
+    color: var(--chalk);
+    min-height: 40px;
+    border-top: 1px solid var(--edge);
+  }
+
+  .beat b { color: var(--ball); }
+
+  svg.figure { display: block; width: 100%; height: auto; background: transparent; }
+
+  .bone { stroke: var(--bone); stroke-width: 5; stroke-linecap: round; }
+  .bone.work { stroke: var(--ball); stroke-width: 6.5; }
+  .hand { fill: var(--ball); }
+  .ground { stroke: var(--edge); stroke-width: 1.5; }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px 14px;
+    border-top: 1px solid var(--edge);
+  }
+
+  button.play {
+    font: inherit;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--court);
+    background: var(--chalk);
+    border: 0;
+    border-radius: 4px;
+    padding: 7px 14px;
+    cursor: pointer;
+    min-width: 74px;
+  }
+
+  button.play:focus-visible,
+  .phase:focus-visible { outline: 2px solid var(--panel); outline-offset: 2px; }
+
+  input[type="range"] { flex: 1; accent-color: var(--ball); min-width: 0; }
+
+  .readout {
+    font-family: var(--data);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--dust);
+    min-width: 62px;
+    text-align: right;
+  }
+
+  .phases { display: flex; flex-direction: column; gap: 10px; }
+
+  .phase {
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    background: var(--bench);
+    border: 1px solid var(--edge);
+    border-left: 3px solid var(--edge);
+    border-radius: 5px;
+    padding: 12px 14px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    transition: border-color .18s ease, transform .18s ease;
+  }
+
+  .phase[data-active="true"] {
+    border-left-color: var(--ball);
+    transform: translateX(2px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .phase { transition: none; }
+  }
+
+  .phase-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+
+  .phase-name {
+    font-size: 12px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  .phase-at { font-family: var(--data); font-size: 11px; color: var(--dust); }
+
+  .check { display: flex; flex-direction: column; gap: 5px; }
+
+  .cue { font-size: 13px; line-height: 1.4; }
+
+  .meter-row { display: flex; align-items: center; gap: 10px; }
+
+  .meter {
+    position: relative;
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--edge);
+    min-width: 60px;
+  }
+
+  .band { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: var(--panel); opacity: .45; }
+
+  .marker {
+    position: absolute;
+    top: -3px;
+    width: 2px;
+    height: 12px;
+    background: var(--chalk);
+    border-radius: 1px;
+  }
+
+  .value {
+    font-family: var(--data);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    min-width: 74px;
+    text-align: right;
+  }
+
+  .value[data-verdict="within"] { color: var(--met); }
+  .value[data-verdict="below"],
+  .value[data-verdict="above"] { color: var(--short); }
+
+  .timeline { display: flex; flex-direction: column; gap: 8px; }
+
+  .track {
+    position: relative;
+    height: 30px;
+    border: 1px solid var(--edge);
+    border-radius: 4px;
+    background: var(--bench);
+    overflow: hidden;
+  }
+
+  .progress { position: absolute; top: 0; bottom: 0; left: 0; background: var(--ball); opacity: .16; }
+
+  .tick { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--edge); }
+
+  .tick-label {
+    position: absolute;
+    top: 7px;
+    font-size: 10px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--dust);
+    transform: translateX(6px);
+    white-space: nowrap;
+  }
+
+  footer { border-top: 1px solid var(--edge); padding-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+
+  .prov { font-size: 12px; color: var(--dust); max-width: 78ch; }
+
+  .stats { display: flex; flex-wrap: wrap; gap: 18px; }
+
+  .stat { display: flex; flex-direction: column; gap: 1px; }
+
+  .stat-value { font-family: var(--data); font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .stat-label { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--dust); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Braven Movement &middot; netball catching</div>
+    <h1 id="skill">Snatch and Pull In</h1>
+    <p class="sub" id="blurb"></p>
+    <div class="chips">
+      <span class="chip">MHR athlete &middot; 127 joints</span>
+      <span class="chip">Joint limits active</span>
+      <span class="chip">Shape locked</span>
+      <span class="chip warn">Bands provisional</span>
+    </div>
+  </header>
+
+  <nav class="picker" id="picker" aria-label="Skill"></nav>
+
+  <main>
+    <section class="card">
+      <div class="card-head">
+        <span class="card-title">The manual</span>
+        <span class="card-note">page 71</span>
+      </div>
+      <img class="photo" id="photo" alt="A netball player taking a two-hand snatch in front of her shoulder, from the coaches manual." />
+      <p class="photo-caption">
+        The technique as coached. Both elbows are bent as she snatches the ball
+        in front of the shoulder. This photograph corrected a band that had
+        demanded almost straight arms.
+      </p>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <span class="card-title">The engine</span>
+        <span class="card-note" id="frameNote"></span>
+      </div>
+      <div class="stage">
+        <div class="views">
+          <figure class="view">
+            <svg class="figure" viewBox="0 0 420 560" role="img"
+                 aria-label="Front view of the athlete performing the snatch and pull in.">
+              <line class="ground" x1="30" y1="506" x2="390" y2="506" />
+              <g data-bones="front"></g>
+              <circle class="ball" data-ball="front" r="17" />
+              <g data-hands="front"></g>
+            </svg>
+            <figcaption>Front &middot; camera 1</figcaption>
+          </figure>
+          <figure class="view">
+            <svg class="figure" viewBox="0 0 420 560" role="img"
+                 aria-label="Side view of the athlete, facing right, performing the snatch and pull in.">
+              <line class="ground" x1="30" y1="506" x2="390" y2="506" />
+              <g data-bones="side"></g>
+              <circle class="ball" data-ball="side" r="17" />
+              <g data-hands="side"></g>
+            </svg>
+            <figcaption>Side &middot; camera 2 &middot; she faces right</figcaption>
+          </figure>
+        </div>
+        <p class="beat" id="beat"></p>
+      </div>
+      <div class="controls">
+        <button class="play" id="play" type="button">Pause</button>
+        <input type="range" id="scrub" min="0" max="23" value="0" step="1"
+               aria-label="Movement frame" />
+        <span class="readout" id="phaseRead">0%</span>
+      </div>
+    </section>
+
+    <section class="phases" id="phases"></section>
+  </main>
+
+  <section class="timeline">
+    <div class="track" id="track">
+      <div class="progress" id="progress"></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="stats">
+      <div class="stat"><span class="stat-value">1.7 ms</span><span class="stat-label">Solve per frame</span></div>
+      <div class="stat"><span class="stat-value">0.00 cm</span><span class="stat-label">Hand target miss</span></div>
+      <div class="stat"><span class="stat-value">2.2&deg;</span><span class="stat-label">Largest frame step</span></div>
+      <div class="stat"><span class="stat-value">0.000000&deg;</span><span class="stat-label">Error vs OpenSim</span></div>
+      <div class="stat"><span class="stat-value">5 mm</span><span class="stat-label">Landmark budget</span></div>
+    </div>
+    <p class="prov" id="source"></p>
+    <p class="prov">
+      Every figure here is engine output, solved on a CPU with no GPU. The pose
+      is not coaching-approved. A coach must set the numeric bands before an
+      athlete sees them.
+    </p>
+  </footer>
+</div>
+
+<script id="payload" type="application/json">__DATA__</script>
+<script>
+  (function () {
+    var LIBRARY = JSON.parse(document.getElementById('payload').textContent);
+    var ids = Object.keys(LIBRARY);
+
+    var SVG = 'http://www.w3.org/2000/svg';
+    var VIEWS = ['front', 'side'];
+
+    var picker = document.getElementById('picker');
+    var photoCard = document.getElementById('photo').closest('.card');
+    var scrub = document.getElementById('scrub');
+    var play = document.getElementById('play');
+    var phaseRead = document.getElementById('phaseRead');
+    var frameNote = document.getElementById('frameNote');
+    var track = document.getElementById('track');
+    var phaseBox = document.getElementById('phases');
+
+    var data = null, scenes = [], cards = [], anchors = {}, last = 0;
+    var index = 0, playing = true;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      playing = false;
+      play.textContent = 'Play';
+    }
+
+    // Arms are the working limbs in these skills, so they carry the accent.
+    function isWork(bone) {
+      return /uparm|lowarm|wrist|clavicle/.test(bone[0] + ' ' + bone[1]);
+    }
+
+    function clear(node) {
+      while (node.firstChild) { node.removeChild(node.firstChild); }
+    }
+
+    function buildScenes() {
+      scenes = VIEWS.map(function (view) {
+        var boneGroup = document.querySelector('[data-bones="' + view + '"]');
+        var handGroup = document.querySelector('[data-hands="' + view + '"]');
+        clear(boneGroup);
+        clear(handGroup);
+        var lines = data.bones.map(function (bone) {
+          var line = document.createElementNS(SVG, 'line');
+          line.setAttribute('class', 'bone' + (isWork(bone) ? ' work' : ''));
+          boneGroup.appendChild(line);
+          return { el: line, bone: bone };
+        });
+        var hands = ['l_wrist', 'r_wrist'].map(function (name) {
+          var dot = document.createElementNS(SVG, 'circle');
+          dot.setAttribute('class', 'hand');
+          dot.setAttribute('r', '7');
+          handGroup.appendChild(dot);
+          return { el: dot, name: name };
+        });
+        return {
+          view: view,
+          lines: lines,
+          hands: hands,
+          ball: document.querySelector('[data-ball="' + view + '"]')
+        };
+      });
+    }
+
+    function buildPhases() {
+      clear(phaseBox);
+      var coaching = data.coaching;
+      var order = Object.keys(coaching.phases);
+      anchors = {};
+      order.forEach(function (name, i) {
+        var given = data.phaseAnchors ? data.phaseAnchors[name] : undefined;
+        anchors[name] = (given === undefined)
+          ? i / Math.max(order.length - 1, 1)
+          : given;
+      });
+
+      cards = order.map(function (name) {
+        var card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'phase';
+        card.setAttribute('data-active', 'false');
+
+        var head = document.createElement('div');
+        head.className = 'phase-head';
+        var title = document.createElement('span');
+        title.className = 'phase-name';
+        title.textContent = name.replace(/_/g, ' ');
+        var at = document.createElement('span');
+        at.className = 'phase-at';
+        head.appendChild(title);
+        head.appendChild(at);
+        card.appendChild(head);
+
+        var rows = coaching.phases[name].map(function (check) {
+          var wrap = document.createElement('div');
+          wrap.className = 'check';
+          var cue = document.createElement('div');
+          cue.className = 'cue';
+          cue.textContent = check.cue;
+          wrap.appendChild(cue);
+
+          var row = document.createElement('div');
+          row.className = 'meter-row';
+          var meter = document.createElement('div');
+          meter.className = 'meter';
+          var band = document.createElement('div');
+          band.className = 'band';
+          var marker = document.createElement('div');
+          marker.className = 'marker';
+          meter.appendChild(band);
+          meter.appendChild(marker);
+          var value = document.createElement('span');
+          value.className = 'value';
+          row.appendChild(meter);
+          row.appendChild(value);
+          wrap.appendChild(row);
+          card.appendChild(wrap);
+
+          var lo = check.band[0];
+          var hi = check.band[1];
+          var pad = Math.max(20, (hi - lo) * 0.45);
+          var from = lo - pad;
+          var to = hi + pad;
+          band.style.left = ((lo - from) / (to - from) * 100) + '%';
+          band.style.width = ((hi - lo) / (to - from) * 100) + '%';
+          return { check: check, marker: marker, value: value, from: from, to: to };
+        });
+
+        card.addEventListener('click', function () {
+          index = Math.round(anchors[name] * last);
+          scrub.value = String(index);
+          playing = false;
+          play.textContent = 'Play';
+          draw(index);
+        });
+        phaseBox.appendChild(card);
+        return { name: name, el: card, at: at, rows: rows };
+      });
+
+      clear(track);
+      var bar = document.createElement('div');
+      bar.className = 'progress';
+      bar.id = 'progressBar';
+      track.appendChild(bar);
+      order.forEach(function (name) {
+        var at = anchors[name];
+        var tick = document.createElement('div');
+        tick.className = 'tick';
+        tick.style.left = (at * 100) + '%';
+        track.appendChild(tick);
+        var label = document.createElement('div');
+        label.className = 'tick-label';
+        label.style.left = (at * 100) + '%';
+        label.textContent = name.replace(/_/g, ' ');
+        track.appendChild(label);
+      });
+    }
+
+    function nearestPhase(fraction) {
+      var names = Object.keys(anchors);
+      var best = names[0];
+      var gap = Infinity;
+      names.forEach(function (name) {
+        var distance = Math.abs(anchors[name] - fraction);
+        if (distance < gap) { gap = distance; best = name; }
+      });
+      return best;
+    }
+
+    function draw(i) {
+      var frame = data.frames[i];
+      scenes.forEach(function (scene) {
+        var points = frame[scene.view];
+        scene.lines.forEach(function (item) {
+          var a = points[item.bone[0]];
+          var b = points[item.bone[1]];
+          if (!a || !b) { return; }
+          item.el.setAttribute('x1', a[0]);
+          item.el.setAttribute('y1', a[1]);
+          item.el.setAttribute('x2', b[0]);
+          item.el.setAttribute('y2', b[1]);
+        });
+        scene.hands.forEach(function (item) {
+          var pt = points[item.name];
+          if (!pt) { return; }
+          item.el.setAttribute('cx', pt[0]);
+          item.el.setAttribute('cy', pt[1]);
+        });
+        var ball = frame.ball[scene.view];
+        scene.ball.setAttribute('cx', ball[0]);
+        scene.ball.setAttribute('cy', ball[1]);
+      });
+
+      var fraction = i / last;
+      var current = data.measurements[i];
+      var bar = document.getElementById('progressBar');
+      if (bar) { bar.style.width = (fraction * 100) + '%'; }
+      phaseRead.textContent = Math.round(fraction * 100) + '%';
+      frameNote.textContent = 'frame ' + (i + 1) + ' of ' + data.frames.length;
+
+      var active = nearestPhase(fraction);
+      var pretty = active.replace(/_/g, ' ');
+      document.getElementById('beat').innerHTML =
+        '<b>' + pretty.charAt(0).toUpperCase() + pretty.slice(1) + '.</b> '
+        + (data.notes && data.notes[active] ? data.notes[active] : '');
+
+      cards.forEach(function (card) {
+        card.el.setAttribute('data-active', card.name === active ? 'true' : 'false');
+        card.at.textContent = Math.round(anchors[card.name] * 100) + '%';
+        card.rows.forEach(function (row) {
+          var live = current[row.check.measure];
+          var shown = (live === undefined) ? row.check.measured : live;
+          var lo = row.check.band[0];
+          var hi = row.check.band[1];
+          var verdict = shown < lo ? 'below' : (shown > hi ? 'above' : 'within');
+          var pos = Math.max(0, Math.min(1, (shown - row.from) / (row.to - row.from)));
+          row.marker.style.left = 'calc(' + (pos * 100) + '% - 1px)';
+          row.value.textContent = shown.toFixed(1) + '°';
+          row.value.setAttribute('data-verdict', verdict);
+        });
+      });
+    }
+
+    function select(id) {
+      data = LIBRARY[id];
+      last = data.frames.length - 1;
+      scrub.max = String(last);
+      scrub.value = '0';
+      index = 0;
+      document.getElementById('skill').textContent = data.skill;
+      document.getElementById('source').textContent = data.source;
+      document.getElementById('blurb').textContent =
+        'A ' + data.sport + ' skill, solved joint by joint and graded against the '
+        + 'coaches manual. Scrub the movement, or pick a phase, and watch every '
+        + 'checkpoint answer.';
+      if (data.referencePhoto) {
+        document.getElementById('photo').src = data.referencePhoto;
+        photoCard.classList.remove('no-photo');
+      } else {
+        photoCard.classList.add('no-photo');
+      }
+      Array.prototype.forEach.call(picker.children, function (button) {
+        button.setAttribute(
+          'aria-pressed', button.getAttribute('data-id') === id ? 'true' : 'false'
+        );
+      });
+      buildScenes();
+      buildPhases();
+      draw(0);
+    }
+
+    ids.forEach(function (id) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.setAttribute('data-id', id);
+      button.textContent = LIBRARY[id].skill;
+      button.setAttribute('aria-pressed', 'false');
+      button.addEventListener('click', function () { select(id); });
+      picker.appendChild(button);
+    });
+
+    scrub.addEventListener('input', function () {
+      index = Number(scrub.value);
+      playing = false;
+      play.textContent = 'Play';
+      draw(index);
+    });
+
+    play.addEventListener('click', function () {
+      playing = !playing;
+      play.textContent = playing ? 'Pause' : 'Play';
+    });
+
+    var lastStep = 0;
+    function tick(now) {
+      if (playing && data && now - lastStep > 70) {
+        lastStep = now;
+        index = (index + 1) % data.frames.length;
+        scrub.value = String(index);
+        draw(index);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    select(ids[0]);
+    requestAnimationFrame(tick);
+  })();
+</script>

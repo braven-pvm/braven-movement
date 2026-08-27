@@ -1,0 +1,33 @@
+{
+  "movementId": "netball_two_hand_snatch_pull_in",
+  "source": "202526 Netball Coaches Manual, page 71, 2 hand snatches and pull in",
+  "notes": "How the athlete meets the ball. This file never says where a hand is. The hands are solved against the ball, so the same technique can be practised against any trajectory in the arm span, which is what the manual asks for.",
+  "hands": "both",
+  "turnToBall": true,
+  "turnNote": "She turns to put the ball in front of her, and no further. A ball 31 cm to her left, taken square, leaves her right shoulder 62 cm from it against her left shoulder's 39, so the far arm reaches across at nearly full extension where the elbow stops steering smoothly.",
+  "grip": {
+    "spreadDegrees": 90,
+    "faceBall": true,
+    "note": "The angle between the two palms, measured around the ball, half either side of the direction back toward the athlete. Both palms face the ball centre, which is what puts the fingers up and the thumbs behind.",
+    "whyNinety": "Measured, not chosen. Sweeping the spread from 40 to 140 degrees and solving each one, this athlete produces exactly what is asked from 80 degrees upward. Below that her forearm reaches its supination limit and the palms stay wider than requested: asking for 40 gives 92, asking for 60 gives 85. Ninety is the nearest round value clear of that floor, and it puts the thumb tips together behind the ball."
+  },
+  "afterContact": [
+    {
+      "atPhase": 0.78,
+      "name": "absorb",
+      "across": 0.0,
+      "up": 0.30512,
+      "ahead": 0.63057,
+      "note": "Giving with the ball. These keys move the ball, not the hands. The hands follow because they are holding it."
+    },
+    {
+      "atPhase": 1.0,
+      "name": "pull_in",
+      "across": 0.0,
+      "up": 0.10171,
+      "ahead": 0.55938,
+      "note": "Ball secured at the chest, ready to release. This is where the ball centre goes, not where a wrist goes: the first draft reused the old hand keys and folded the elbow to 154 degrees, past the 150 AAOS allows. 0.55 of an arm length is 29 cm ahead of the chest joint, which is a spine joint, so the ball sits a few centimetres off the sternum. Measured: 0.40 gives 153 degrees of elbow flexion, 0.50 gives 149, and 0.55 gives 145. The grip is held at one spread for the whole carry, and a real athlete rotates her hands under the ball as she brings it in, which is what would let her hold it closer."
+    }
+  ],
+  "carryUnitNote": "afterContact is measured in torso lengths, not arm lengths. Where a ball sits when it is held against the chest depends on the chest and the ball, not on how long the arm is, and in arm lengths two athletes of the same height whose reach differed by a tenth held the same ball 9 percent apart. Every number here was multiplied by 1.017053, the reference athlete's arm over her torso, so her positions are unchanged and only other bodies move."
+}

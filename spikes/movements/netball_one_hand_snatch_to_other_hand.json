@@ -1,0 +1,104 @@
+{
+  "movementId": "netball_one_hand_snatch_to_other_hand",
+  "sport": "netball",
+  "skill": "1 Hand Snatches to Other Hand",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger, Catching section, page 71. The manual instructs the worker to stand still with the feet in the power position, use hands and arms to catch and pull the ball to the other hand, and react to the front in front of the shoulder. It adds a note in capitals: get 2 hands on the ball as quick as possible. The cues are the manual's. The numeric bands are NOT, and are PROVISIONAL until a coach sets them.",
+  "phases": [
+    {
+      "name": "ready",
+      "atPhase": 0.0,
+      "checkpoints": [
+        {
+          "measure": "rightShoulderElevationDegrees",
+          "minimumDegrees": 20.0,
+          "maximumDegrees": 80.0,
+          "cue": "Show the passer your arm span. Either hand may have to take it.",
+          "why": "The passer can put the ball anywhere in the span, so the athlete cannot pre-commit to a hand."
+        },
+        {
+          "measure": "leftKneeFlexionDegrees",
+          "minimumDegrees": 25.0,
+          "maximumDegrees": 75.0,
+          "cue": "Power position, feet still.",
+          "why": "The manual keeps the feet static and makes the arms do the work."
+        }
+      ]
+    },
+    {
+      "name": "reach",
+      "atPhase": 0.35,
+      "checkpoints": [
+        {
+          "measure": "rightShoulderElevationDegrees",
+          "minimumDegrees": 45.0,
+          "maximumDegrees": 125.0,
+          "cue": "Catching hand goes to the ball, out in front of the shoulder.",
+          "why": "A one-hand catch has no margin. It must be taken in front where the arm still has range."
+        }
+      ]
+    },
+    {
+      "name": "contact",
+      "atPhase": 0.5,
+      "checkpoints": [
+        {
+          "measure": "rightElbowFlexionDegrees",
+          "minimumDegrees": 10.0,
+          "maximumDegrees": 90.0,
+          "cue": "Take it in one hand, in front of your shoulder.",
+          "why": "Reaching with a bent arm shortens the range the athlete can cover in the span."
+        },
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 30.0,
+          "maximumDegrees": 120.0,
+          "cue": "Other hand stays ready, close to the ball, not chasing it.",
+          "why": "The second hand has to arrive next. Chasing early takes it out of position."
+        }
+      ]
+    },
+    {
+      "name": "join",
+      "atPhase": 0.72,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 100.0,
+          "maximumDegrees": 150.0,
+          "cue": "Get two hands on the ball as quick as possible.",
+          "why": "The athlete is holding the ball here, so her wrists are on its surface rather than at its centre. That is about 14.5 cm nearer the shoulder than the geometry this band was first written against, and roughly 45 degrees more elbow flexion. The lower bound is the coaching point: below it she has not brought the ball in. The upper bound is anatomy rather than technique, and the range of motion check already guards it.",
+          "wasBand": "25 to 110"
+        },
+        {
+          "measure": "rightElbowFlexionDegrees",
+          "minimumDegrees": 100.0,
+          "maximumDegrees": 150.0,
+          "cue": "Bring the ball to meet the second hand.",
+          "why": "The athlete is holding the ball here, so her wrists are on its surface rather than at its centre. That is about 14.5 cm nearer the shoulder than the geometry this band was first written against, and roughly 45 degrees more elbow flexion. The lower bound is the coaching point: below it she has not brought the ball in. The upper bound is anatomy rather than technique, and the range of motion check already guards it.",
+          "wasBand": "25 to 110"
+        }
+      ]
+    },
+    {
+      "name": "pull_in",
+      "atPhase": 1.0,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 105.0,
+          "maximumDegrees": 150.0,
+          "cue": "Two hands, ball in to the chest, secure.",
+          "why": "The athlete is holding the ball here, so her wrists are on its surface rather than at its centre. That is about 14.5 cm nearer the shoulder than the geometry this band was first written against, and roughly 45 degrees more elbow flexion. The lower bound is the coaching point: below it she has not brought the ball in. The upper bound is anatomy rather than technique, and the range of motion check already guards it.",
+          "wasBand": "50 to 130"
+        },
+        {
+          "measure": "trunkLeanDegrees",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 14.0,
+          "cue": "Stay balanced through the join. Do not reach with your body.",
+          "why": "A one-hand catch tempts the athlete to lean after the ball, which costs the next movement."
+        }
+      ]
+    }
+  ]
+}

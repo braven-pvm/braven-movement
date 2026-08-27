@@ -1,0 +1,54 @@
+{
+  "movementId": "netball_two_hand_snatch_pull_in",
+  "frames": 98,
+  "framesPerSecond": 60,
+  "rateNote": "60 frames per second, not 24. The drill now contains a real pass at 6 m per second, and the ball crosses the whole reachable span in two frames at 24. Measured over the same 1.625 second movement, the largest elbow change between frames falls from 9.4 degrees at 24 to 4.4 at 60 and 3.7 at 96. Nothing about the movement changes with the rate; there were simply not enough frames to hold it.",
+  "notes": "Hand positions are given relative to the chest and scaled by the athlete's own arm length, so the same movement retargets to any body without rewriting numbers. Units are fractions of arm length. across is the distance out to the side, up is above the chest, ahead is in front of the chest. A value of 1.0 ahead means a fully straight arm reaching forward.",
+  "stance": {
+    "hipDropFraction": 0.11284,
+    "note": "How far the hips sit below standing, as a fraction of arm length. This is what produces the wide base power position the manual asks for. Feet stay planted.",
+    "unitNote": "Stance is measured in leg lengths, not arm lengths. hipDrop, the foot placements and the root travel were all written in arm lengths, which made them depend on the wrong limb: two athletes of the same height with the same legs, differing only in reach, came out with knees 5 degrees apart. Every stance number here was multiplied by 0.626885, the reference athlete's arm over her leg, so her poses are exactly what they were and only other bodies change."
+  },
+  "keys": [
+    {
+      "atPhase": 0.0,
+      "name": "ready",
+      "across": 0.26,
+      "up": 0.16,
+      "ahead": 0.82,
+      "note": "Hands up and in front, showing the passer the arm span."
+    },
+    {
+      "atPhase": 0.3,
+      "name": "react",
+      "across": 0.27,
+      "up": 0.24,
+      "ahead": 0.6,
+      "note": "Reacting to the front, hands rising toward the ball."
+    },
+    {
+      "atPhase": 0.5,
+      "name": "contact",
+      "across": 0.26,
+      "up": 0.42,
+      "ahead": 0.7,
+      "note": "Contact, in front of the shoulder, near full reach."
+    },
+    {
+      "atPhase": 0.74,
+      "name": "absorb",
+      "across": 0.24,
+      "up": 0.28,
+      "ahead": 0.52,
+      "note": "Giving with the ball as it comes in."
+    },
+    {
+      "atPhase": 1.0,
+      "name": "pull_in",
+      "across": 0.22,
+      "up": 0.04,
+      "ahead": 0.36,
+      "note": "Ball secured at the chest, ready to release."
+    }
+  ]
+}

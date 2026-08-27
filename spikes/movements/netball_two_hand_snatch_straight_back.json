@@ -1,0 +1,90 @@
+{
+  "movementId": "netball_two_hand_snatch_straight_back",
+  "sport": "netball",
+  "skill": "2 Hand Snatches and Straight Back",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger, Catching section, page 71. The manual describes this drill exactly as the pull-in drill except for the fourth instruction: pass the ball straight back to the passer, without pulling the ball to the body. The cues are the manual's. The numeric bands are NOT, and are PROVISIONAL until a coach sets them.",
+  "phases": [
+    {
+      "name": "ready",
+      "atPhase": 0.0,
+      "checkpoints": [
+        {
+          "measure": "leftShoulderElevationDegrees",
+          "minimumDegrees": 20.0,
+          "maximumDegrees": 75.0,
+          "cue": "Show the passer your arm span, the range your hands can reach.",
+          "why": "The passer may put the ball anywhere inside that span, so the span must be presented honestly."
+        },
+        {
+          "measure": "leftKneeFlexionDegrees",
+          "minimumDegrees": 25.0,
+          "maximumDegrees": 75.0,
+          "cue": "Wide base power position, static with the feet.",
+          "why": "The manual keeps the feet still and makes the hands and arms do the work."
+        }
+      ]
+    },
+    {
+      "name": "contact",
+      "atPhase": 0.5,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 30.0,
+          "maximumDegrees": 110.0,
+          "cue": "React to the front, in front of your shoulder.",
+          "why": "Taking the ball in front of the shoulder line is what gives the arms room to control it."
+        },
+        {
+          "measure": "rightElbowFlexionDegrees",
+          "minimumDegrees": 30.0,
+          "maximumDegrees": 110.0,
+          "cue": "Both hands on the ball together.",
+          "why": "Two hands give the control needed to send a strong ball back."
+        }
+      ]
+    },
+    {
+      "name": "control",
+      "atPhase": 0.68,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 95.0,
+          "maximumDegrees": 145.0,
+          "cue": "Control it, but do not pull it in to your body.",
+          "why": "The athlete is holding the ball here, so her wrists are on its surface rather than at its centre. That is about 14.5 cm nearer the shoulder than the geometry this band was first written against, and roughly 45 degrees more elbow flexion. The lower bound is the coaching point: below it she has not brought the ball in. The upper bound is anatomy rather than technique, and the range of motion check already guards it.",
+          "wasBand": "35 to 105"
+        },
+        {
+          "measure": "trunkLeanDegrees",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 12.0,
+          "cue": "Stay tall. The hands work, the body does not.",
+          "why": "The worker is static with the feet and uses hands and arms only."
+        }
+      ]
+    },
+    {
+      "name": "return",
+      "atPhase": 1.0,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 45.0,
+          "maximumDegrees": 105.0,
+          "cue": "Pass it straight back from where you caught it.",
+          "why": "Shifted by the same 45 degrees as every other elbow band in this library, for the same reason. These numbers were authored against a solve in which the ball was drawn at the midpoint of the wrists, so the wrist occupied the ball's centre. A hand holding a ball is on its surface, which is 14.5 cm nearer the shoulder, and at these ranges that is worth about 45 degrees of elbow flexion. The shift is uniform and the width of the band is unchanged, so what the band asks of the athlete is the same; only the geometry it was measured against has been corrected.",
+          "wasBand": "0 to 60"
+        },
+        {
+          "measure": "leftShoulderElevationDegrees",
+          "minimumDegrees": 30.0,
+          "maximumDegrees": 100.0,
+          "cue": "Send it back in front of the shoulder, not from the chest.",
+          "why": "A pass that starts at the chest has already lost the time the drill exists to save."
+        }
+      ]
+    }
+  ]
+}

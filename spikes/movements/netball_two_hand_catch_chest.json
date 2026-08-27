@@ -1,0 +1,86 @@
+{
+  "movementId": "netball_two_hand_catch_chest",
+  "sport": "netball",
+  "skill": "2 Hands Catch",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger, Catching section, page 71. The manual gives three instructions for this catch: keep fingers up with thumbs in the middle, keep arms almost straight in front and pull the ball in to the chest as soon as it is caught, and use the momentum of the catch to pass the ball back. The cues below are the manual's. The numeric bands are NOT. They are PROVISIONAL and a coach must set them.",
+  "phases": [
+    {
+      "name": "ready",
+      "atPhase": 0.0,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 50.0,
+          "maximumDegrees": 105.0,
+          "cue": "Arms almost straight in front, fingers up, thumbs in the middle.",
+          "why": "She meets the ball with her palms on its surface, so the wrist sits about 14.5 cm inside the ball's centre, which is where this band first put it. A two hand catch on a size 5 netball at the edge of the reach measures about 64 degrees of elbow flexion, and 40 was not reachable at all. The lower bound now guards the real fault at the other end: an arm caught straight cannot give with the ball.",
+          "wasBand": "0 to 45"
+        },
+        {
+          "measure": "leftKneeFlexionDegrees",
+          "minimumDegrees": 20.0,
+          "maximumDegrees": 70.0,
+          "cue": "Balanced base, ready to release straight away.",
+          "why": "The manual wants a quick catch and release, and a release needs a base."
+        }
+      ]
+    },
+    {
+      "name": "contact",
+      "atPhase": 0.45,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 40.0,
+          "maximumDegrees": 95.0,
+          "cue": "Meet the ball with almost straight arms.",
+          "why": "She meets the ball with her palms on its surface, so the wrist sits about 14.5 cm inside the ball's centre, which is where this band first put it. A two hand catch on a size 5 netball at the edge of the reach measures about 64 degrees of elbow flexion, and 40 was not reachable at all. The lower bound now guards the real fault at the other end: an arm caught straight cannot give with the ball.",
+          "wasBand": "0 to 40"
+        },
+        {
+          "measure": "rightElbowFlexionDegrees",
+          "minimumDegrees": 40.0,
+          "maximumDegrees": 95.0,
+          "cue": "Both arms the same. Thumbs in the middle behind the ball.",
+          "why": "She meets the ball with her palms on its surface, so the wrist sits about 14.5 cm inside the ball's centre, which is where this band first put it. A two hand catch on a size 5 netball at the edge of the reach measures about 64 degrees of elbow flexion, and 40 was not reachable at all. The lower bound now guards the real fault at the other end: an arm caught straight cannot give with the ball.",
+          "wasBand": "0 to 40"
+        }
+      ]
+    },
+    {
+      "name": "pull_in",
+      "atPhase": 0.72,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 105.0,
+          "maximumDegrees": 150.0,
+          "cue": "As soon as you catch the ball, pull it in to your chest.",
+          "why": "The athlete is holding the ball here, so her wrists are on its surface rather than at its centre. That is about 14.5 cm nearer the shoulder than the geometry this band was first written against, and roughly 45 degrees more elbow flexion. The lower bound is the coaching point: below it she has not brought the ball in. The upper bound is anatomy rather than technique, and the range of motion check already guards it.",
+          "wasBand": "50 to 130"
+        },
+        {
+          "measure": "trunkLeanDegrees",
+          "minimumDegrees": 0.0,
+          "maximumDegrees": 12.0,
+          "cue": "Bring the ball to your chest. Do not take your chest to the ball.",
+          "why": "Leaning back to receive the ball costs balance and the next pass. The arms do the absorbing."
+        }
+      ]
+    },
+    {
+      "name": "release",
+      "atPhase": 1.0,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 55.0,
+          "maximumDegrees": 115.0,
+          "cue": "Use the momentum of the catch to pass the ball back straight away.",
+          "why": "Shifted by the same 45 degrees as every other elbow band in this library, for the same reason. These numbers were authored against a solve in which the ball was drawn at the midpoint of the wrists, so the wrist occupied the ball's centre. A hand holding a ball is on its surface, which is 14.5 cm nearer the shoulder, and at these ranges that is worth about 45 degrees of elbow flexion. The shift is uniform and the width of the band is unchanged, so what the band asks of the athlete is the same; only the geometry it was measured against has been corrected.",
+          "wasBand": "10 to 70"
+        }
+      ]
+    }
+  ]
+}

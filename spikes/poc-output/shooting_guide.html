@@ -1,0 +1,271 @@
+<title>Field Capture Card</title>
+<style>
+  :root {
+    --court: #F2F4ED; --bench: #FFFFFF; --edge: #D8DED0;
+    --chalk: #161A12; --dust: #5F6A59;
+    --ball: #D9482A; --panel: #178073;
+    --good: #4E7A12; --bad: #A83A16;
+    --display: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --data: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --court: #12160F; --bench: #1B2118; --edge: #2C3428;
+      --chalk: #ECF1E6; --dust: #8B9784;
+      --ball: #FF6B4A; --panel: #35B9A6;
+      --good: #A8D93F; --bad: #FF7A5C;
+    }
+  }
+  :root[data-theme="dark"] {
+    --court: #12160F; --bench: #1B2118; --edge: #2C3428;
+    --chalk: #ECF1E6; --dust: #8B9784;
+    --ball: #FF6B4A; --panel: #35B9A6;
+    --good: #A8D93F; --bad: #FF7A5C;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--court); color: var(--chalk);
+    font-family: var(--display); line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 28px 20px 64px;
+          display: flex; flex-direction: column; gap: 26px; }
+  .eyebrow { font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+             color: var(--dust); font-weight: 600; }
+  h1 { margin: 0; font-size: clamp(28px, 7vw, 40px); font-weight: 800;
+       letter-spacing: -.03em; line-height: 1.03; text-wrap: balance; }
+  .lede { margin: 0; color: var(--dust); font-size: 15px; max-width: 60ch; }
+  section { display: flex; flex-direction: column; gap: 12px; }
+  h2 { margin: 0; font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+       font-weight: 700; color: var(--panel); }
+  .card { background: var(--bench); border: 1px solid var(--edge);
+          border-radius: 6px; padding: 16px; }
+  ol.steps { margin: 0; padding-left: 0; list-style: none;
+             display: flex; flex-direction: column; gap: 14px; counter-reset: step; }
+  ol.steps > li { display: grid; grid-template-columns: 26px 1fr; gap: 12px;
+                  align-items: start; counter-increment: step; }
+  ol.steps > li::before {
+    content: counter(step); font-family: var(--data); font-size: 12px;
+    font-weight: 700; color: var(--court); background: var(--chalk);
+    width: 22px; height: 22px; border-radius: 3px;
+    display: grid; place-items: center; margin-top: 2px;
+  }
+  .step-title { font-weight: 700; }
+  .step-body { color: var(--dust); font-size: 14px; }
+  .step-body b { color: var(--chalk); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--edge); }
+  th { font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+       color: var(--dust); font-weight: 600; }
+  td.num { font-family: var(--data); font-variant-numeric: tabular-nums; text-align: right; }
+  tr.best td { color: var(--good); font-weight: 600; }
+  tr.bad td.verdict { color: var(--bad); }
+  .diagram { display: block; width: 100%; height: auto; }
+  ul.plain { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 7px;
+             font-size: 14px; }
+  .warn { border-left: 3px solid var(--bad); padding-left: 12px; }
+  .warn h3 { margin: 0 0 6px; font-size: 14px; }
+  .check { display: flex; flex-direction: column; gap: 9px; }
+  .check label { display: grid; grid-template-columns: 18px 1fr; gap: 10px;
+                 align-items: start; font-size: 14px; cursor: pointer; }
+  .check input { margin: 3px 0 0; accent-color: var(--panel); width: 16px; height: 16px; }
+  footer { border-top: 1px solid var(--edge); padding-top: 16px;
+           color: var(--dust); font-size: 12px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Braven Movement &middot; field capture</div>
+    <h1>Field Capture Card</h1>
+    <p class="lede">
+      What to film so the footage can actually be measured. Every number here was
+      measured by running the recovery on a known pose, not estimated. Get the
+      separation wrong and the trip produces footage we can only look at.
+    </p>
+  </header>
+
+  <section>
+    <h2>The one thing that matters most</h2>
+    <div class="card">
+      <svg class="diagram" viewBox="0 0 560 260" role="img"
+           aria-label="Two cameras placed 60 to 90 degrees apart around the athlete, about 3 metres away.">
+        <circle cx="280" cy="170" r="9" fill="var(--ball)" />
+        <text x="280" y="200" fill="var(--chalk)" font-size="12" text-anchor="middle"
+              font-family="system-ui,sans-serif">athlete</text>
+        <path d="M 280 170 L 130 70" stroke="var(--panel)" stroke-width="2" />
+        <path d="M 280 170 L 430 70" stroke="var(--panel)" stroke-width="2" />
+        <path d="M 205 120 A 95 95 0 0 1 355 120" fill="none"
+              stroke="var(--dust)" stroke-width="1.5" stroke-dasharray="4 4" />
+        <text x="280" y="112" fill="var(--dust)" font-size="13" text-anchor="middle"
+              font-family="system-ui,sans-serif">60&deg; to 90&deg;</text>
+        <rect x="108" y="52" width="36" height="26" rx="3" fill="var(--chalk)" />
+        <rect x="416" y="52" width="36" height="26" rx="3" fill="var(--chalk)" />
+        <text x="126" y="42" fill="var(--dust)" font-size="11" text-anchor="middle"
+              font-family="system-ui,sans-serif">phone 1</text>
+        <text x="434" y="42" fill="var(--dust)" font-size="11" text-anchor="middle"
+              font-family="system-ui,sans-serif">phone 2</text>
+        <text x="196" y="140" fill="var(--dust)" font-size="11" text-anchor="middle"
+              font-family="system-ui,sans-serif" transform="rotate(-34 196 140)">3 m</text>
+      </svg>
+      <p class="step-body" style="margin: 10px 0 0;">
+        <b>Two phones, 60&deg; to 90&deg; apart, about 3 m from the athlete, at chest
+        height.</b> Both recording at the same time, both seeing the whole body
+        including the feet.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Why 60 to 90, measured</h2>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Separation</th><th class="num">Mean error</th><th class="num">Worst joint</th><th>Verdict</th></tr>
+        </thead>
+        <tbody>
+          <tr class="bad"><td>0&deg; to 30&deg;</td><td class="num">33&ndash;37&deg;</td><td class="num">100&deg;+</td><td class="verdict">Useless. Both cameras see the same thing.</td></tr>
+          <tr><td>45&deg;</td><td class="num">2.6&deg;</td><td class="num">11.1&deg;</td><td>Workable</td></tr>
+          <tr class="best"><td>60&deg;</td><td class="num">1.7&deg;</td><td class="num">5.8&deg;</td><td>Best</td></tr>
+          <tr><td>75&deg;</td><td class="num">1.9&deg;</td><td class="num">7.3&deg;</td><td>Good</td></tr>
+          <tr><td>90&deg;</td><td class="num">2.2&deg;</td><td class="num">9.2&deg;</td><td>Good</td></tr>
+          <tr><td>120&deg;</td><td class="num">3.2&deg;</td><td class="num">13.7&deg;</td><td>Falling off</td></tr>
+          <tr class="bad"><td>150&deg; to 180&deg;</td><td class="num">5.4&ndash;6.3&deg;</td><td class="num">33&deg;+</td><td class="verdict">Poor. One camera is behind her.</td></tr>
+        </tbody>
+      </table>
+      <p class="step-body" style="margin: 12px 0 0;">
+        Two phones side by side are <b>no better than one phone</b>. The whole
+        benefit comes from the angle between them.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Two things that turned out not to matter</h2>
+    <div class="card">
+      <ul class="plain">
+        <li><b>Camera height.</b> Anything from knee height to overhead gave the same
+          result, within a quarter of a degree. Chest height on a tripod is fine.
+          Do not spend time levelling.</li>
+        <li><b>A third camera.</b> Three phones improved the mean from 2.2&deg; to
+          1.8&deg;. Not worth the extra setup. Two, placed well, beats three placed badly.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>On the day</h2>
+    <div class="card">
+      <ol class="steps">
+        <li>
+          <div>
+            <div class="step-title">Set both phones on tripods</div>
+            <div class="step-body">60&deg; to 90&deg; apart, roughly 3 m out, chest height,
+              <b>landscape or portrait, but both the same</b>. Lock the exposure and
+              focus if the phone allows it.</div>
+          </div>
+        </li>
+        <li>
+          <div>
+            <div class="step-title">Do not zoom, and do not switch lenses</div>
+            <div class="step-body">Use the plain 1&times; main camera on both. Zooming
+              changes the lens maths and I cannot recover it afterwards. Note the phone
+              model for each.</div>
+          </div>
+        </li>
+        <li>
+          <div>
+            <div class="step-title">Fill the frame with the athlete</div>
+            <div class="step-body">Head and feet in shot, with a little room to spare.
+              The bigger she is in frame, the smaller the error. This is the cheapest
+              accuracy you will get all day.</div>
+          </div>
+        </li>
+        <li>
+          <div>
+            <div class="step-title">Film the calibration sheet first</div>
+            <div class="step-body">Hold a sheet of <b>A4 paper</b> flat, facing each
+              camera in turn, for five seconds, standing where the athlete will stand.
+              A printed chessboard is better if you have one. This gives me the real
+              lens instead of a guess.</div>
+          </div>
+        </li>
+        <li>
+          <div>
+            <div class="step-title">Start both recordings, then clap once</div>
+            <div class="step-body">One sharp clap in view of both cameras. That is how
+              the two clips get lined up. Repeat the clap if you restart either phone.</div>
+          </div>
+        </li>
+        <li>
+          <div>
+            <div class="step-title">Measure the athlete</div>
+            <div class="step-body"><b>Standing height</b> and <b>arm span</b>,
+              fingertip to fingertip, in centimetres. Without height there is no scale,
+              and every movement in the engine is expressed in arm lengths.</div>
+          </div>
+        </li>
+        <li>
+          <div>
+            <div class="step-title">Film the drill three times</div>
+            <div class="step-body">Three clean repetitions, with a pause between them.
+              A second athlete of a different height is a bonus, because it tests
+              whether a movement retargets.</div>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2>What to film</h2>
+    <div class="card">
+      <p class="step-body" style="margin: 0 0 10px;">
+        In manual order. The first is the one already built, so it is the direct
+        comparison. The rest extend the library.
+      </p>
+      <ul class="plain">
+        <li><b>2 hand snatches and pull in</b> &mdash; the built one. Film this first.</li>
+        <li><b>2 hand catch at the chest</b> &mdash; arms almost straight, the contrast case.</li>
+        <li><b>2 hand snatch straight back</b> &mdash; catch and release, no pull in.</li>
+        <li><b>1 hand snatch pull in</b> &mdash; tests the left and right handling properly.</li>
+        <li>Any one <b>power position</b> hold, still, for five seconds. A static
+          reference is worth a lot for checking the stance.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Mistakes that cost the trip</h2>
+    <div class="card warn">
+      <h3>Any one of these and the footage cannot be measured</h3>
+      <ul class="plain">
+        <li>Phones less than 45&deg; apart. This is the big one.</li>
+        <li>Feet out of frame, or cut off at the knee.</li>
+        <li>Only one phone recording during a take.</li>
+        <li>Zooming, or the phone switching to the ultra-wide lens by itself.</li>
+        <li>No clap, so the clips cannot be synchronised.</li>
+        <li>Height not written down.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Before you leave the field</h2>
+    <div class="card check">
+      <label><input type="checkbox" /> Both clips exist for every take</label>
+      <label><input type="checkbox" /> Whole body visible in both, feet included</label>
+      <label><input type="checkbox" /> Clap audible or visible in both</label>
+      <label><input type="checkbox" /> A4 sheet filmed from both cameras</label>
+      <label><input type="checkbox" /> Height and arm span written down, in cm</label>
+      <label><input type="checkbox" /> Phone model noted for each camera</label>
+      <label><input type="checkbox" /> Rough separation angle noted, even if paced out</label>
+    </div>
+  </section>
+
+  <footer>
+    Figures from spike I, run on this codebase: a known pose is projected to the
+    cameras under test, 2 px of detector noise is added, the pose is recovered from
+    the pixels alone, and the recovered joint angles are compared against the truth.
+    The clinical threshold for a meaningful difference is 5 degrees.
+  </footer>
+</div>
