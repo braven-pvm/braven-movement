@@ -31,7 +31,8 @@ Start by proving the pipeline still runs end to end on one drill. Refer to
 | `blender_glb_render.py` | Renders an inspected GLB job. |
 | `spikes/movement_viewer.html` | Interactive three.js viewer for the animated GLB. |
 | `spikes/render_figure.py` | A software rasteriser in numpy. **Debug view only.** Refer to "Do not grow the rasteriser". |
-| `spikes/export_manual_page.py`, `spikes/manual_page_template.html` | The manual page. Still draws the older SMPL-X figure. |
+| `spikes/export_manual_page.py`, `spikes/manual_page_template.html` | The manual page. Assembles the manual's words and the Blender stills. It solves, poses and renders nothing. |
+| `spikes/export_figure_check.py` | One figure, full size, through the rasteriser. **Debug view only**, and the last place SMPL-X reaches a page. |
 | `config/reference_catch.v1.json` | The one authored reference pose, calibrated against a photograph. |
 | `scripts/render-reference.ps1`, `scripts/test-blender.ps1` | The runners. |
 
@@ -115,15 +116,33 @@ Write a job for one movement. Add `--every=2` if you want animation frames.
 cd spikes && "$USERPROFILE/.pixi/bin/pixi.exe" run python export_blender_job.py netball_two_hand_snatch_pull_in --every=2
 ```
 
+Write a job for every drill the possession model is ready for.
+
+```bash
+cd spikes && "$USERPROFILE/.pixi/bin/pixi.exe" run python export_blender_job.py --all --every=2
+```
+
 Render the phase stills, three views each.
 
 ```bash
 "/c/Program Files/Blender Foundation/Blender 4.5/blender.exe" -b --python-exit-code 9 -P blender_movement_render.py -- --job spikes/poc-output/netball_two_hand_snatch_pull_in.job.json --output out
 ```
 
+`--job` repeats. Give it every job and one session renders the lot, which
+matters because building the athlete costs about two minutes and a phase view
+costs about seventeen seconds. Eight drills are 33 phases and 99 views, so
+about half an hour.
+
 Add `--turntable 12` for twelve angles of each phase, `--animate` for the GLB
 and the video, `--no-stills` to skip the phase pictures, and
-`--phase contact` to do one phase only.
+`--phase contact` to do one phase only. `--animate` takes one job.
+
+Build the manual page from those stills. It reads the render receipts and the
+job files and renders nothing itself.
+
+```bash
+cd spikes && "$USERPROFILE/.pixi/bin/pixi.exe" run python export_manual_page.py --renders ../out/manual
+```
 
 Serve the viewer. Pass `?glb=<path>` for a movement other than the default.
 
@@ -155,9 +174,10 @@ Ignoring these will cost hours. Each one already did.
    chest through her shirt. MakeHuman's base mesh is 19158 vertices of which
    only 13380 are the body.
 
-2. **`blender_mpfb_reference_catch.py` still lacks that flag.** Its own GLB has
-   the same defect. It is untouched because it is the validated path with its
-   own receipts and tests. Fixing it is the first item in "Known defects".
+2. **Both exporters set that flag now.** `blender_mpfb_reference_catch.py`
+   gained it in `8818015`, together with the shape key bake and the opaque
+   skin. A new glTF export needs all three parts. Refer to gotchas 1, 3
+   and 4.
 
 3. **Bake the shape keys before export.** `export_apply` disables shape key
    export, so they must be baked or the body reverts to the base MakeHuman
@@ -242,11 +262,15 @@ Keep it as a fast debug view of the solve. Anything a person looks at goes
 through Blender.
 
 The same applies to `spikes/smplx_body.py` and `spikes/smplx_retarget.py`. They
-wear an SMPL-X body on the solved pose and they feed the rasteriser and the
-current manual page. SMPL-X is in under a **research licence** and needs a
-commercial licence from the Max Planck Institute before anything is sold. MPFB
-does not. Refer to `LICENCE-RISK.md`. Moving the manual page onto the Blender
-path removes that risk, and it is in "Known defects" below.
+wear an SMPL-X body on the solved pose. SMPL-X is under a **research licence**
+and needs a commercial licence from the Max Planck Institute before anything is
+sold. MPFB does not. Refer to `LICENCE-RISK.md`.
+
+The manual page is off that path now. SMPL-X reaches exactly three files:
+`smplx_body.py`, `smplx_retarget.py` and `export_figure_check.py`, and every
+one of them is a debug view. Nothing a coach or a customer sees imports them.
+Keep it that way: if a page a person reads needs a figure, render it in
+Blender.
 
 ## Licence
 
@@ -261,27 +285,50 @@ path removes that risk, and it is in "Known defects" below.
 
 Ordered by how much they cost.
 
-1. **The manual page still draws the SMPL-X figure.** `export_manual_page.py`
-   uses the rasteriser. Moving it to Blender stills gives it materials, kit and
-   shadows, and removes the research licence from the product path.
+1. **The fingers go through the ball.** On every phase where she holds it, two
+   or three fingertips of the far hand come out of the top of the ball, and the
+   near hand does not appear to touch it. This is the first thing a coach will
+   see, and it is on every manual figure.
+
+   Measured on `netball_two_hand_snatch_pull_in`, contact phase. The renderer
+   is placing the wrists exactly where the job asks: both 14.8 cm from the ball
+   centre against 14.8 cm asked for, symmetric, 3.8 cm outside an 11 cm
+   surface. It achieves the palm normal to within 0.5 degrees. So the wrist is
+   not the fault.
+
+   The finger direction sits 76 degrees off the line into the centre, which is
+   nearly tangential and right. What follows it is `pose_articulated_hand`,
+   which curls each joint by a fixed number of degrees from
+   `config.finger_curl_degrees`. A fixed curl cannot wrap a ball whose surface
+   is a different distance away from one grip to the next. Suspect that before
+   the grip.
+
+   The two palm normals point in opposite senses relative to the ball, 13.8
+   and 166.2 degrees. **That is correct and is not the defect.** `hand_basis`
+   uses `finger` crossed with `index - pinky`, and the lateral axis mirrors
+   between hands, so the sign flips by design. The comment there says so. Do
+   not "fix" it.
 
 2. **The kit is not netball kit.** `female_casualsuit02` is a grey t-shirt and
    shorts. A bib in team colours is what a netball manual shows.
 
 3. **No transparent background or shadow catcher.** A manual page usually wants
-   the figure cut out with a contact shadow, not a grey room.
+   the figure cut out with a contact shadow, not a grey room. The manual page
+   shows the studio render as it is, so this is now visible on every figure.
 
-4. **Only one drill has been through the pipeline.** There are eight. The
-   batch does not exist.
-
-5. **The viewer plays two animation clips.** Blender exports the athlete and
+4. **The viewer plays two animation clips.** Blender exports the athlete and
    the ball separately. The viewer plays both, which is correct, but a reader
    that plays only the first shows the ball standing still.
 
-6. **`delete_helper_geometry` in `blender_movement_render.py` is dead.** It
+5. **`delete_helper_geometry` in `blender_movement_render.py` is dead.** It
    deleted the helper vertices by hand before `export_apply` existed. Nothing
    calls it, and its docstring still reads as live guidance. `HELPER_GROUPS`
    is unused with it.
+
+6. **`--animate` takes one job.** The GLB export bakes the shape keys away and
+   sets the materials opaque, so a second job in the same session would export
+   an athlete already baked. The stills batch has no such limit. Making the
+   animation batch would mean rebuilding the athlete, or undoing the bake.
 
 ### Closed
 
