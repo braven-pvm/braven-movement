@@ -192,6 +192,40 @@ class BlenderSourceContractTest(unittest.TestCase):
         exported = source.index("bpy.ops.export_scene.gltf(")
         self.assertLess(purge, exported, "purge the actions before exporting")
 
+    def test_the_receipt_carries_a_second_instrument_and_a_holding_flag(self):
+        """One table cannot say whether the figure is right.
+
+        The per digit table answers whether the FINGERS met the ball. It
+        passed a figure at +7 to +9 mm per finger while the ball sat through
+        the athlete's face: 406 vertices and 22.6 mm inside, none of them a
+        finger. So the receipt carries a body measurement beside it, and a
+        holding flag, because a hand 1.6 m from a ball in flight is not short
+        of anything.
+        """
+        renderer = (MODULE_DIR / "blender_movement_render.py").read_text(
+            encoding="utf-8"
+        )
+        catch = (MODULE_DIR / "blender_mpfb_reference_catch.py").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("def body_surface_clearance(", catch)
+        self.assertIn('"bodyClearanceMm"', renderer)
+        self.assertIn('"holding": bool(grip)', renderer)
+        for key in ("nearestMm", "verticesInside", "deepestMm"):
+            self.assertIn(f'"{key}"', catch)
+
+    def test_the_report_never_reads_missing_data_as_a_clean_result(self):
+        """Silence is not a pass, and this instrument exists to say so."""
+        report = (MODULE_DIR / "scripts" / "report_clearance.py").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("body_missing", report)
+        self.assertIn("carry NO body measurement", report)
+        self.assertIn("measured for it", report)
+        self.assertIn("body_measured", report)
+
     def test_movement_renderer_calls_match_the_reference_helper_signatures(self):
         """The posing helpers are shared, and only Blender links the two sides.
 

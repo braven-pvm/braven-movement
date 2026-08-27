@@ -60,12 +60,24 @@ def main(argv: list[str]) -> int:
         return 1
 
     counts = {"held": 0, "short": 0, "away": 0, "inside": 0}
-    stale = 0
+    stale, reaching, bodies = 0, 0, []
+    body_measured, body_missing = 0, 0
     for path in receipts:
         receipt = json.loads(path.read_text(encoding="utf-8"))
         print()
         print(receipt["movementId"])
         for phase in receipt["phases"]:
+            body = phase.get("bodyClearanceMm")
+            if body is None:
+                body_missing += 1
+            else:
+                body_measured += 1
+            if body and body["verticesInside"]:
+                bodies.append(
+                    f"{receipt['movementId']} {phase['name']}: "
+                    f"{body['verticesInside']} vertices of the athlete inside "
+                    f"the ball, {body['deepestMm']:.1f} mm deep"
+                )
             for side in ("l", "r"):
                 profile = phase["hands"][side].get("surfaceClearanceMm")
                 if not profile:
@@ -73,6 +85,12 @@ def main(argv: list[str]) -> int:
                     continue
                 if not any(is_profile(profile.get(d)) for d in DIGITS):
                     stale += 1
+                    continue
+                # A hand 1.6 m from a ball still in flight is not a defect, so
+                # it is not counted as one. Older receipts have no holding
+                # flag, so they are read as holding and reported as before.
+                if not phase.get("holding", True):
+                    reaching += 1
                     continue
                 cells = []
                 for digit in DIGITS:
@@ -93,6 +111,26 @@ def main(argv: list[str]) -> int:
           f"{counts['held']} on the ball, {counts['short']} short of it, "
           f"{counts['away']} pointing away, {counts['inside']} inside it")
     print("Each digit reads knuckle > tip. A grip falls; a pointing finger climbs.")
+    if reaching:
+        print(f"{reaching} hands are on a phase where she is not holding the "
+              f"ball, so they are not judged against it.")
+    print()
+    if bodies:
+        print(f"THE SECOND INSTRUMENT: {len(bodies)} phases have part of the "
+              f"athlete inside the ball. The per digit table above cannot see "
+              f"this, and once passed a figure with the ball through her face.")
+        for line in bodies:
+            print(f"   {line}")
+    elif body_measured:
+        print(f"The athlete is outside the ball on all {body_measured} phases "
+              f"measured for it.")
+    if body_missing:
+        # Silence here is not a clean result. It is no result, and saying
+        # otherwise is the mistake this instrument exists to prevent.
+        print(f"{body_missing} phases carry NO body measurement, because they "
+              f"were rendered before the field existed. Nothing above says "
+              f"whether the athlete is inside the ball on those. Re-render to "
+              f"find out.")
     if stale:
         print(f"{stale} hands carry the older single number per digit and cannot "
               f"be read. That number is a minimum sitting on the base knuckle "

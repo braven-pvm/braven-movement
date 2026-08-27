@@ -41,6 +41,7 @@ from blender_mpfb_reference_catch import (  # noqa: E402
     create_athlete,
     create_panelled_netball,
     elbow_for_target,
+    body_surface_clearance,
     finger_surface_clearance,
     make_material,
     orient_hand,
@@ -303,7 +304,8 @@ def pose_stance(rig, stance: dict, foot_baseline: dict) -> dict:
 
 
 def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
-               finger_curl_degrees: dict, knuckle_limits: dict | None = None):
+               finger_curl_degrees: dict, knuckle_limits: dict | None = None,
+               body=None):
     reset_pose(rig, basis)
     stance = pose_stance(rig, phase["stance"], foot_baseline)
 
@@ -372,7 +374,22 @@ def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
             rig, side=side, ball_centre=ball_centre, radius=radius
         )
     orient_head_to_ball(rig, ball_centre)
-    return ball_centre, {"stance": stance, "arms": arms, "hands": hands}
+    receipt = {
+        # Whether she is holding it, so a reader never has to guess why a hand
+        # is 1.6 m from the ball. Without this the report called every hand on
+        # a non-holding phase "short", which reads as a defect and is not one.
+        "holding": bool(grip),
+        "stance": stance,
+        "arms": arms,
+        "hands": hands,
+    }
+    if body is not None:
+        # The second instrument. The per digit table says whether the fingers
+        # met the surface; this says whether anything else is inside the ball.
+        receipt["bodyClearanceMm"] = body_surface_clearance(
+            body, ball_centre=ball_centre, radius=radius
+        )
+    return ball_centre, receipt
 
 
 class Studio:
@@ -425,6 +442,7 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
         centre, receipt = pose_phase(
             rig, phase, job["anatomyLimitsDegrees"], basis, foot_baseline,
             config.finger_curl_degrees, job.get("knuckleLimitsDegrees"),
+            studio.human,
         )
         ball.location = centre
         bpy.context.view_layer.update()

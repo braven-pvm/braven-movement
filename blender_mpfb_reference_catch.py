@@ -432,6 +432,43 @@ CONTACT_CLEARANCE_M = 0.008
 CONTACT_TOLERANCE_M = 0.0015
 
 
+def body_surface_clearance(
+    body: bpy.types.Object,
+    *,
+    ball_centre: Vector,
+    radius: float,
+) -> dict[str, float]:
+    """How near the athlete's whole skin comes to the ball, and what is inside.
+
+    The per digit table answers whether the FINGERS met the surface. It cannot
+    answer whether the BALL is in a sane place, because it never looks
+    anywhere else. A figure once passed every finger check at +7 to +9 mm
+    while the ball sat through the athlete's face: 406 vertices and 22.6 mm
+    inside, none of them a finger.
+
+    So this measures the evaluated mesh, which is what the camera sees, and
+    the two tables sit side by side in the receipt. Neither replaces the
+    other. Three separate defects this lane shipped or nearly shipped were
+    invisible to one instrument and obvious to a second.
+    """
+    evaluated = body.evaluated_get(bpy.context.evaluated_depsgraph_get())
+    mesh = evaluated.to_mesh()
+    matrix = evaluated.matrix_world
+    nearest, inside, deepest = None, 0, 0.0
+    for vertex in mesh.vertices:
+        gap = ((matrix @ vertex.co) - ball_centre).length - radius
+        if gap < 0.0:
+            inside += 1
+            deepest = min(deepest, gap)
+        nearest = gap if nearest is None else min(nearest, gap)
+    evaluated.to_mesh_clear()
+    return {
+        "nearestMm": round((nearest or 0.0) * 1000.0, 2),
+        "verticesInside": inside,
+        "deepestMm": round(deepest * 1000.0, 2),
+    }
+
+
 def pose_articulated_hand(
     armature: bpy.types.Object,
     *,
