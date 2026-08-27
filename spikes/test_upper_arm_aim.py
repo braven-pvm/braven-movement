@@ -6,7 +6,10 @@ obvious from reading the code, and a model change would break them silently:
 the athlete would still solve, still grade, and quietly put her elbows back
 against her ribs.
 
-These run only where the solver is installed, which is the pixi environment.
+Coverage note: these run ONLY in the pixi environment, because that is where
+pymomentum lives. A run on system python reports them as skipped, so a green
+system-python run says nothing at all about anything guarded here. Run
+`pixi run python -m unittest discover -s . -p "test_*.py"` to exercise them.
 """
 
 from __future__ import annotations
@@ -15,16 +18,22 @@ import unittest
 
 import numpy as np
 
+# Only a genuinely absent solver may skip these. Catching every exception
+# here would swallow a syntax error in the module under test and skip the
+# whole suite in silence, which is the one moment these guards exist for.
 try:
     import pymomentum.geometry as geometry
 
+    SOLVER = True
+except ImportError:  # pragma: no cover - exercised only without the solver
+    SOLVER = False
+
+if SOLVER:
+    # Deliberately unguarded. A failure importing these is a real break in
+    # the code under test and must be loud.
     import possession_solve
     from contact_solve import UPPER_ARM_AIM_WEIGHT, UPPER_ARM_LOCAL_AXIS
     from movement_engine import load_character
-
-    SOLVER = True
-except Exception:  # pragma: no cover - exercised only without the solver
-    SOLVER = False
 
 
 @unittest.skipUnless(SOLVER, "needs pymomentum, which lives in the pixi environment")
