@@ -54,6 +54,25 @@ class AfterContactKey:
     offset: BallOffset
 
 
+def read_elbow_width(grip: dict) -> float:
+    """Read `elbowWidth` from a grip block, defaulting to the snatch."""
+    value = grip.get("elbowWidth", 1.0)
+    try:
+        width = float(value)
+    except (TypeError, ValueError):
+        raise TechniqueError(
+            f"elbowWidth must be a number, got {value!r}"
+        ) from None
+    if not 0.0 <= width <= 1.5:
+        raise TechniqueError(
+            f"elbowWidth is {width}, outside 0.0 to 1.5. One is the snatch "
+            "posture measured off the manual's photographs, zero is tucked "
+            "against the ribs, and anything above 1.5 is not a shape a "
+            "shoulder makes."
+        )
+    return width
+
+
 @dataclass(frozen=True)
 class Technique:
     movement_id: str
@@ -76,6 +95,16 @@ class Technique:
     # drills ask for. A high deflect waits with the hands beside the head
     # instead, and the manual says so.
     ready: BallOffset | None
+    # How far the upper arms are held out from the ribs, as a fraction between
+    # tucked and wide. One is the snatch, measured off the manual's own
+    # photographs at 38.6 cm between the elbows. Lower values tuck them.
+    #
+    # This belongs to the technique and not to the engine, because a snatch and
+    # a chest catch are different shapes. Reaching to meet a ball spreads the
+    # elbows; taking one into the chest folds them. A single global value moved
+    # both chest catches from 14 cm between the elbows to 40, which is a snatch
+    # posture on a drill that is not a snatch.
+    elbow_width: float
     second_hand_phase: float | None
     # When she lets go. After this the hands are no longer on the ball and the
     # ball is in flight again.
@@ -172,6 +201,7 @@ def load_technique(path: Path) -> Technique:
         hands=hands,
         spread_degrees=spread,
         face_ball=bool(grip.get("faceBall", True)),
+        elbow_width=read_elbow_width(grip),
         turn_to_ball=bool(data.get("turnToBall", False)),
         possession_ready=bool(data.get("possessionReady", True)),
         ready=(

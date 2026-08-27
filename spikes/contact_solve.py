@@ -103,6 +103,27 @@ CONTACT_POLE_WEIGHT = 0.8
 # orientation, which is engine work rather than a constant.
 ELBOW_POLE_OUT_CM = 16.0
 ELBOW_POLE_DOWN_CM = 6.0
+# Where the upper arm points, as a direction rather than as a place.
+#
+# The pole above is a point target on the elbow, and a point target cannot hold
+# an upper arm up. It pulls the elbow's position while the reach pulls the hand,
+# so the two argue and the elbow settles wherever the heavier weight puts it.
+# Swept across the library it opened the elbows to 27.3 cm against the 38.6 cm
+# the manual's photographs show, and pushing it further bought the width by
+# wrecking the movement: at 22 out and 6 up the worst spike on a clean drill
+# went from 2.1 to 11.3.
+#
+# An aim term asks only for a direction, so it shapes the arm without arguing
+# about where the hand has to be. These are the components of that direction in
+# the trunk frame: out to the athlete's side, and down.
+UPPER_ARM_AIM_OUT = 0.55
+UPPER_ARM_AIM_DOWN = 0.84
+UPPER_ARM_AIM_WEIGHT = 2.0
+# The upper arm's own axis, in the shoulder's local frame, pointing at the
+# elbow. Measured on the rest skeleton as (1, -0.0018, 0) on the left and its
+# mirror on the right, so plus or minus X to four decimal places.
+# `test_upper_arm_axis_is_local_x` guards this against a model change.
+UPPER_ARM_LOCAL_AXIS = (1.0, 0.0, 0.0)
 # The arm the pole offsets were measured on. Everything absolute in this file
 # is relative to this body and has to be scaled to any other.
 REFERENCE_ARM_CM = 52.68
@@ -252,6 +273,55 @@ def elbow_poles(
     return error
 
 
+def upper_arm_aim(
+    character,
+    index: dict[str, int],
+    placed,
+    targets: dict,
+    reach_cm: float,
+    sides: tuple[str, ...],
+    width: float = 1.0,
+):
+    """Ask each upper arm to point out and down, without moving the hand.
+
+    This is the instrument the elbow pole could not be. The pole says "the
+    elbow belongs here" and the grip says "the hand belongs there", and one of
+    them loses. This says "the upper arm points this way" and leaves the
+    forearm to reach, which is how a person holds a ball away from their chest.
+
+    It is deliberately not faded out as the arm straightens, which is the one
+    thing that made the first attempt useless. The pole fades because a point
+    target argues with the reach, so near full extension it has to yield. This
+    does not argue with the reach, and at contact the arms sit at 0.69 to 0.90
+    of full extension across the library, so a fade would switch the term off
+    at precisely the moment the manual's photographs show the elbows widest.
+    """
+    error = solver2.AimDirErrorFunction(character, weight=1.0)
+    for side in sides:
+        sign = 1.0 if side == "l" else -1.0
+        shoulder = placed.shoulders[side]
+        # `width` is the technique's own, so a chest catch can fold the
+        # elbows in where a snatch spreads them.
+        wanted = np.array(
+            [sign * UPPER_ARM_AIM_OUT * width, -UPPER_ARM_AIM_DOWN, 0.0]
+        )
+        wanted = wanted / float(np.linalg.norm(wanted))
+        # Out and down in the athlete's frame, not the world's, so a drill that
+        # turns keeps its elbows beside her rather than beside the court.
+        target = shoulder + reach_cm * (placed.rotation @ wanted)
+        error.add_constraint(
+            local_point=np.zeros(3, dtype=np.float32),
+            local_dir=np.asarray(
+                [sign * axis for axis in UPPER_ARM_LOCAL_AXIS],
+                dtype=np.float32,
+            ),
+            global_target=np.asarray(target, dtype=np.float32),
+            parent=index[f"{side}_uparm"],
+            weight=UPPER_ARM_AIM_WEIGHT,
+        )
+    return error
+
+
 def contact_miss(points: np.ndarray, index: dict[str, int], targets: dict) -> float:
     """The worst distance from a carried joint to where the grip asked for it."""
     return max(
@@ -352,6 +422,10 @@ def solve_contact(
                 foot_targets(track, phase, placed, rest_positions, index, reach_cm),
             ),
             elbow_poles(character, index, placed, targets, reach_cm, method.sides),
+            upper_arm_aim(
+                character, index, placed, targets, reach_cm, method.sides,
+                method.elbow_width,
+            ),
             solver2.LimitErrorFunction(character, weight=LIMIT_WEIGHT),
         ],
     )
