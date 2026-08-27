@@ -253,6 +253,27 @@ Ignoring these will cost hours. Each one already did.
     Blender fails at load. `tests/test_blender_sources.py` now compares both
     sides with the AST and needs no Blender.
 
+16. **A quiet log is not evidence that nothing is running.** Blender's stdout
+    buffers through a file redirect, so a long render can be nine minutes into
+    real work with an empty log and an empty output directory. Neither says
+    the run failed. They say there is no evidence either way, and the evidence
+    is in the process table.
+
+    ```bash
+    tasklist | grep -i blender
+    ```
+
+    A process with hundreds of seconds of CPU behind it is working. Judge a
+    render by its artifacts appearing and by the process still being alive,
+    never by the log going quiet.
+
+    **The trap that follows.** Reading the quiet as a failure and starting the
+    run again gives two Blender processes writing one output directory and one
+    log. Whatever comes out of that cannot be trusted, and it looks like a
+    result. If a run seems stuck, count the processes first. If two are
+    running, stop both and start exactly one, rather than reasoning about
+    which output belongs to which.
+
 ## Do not grow the rasteriser
 
 `spikes/render_figure.py` draws a figure with a depth buffer in numpy. It was
