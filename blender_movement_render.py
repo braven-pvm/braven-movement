@@ -337,11 +337,16 @@ def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
             palm_normal=Vector(phase["hands"][side]["palmNormal"]),
             max_forearm_roll_degrees=limits["forearmRoll"],
         )
+        # The radius is what lets the knuckles close on the ball. The
+        # reference generator withholds it and keeps its authored hand,
+        # because that pose is calibrated against a photograph.
         pose_articulated_hand(
             rig,
             side=side,
             ball_centre=ball_centre,
             finger_curl_degrees=finger_curl_degrees,
+            ball_radius=radius,
+            base_deviation_limit_degrees=limits["fingerBaseDeviation"],
         )
         # Millimetres from the ball surface, negative inside it. A fingertip
         # out of the top of the ball is the only symptom a coach sees, so the

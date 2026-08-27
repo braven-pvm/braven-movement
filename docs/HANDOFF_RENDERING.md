@@ -303,8 +303,50 @@ Ordered by how much they cost.
    surface. It achieves the palm normal to within 0.5 degrees. So the renderer
    is doing what it is told.
 
-   **This lane cannot fix it, and the experiment is done. Do not repeat it.**
-   Two levers were measured per digit on the two hand snatch at contact:
+   **The knuckle never flexed. That is the defect, and it is this lane's.**
+   `curved_directions` built its cumulative angles as `(0.0, first, first +
+   second)`, so the first bone of every chain took zero rotation. Only the
+   middle and distal joints bent, 8 and 12 degrees. A grip flexes the knuckle
+   hardest, and this one did not flex it at all.
+
+   The symptom is a profile that runs the wrong way. Clearance in mm along
+   each finger, two hand snatch at contact, before the fix:
+
+   | digit | knuckle | mid | distal | tip |
+   |---|---|---|---|---|
+   | thumb | +32.9 | +36.2 | +44.0 | +51.2 |
+   | index | +46.4 | +57.5 | +67.1 | +76.2 |
+   | middle | +46.7 | +60.5 | +72.2 | +81.8 |
+   | ring | +45.5 | +56.9 | +66.4 | +74.8 |
+   | pinky | +41.3 | +48.9 | +53.9 | +58.3 |
+
+   A grip falls from knuckle to tip, about 40 down to 7 on the solved
+   athlete. This climbs. The fingers were not short of the ball. They pointed
+   away from it.
+
+   **Two retractions, and both were the same mistake.** A summary number
+   stood in for the thing itself.
+
+   1. "The fingers go through the ball." Read off a picture, never measured.
+      Zero vertices of any mesh are inside the ball on any phase.
+   2. "Curl moves the clearance by 0.00 mm." Read off `worst`, the minimum
+      over five digits. That minimum sits on the **thumb's base knuckle**,
+      which flexion rotates about and therefore cannot move. It read a flat
+      zero while every fingertip moved about 10 mm per unit of curl scale
+      underneath it. The index tip runs 86.0 mm at curl 0, 76.2 at curl 1 and
+      65.1 at curl 2.
+
+   `finger_surface_clearance` reports per segment now and never a bare
+   minimum, because the instrument fooled its own author twice. Read the
+   shape.
+
+   **The arm and hand lengths, for the record.** A unit mismatch was proposed
+   and does not hold: MPFB's arm is 485.47 mm and its wrist to middle
+   fingertip is 181.91 mm, a ratio of 0.3747 against MHR's 0.2897. MPFB's
+   hand is proportionally longer, so it would over-reach, not fall short.
+
+   **What was tried before the knuckle was found, so nobody repeats it.**
+   Two levers, measured per digit at contact:
 
    | aim | thumb | index | middle | ring | pinky | base deviation |
    |---|---|---|---|---|---|---|

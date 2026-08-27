@@ -366,35 +366,62 @@ def finger_surface_clearance(
     ball_centre: Vector,
     radius: float,
     samples: int = 6,
-) -> dict[str, float]:
-    """How near each finger comes to the ball, and whether it went inside.
+) -> dict[str, dict[str, float]]:
+    """How near each part of each finger comes to the ball, in millimetres.
 
-    Clearance is the distance from the ball surface: zero is contact, positive
-    is a gap, negative is the finger inside the ball. A rendered figure with a
-    fingertip out of the top of the ball is the only symptom anyone sees, so
-    this is what proves the wrap.
+    Zero is contact, positive is a gap, negative is the finger inside the ball.
 
-    The whole bone is sampled, not only the tip. A finger can straddle the
-    surface with its middle phalanx inside while both ends sit outside it.
+    Reported per segment, and deliberately never as a bare minimum over the
+    hand. That minimum fooled this lane's own author twice. It sits on the
+    thumb's base knuckle, which curl rotates about and therefore cannot move,
+    so it read as a flat 0.00 mm response to curl while every fingertip was
+    moving 10 mm per scale unit underneath it.
+
+    Read the shape, not one number. A grip runs high at the knuckle and low at
+    the tip, about 40 down to 7 on the solved athlete. A profile that climbs
+    from knuckle to tip is a hand pointing away from the ball.
     """
-    nearest = {}
+    profile: dict[str, dict[str, float]] = {}
     for digit in FINGER_DIGITS:
-        best = None
-        for index in (1, 2, 3):
-            name = f"{digit}_{index:02d}_{side}"
+        names = [f"{digit}_{index:02d}_{side}" for index in (1, 2, 3)]
+        joints = {
+            "knuckle": world_head(armature, names[0]),
+            "mid": world_head(armature, names[1]),
+            "distal": world_head(armature, names[2]),
+            "tip": world_tail(armature, names[2]),
+        }
+        entry = {
+            key: round(((point - ball_centre).length - radius) * 1000.0, 2)
+            for key, point in joints.items()
+        }
+        # The bone between the joints, in case a phalanx bows through the
+        # surface while both of its ends stay outside.
+        along = None
+        for name in names:
             head = world_head(armature, name)
             tail = world_tail(armature, name)
             for step in range(samples + 1):
                 point = head.lerp(tail, step / samples)
                 distance = (point - ball_centre).length - radius
-                best = distance if best is None else min(best, distance)
-        nearest[digit] = round(best * 1000.0, 2)
-    nearest["worst"] = min(
-        nearest[digit] for digit in FINGER_DIGITS
-    )
-    return nearest
+                along = distance if along is None else min(along, distance)
+        entry["nearestOnBone"] = round(along * 1000.0, 2)
+        # Positive means the finger reaches inward along its length, which is
+        # what a grip does. Negative means it points away from the ball.
+        entry["knuckleToTip"] = round(entry["knuckle"] - entry["tip"], 2)
+        profile[digit] = entry
+    return profile
 
 
+
+
+# A grip flexes the knuckle hardest. This is the ceiling the solve searches
+# under; `fingerBaseDeviation` in the job then bounds what actually survives.
+KNUCKLE_FLEXION_CEILING_DEGREES = 80.0
+KNUCKLE_ITERATIONS = 14
+# The bone sits inside the flesh, so a bone clearance of about 8 mm puts the
+# skin on the surface. Contact, not a dent.
+CONTACT_CLEARANCE_M = 0.008
+CONTACT_TOLERANCE_M = 0.0015
 
 
 def pose_articulated_hand(
@@ -404,24 +431,22 @@ def pose_articulated_hand(
     ball_centre: Vector,
     finger_curl_degrees: dict[str, tuple[float, float]],
     finger_aim: float | None = None,
+    ball_radius: float | None = None,
+    base_deviation_limit_degrees: float = 40.0,
 ) -> dict[str, list[list[float]]]:
-    """Curl one hand's fingers toward the ball.
+    """Close one hand's fingers onto the ball.
 
-    This cannot make her grip a ball the wrist is not near. Two levers were
-    measured against the two hand snatch, where the job puts the wrist 38 mm
-    outside the surface:
+    Three joints bend, not two. The cumulative angles used to start at zero,
+    which left the first bone of every chain unrotated and the knuckle
+    unflexed. Only the middle and distal joints moved, 8 and 12 degrees, and
+    the knuckle is the joint a real grip flexes most. The result pointed away
+    from the ball: clearance climbed from 46 mm at the index knuckle to 76 mm
+    at its tip, where a grip runs about 40 down to 7.
 
-    - Curl does nothing. It rotates each bone about the knuckle above it, and
-      that knuckle is the part of the finger nearest the ball. Taking every
-      joint from 12 degrees to 24, hard against the 25 degree limit, moves the
-      clearance by 0.00 mm.
-    - Aim runs out of anatomy. At `fingerBaseDeviation` of 40 degrees, which is
-      about aim 1.0, the nearest finger is still 27 mm short. The fingers only
-      reach at aim 3.0, where the base deviation is 59 degrees.
-
-    So the gap belongs to `grip.wristFromSurfaceInArms`, which the job carries
-    and the movement lane owns. Refer to known defect 1 in
-    docs/HANDOFF_RENDERING.md.
+    Pass `ball_radius` and the knuckle angle is solved per digit so the
+    fingertip reaches the surface, bounded by `fingerBaseDeviation`. Leave it
+    out and the knuckle stays where the caller aimed it, which is what the
+    reference catch wants: that pose is calibrated against a photograph.
     """
     result: dict[str, list[list[float]]] = {}
     wrist = world_head(armature, f"hand_{side}")
@@ -436,17 +461,25 @@ def pose_articulated_hand(
     splay = {"index": 0.28, "middle": 0.08, "ring": -0.08, "pinky": -0.22}
     aim = FINGER_AIM if finger_aim is None else finger_aim
 
-    def curved_directions(
-        base_direction: Vector,
-        digit: str,
-    ) -> list[Vector]:
-        base = base_direction.normalized()
+    def base_for(digit: str) -> Vector:
+        if digit == "thumb":
+            return (
+                palm_direction * 0.50
+                + lateral * 0.72
+                + toward_ball * (aim * 3.0)
+            ).normalized()
+        return (
+            palm_direction + lateral * splay[digit] + toward_ball * aim
+        ).normalized()
+
+    def curved_directions(digit: str, knuckle: float) -> list[Vector]:
+        base = base_for(digit)
         bend = toward_ball - base * toward_ball.dot(base)
         if bend.length < 1e-8:
             raise RuntimeError(f"cannot establish {side} {digit} curl plane")
         bend.normalize()
         first, second = finger_curl_degrees[digit]
-        cumulative = (0.0, first, first + second)
+        cumulative = (knuckle, knuckle + first, knuckle + first + second)
         return [
             (
                 base * math.cos(math.radians(angle))
@@ -455,10 +488,17 @@ def pose_articulated_hand(
             for angle in cumulative
         ]
 
-    def aim_chain(digit: str, base_direction: Vector) -> None:
+    def apply(digit: str, knuckle: float) -> None:
+        """Pose one finger for one knuckle angle.
+
+        Safe to call again with a different angle. Each bone is rotated to an
+        absolute direction rather than by a delta, and the palm frame is read
+        from the wrist and the knuckles, which finger flexion does not move.
+        """
         chain = [f"{digit}_{index:02d}_{side}" for index in (1, 2, 3)]
-        directions = curved_directions(base_direction, digit)
-        for index, (name, direction) in enumerate(zip(chain, directions)):
+        for index, (name, direction) in enumerate(
+            zip(chain, curved_directions(digit, knuckle))
+        ):
             if index + 1 < len(chain):
                 rotate_bone_toward(
                     armature,
@@ -477,19 +517,66 @@ def pose_articulated_hand(
             for name in chain
         ]
 
-    def base_for(digit: str) -> Vector:
+    def tip_clearance(digit: str) -> float:
+        tail = world_tail(armature, f"{digit}_03_{side}")
+        return (tail - ball_centre).length - ball_radius
+
+    def deviation(digit: str) -> float:
+        """How far this finger's first bone leaves the palm.
+
+        The thumb is exempt, exactly as `max_finger_base_deviation_degrees` is:
+        it leaves the palm by about 54 degrees before anything is posed,
+        because that is where a thumb sits. Holding it to the four fingers'
+        limit drove its knuckle flexion straight to zero and left it pointing
+        away from the ball while the fingers closed.
+        """
         if digit == "thumb":
-            return (
-                palm_direction * 0.50
-                + lateral * 0.72
-                + toward_ball * (aim * 3.0)
-            ).normalized()
-        return (
-            palm_direction + lateral * splay[digit] + toward_ball * aim
+            return 0.0
+        first = f"{digit}_01_{side}"
+        direction = (
+            world_tail(armature, first) - world_head(armature, first)
         ).normalized()
+        return math.degrees(palm_direction.angle(direction))
 
     for digit in FINGER_DIGITS:
-        aim_chain(digit, base_for(digit))
+        apply(digit, 0.0)
+
+    if ball_radius is None:
+        return result
+
+    # Flex each knuckle until that fingertip reaches the surface. The tip is
+    # the control, not a minimum over the hand: a minimum sits on the base
+    # knuckle, which this rotates about and so cannot move.
+    for digit in FINGER_DIGITS:
+        if tip_clearance(digit) <= CONTACT_CLEARANCE_M:
+            continue
+        low, high = 0.0, KNUCKLE_FLEXION_CEILING_DEGREES
+        apply(digit, high)
+        if tip_clearance(digit) > CONTACT_CLEARANCE_M:
+            # It cannot reach even fully flexed. Leave the finger at the
+            # furthest flexion the anatomy allows rather than straight, and
+            # let the receipt report the residual.
+            while high > 0.0 and deviation(digit) > base_deviation_limit_degrees:
+                high -= 1.0
+                apply(digit, high)
+            continue
+
+        for _ in range(KNUCKLE_ITERATIONS):
+            middle = 0.5 * (low + high)
+            apply(digit, middle)
+            gap = tip_clearance(digit)
+            if gap > CONTACT_CLEARANCE_M:
+                low = middle
+            else:
+                high = middle
+            if abs(gap - CONTACT_CLEARANCE_M) < CONTACT_TOLERANCE_M:
+                break
+        # Land on the near side of contact, never inside it.
+        apply(digit, high)
+        while high > 0.0 and deviation(digit) > base_deviation_limit_degrees:
+            high -= 1.0
+            apply(digit, high)
+
     return result
 
 

@@ -125,9 +125,14 @@ class BlenderSourceContractTest(unittest.TestCase):
         self.assertIn("def finger_surface_clearance(", catch)
         self.assertIn("finger_surface_clearance", renderer)
         self.assertIn('hands[side]["surfaceClearanceMm"]', renderer)
-        # Every phalanx, not only the tip: a finger can straddle the surface
-        # with its middle bone inside and both ends outside.
-        self.assertIn("for index in (1, 2, 3):", catch)
+
+        # Per segment, and never a bare minimum over the hand. That minimum
+        # sits on the thumb's base knuckle, which flexion rotates about and so
+        # cannot move, and it twice reported a flat response while every
+        # fingertip moved underneath it.
+        for key in ("knuckle", "mid", "distal", "tip", "knuckleToTip"):
+            self.assertIn(f'"{key}"', catch, f"the clearance profile lost {key}")
+        self.assertNotIn('nearest["worst"]', catch)
 
     def test_movement_renderer_calls_match_the_reference_helper_signatures(self):
         """The posing helpers are shared, and only Blender links the two sides.

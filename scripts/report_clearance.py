@@ -1,12 +1,12 @@
-"""Read a directory of render receipts and say how near the hands came.
+"""Read a directory of render receipts and say how each hand met the ball.
 
-Whether the athlete touched the ball is the first thing a person asks of a
-figure, and this lane once answered it wrong from a picture. The renderer
-writes the millimetres into every receipt. This prints them.
+Whether the athlete grips the ball is the first thing a person asks of a
+figure, and this lane answered it wrong twice from summary numbers. So this
+reads the shape of each finger, never one number for the hand.
 
-Negative is inside the ball, which is a defect. A large positive is the hand
-nowhere near it, which is the open grip defect. Refer to known defect 1 in
-docs/HANDOFF_RENDERING.md.
+A grip runs high at the knuckle and low at the tip, about 40 mm down to 7 on
+the solved athlete. A finger whose tip is further out than its knuckle is not
+gripping at all: it points away from the ball, and the knuckle is not flexing.
 
     python report_clearance.py <render directory>
 """
@@ -17,9 +17,24 @@ import json
 import sys
 from pathlib import Path
 
-# The bone is inside the flesh, so a bone clearance of about 8 mm is the skin
-# on the surface. Anything past this is a hand not holding the ball.
+DIGITS = ("thumb", "index", "middle", "ring", "pinky")
+
+# The bone sits inside the flesh, so a tip clearance of about 8 mm is the skin
+# on the surface. Past this and the finger is not touching.
 CONTACT_MM = 12.0
+
+
+def classify(entry: dict) -> str:
+    if entry["nearestOnBone"] < 0.0:
+        return "inside"
+    if entry["knuckleToTip"] < 0.0:
+        return "away"
+    if entry["tip"] > CONTACT_MM:
+        return "short"
+    return "held"
+
+
+MARKS = {"inside": "IN", "away": "away", "short": "short", "held": "held"}
 
 
 def main(argv: list[str]) -> int:
@@ -32,38 +47,41 @@ def main(argv: list[str]) -> int:
         print(f"no render receipt under {directory}")
         return 1
 
-    holding, open_handed, penetrating = 0, 0, 0
+    counts = {"held": 0, "short": 0, "away": 0, "inside": 0}
     for path in receipts:
         receipt = json.loads(path.read_text(encoding="utf-8"))
-        print(f"\n{receipt['movementId']}")
+        print()
+        print(receipt["movementId"])
         for phase in receipt["phases"]:
-            cells = []
             for side in ("l", "r"):
-                clearance = phase["hands"][side].get("surfaceClearanceMm")
-                if clearance is None:
-                    cells.append(f"{side}: not measured")
+                profile = phase["hands"][side].get("surfaceClearanceMm")
+                if not profile:
+                    print(f"   {phase['name']:12s} {side}: not measured")
                     continue
-                worst = clearance["worst"]
-                if worst < 0.0:
-                    penetrating += 1
-                    mark = "INSIDE"
-                elif worst > CONTACT_MM:
-                    open_handed += 1
-                    mark = "open"
-                else:
-                    holding += 1
-                    mark = "held"
-                cells.append(f"{side}: {worst:+7.1f} mm {mark}")
-            print(f"   {phase['name']:12s} " + "   ".join(cells))
+                cells = []
+                for digit in DIGITS:
+                    entry = profile.get(digit)
+                    if not entry:
+                        continue
+                    verdict = classify(entry)
+                    counts[verdict] += 1
+                    cells.append(
+                        f"{digit[:3]} {entry['knuckle']:+5.0f}>{entry['tip']:+5.0f} "
+                        f"{MARKS[verdict]}"
+                    )
+                print(f"   {phase['name']:12s} {side}: " + "  ".join(cells))
 
-    total = holding + open_handed + penetrating
-    print(f"\n{len(receipts)} drills, {total} hands measured: "
-          f"{holding} on the ball, {open_handed} open, {penetrating} inside it")
-    if penetrating:
-        print("A hand inside the ball is a rendering defect. Report it.")
-    if open_handed:
-        print("An open hand is the wrist standoff in the job file, which the "
-              "movement lane owns. Refer to known defect 1.")
+    total = sum(counts.values())
+    print()
+    print(f"{len(receipts)} drills, {total} digits measured: "
+          f"{counts['held']} on the ball, {counts['short']} short of it, "
+          f"{counts['away']} pointing away, {counts['inside']} inside it")
+    print("Each digit reads knuckle > tip. A grip falls; a pointing finger climbs.")
+    if counts["inside"]:
+        print("A digit inside the ball is a rendering defect. Report it.")
+    if counts["away"]:
+        print("A digit whose tip is further out than its knuckle is not "
+              "gripping. Its knuckle is not flexing. Refer to known defect 1.")
     return 0
 
 
