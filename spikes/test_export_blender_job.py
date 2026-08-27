@@ -26,7 +26,9 @@ except ImportError:  # pragma: no cover - exercised only without the solver
 if SOLVER:
     # Deliberately unguarded: a failure here is a real break and must be loud.
     from export_blender_job import DIGITS, knuckle_limits
-    from movement_engine import load_character
+    from ball_track import has_ball
+    from movement_engine import library, load_character
+    from technique import has_technique, load_technique, technique_path
 
 
 @unittest.skipUnless(SOLVER, "needs pymomentum, which lives in the pixi environment")
@@ -101,6 +103,105 @@ class KnuckleFlexionLimits(unittest.TestCase):
             "deviation still means deviation and must not be repurposed",
         )
         self.assertEqual(set(job["knuckleLimitsDegrees"]), set(DIGITS))
+
+
+@unittest.skipUnless(SOLVER, "needs pymomentum, which lives in the pixi environment")
+class GripFollowsTheHandsThatHold(unittest.TestCase):
+    """The job must not say a hand grips a ball it has not reached.
+
+    A one-handed contact exports a grip for one hand. It used to export both,
+    which told the receiving side that a hand still travelling toward the ball
+    was holding it, and buried that hand in the ball on the render.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from movement_engine import load_character
+
+        cls.character = load_character()
+
+    def job(self, movement_id: str):
+        from export_blender_job import build
+
+        return build(self.character, movement_id)
+
+    def drills(self) -> list[str]:
+        return [
+            name
+            for name in library()
+            if has_ball(name)
+            and has_technique(name)
+            and load_technique(technique_path(name)).possession_ready
+        ]
+
+    def test_a_one_handed_contact_exports_one_grip(self) -> None:
+        """This drill hooks the ball with the outside hand alone. The left is
+        still travelling, and it used to be exported as a grip regardless."""
+        job = self.job("netball_hooks_outside_hand")
+        contact = next(p for p in job["phases"] if p["name"] == "contact")
+        self.assertEqual(set(contact["grip"]), {"r"})
+
+    def test_the_second_hand_appears_when_it_joins(self) -> None:
+        """The other half of the same rule. A grip that never grows would pass
+        the test above while telling the renderer the left hand never arrives.
+        """
+        job = self.job("netball_hooks_outside_hand")
+        gather = next(p for p in job["phases"] if p["name"] == "gather")
+        self.assertEqual(set(gather["grip"]), {"l", "r"})
+
+    def test_a_two_handed_contact_still_exports_both(self) -> None:
+        job = self.job("netball_two_hand_snatch_pull_in")
+        contact = next(p for p in job["phases"] if p["name"] == "contact")
+        self.assertEqual(set(contact["grip"]), {"l", "r"})
+
+    def test_no_phase_grips_a_hand_the_drill_never_uses(self) -> None:
+        """The library-wide floor. `every_side` is the widest honest answer.
+
+        Deliberately weaker than the two cases above, and deliberately
+        independent of the exporter's own expression: a test that recomputed
+        `sides_at` the way the exporter does would mirror a mutation of it
+        rather than catch one.
+        """
+        checked = 0
+        for movement_id in self.drills():
+            method = load_technique(technique_path(movement_id))
+            with self.subTest(movement=movement_id):
+                for phase in self.job(movement_id)["phases"]:
+                    grip = set(phase.get("grip", {}))
+                    checked += 1
+                    self.assertTrue(
+                        grip <= set(method.every_side),
+                        f"{phase['name']} grips {sorted(grip)}, and this drill "
+                        f"only ever uses {sorted(method.every_side)}",
+                    )
+                    if not phase["ball"]["holding"]:
+                        self.assertFalse(
+                            grip, f"{phase['name']} grips a ball she has not got"
+                        )
+        self.assertGreater(checked, 0, "no phase was checked, so this is empty")
+
+    def test_the_grip_actually_changes_where_a_second_hand_joins(self) -> None:
+        """The anti-hollow clause.
+
+        A job that exported one hand everywhere would satisfy every subset
+        check above while telling the renderer the second hand never arrives.
+        This asks the opposite question: does the count move?
+        """
+        found = 0
+        for movement_id in self.drills():
+            method = load_technique(technique_path(movement_id))
+            if method.second_hand_phase is None or len(method.sides) != 1:
+                continue
+            found += 1
+            counts = {
+                len(phase.get("grip", {}))
+                for phase in self.job(movement_id)["phases"]
+                if phase["ball"]["holding"]
+            }
+            with self.subTest(movement=movement_id):
+                self.assertIn(1, counts, "no phase holds with one hand")
+                self.assertIn(2, counts, "the second hand never joins")
+        self.assertGreater(found, 0, "no drill joins a second hand")
 
 
 if __name__ == "__main__":  # pragma: no cover
