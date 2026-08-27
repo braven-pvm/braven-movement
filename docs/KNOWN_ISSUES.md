@@ -144,6 +144,27 @@ all three dead phases are dead in either unit. It is recorded because a name
 that does not say what it holds is how `fingerBaseDeviation` came to bound a
 flexion axis, and that cost a day.
 
+## A per-hand ready offset is a design candidate, not a gap
+
+`BallOffset` is a point, and `ready` in a technique file uses it. Both hands
+are then placed around that point by the grip spread, so an `across` of 0.3
+means the point sits to her left rather than that each hand sits out to its
+own side. Two hands reaching for an off-centre point carry the far one across
+the body, which is what put a hand across the face on
+`netball_deflect_high`.
+
+That drill is corrected by putting its point on the midline, which is what its
+own cue describes. The type is documented in `ball_track.py` rather than
+widened.
+
+**A per-hand form is deliberately not built.** One drill authors a ready
+offset today, and a field invented for a need nobody has yet is a field that
+ends up meaning nothing. Build it when a second drill needs a genuinely
+asymmetric wait, and not before.
+
+The trap for the next author: the motion track's `across` IS per hand, and
+this one reads the same and is not.
+
 ## The coach animation exporter has no tests
 
 `spikes/export_coach_animations.py` has no test file. Its determinism is
