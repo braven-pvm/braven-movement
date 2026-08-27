@@ -110,6 +110,13 @@ CONTACT_POLE_WEIGHT = 0.8
 # grip, the aim term and the limits move the arm as well. Bisecting the solve
 # itself gives 34.6 degrees and 38.58 cm.
 #
+# RE-READ at 31.3 when the waiting-distance correction landed. That correction
+# changes where she stands while she waits, which changes the pose she takes
+# the ball from, so the angle that reproduces 38.6 moves with it. This is the
+# definition being re-applied, not a number being nudged: the angle is whatever
+# puts the solved mean on the manual's figure, and when the solve changes the
+# angle has to be read again.
+#
 # It is deliberately NOT read from the solve's own pole angle in the evidenced
 # band. That spreads from -14 to +75 degrees over 16 frames, so its mean would
 # be calibrating against noise.
@@ -117,7 +124,7 @@ CONTACT_POLE_WEIGHT = 0.8
 # What the folded regime then does is a FINDING, not a target. No evidence says
 # how wide the elbows should be with the ball at the chest, so nothing here is
 # tuned to make that number anything in particular.
-ELBOW_POLE_ANGLE_DEGREES = 34.6
+ELBOW_POLE_ANGLE_DEGREES = 31.3
 # How much of the arm is upper arm, on this model. Needed to place the elbow on
 # the circle it can actually occupy for a given shoulder and wrist, which is
 # what lets the pole ask for a direction without arguing about the reach.

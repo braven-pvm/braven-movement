@@ -44,19 +44,25 @@ configuration records its SHA-256 and dimensions so an authorised local copy can
 
 # Movement
 
-## Four coaching phases cannot fail
+## Five coaching phases cannot fail
 
 `build_library.py` reports these in every receipt under `phaseSeparation`, and
 flags the movement rather than calling it ok.
 
 | drill | phase | its measures move | was |
 |---|---|---|---|
-| Double Foot Landing | **flight** | **1.97** | **5.70, so it could fail** |
+| 1 Hand Snatches to Other Hand | **contact** | **1.67** | **7.63, so it could fail** |
+| Double Foot Landing | flight | 1.95 | 5.70, so it could fail |
 | Double Foot Landing | land | 0.16 | 0.33 |
 | 1 Hand Snatches to Other Hand | reach | 0.15 | 0.21 |
 | 2 Hand Snatches and Pull In | react | 0.00 | 0.17 |
 
-**The flight row is new, and the elbow pole pack caused it.** Its measure is
+**The contact row is newer still, and the waiting-distance correction caused
+it.** That drill's waiting point sat 53.53 cm against a 52.68 cm arm, so its
+free arm moves when the correction lands, and its contact checkpoints now read
+closer to its reach ones. Disclosed rather than retimed, like the rest.
+
+**The flight row came before it, and the elbow pole pack caused that one.** Its measure is
 `leftShoulderElevationDegrees`, and a pole with constant authority makes the
 shoulder vary less between the approach and the flight. It was 5.70 before,
 which is 0.70 above the threshold, so it was already marginal. The other three
@@ -536,4 +542,84 @@ where the approach hands over to the carry.
 
 So the red row is honest about there being something wrong, and dishonest about
 where and by how much. Neither half excuses the other.
+
+## The cold-start seed set is four copies of one pose
+
+`seeds()` yields four candidates that differ only in `{side}_lowarm_twist`.
+That parameter sits BELOW the elbow. Measured on a bent arm, across every seed
+value, the elbow moves 0.000 cm and the wrist moves 0.000 cm. The four
+candidates are identical from the shoulder to the wrist and differ only in how
+the hand is rotated about the forearm.
+
+So the cold start's "best of four" has never been able to choose which side the
+elbow goes. `{side}_uparm_twist`, at the shoulder, does select it: the same
+values move the wrist by up to 44 cm.
+
+**Measured and then dropped from the pack that found it**, and the numbers
+here are corrected against `spikes/measure_seed_variety.py`, which is the
+committed way to reproduce them:
+
+| | >5 | >10 | >15 | >20 | >30 | worst | contact |
+|---|---|---|---|---|---|---|---|
+| the shipped four seeds | 112 | 8 | 0 | 0 | 0 | 12.4 | 38.58 |
+| twenty, with humeral twist per side | 112 | 8 | 0 | 0 | 0 | 12.4 | 38.58 |
+
+**Identical.** Not "nearly": every column, the worst step, and the contact mean
+to two decimals. Wall time is 5.7 seconds against 5.8, which is noise — the
+cold start is one frame out of ninety-eight, so sixteen extra candidates cost
+nothing measurable. An earlier version of this entry said "one step at the
+5 degree threshold, 0.02 cm, five times the cost". That measured the seed
+change TOGETHER WITH a second change to the cold-start score, and it read the
+cost as if the seed count were the running cost. Both are corrected here.
+
+So the honest reason for dropping it is not that it is expensive. It is that
+it fixes nothing that is currently broken, because the fault it was written for
+turned out to be the waiting distance.
+
+It is still recorded, because the search is nominal rather than real: four
+candidates identical from the shoulder to the wrist is one trial wearing four
+coats, and the next cold-start pathology will meet that wall. `pixi run seeds`
+prints the comparison above and the parameter measurements behind it.
+
+## The waiting hand's own history
+
+Kept because the numbers are the evidence a coach is asked to bless.
+
+Before the correction, `netball_hooks_outside_hand` waited with its free arm at
+0.927 to 0.999 of full extension, mean 0.979, against 0.328 to 0.890 for every
+other arm in the library. The waiting point sat 66.4 cm from that shoulder and
+39.1 cm from the other, from one point 50.8 cm from the midpoint between them.
+
+After it, that arm waits inside the library's own band and the drill's contact
+elbow separation moves from 30.2 cm to 37.4, against the manual's 38.6.
+
+**A coach may still rule that a facing-away wait belongs nearer full stretch.**
+The dial is `ready` in the technique file, the evidence of what 0.999 looked
+like is above, and the drill is one of the eight in the review pack.
+
+## Two callers still measure the reach from the midpoint
+
+`toward` places a point at a fixed distance from the MIDPOINT of the shoulders.
+`within_every_shoulder` makes that a real reach guarantee, and only
+`ready_point` wraps it. Two callers do not:
+
+- `possession.py`, the released follow-through's aim point;
+- `possession.py`, the hand target that follows it out.
+
+**Both are reach-and-release contexts, and extending through the ball is what
+the manual asks for there**, so a point at the limit of her reach is the
+intent rather than a fault. That is the reason they are left alone.
+
+**But the same geometry applies, and this records it as a decision rather than
+leaving it as an assumption.** A turned athlete releasing the ball would put
+one shoulder further from that point than the midpoint is, exactly as the
+waiting case did, and could overshoot her reach on that side.
+
+**It is latent, not active.** Measured at the release frames, all four
+releasing drills are square: the shoulder line is within 0.1 degrees of facing
+forward, so the midpoint and the shoulders agree and the approximation is
+currently exact. The hands reach 0.905 to 0.952 of the arm there, which is the
+intended extension.
+
+A drill that both turns and releases would make it active. There is none today.
 
