@@ -226,3 +226,76 @@ knowledge someone has to be told:
 cd spikes && pixi run test
 ```
 
+
+## A released ball leaves her hands at walking pace
+
+Measured on this tip, recovering the velocity from the released path itself
+and undoing gravity:
+
+| drill | release speed | the incoming pass it answers |
+|---|---|---|
+| deflect high | 1.22 m/s | 6.32 m/s |
+| hooks jump and pull in | 1.20 | 6.64 |
+| two hands catch chest | 0.44 | 6.24 |
+| two hand snatch straight back | 0.36 | 6.26 |
+
+Four drills release the ball, and all four send it back at a fifth to a
+twentieth of the speed it arrived. The ball leaves her hands and then drifts.
+
+**The cause is authoring, not physics.** `possession.py` derives the release
+velocity from a one-frame difference of the carry path, and the carry is
+almost stationary at that moment. It is a fair reading of what is authored.
+The gap is that nothing outgoing is authored: no ball track in the library has
+a single key after its drill's release phase. Every track stops at arrival,
+between phase 0.45 and 0.58, and the technique then carries the ball with
+exactly two keys to a release between 0.80 and 0.95. After that there is
+nothing to read.
+
+The frame rate makes the one-frame reading noisy as well. Frames are about
+7.5 ms apart, so the difference is taken over a very short base.
+
+**Not fixed here, deliberately.** Every repair needs a number nobody has ruled
+on: an outgoing speed, a receiver position, or a decision to mirror the
+incoming pass. An earlier report of this from the movement lane gave
+0.55/0.53/0.21/0.13 m/s, which used a wrong time step and is low by roughly a
+factor of two. The figures above are the ones to trust.
+
+## The deflect carry still passes close to her face
+
+`netball_deflect_high` no longer interpolates the ball through her head, but
+the worst clearance over its carry is 8.3 cm of ball surface to her eye, and
+it now sits at the authored `control` key itself at phase 0.62. Raising the
+route key's `ahead` value does not move it: 0.70 through 0.90 all give 8.3 cm.
+The control key is where the binding is.
+
+That is an authored coaching position, so it is not touched. A coach has to
+say how far in front of her face the ball is controlled. The route key added
+alongside it is marked PROVISIONAL for the same reason.
+
+Second closest in the library is `netball_two_hand_snatch_pull_in` at 7.3 cm,
+which is a different shape: its closest approach is 10.4 cm BELOW the eye
+line, a ball pulled in to the chest. Every drill except the deflect keeps the
+ball below the eyes. The deflect is the only one that holds it above, because
+the manual says the ball is controlled beside the head.
+
+**A threshold guard was measured and rejected.** The defect dipped 1.7 cm
+toward her face between its keys, while `netball_hooks_outside_hand` dips
+2.5 cm harmlessly. No distance threshold separates them, so any number chosen
+would be a change detector. `spikes/test_carry_route.py` guards the authoring
+rule instead, and does not claim to guard the clearance.
+
+## A graded phase can sit in the middle of an interpolation
+
+`netball_deflect_high` grades its control checkpoint at phase 0.70. The
+technique authors its `control` key at 0.62 and its `send_on` key at 0.80. The
+graded frame therefore falls between two authored keys and reads a position
+nobody authored.
+
+This is the same shape as the three checkpoints that cannot fail: a phase
+number chosen in the coaching definition and a phase number chosen in the
+technique are set independently, and nothing checks that they agree. There a
+checkpoint reads a measure that has not moved yet. Here a checkpoint reads a
+position that is a straight line between two authored ones.
+
+Event-anchored phases, already queued for the cannot-fail entry, would fix
+both. Recorded here so the two are fixed together rather than separately.
