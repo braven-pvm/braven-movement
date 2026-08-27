@@ -28,6 +28,9 @@ SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
 
 from isb_angles import AAOS_LIMITS  # noqa: E402
+from movement_definition import (  # noqa: E402
+    MINIMUM_MEANINGFUL_BAND_DEGREES,
+)
 from motion_track import describe, load_motion  # noqa: E402
 from movement_engine import (  # noqa: E402
     SolveError,
@@ -96,6 +99,7 @@ def build_one(character, movement_id: str) -> dict:
 
     measurements = result["measurements"]
     assessment = definition.assess(measurements)
+    separation = definition.separation(measurements)
     violations = anatomy_violations(measurements)
 
     series = [frame["leftElbowFlexionDegrees"] for frame in measurements]
@@ -165,6 +169,26 @@ def build_one(character, movement_id: str) -> dict:
         },
         "possession": possession_receipt,
         "coaching": assessment.to_receipt(),
+        # Whether each phase's own checkpoints can tell it apart from the phase
+        # before it. A checkpoint that cannot fail is not a check, and it
+        # inflates the score above.
+        "phaseSeparation": {
+            "thresholdDegrees": MINIMUM_MEANINGFUL_BAND_DEGREES,
+            "phases": [
+                {
+                    "phase": item.phase,
+                    "movedFromPrevious": None
+                    if item.moved is None
+                    else round(item.moved, 2),
+                    "measure": item.measure,
+                    "distinguishable": item.distinguishable,
+                }
+                for item in separation
+            ],
+            "indistinguishable": [
+                item.phase for item in separation if not item.distinguishable
+            ],
+        },
         "exports": {
             "glb": {
                 "note": export_note,
@@ -221,7 +245,12 @@ def main() -> int:
                 "maxTrunkLeanDegrees": receipt["measurement"]["maxTrunkLeanDegrees"],
             }
         )
-        flag = "ok " if met == checks and not receipt["anatomy"]["violations"] else "-> "
+        blind = receipt["phaseSeparation"]["indistinguishable"]
+        flag = (
+            "ok "
+            if met == checks and not receipt["anatomy"]["violations"] and not blind
+            else "-> "
+        )
         print(
             f"{flag}{receipt['skill']:<34} {met}/{checks} checks   "
             f"{receipt['movement']['solveMillisecondsPerFrame']:>4} ms/frame   "
@@ -233,6 +262,15 @@ def main() -> int:
                 f"     anatomy: {len(receipt['anatomy']['violations'])} frames "
                 f"outside range, first is {receipt['anatomy']['violations'][0]}"
             )
+        if blind:
+            for item in receipt["phaseSeparation"]["phases"]:
+                if item["distinguishable"]:
+                    continue
+                print(
+                    f"     [{item['phase']}] cannot fail: its checkpoints move "
+                    f"{item['movedFromPrevious']} from the phase before, under "
+                    f"the {MINIMUM_MEANINGFUL_BAND_DEGREES:.0f} threshold"
+                )
         if met != checks:
             for phase, rows in coaching["phases"].items():
                 for row in rows:
