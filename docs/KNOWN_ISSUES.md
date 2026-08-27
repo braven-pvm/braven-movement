@@ -44,19 +44,25 @@ configuration records its SHA-256 and dimensions so an authorised local copy can
 
 # Movement
 
-## Four coaching phases cannot fail
+## Five coaching phases cannot fail
 
 `build_library.py` reports these in every receipt under `phaseSeparation`, and
 flags the movement rather than calling it ok.
 
 | drill | phase | its measures move | was |
 |---|---|---|---|
-| Double Foot Landing | **flight** | **1.97** | **5.70, so it could fail** |
+| 1 Hand Snatches to Other Hand | **contact** | **1.67** | **7.63, so it could fail** |
+| Double Foot Landing | flight | 1.95 | 5.70, so it could fail |
 | Double Foot Landing | land | 0.16 | 0.33 |
 | 1 Hand Snatches to Other Hand | reach | 0.15 | 0.21 |
 | 2 Hand Snatches and Pull In | react | 0.00 | 0.17 |
 
-**The flight row is new, and the elbow pole pack caused it.** Its measure is
+**The contact row is newer still, and the waiting-distance correction caused
+it.** That drill's waiting point sat 53.53 cm against a 52.68 cm arm, so its
+free arm moves when the correction lands, and its contact checkpoints now read
+closer to its reach ones. Disclosed rather than retimed, like the rest.
+
+**The flight row came before it, and the elbow pole pack caused that one.** Its measure is
 `leftShoulderElevationDegrees`, and a pole with constant authority makes the
 shoulder vary less between the approach and the flight. It was 5.70 before,
 which is 0.70 above the threshold, so it was already marginal. The other three
@@ -536,4 +542,42 @@ where the approach hands over to the carry.
 
 So the red row is honest about there being something wrong, and dishonest about
 where and by how much. Neither half excuses the other.
+
+## The cold-start seed set is four copies of one pose
+
+`seeds()` yields four candidates that differ only in `{side}_lowarm_twist`.
+That parameter sits BELOW the elbow. Measured on a bent arm, across every seed
+value, the elbow moves 0.000 cm and the wrist moves 0.000 cm. The four
+candidates are identical from the shoulder to the wrist and differ only in how
+the hand is rotated about the forearm.
+
+So the cold start's "best of four" has never been able to choose which side the
+elbow goes. `{side}_uparm_twist`, at the shoulder, does select it: the same
+values move the wrist by up to 44 cm.
+
+**Measured and then dropped from the pack that found it.** Twenty seeds varying
+`uparm_twist` per side, plus the pole's error joining the seed score, were
+built and measured on top of the waiting-distance correction. They move the
+flip counts by one step at the 5 degree threshold and the contact mean by
+0.02 cm, at five times the cold-start cost. Nothing today needs them.
+
+It is recorded because the search is nominal rather than real, and the next
+cold-start pathology will find that out. The scratchpad script that applies it
+exists; the evidence for turning it on does not yet.
+
+## The waiting hand's own history
+
+Kept because the numbers are the evidence a coach is asked to bless.
+
+Before the correction, `netball_hooks_outside_hand` waited with its free arm at
+0.927 to 0.999 of full extension, mean 0.979, against 0.328 to 0.890 for every
+other arm in the library. The waiting point sat 66.4 cm from that shoulder and
+39.1 cm from the other, from one point 50.8 cm from the midpoint between them.
+
+After it, that arm waits inside the library's own band and the drill's contact
+elbow separation moves from 30.2 cm to 37.4, against the manual's 38.6.
+
+**A coach may still rule that a facing-away wait belongs nearer full stretch.**
+The dial is `ready` in the technique file, the evidence of what 0.999 looked
+like is above, and the drill is one of the eight in the review pack.
 
