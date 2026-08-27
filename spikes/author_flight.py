@@ -27,7 +27,12 @@ import numpy as np
 SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
 
-from ball_track import MOVEMENT_DIR, BallOffset, ball_path  # noqa: E402
+from ball_track import (  # noqa: E402
+    MOVEMENT_DIR,
+    BallOffset,
+    ball_path,
+    solve_launch,
+)
 from motion_track import _sample, arm_length, load_motion  # noqa: E402
 
 GRAVITY_CM = 981.0
@@ -38,26 +43,6 @@ DEFAULT_RELEASE_HEIGHT_CM = 135.0
 DEFAULT_ARRIVAL_PHASE = 0.55
 DEFAULT_KEYS = 5
 SIZE_FIVE_RADIUS_CM = 11.0
-
-
-def solve_launch(
-    release: np.ndarray, catch: np.ndarray, horizontal_speed_cm: float
-) -> tuple[float, np.ndarray]:
-    """Return the flight time and the launch velocity that joins two points.
-
-    Horizontal motion is straight and steady. Only the vertical is accelerated,
-    which is the whole of ballistics without drag.
-    """
-    ground = np.array([catch[0] - release[0], 0.0, catch[2] - release[2]])
-    span = float(np.linalg.norm(ground))
-    if span < 1e-6:
-        raise ValueError("the passer is standing where the ball is caught")
-    seconds = span / horizontal_speed_cm
-    rise = float(catch[1] - release[1])
-    vertical = (rise + 0.5 * GRAVITY_CM * seconds * seconds) / seconds
-    velocity = ground / seconds
-    velocity[1] = vertical
-    return seconds, velocity
 
 
 def sample_flight(

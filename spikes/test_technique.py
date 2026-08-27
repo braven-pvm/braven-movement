@@ -21,7 +21,7 @@ from technique import (
     MINIMUM_SPREAD_DEGREES,
     TechniqueError,
     load_technique,
-    read_elbow_width,
+    read_elbow_angle_degrees,
     technique_path,
 )
 
@@ -200,30 +200,41 @@ class WrapReportTest(unittest.TestCase):
         self.assertAlmostEqual(report["deepestFingerInsideBallCm"], 0.0, places=6)
 
 
-class ElbowWidth(unittest.TestCase):
-    """`elbowWidth` is a technique property, so a chest catch can differ.
+class ElbowAngleDegrees(unittest.TestCase):
+    """`elbowAngleDegrees` is a technique property, so a chest catch can differ.
 
-    The default is one, the snatch posture measured off the manual's
-    photographs at 38.6 cm between the elbows. It is a default and not a
-    constant, because a drill that takes the ball into the chest folds the
-    elbows rather than spreading them.
+    It replaces `elbowWidth`, a dimensionless multiplier on the upper arm aim
+    term. That dial was named for the folded case and attached to a term which
+    a weight sweep from 2.0 down to 0.0 showed moves folded elbow separation by
+    0.2 cm, so it could not have honoured a coach's number whatever they said.
+    It now sets the pole angle, which does control separation, and it is in
+    degrees rather than in multiples of nothing.
+
+    Absent means the engine's own angle, which is read from the manual's
+    38.6 cm rather than typed. A drill states one only to differ from it.
     """
 
-    def test_a_grip_without_it_takes_the_snatch_posture(self):
-        self.assertEqual(read_elbow_width({}), 1.0)
+    def test_a_grip_without_it_leaves_the_engine_its_own(self):
+        self.assertIsNone(read_elbow_angle_degrees({}))
 
-    def test_a_stated_width_is_read(self):
-        self.assertEqual(read_elbow_width({"elbowWidth": 0.4}), 0.4)
-        self.assertEqual(read_elbow_width({"elbowWidth": 0}), 0.0)
+    def test_a_stated_angle_is_read(self):
+        self.assertEqual(read_elbow_angle_degrees({"elbowAngleDegrees": 10.0}), 10.0)
+        self.assertEqual(read_elbow_angle_degrees({"elbowAngleDegrees": 0}), 0.0)
 
-    def test_a_width_outside_the_range_is_refused(self):
-        for value in (-0.1, 1.6, 12.0):
+    def test_an_angle_outside_the_range_is_refused(self):
+        for value in (-20.1, 90.1, 400.0):
             with self.assertRaises(TechniqueError):
-                read_elbow_width({"elbowWidth": value})
+                read_elbow_angle_degrees({"elbowAngleDegrees": value})
 
-    def test_a_width_that_is_not_a_number_is_refused(self):
+    def test_the_range_boundaries_are_allowed(self):
+        """The old range check was never probed at its edges, which the ball
+        pack's review flagged as a place an off-by-strictness would survive."""
+        self.assertEqual(read_elbow_angle_degrees({"elbowAngleDegrees": -20.0}), -20.0)
+        self.assertEqual(read_elbow_angle_degrees({"elbowAngleDegrees": 90.0}), 90.0)
+
+    def test_an_angle_that_is_not_a_number_is_refused(self):
         with self.assertRaises(TechniqueError):
-            read_elbow_width({"elbowWidth": "wide"})
+            read_elbow_angle_degrees({"elbowAngleDegrees": "wide"})
 
 
 if __name__ == "__main__":

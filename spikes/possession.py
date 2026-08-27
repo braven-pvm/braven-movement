@@ -65,7 +65,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from ball_track import BallOffset, BallTrack, StanceFrame
+from ball_track import BallOffset, BallTrack, StanceFrame, solve_launch
 from motion_track import _sample
 
 # How far out the athlete holds her hands while she waits, as a fraction of the
@@ -241,6 +241,56 @@ def to_offset(
     )
 
 
+def incoming_speed_cm(
+    ball: BallTrack, stance: StanceFrame, seconds_per_phase: float
+) -> float:
+    """How fast the passer's ball travelled, horizontally, in cm per second.
+
+    Derived from the authored flight rather than read from a field: the two
+    ends of the flight and how long it takes are all already in the track, and
+    a stored speed would be a second copy of the same fact that could disagree
+    with the keys.
+
+    Horizontal, not total, because that is what joins two points under gravity.
+    """
+    seconds = (ball.arrival_phase - ball.release_phase) * seconds_per_phase
+    if seconds <= 1e-9:
+        return 0.0
+    passer = stance.place(ball.offset_at(ball.release_phase))
+    caught = stance.place(ball.offset_at(ball.arrival_phase))
+    ground = np.array([caught[0] - passer[0], 0.0, caught[2] - passer[2]])
+    return float(np.linalg.norm(ground)) / seconds
+
+
+def return_velocity(
+    ball: BallTrack,
+    stance: StanceFrame,
+    released_at: np.ndarray,
+    seconds_per_phase: float,
+) -> np.ndarray:
+    """The velocity that sends the ball back to the passer who threw it.
+
+    PROVISIONAL. That the athlete returns the ball to the passer is a reading
+    of the manual's cues and no coach has confirmed it. What is NOT provisional
+    is the arithmetic: given that target and that speed, this is the launch,
+    and it is solved rather than typed.
+
+    A zero vector where the return cannot be solved, which is a ball that stops
+    in mid air. That is visibly wrong rather than quietly wrong, and it is what
+    the old one-frame difference produced anyway when the carry did not move.
+    """
+    speed = incoming_speed_cm(ball, stance, seconds_per_phase)
+    if speed <= 0.0:
+        return np.zeros(3)
+    passer = stance.place(ball.offset_at(ball.release_phase))
+    try:
+        _, velocity = solve_launch(np.asarray(released_at, dtype=np.float64), passer, speed)
+    except ValueError:
+        # She is standing where the passer is, so there is no pass to solve.
+        return np.zeros(3)
+    return velocity
+
+
 def resolve(
     phases: list[float],
     ball: BallTrack,
@@ -258,6 +308,7 @@ def resolve(
     release_phase: float | None = None,
     sides_at=None,
     seconds_per_phase: float = 0.0,
+    shoulder_places: list[dict] | None = None,
 ) -> Possession:
     """Return where the ball is on every frame, and where the hands should go."""
     if not (len(phases) == len(athlete_frames) == len(shoulder_mids)):
@@ -295,13 +346,83 @@ def resolve(
         )
 
     def toward(number: int, target: np.ndarray, distance_cm: float) -> np.ndarray:
-        """A point on the line to the target, no further out than she reaches."""
+        """A point on the line to the target, at most `distance_cm` from the
+        MIDPOINT of her shoulders.
+
+        That is not the same as "no further out than she reaches", which is
+        what this said until the waiting-distance pack proved otherwise. For a
+        square athlete the two agree, because both shoulders are equidistant
+        from the middle. For a turned one they do not: on a drill starting at
+        -44 degrees the same point sat 66.4 cm from one shoulder and 39.1 cm
+        from the other, against a 52.7 cm arm.
+
+        `within_every_shoulder` is what makes the reach guarantee true, and
+        only `ready_point` wraps this in it. The two remaining callers are the
+        released follow-through, where extending through the ball is the point.
+        Refer to "Two callers still measure the reach from the midpoint" in
+        docs/KNOWN_ISSUES.md before adding a third.
+        """
         shoulder = np.asarray(shoulder_mids[number], dtype=np.float64)
         along = np.asarray(target, dtype=np.float64) - shoulder
         span = float(np.linalg.norm(along))
         if span < 1e-6:
             return shoulder
         return shoulder + along * (min(span, distance_cm) / span)
+
+    def within_every_shoulder(number: int, point: np.ndarray) -> np.ndarray:
+        """Pull a waiting point back until every shoulder can reach it.
+
+        `toward` measures from the MIDPOINT of the shoulders. Its own docstring
+        says "no further out than she reaches", and for a square athlete that
+        is true, because both shoulders are the same distance from the middle.
+        A TURNED athlete is a different matter: on
+        `netball_hooks_outside_hand`, which starts facing away at -44 degrees,
+        a waiting point 50.8 cm from the midpoint sits 66.4 cm from her left
+        shoulder and 39.1 cm from her right. The same point, 27 cm apart.
+
+        She then waited with that arm locked out, 0.93 to 0.999 of full
+        extension, where every other arm in the library waits between 0.33 and
+        0.89. And a hand target past full reach has no elbow triangle, so
+        `elbow_poles` skipped that arm entirely: the elbow was unconstrained
+        for 41 frames, drifted 46 degrees from where the pole wanted it, and
+        was corrected all at once when the target finally came inside her
+        reach. That single frame was the largest step in the library.
+
+        `READY_FRACTION` is not touched. It was tuned so the elbow is flexed
+        at the ready phase and it does that correctly on every square drill.
+        What is corrected is the MEASURE it is spent against: a distance the
+        hand has to cover belongs to the shoulder that covers it, not to the
+        point between her shoulders.
+        """
+        if shoulder_places is None:
+            return np.asarray(point, dtype=np.float64)
+        shoulders = shoulder_places[number]
+        middle = np.asarray(shoulder_mids[number], dtype=np.float64)
+        along = np.asarray(point, dtype=np.float64) - middle
+        span = float(np.linalg.norm(along))
+        if span < 1e-6:
+            return np.asarray(point, dtype=np.float64)
+        worst = max(
+            float(np.linalg.norm(point - np.asarray(place, dtype=np.float64)))
+            for place in shoulders.values()
+        )
+        if worst <= ready_distance:
+            return np.asarray(point, dtype=np.float64)
+        # Walk back along the same line until the furthest shoulder is inside
+        # the waiting distance. The direction is what the drill asked for and
+        # is preserved; only how far out she holds it changes.
+        low, high = 0.0, 1.0
+        for _ in range(40):
+            middle_step = (low + high) / 2.0
+            candidate = middle + along * middle_step
+            if max(
+                float(np.linalg.norm(candidate - np.asarray(place, dtype=np.float64)))
+                for place in shoulders.values()
+            ) > ready_distance:
+                high = middle_step
+            else:
+                low = middle_step
+        return middle + along * low
 
     def ready_point(number: int) -> np.ndarray:
         """Where she waits.
@@ -312,10 +433,15 @@ def resolve(
         standing two metres away put them at her waist.
         """
         if ready_offset is not None:
-            return toward(
-                number, athlete_frames[number].place(ready_offset), ready_distance
+            return within_every_shoulder(
+                number,
+                toward(
+                    number,
+                    athlete_frames[number].place(ready_offset),
+                    ready_distance,
+                ),
             )
-        return toward(number, flight[0], ready_distance)
+        return within_every_shoulder(number, toward(number, flight[0], ready_distance))
 
     def carried_at(number: int) -> np.ndarray:
         return carry_frames[number].place(
@@ -325,18 +451,31 @@ def resolve(
     # Where the ball is when she lets go, and how fast. A released ball keeps
     # the speed she gave it, which is what makes the pass back a pass rather
     # than the ball stopping in mid air.
+    #
+    # The return answers the pass along its own corridor: it goes back to the
+    # passer, at the speed the passer used. The manual asks for exactly that on
+    # these drills, in the cues "pass it straight back" and "use the momentum of
+    # the catch to pass the ball back straight away".
+    #
+    # Nothing here is typed. The passer's hand, the arrival point and the flight
+    # duration are all already authored in the incoming track, and the return is
+    # the same parabola solved the other way round.
+    #
+    # This replaces a one-frame difference of the carry path. That difference
+    # was a fair reading of what was authored, and what was authored was a carry
+    # that is almost stationary at the moment of release, so it read 0.36 to
+    # 1.22 m/s against an incoming pass of about 6.3. It was also noisy: frames
+    # are about 7.5 ms apart, which is a very short base for a derivative.
     thrown_from = None
     if contact is not None and release_phase is not None:
         going = [n for n, phase in enumerate(phases) if phase >= release_phase]
         if going and going[0] > contact:
             first = going[0]
-            step = seconds_per_phase * (phases[first] - phases[first - 1])
-            velocity = (
-                (carried_at(first) - carried_at(first - 1)) / step
-                if step > 1e-9
-                else np.zeros(3)
+            thrown_from = (
+                first,
+                carried_at(first),
+                return_velocity(ball, stance, carried_at(first), seconds_per_phase),
             )
-            thrown_from = (first, carried_at(first), velocity)
 
     frames = []
     for number, phase in enumerate(phases):
@@ -357,7 +496,38 @@ def resolve(
             # the hands jump 25 cm outward on the release frame, which showed
             # up as a 50 degree elbow step on every drill that passes the ball
             # back.
-            along_the_pass = origin + velocity * min(at, FOLLOW_THROUGH_SECONDS)
+            #
+            # It travels at HAND speed, not at ball speed. Driving it with the
+            # ball's velocity was harmless while the release was 0.5 m/s, and
+            # wrong: on a real 6 m/s return the aim point moved 10 cm a frame,
+            # so the hands reached the limit of her reach two frames after the
+            # release and the elbow stepped 34 degrees between frames. A
+            # follow-through is a distance the arm travels, and the arm has a
+            # length. It ends at extension whatever the ball does.
+            #
+            # So the aim point runs from the ball to the far end of her reach
+            # along the pass line, over the follow-through. The far end is
+            # found with the same reach rule every other hand target in this
+            # module uses, so no distance is invented here and no constant
+            # needs a coach.
+            speed = float(np.linalg.norm(velocity))
+            if speed > 1e-9 and FOLLOW_THROUGH_SECONDS > 0.0:
+                extended = toward(
+                    number,
+                    origin + velocity / speed * reach_limit_cm,
+                    contact_distance,
+                )
+                # Eased out rather than linear, for the mirror of the reason
+                # the reach is eased in above: the hands are already moving
+                # when she lets go, because they drove the ball, and they come
+                # to rest at full extension rather than stopping dead. It also
+                # measures better, worst step 11.7 degrees against 15.4, but
+                # that is corroboration and not the reason.
+                out = min(1.0, at / FOLLOW_THROUGH_SECONDS)
+                out = 1.0 - (1.0 - out) ** 2
+                along_the_pass = origin + (extended - origin) * out
+            else:
+                along_the_pass = origin
         elif holding:
             centre = carried_at(number)
             state = "carried"

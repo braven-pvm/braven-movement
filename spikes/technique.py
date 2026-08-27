@@ -54,23 +54,35 @@ class AfterContactKey:
     offset: BallOffset
 
 
-def read_elbow_width(grip: dict) -> float:
-    """Read `elbowWidth` from a grip block, defaulting to the snatch."""
-    value = grip.get("elbowWidth", 1.0)
+def read_elbow_angle_degrees(grip: dict) -> float | None:
+    """Read `elbowAngleDegrees` from a grip block. None means the engine's own.
+
+    This replaces `elbowWidth`, a dimensionless multiplier on the upper arm aim
+    term. That dial was named for the folded case and wired to a term which a
+    weight sweep from 2.0 down to 0.0 showed moves folded elbow separation by
+    0.2 cm, so it could not have honoured a coach's number whatever they said.
+    The pole angle does control separation, and it is in degrees, which is a
+    quantity a coach can hold in their head.
+
+    No technique file authored `elbowWidth`, so nothing is migrated.
+    """
+    value = grip.get("elbowAngleDegrees")
+    if value is None:
+        return None
     try:
-        width = float(value)
+        degrees = float(value)
     except (TypeError, ValueError):
         raise TechniqueError(
-            f"elbowWidth must be a number, got {value!r}"
+            f"elbowAngleDegrees must be a number, got {value!r}"
         ) from None
-    if not 0.0 <= width <= 1.5:
+    if not -20.0 <= degrees <= 90.0:
         raise TechniqueError(
-            f"elbowWidth is {width}, outside 0.0 to 1.5. One is the snatch "
-            "posture measured off the manual's photographs, zero is tucked "
-            "against the ribs, and anything above 1.5 is not a shape a "
-            "shoulder makes."
+            f"elbowAngleDegrees is {degrees}, outside -20 to 90. Zero is the "
+            "elbow hanging straight below the line from shoulder to hand, "
+            "ninety is straight out to her side, and the engine's own value "
+            "is the angle that reproduces the manual's 38.6 cm at contact."
         )
-    return width
+    return degrees
 
 
 @dataclass(frozen=True)
@@ -104,7 +116,7 @@ class Technique:
     # elbows; taking one into the chest folds them. A single global value moved
     # both chest catches from 14 cm between the elbows to 40, which is a snatch
     # posture on a drill that is not a snatch.
-    elbow_width: float
+    elbow_angle_degrees: float | None
     second_hand_phase: float | None
     # When she lets go. After this the hands are no longer on the ball and the
     # ball is in flight again.
@@ -201,7 +213,7 @@ def load_technique(path: Path) -> Technique:
         hands=hands,
         spread_degrees=spread,
         face_ball=bool(grip.get("faceBall", True)),
-        elbow_width=read_elbow_width(grip),
+        elbow_angle_degrees=read_elbow_angle_degrees(grip),
         turn_to_ball=bool(data.get("turnToBall", False)),
         possession_ready=bool(data.get("possessionReady", True)),
         ready=(

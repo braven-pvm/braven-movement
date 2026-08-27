@@ -20,6 +20,13 @@
       "ahead": 0.50853
     },
     {
+      "atPhase": 0.71,
+      "name": "across_the_front",
+      "across": 0.0,
+      "up": 0.744,
+      "ahead": 0.75
+    },
+    {
       "atPhase": 0.8,
       "name": "send_on",
       "across": -0.20341,
@@ -28,10 +35,11 @@
     }
   ],
   "ready": {
-    "across": 0.3,
+    "across": 0.0,
     "up": 0.72,
     "ahead": 0.3
   },
-  "readyNote": "Hands up beside the head, which is where the manual tells the passer to put the ball. Aiming the waiting hands at a passer two metres away instead left them at her waist.",
+  "readyNote": "Hands up beside the head, which is where the manual tells the passer to put the ball. Aiming the waiting hands at a passer two metres away instead left them at her waist. across is 0.0 because this offset is a POINT, not a per-hand position: the grip spread puts one hand each side of it. At across 0.3 the point sat to her left and both hands reached for it, carrying the right hand across her face.",
+  "carryRouteNote": "PROVISIONAL. The across_the_front key is a ROUTE, not a coached position, and no coach has seen it. control sits on her left at across +0.224 and send_on on her right at -0.203, and with only those two the carry interpolates in a straight line THROUGH her head: at the graded phase the ball surface passed 6.6 cm from her eye. This key routes it in front of her face instead. The ahead value was chosen to sit between the two measured neighbours, which are 25.6 cm ahead of the eye at contact and 16.9 cm at send_on; 0.75 gives 22.4 cm. up and across are interpolated, not authored: across is 0.0 because that is where the straight line crosses her midline anyway, so this key changes WHERE IN FRONT the ball passes and not WHETHER it crosses. Replace the number when a coach rules on it. It does NOT fix the whole drill: the worst clearance over the carry is now 8.3 cm at the authored control key itself, phase 0.62, which is a separate authored number and is not touched here.",
   "carryUnitNote": "afterContact is measured in torso lengths, not arm lengths. Where a ball sits when it is held against the chest depends on the chest and the ball, not on how long the arm is, and in arm lengths two athletes of the same height whose reach differed by a tenth held the same ball 9 percent apart. Every number here was multiplied by 1.017053, the reference athlete's arm over her torso, so her positions are unchanged and only other bodies move."
 }
