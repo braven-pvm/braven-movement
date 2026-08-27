@@ -179,6 +179,7 @@ def solve_movement(
         stance=stance,
         athlete_frames=frames,
         shoulder_mids=shoulders,
+        shoulder_places=[one.shoulders for one in placed],
         after_contact=method.after_contact,
         reach_limit_cm=envelope.far_cm + radius_cm,
         arm_length_cm=reach_cm,

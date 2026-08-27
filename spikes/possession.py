@@ -308,6 +308,7 @@ def resolve(
     release_phase: float | None = None,
     sides_at=None,
     seconds_per_phase: float = 0.0,
+    shoulder_places: list[dict] | None = None,
 ) -> Possession:
     """Return where the ball is on every frame, and where the hands should go."""
     if not (len(phases) == len(athlete_frames) == len(shoulder_mids)):
@@ -353,6 +354,61 @@ def resolve(
             return shoulder
         return shoulder + along * (min(span, distance_cm) / span)
 
+    def within_every_shoulder(number: int, point: np.ndarray) -> np.ndarray:
+        """Pull a waiting point back until every shoulder can reach it.
+
+        `toward` measures from the MIDPOINT of the shoulders. Its own docstring
+        says "no further out than she reaches", and for a square athlete that
+        is true, because both shoulders are the same distance from the middle.
+        A TURNED athlete is a different matter: on
+        `netball_hooks_outside_hand`, which starts facing away at -44 degrees,
+        a waiting point 50.8 cm from the midpoint sits 66.4 cm from her left
+        shoulder and 39.1 cm from her right. The same point, 27 cm apart.
+
+        She then waited with that arm locked out, 0.93 to 0.999 of full
+        extension, where every other arm in the library waits between 0.33 and
+        0.89. And a hand target past full reach has no elbow triangle, so
+        `elbow_poles` skipped that arm entirely: the elbow was unconstrained
+        for 41 frames, drifted 46 degrees from where the pole wanted it, and
+        was corrected all at once when the target finally came inside her
+        reach. That single frame was the largest step in the library.
+
+        `READY_FRACTION` is not touched. It was tuned so the elbow is flexed
+        at the ready phase and it does that correctly on every square drill.
+        What is corrected is the MEASURE it is spent against: a distance the
+        hand has to cover belongs to the shoulder that covers it, not to the
+        point between her shoulders.
+        """
+        if shoulder_places is None:
+            return np.asarray(point, dtype=np.float64)
+        shoulders = shoulder_places[number]
+        middle = np.asarray(shoulder_mids[number], dtype=np.float64)
+        along = np.asarray(point, dtype=np.float64) - middle
+        span = float(np.linalg.norm(along))
+        if span < 1e-6:
+            return np.asarray(point, dtype=np.float64)
+        worst = max(
+            float(np.linalg.norm(point - np.asarray(place, dtype=np.float64)))
+            for place in shoulders.values()
+        )
+        if worst <= ready_distance:
+            return np.asarray(point, dtype=np.float64)
+        # Walk back along the same line until the furthest shoulder is inside
+        # the waiting distance. The direction is what the drill asked for and
+        # is preserved; only how far out she holds it changes.
+        low, high = 0.0, 1.0
+        for _ in range(40):
+            middle_step = (low + high) / 2.0
+            candidate = middle + along * middle_step
+            if max(
+                float(np.linalg.norm(candidate - np.asarray(place, dtype=np.float64)))
+                for place in shoulders.values()
+            ) > ready_distance:
+                high = middle_step
+            else:
+                low = middle_step
+        return middle + along * low
+
     def ready_point(number: int) -> np.ndarray:
         """Where she waits.
 
@@ -362,10 +418,15 @@ def resolve(
         standing two metres away put them at her waist.
         """
         if ready_offset is not None:
-            return toward(
-                number, athlete_frames[number].place(ready_offset), ready_distance
+            return within_every_shoulder(
+                number,
+                toward(
+                    number,
+                    athlete_frames[number].place(ready_offset),
+                    ready_distance,
+                ),
             )
-        return toward(number, flight[0], ready_distance)
+        return within_every_shoulder(number, toward(number, flight[0], ready_distance))
 
     def carried_at(number: int) -> np.ndarray:
         return carry_frames[number].place(
