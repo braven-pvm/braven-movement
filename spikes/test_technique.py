@@ -21,6 +21,7 @@ from technique import (
     MINIMUM_SPREAD_DEGREES,
     TechniqueError,
     load_technique,
+    read_elbow_width,
     technique_path,
 )
 
@@ -197,6 +198,32 @@ class WrapReportTest(unittest.TestCase):
         report = wrap_report(points, index, centre, 11.0, ("l",))
         self.assertAlmostEqual(report["worstFingertipGapCm"], 0.0, places=6)
         self.assertAlmostEqual(report["deepestFingerInsideBallCm"], 0.0, places=6)
+
+
+class ElbowWidth(unittest.TestCase):
+    """`elbowWidth` is a technique property, so a chest catch can differ.
+
+    The default is one, the snatch posture measured off the manual's
+    photographs at 38.6 cm between the elbows. It is a default and not a
+    constant, because a drill that takes the ball into the chest folds the
+    elbows rather than spreading them.
+    """
+
+    def test_a_grip_without_it_takes_the_snatch_posture(self):
+        self.assertEqual(read_elbow_width({}), 1.0)
+
+    def test_a_stated_width_is_read(self):
+        self.assertEqual(read_elbow_width({"elbowWidth": 0.4}), 0.4)
+        self.assertEqual(read_elbow_width({"elbowWidth": 0}), 0.0)
+
+    def test_a_width_outside_the_range_is_refused(self):
+        for value in (-0.1, 1.6, 12.0):
+            with self.assertRaises(TechniqueError):
+                read_elbow_width({"elbowWidth": value})
+
+    def test_a_width_that_is_not_a_number_is_refused(self):
+        with self.assertRaises(TechniqueError):
+            read_elbow_width({"elbowWidth": "wide"})
 
 
 if __name__ == "__main__":
