@@ -462,6 +462,15 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
             raise SystemExit(
                 "the job carries no frames. Export it with --every=N."
             )
+        # Every job keyframes the same rig, so the previous drill's action
+        # has to go or the two movements interleave on one timeline. This is
+        # the only thing that stopped several drills sharing a session: the
+        # shape key bake is idempotent, because the athlete's shape is the
+        # same for every drill and the second bake finds nothing left to do,
+        # and setting the materials opaque is idempotent too.
+        for item in (rig, ball):
+            item.animation_data_clear()
+
         scene = bpy.context.scene
         scene.frame_start = 1
         scene.frame_end = len(frames)
@@ -554,11 +563,6 @@ def main() -> None:
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     jobs = [json.loads(path.read_text(encoding="utf-8")) for path in args.job]
-
-    if args.animate and len(jobs) > 1:
-        # The export bakes the shape keys away and sets the materials opaque,
-        # so a second job would export an athlete already baked.
-        raise SystemExit("--animate takes one --job. Run the others separately.")
 
     radii = {job["phases"][0]["ball"]["radiusM"] for job in jobs}
     if len(radii) > 1:

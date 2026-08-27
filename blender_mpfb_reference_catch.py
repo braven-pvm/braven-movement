@@ -599,6 +599,22 @@ def finger_joint_bends_degrees(armature: bpy.types.Object) -> list[float]:
 
 
 def max_finger_base_deviation_degrees(armature: bpy.types.Object) -> float:
+    """The widest angle any first finger bone makes with the palm.
+
+    It is a total angle and it does not separate the axes. Flexion toward the
+    palm and sideways splay both spend the same budget, so a finger splayed
+    for a wide grip has less flexion left than one held straight, and the two
+    are not anatomically interchangeable: the ranges differ.
+
+    `pose_articulated_hand` bounds knuckle FLEXION with this DEVIATION, and so
+    inherits the ambiguity. The movement lane is deciding whether the job
+    should carry an explicit flexion limit instead. Until it does, read a
+    number near the limit as "this finger has spent its budget", not as "this
+    finger is flexed 40 degrees".
+
+    The thumb is excluded on purpose. It leaves the palm by about 54 degrees
+    before anything is posed, because that is where a thumb sits.
+    """
     maximum = 0.0
     for side in ("l", "r"):
         wrist = world_head(armature, f"hand_{side}")
