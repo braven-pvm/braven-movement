@@ -44,16 +44,27 @@ configuration records its SHA-256 and dimensions so an authorised local copy can
 
 # Movement
 
-## Three coaching phases cannot fail
+## Four coaching phases cannot fail
 
 `build_library.py` reports these in every receipt under `phaseSeparation`, and
 flags the movement rather than calling it ok.
 
-| drill | phase | its measures move |
-|---|---|---|
-| Double Foot Landing | land | 0.33 |
-| 1 Hand Snatches to Other Hand | reach | 0.21 |
-| 2 Hand Snatches and Pull In | react | 0.17 |
+| drill | phase | its measures move | was |
+|---|---|---|---|
+| Double Foot Landing | **flight** | **1.97** | **5.70, so it could fail** |
+| Double Foot Landing | land | 0.16 | 0.33 |
+| 1 Hand Snatches to Other Hand | reach | 0.15 | 0.21 |
+| 2 Hand Snatches and Pull In | react | 0.00 | 0.17 |
+
+**The flight row is new, and the elbow pole pack caused it.** Its measure is
+`leftShoulderElevationDegrees`, and a pole with constant authority makes the
+shoulder vary less between the approach and the flight. It was 5.70 before,
+which is 0.70 above the threshold, so it was already marginal. The other three
+all moved closer to zero for the same reason.
+
+Nothing is retimed and no band is widened to recover it, for the reason the
+whole entry gives below. This is the cost of a smoother arm, stated rather
+than absorbed, and it goes to the coach morning with the other three.
 
 A checkpoint grades a measure at a phase. If that measure reads the same as at
 the previous phase, the checkpoint cannot tell them apart, so it cannot fail.
@@ -127,8 +138,21 @@ Starting points, recorded so they are not rediscovered:
    Recorded this way because a debt entry that sends the fixer to the wrong
    frames is worse than no entry at all.
 
-The return pass adds three new instances of this, with named frames. Refer to
-"The follow-through is rough where the arm now moves".
+The elbow pole pack moved this a long way. Per-frame arm direction steps above
+each threshold, across both arms and both arm segments, whole library:
+
+| | >5 | >10 | >15 | >20 | >30 | worst |
+|---|---|---|---|---|---|---|
+| before the ball pack | 71 | 14 | 5 | 4 | 1 | 48.1 |
+| after the ball pack | 134 | 26 | 9 | 8 | 1 | 48.1 |
+| after the catching-hand fix | 141 | 21 | 6 | 6 | 0 | 26.1 |
+| after the pole angle | **109** | **9** | **2** | **0** | **0** | **19.3** |
+
+The >20 column is empty for the first time. What remains at >15 is both on
+`netball_hooks_outside_hand`, and is the free-arm flip recorded below.
+
+This entry stays open. 19.3 degrees between two frames at 60 frames a second is
+still not a movement a person makes.
 
 When a coach number arrives for the chest catches, the 25 cm threshold in
 `test_upper_arm_aim.py` needs rework alongside it: the `technique.py` comment
@@ -352,3 +376,58 @@ position that is a straight line between two authored ones.
 
 Event-anchored phases, already queued for the cannot-fail entry, would fix
 both. Recorded here so the two are fixed together rather than separately.
+
+## A comment is not a test
+
+Three defects this month were a comment describing the right behaviour sitting
+directly above code that did the opposite:
+
+- the bisection's "never inside";
+- `curved_directions` and its first bone;
+- `possession_solve`'s "only the hand that is taking the ball goes out to meet
+  it", above a line that sent both hands to wait.
+
+The third was the largest single-frame step in the library: 19.9 cm of wrist
+travel in the contact frame and a 48.1 degree arm swing behind it.
+
+Every one was found by an instrument reading output. None was found by anyone
+reading the code, including the people who read that code closely enough to
+change the lines around it. A comment states intent, and intent is not
+enforced by anything.
+
+The practical consequence for this project: when a comment states a behaviour,
+that is a candidate for a test, not evidence that the behaviour happens.
+
+## The free arm flips as it comes round her
+
+`netball_hooks_outside_hand`, frame 47, left upper arm, 21.7 degrees between
+two frames while the left wrist moves 0.13 cm. A large rotation with almost no
+translation is a solver mode flip: the arm changes configuration rather than
+moving.
+
+It is a different event from the 19.9 cm contact teleport fixed in this pack,
+which was the RIGHT arm two frames earlier, and the two were recorded as one
+until they were measured apart. The pole angle reduced it to 19.3 degrees but
+did not remove it.
+
+This is the free arm crossing her body to join the ball, and it is now the
+worst step anywhere in the library. It belongs to the smoothness entry above.
+
+## How wide the elbows sit with the ball at the chest
+
+The pole pack brought the most folded band from 62.9 cm between the elbows to
+52.7. The manual's reference is 38.6 cm, and it does not apply here: those
+photographs are a snatch AT CONTACT, with the arm at 0.85 to 0.90 of full
+extension. No evidence in this project describes a folded arm.
+
+So 52.7 is published rather than aimed at. Nothing was tuned to make it any
+particular number, and the mechanical change that produced it needed no coach.
+
+Some of the remaining relationship is real. Elbow separation still correlates
+with arm extension at -0.847, against -0.865 before, and it should: a folded
+arm's elbow IS further off the line from shoulder to hand. What the pack
+removed is the artificial amplification on top of that, worth about 10 cm.
+
+A coach looking at the pull-in should be asked whether 52.7 cm is right. If it
+is not, `elbowAngleDegrees` in the technique file is the dial, in degrees, and
+it now reaches the mechanism that decides the answer.
