@@ -226,6 +226,35 @@ class BlenderSourceContractTest(unittest.TestCase):
         self.assertIn("measured for it", report)
         self.assertIn("body_measured", report)
 
+    def test_the_grip_solve_lands_on_a_measured_angle_never_an_interval_end(self):
+        """A bisection end is not a result. It is a bound on one.
+
+        The loop kept `low` and `high` and applied `high`, which is the side
+        where the gap is at or BELOW the target, so it is the INSIDE. When the
+        tolerance break fired on a good `middle` the loop exited and applied
+        `high` anyway, discarding the angle it had just measured and landing
+        the finger up to 4 mm inside the ball, about 12 mm of skin.
+
+        The comment above it said "land on the near side of contact, never
+        inside it", which is what it was meant to do and the opposite of what
+        it did, so the comment could not catch it either.
+        """
+        catch = (MODULE_DIR / "blender_mpfb_reference_catch.py").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("best_angle, best_gap", catch)
+        self.assertIn("apply(digit, best_angle)", catch)
+        # Only a positive clearance may be accepted, so the chosen angle is
+        # never one that put the finger through the surface.
+        self.assertIn("gap >= 0.0", catch)
+        # The angle finally applied must be the measured one. `apply(digit,
+        # high)` still appears once, probing the ceiling to see whether the
+        # finger can reach at all, and that is not what lands the pose.
+        applied = catch.index("apply(digit, best_angle)")
+        retreat = catch.index("retreat_into_limits(digit, best_angle)")
+        self.assertLess(applied, retreat)
+
     def test_movement_renderer_calls_match_the_reference_helper_signatures(self):
         """The posing helpers are shared, and only Blender links the two sides.
 
