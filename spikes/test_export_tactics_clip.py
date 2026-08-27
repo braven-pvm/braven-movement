@@ -19,9 +19,8 @@ SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
 
 from movement_definition import load as load_definition  # noqa: E402
-from movement_engine import definition_path  # noqa: E402
 
-from export_tactics_clip import (  # noqa: E402
+from clip_geometry import (  # noqa: E402
     CLASSES,
     across,
     athlete_frame,
@@ -32,6 +31,19 @@ from export_tactics_clip import (  # noqa: E402
     swing_of,
     unwrap,
 )
+
+# The movement definitions, reached without the solver.
+#
+# `movement_engine.definition_path` is a one-line path join, and importing it
+# pulls in pymomentum, which is conda-forge only. That one import was the whole
+# reason this file could not run anywhere but a machine with the pixi
+# environment on it — so it is joined here instead. If the library ever moves,
+# this is the line that breaks and it breaks loudly.
+MOVEMENT_DIR = SPIKE_DIR / "movements"
+
+
+def definition_path(movement_id: str) -> Path:
+    return MOVEMENT_DIR / (movement_id + ".json")
 
 UP = np.array([0.0, 1.0, 0.0])
 FORWARD = np.array([0.0, 0.0, 1.0])

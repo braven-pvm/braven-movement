@@ -413,6 +413,36 @@ grip on the ball, the spine as three joints rather than one lean, and the sign
 of a knee or an elbow bend. A pose is a fifteen number sketch of a body and this
 is what a sketch costs.
 
+**Shoulder elevation is not carried, and this is the loss consumers meet
+first.** The engine measures it the ISB way, as a three dimensional angle of the
+upper arm from the trunk. A pose has no such channel: `upper` is a swing in one
+plane and `out` is a departure from the midline, and the consumer applies each
+as a rotation about its own axis. So the two quantities are relatives rather
+than the same number, and they part company as soon as the arm leaves the plane
+of the run.
+
+Measured on `netball_two_hand_snatch_pull_in`:
+
+| Phase | ISB elevation | The clip's `upper` | Apart by |
+|---|---|---|---|
+| ready | 47.4° | 45.1° | 2.3° |
+| react | 47.5° | 45.3° | 2.3° |
+| contact | 64.2° | 62.0° | 2.2° |
+| pull_in | 41.4° | 26.9° | **14.5°** |
+
+The pull-in is where the arm carries 25 degrees off the midline, and that is
+exactly the part `upper` cannot see.
+
+**So a coaching checkpoint on shoulder elevation cannot be re-checked from a
+clip.** It was checked at export, against the solve, and the verdict travels in
+the clip's own `phases[].checkpoints`. A consumer that recomputes it from
+`upper` will find a movement failing a band it passed. Assert on the elbow and
+the knee, which a pose carries exactly, and read the shoulder rather than
+measuring it.
+
+`verify_tactics_clip.py` reports this comparison on every run and never asserts
+on it, for the same reason.
+
 **Kept.** The shape of the movement, frame by frame, on an anatomy with joint
 limits that were enforced during the solve. The coaching phases, by name, with
 their cues. The moment the movement is about. The grading provenance: which
@@ -509,7 +539,50 @@ Small, and each part is separable.
   distances do not, which is why `bob` is the only absolute number in a frame
   and why nothing else in the format has a unit.
 
-## 15. Producing a clip
+## 15. The pre-merge gate
+
+**Run this before merging anything that touches a clip, the exporter, or the
+solve it reads.**
+
+```bash
+cd spikes && "$USERPROFILE/.pixi/bin/pixi.exe" run python export_tactics_clip.py --all && "$USERPROFILE/.pixi/bin/pixi.exe" run python verify_tactics_clip.py --against clip-baseline.json
+```
+
+It exits non-zero when any asserted channel has left its solve, so it can gate a
+merge by hand or by hook.
+
+### Why this is not a job on a runner, and what is
+
+An independent review found the hole this closes: with the bend reverted to the
+old planar reading, **every unit test in both repositories still passed**. The
+contact anchor missed it by 0.064 degrees, because this drill happens to be
+nearly in the plane of the run at that one instant — the same geometry that
+fooled a hand check earlier the same day. Only the verifier caught it, on seven
+of the eight drills, worst 49.81 degrees. And nothing ran the verifier.
+
+So the guard is split in two, by what a runner can actually hold.
+
+**What CI now runs.** The engine-side suite, 234 tests, on every push. It used
+to run only on a machine with the pixi environment on it, and the only thing
+keeping it off a runner was a handful of module-level imports of `pymomentum`,
+which is conda-forge only. The geometry those tests cover is arithmetic on joint
+positions and needs no solver, so it now lives in `spikes/clip_geometry.py` with
+nothing but numpy behind it. That is where a second anchor at the pull-in also
+sits: the planar bypass shows a 10.4 degree gap there, against a 0.5 degree
+tolerance.
+
+**What CI cannot run, and the reason is not effort.** The verifier solves each
+movement to compare the clip against it, and solving needs the character —
+`spikes/mhr-assets/`, 4.5 GB, gitignored, and not something to put on a runner
+on every push. Standing a pixi environment up in CI is the smaller half of that
+problem; the asset is the larger half and it does not go away.
+
+**So the verifier is a named command enforced by process**, listed here and on
+the merge checklist, until somebody finds a way to make a runner hold it. That
+is a weaker guarantee than a green check and it is written down as one rather
+than described as equivalent.
+
+## 16. Producing a clip
 
 ```bash
 cd spikes && "$USERPROFILE/.pixi/bin/pixi.exe" run python export_tactics_clip.py netball_two_hand_snatch_pull_in
