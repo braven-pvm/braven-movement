@@ -399,6 +399,41 @@ Ignoring these will cost hours. Each one already did.
     and the solve legally reaches 96.4 degrees of visible bend on the index in
     the one handed drills.
 
+18. **One instrument is never enough, and a green check is not evidence.**
+    Every defect this lane shipped or nearly shipped on 2026-08-27 was
+    invisible to the check that should have caught it and obvious to a second
+    one that fails differently:
+
+    | the defect | what said "fine" | what caught it |
+    |---|---|---|
+    | fingers never reached the ball | the render looked plausible | per digit clearance |
+    | the ball through her face | every finger at +7 to +9 mm, receipt PASS | the whole-mesh count |
+    | every drill playing drill one's motion | posed bones read "identical" | the animation curve counts, 533 against 1063 |
+    | fingers inside the ball | the picture, the penetration was behind the ball | the clearance report |
+
+    So the receipt carries two tables, `surfaceClearanceMm` per digit and
+    `bodyClearanceMm` for the whole athlete, and neither replaces the other.
+    Add a third when a third question appears; do not replace one with a
+    "better" single number.
+
+    **Silence is not a pass.** An instrument reporting zero because it cannot
+    reach the thing is worse than no instrument. A skull sphere taken from the
+    head bone reported zero hand vertices inside the head on a figure where the
+    hand is visibly across her face. The number was never delivered, and it
+    should not have been. Anything that reads a receipt must separate
+    "measured and clean" from "not measured", and say which.
+
+    **A comment is not evidence either.** The grip solve landed fingers inside
+    the ball directly beneath a comment reading "land on the near side of
+    contact, never inside it" — correct intent, opposite behaviour. Anyone
+    checking intent against comment would have passed it. Only a reading of the
+    OUTPUT caught it.
+
+19. **Report a stoppage when you stop, not in the summary.** Anything that
+    makes you kill a build goes to the coordinator at the time. Milestones can
+    be batched; stoppages cannot, because the other lanes are planning around
+    a build you have just abandoned.
+
 ## Do not grow the rasteriser
 
 `spikes/render_figure.py` draws a figure with a depth buffer in numpy. It was
@@ -590,31 +625,49 @@ braces rather than a correction, and it can stay.
 
 ## State
 
-Measured on 2026-08-27, on `lane/rendering`, which carries `main` at `828bf6c`
-including the upper arm aim fix.
+Measured on 2026-08-27, on `lane/rendering`, which carries `main` at `84fd600`.
 
-**Verified.**
+**Verified, each by measurement and not by a passing run.**
 
 - All eight drills render in ONE Blender session: 33 phases, 99 images, 8
   receipts, every one PASS. The athlete is built once.
-- The manual page assembles all eight from those receipts: 33 figures, 642 KB,
-  7 of 8 quoting the coaches manual directly. Checked in a browser at 1265 px
-  and at 375 px, in both themes. Every figure decodes, nothing overflows.
-- The reference generator passes unchanged by the knuckle fix: elbows 106.67
-  and 114.73 degrees, 30 finger bones weighted. Its receipt was diffed against
-  the pre-fix one and the largest difference anywhere is 2.265e-06, which is
-  0.0004 mm of fingertip travel. Float32 rounding, not a pose change.
-- 56 repository tests and 209 spike tests pass. 17 of the repository tests skip
-  without Blender.
+- **The grip closes.** 159 digits on the ball across eight drills, tips 0 to 8
+  mm from the surface. This morning the same fingers were 26 to 35 mm short
+  and CLIMBING from knuckle to tip.
+- **Animation batching**, proven on two instruments that fail differently.
+  Curve counts equal at 533 and 533 with no orphans, where the defect showed
+  as 533 against 1063. Bone paths 53.3 mm apart, so the two files carry
+  different movements. Frame counts equal, so the timebase leak is closed.
+- The manual page assembles all eight: 33 figures, 642 KB, 7 of 8 quoting the
+  coaches manual. Checked in a browser at 1265 px and 375 px, both themes.
+- The reference generator is unchanged by the knuckle work: elbows 106.67 and
+  114.73 degrees, 30 finger bones weighted, and its receipt diffed against the
+  pre-fix one to 2.265e-06, which is 0.0004 mm of fingertip travel.
+- 62 repository tests pass. Every guard was verified FAILING with its fix
+  reverted; a guard that has never failed has proven nothing.
 
 **Not verified, and do not report otherwise.**
 
-- Animation batching. Several drills in one session is implemented but proven
-  on nothing yet. The test is two drills in one session, then both GLB files
-  re-imported into a clean Blender with their ball paths compared, because
-  both jobs carry 49 frames and an equal frame count discriminates nothing.
-  Frame count catches only interleaving, which would read 98.
 - The turntable. Unchanged and untouched since it was written.
+- The hand against the head on `deflect_high` ready. The defect is visible and
+  real. My skull sphere, taken from the head bone's length, reported zero hand
+  vertices inside it, so the INSTRUMENT failed and no number was delivered. A
+  zero from an instrument that cannot reach the face is worse than no zero.
+
+**Open pose faults, measured and handed to the movement lane.**
+
+Four phases have the athlete inside the ball by 15 to 41 mm:
+`hooks_outside_hand contact` (558 vertices), `deflect_high control` (406, the
+ball through her face), `hooks_jump_pull_in release` (116) and
+`two_hand_catch_chest release` (99). Two of the four are RELEASE phases on
+unrelated drills, which points at ball trajectory at release rather than
+placement.
+
+Nine further phases show 3 to 20 vertices at 0.3 to 1.8 mm. That is contact,
+not intersection: the render treats the ball as rigid and a real netball
+yields several millimetres under a catch. The gap between the two groups is
+13.4 mm and 79 vertices, which is in the data and not a threshold anyone
+chose.
 
 **Known limits of the 2026-08-27 batch.**
 
