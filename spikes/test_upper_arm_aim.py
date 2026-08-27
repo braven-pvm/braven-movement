@@ -18,7 +18,8 @@ import numpy as np
 try:
     import pymomentum.geometry as geometry
 
-    from contact_solve import UPPER_ARM_LOCAL_AXIS
+    import possession_solve
+    from contact_solve import UPPER_ARM_AIM_WEIGHT, UPPER_ARM_LOCAL_AXIS
     from movement_engine import load_character
 
     SOLVER = True
@@ -79,6 +80,50 @@ class UpperArmAimAssumptions(unittest.TestCase):
         self.assertGreater(left, 0.0)
         self.assertLess(right, 0.0)
         self.assertAlmostEqual(left, -right, places=3)
+
+
+@unittest.skipUnless(SOLVER, "needs pymomentum, which lives in the pixi environment")
+class TheElbowsStayOut(unittest.TestCase):
+    """The outcome, not the mechanism.
+
+    Everything above guards a fact about the model. None of it notices if the
+    term is switched off: set the weight to zero and the whole suite still
+    passes while the elbows quietly return to the ribs, which is the defect
+    this work exists to fix. A solve costs about a second, and that is worth
+    paying to catch a silent revert.
+    """
+
+    def test_the_term_carries_weight(self) -> None:
+        self.assertGreater(
+            UPPER_ARM_AIM_WEIGHT,
+            0.0,
+            "the aim term is switched off, so the elbows are back at the ribs",
+        )
+
+    def test_a_chest_catch_holds_its_elbows_off_the_ribs(self) -> None:
+        """This drill measured 14.0 cm between the elbows before the aim term.
+
+        It is the one that moved furthest, so it is the one that shows a revert
+        soonest. The threshold is deliberately far below the 39.6 cm it now
+        makes: this asks whether the arms are held out at all, not whether a
+        particular number was preserved. Pinning the number would turn a real
+        check into a change detector.
+        """
+        character = load_character()
+        index = {
+            name: number
+            for number, name in enumerate(character.skeleton.joint_names)
+        }
+        result = possession_solve.solve_movement(
+            character, "netball_two_hand_catch_chest"
+        )
+        points = result["points"][result["possession"].contact_frame]
+        apart = float(
+            np.linalg.norm(
+                points[index["l_lowarm"]] - points[index["r_lowarm"]]
+            )
+        )
+        self.assertGreater(apart, 25.0, f"elbows only {apart:.1f} cm apart")
 
 
 if __name__ == "__main__":  # pragma: no cover
