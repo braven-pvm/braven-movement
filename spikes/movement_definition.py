@@ -127,6 +127,55 @@ class MovementDefinition:
         if ordered != sorted(ordered):
             raise MovementDefinitionError("phases must be ordered by at_phase")
 
+    def separation(
+        self, measurements_by_phase: Sequence[Mapping[str, float]]
+    ) -> list["PhaseSeparation"]:
+        """Report whether each phase can be told apart from the one before it.
+
+        A checkpoint grades a measure at a phase. If that measure reads the
+        same at this phase as at the previous one, the checkpoint cannot
+        distinguish them, so it cannot fail. It will pass whatever the athlete
+        does, and it inflates the library's score with a check that was never
+        a check.
+
+        This is the same rule `Checkpoint.__post_init__` already applies to
+        band width, applied to phase separation instead. A band narrower than
+        the measurement threshold reports noise as coaching. A phase closer to
+        its predecessor than the measurement threshold does the same.
+
+        It cannot live in `__post_init__`, because separation is a property of
+        a solved movement and not of the definition alone. A definition is only
+        wrong here once you see what it grades.
+        """
+        if not measurements_by_phase:
+            raise MovementDefinitionError("no measurements supplied")
+        last = len(measurements_by_phase) - 1
+        report: list[PhaseSeparation] = []
+        previous: Mapping[str, float] | None = None
+        for phase in self.phases:
+            frame = measurements_by_phase[round(phase.at_phase * last)]
+            widest, measure = None, None
+            if previous is not None:
+                for checkpoint in phase.checkpoints:
+                    if checkpoint.measure not in frame:
+                        continue
+                    moved = abs(
+                        float(frame[checkpoint.measure])
+                        - float(previous[checkpoint.measure])
+                    )
+                    if widest is None or moved > widest:
+                        widest, measure = moved, checkpoint.measure
+            report.append(
+                PhaseSeparation(
+                    phase=phase.name,
+                    first=previous is None,
+                    moved=widest,
+                    measure=measure,
+                )
+            )
+            previous = frame
+        return report
+
     def assess(
         self,
         measurements_by_phase: Sequence[Mapping[str, float]],
@@ -158,6 +207,36 @@ class MovementDefinition:
             results[phase.name] = phase_results
         return MovementAssessment(
             definition=self, results=results, measurement_valid=measurement_valid
+        )
+
+
+@dataclass(frozen=True)
+class PhaseSeparation:
+    """How far a phase's own checkpoints moved from the phase before it."""
+
+    phase: str
+    first: bool
+    moved: float | None
+    measure: str | None
+
+    @property
+    def distinguishable(self) -> bool:
+        """A first phase has nothing to differ from, so it always counts."""
+        if self.first:
+            return True
+        if self.moved is None:
+            return False
+        return self.moved >= MINIMUM_MEANINGFUL_BAND_DEGREES
+
+    def why(self) -> str:
+        if self.first:
+            return f"{self.phase}: first phase, nothing to differ from"
+        if self.moved is None:
+            return f"{self.phase}: no checkpoints, so nothing is graded here"
+        verdict = "" if self.distinguishable else "  CANNOT FAIL"
+        return (
+            f"{self.phase}: widest change {self.moved:.2f} on "
+            f"{self.measure}{verdict}"
         )
 
 

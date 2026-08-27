@@ -7,6 +7,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from movement_definition import (  # noqa: E402
+    MINIMUM_MEANINGFUL_BAND_DEGREES,
     Checkpoint,
     MovementDefinition,
     MovementDefinitionError,
@@ -169,6 +170,90 @@ class LibraryDefinitionTest(unittest.TestCase):
     def test_the_netball_skills_are_all_netball(self):
         for path in self.definitions():
             self.assertEqual(load(path).sport, "netball", path.name)
+
+
+class PhaseSeparationTest(unittest.TestCase):
+    """A checkpoint that cannot fail is not a check.
+
+    The same threshold that refuses a band narrower than the measurement
+    resolution refuses a phase closer to its predecessor than that resolution.
+    """
+
+    @staticmethod
+    def definition():
+        return MovementDefinition(
+            movement_id="drill",
+            skill="Drill",
+            sport="netball",
+            source="test",
+            phases=(
+                Phase(name="ready", at_phase=0.0, checkpoints=(checkpoint(),)),
+                Phase(name="react", at_phase=0.5, checkpoints=(checkpoint(),)),
+                Phase(name="contact", at_phase=1.0, checkpoints=(checkpoint(),)),
+            ),
+        )
+
+    @staticmethod
+    def frames(values):
+        return [{"leftElbowFlexionDegrees": value} for value in values]
+
+    def test_a_phase_that_moved_is_distinguishable(self):
+        report = self.definition().separation(
+            self.frames([10.0, 40.0, 70.0])
+        )
+        self.assertTrue(all(item.distinguishable for item in report))
+        self.assertAlmostEqual(report[1].moved, 30.0)
+
+    def test_a_phase_identical_to_the_one_before_cannot_fail(self):
+        report = self.definition().separation(
+            self.frames([10.0, 10.0, 70.0])
+        )
+        self.assertTrue(report[0].distinguishable, "a first phase always counts")
+        self.assertFalse(report[1].distinguishable)
+        self.assertIn("CANNOT FAIL", report[1].why())
+
+    def test_the_threshold_is_the_measurement_resolution(self):
+        """Just under fails, just over passes. No separate constant."""
+        under = MINIMUM_MEANINGFUL_BAND_DEGREES - 0.1
+        over = MINIMUM_MEANINGFUL_BAND_DEGREES + 0.1
+        self.assertFalse(
+            self.definition()
+            .separation(self.frames([10.0, 10.0 + under, 70.0]))[1]
+            .distinguishable
+        )
+        self.assertTrue(
+            self.definition()
+            .separation(self.frames([10.0, 10.0 + over, 70.0]))[1]
+            .distinguishable
+        )
+
+    def test_a_phase_whose_measure_is_missing_grades_nothing(self):
+        """`Phase` already refuses zero checkpoints, so this is the real case.
+
+        A checkpoint naming a measure the solver did not produce grades
+        nothing, and must not be reported as distinguishable.
+        """
+        definition = MovementDefinition(
+            movement_id="drill",
+            skill="Drill",
+            sport="netball",
+            source="test",
+            phases=(
+                Phase(name="ready", at_phase=0.0, checkpoints=(checkpoint(),)),
+                Phase(
+                    name="absent",
+                    at_phase=1.0,
+                    checkpoints=(checkpoint(measure="neverMeasuredDegrees"),),
+                ),
+            ),
+        )
+        report = definition.separation(self.frames([10.0, 70.0]))
+        self.assertFalse(report[1].distinguishable)
+        self.assertIn("nothing is graded", report[1].why())
+
+    def test_it_refuses_an_empty_measurement_list(self):
+        with self.assertRaises(MovementDefinitionError):
+            self.definition().separation([])
 
 
 if __name__ == "__main__":

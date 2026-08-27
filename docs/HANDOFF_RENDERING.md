@@ -61,6 +61,8 @@ other.
 schemaVersion, movementId, skill, sport
 anatomyLimitsDegrees   forearmRoll, wristBend, fingerJointBend,
                        fingerBaseDeviation
+knuckleLimitsDegrees   index, middle, ring, pinky, thumb. Refer to the note
+                       below before consuming it
 views                  front, quarter, side
                        resolutionPx, locationM, targetM, lensMm, sensorWidthMm
 framesPerSecond, frameStep
@@ -91,6 +93,91 @@ grip.{l,r}.outward             present only when holding. Unit vector from the
 grip.{l,r}.wristFromSurfaceInArms   how far outside the ball surface the wrist
                                sits, in arm lengths
 ```
+
+### knuckleLimitsDegrees, and the rule behind it
+
+**The rule, which is general.** A POSE crosses this boundary as geometry,
+because a rotation only means something against the rest pose it was measured
+in and the two rigs do not share one. A RANGE OF MOTION crosses as a rotation
+about the anatomical axis, because it is a fact about the joint rather than a
+configuration.
+
+The first version of this field broke that rule: it exported a range of motion
+as visible bend, which is comparable to nothing a consumer computes. It never
+shipped to a consumer.
+
+**What is carried.** Per digit, including the thumb, in degrees:
+
+```
+flexion    {min, max}   about the knuckle's own curl axis
+deviation  {min, max}   about the knuckle's own deviation axis, side to side
+visibleBendAtFlexionLimit   informational only, refer below
+```
+
+**Resolve into the joint's frame first.** These bound rotations about the
+joint's own axes. A consumer reading them as palm-relative or world angles is
+wrong in a way nothing catches.
+
+**A scalar bend is not this quantity.** Rotating a finger in the plane that
+points it at the ball is not rotation about the flexion axis. Off that axis
+the single rotation mixes flexion with deviation, so bounding the mixture by
+the flexion licence permits a deviation the joint does not have. It is the
+mirror of clipping: the same number, over-permitting instead of over-clipping.
+
+The rendering lane measured their bend axis at 8 to 16 degrees off flexion on
+the four fingers. First-order arithmetic, so treat it as an indication and
+measure directly: spending the full flexion licence through a 16.2 degree
+tilted axis costs the pinky about 25 degrees of deviation on top of the 28 it
+already carries at rest, which is past its deviation limit while passing a
+scalar flexion check.
+
+The rule that follows: decompose the knuckle rotation in the hand's own frame,
+bound the flexion component by `flexion` and the deviation component by
+`deviation`.
+
+**The thumb is carried, and it is the reason not to skip this.** Its licence
+is materially tighter than a finger's — flexion −11.5 to 57.3 against a
+finger's −44.7 to 90, deviation ±28.6 against ±45.8. A consumer ceiling of 80
+degrees is above the model's 57.3, so before this field the thumb was not
+merely unbounded, it was over-permitted.
+
+**Per digit, and the reason is extension, not flexion.** Flexion maximum is
+90.0 on all four fingers, so a per-digit flexion maximum varies for no
+anatomical reason. The digits differ in extension: the pinky reaches −57.3
+where the others reach −44.7.
+
+**`visibleBendAtFlexionLimit` is informational and is not a ceiling.** It is
+the visible angle between wrist-to-knuckle and knuckle-to-phalanx when the
+curl axis is at its limit and the other two are at zero. It exists so nobody
+clips a legal pose. Two worked cautions, because both are mistakes waiting to
+happen:
+
+- **It is not the rest bend plus the rotation limit.** The index rests at 18.5
+  with a rotation limit of 90 and reaches 90.0 of visible bend, not 108.5.
+  These are measured by driving the parameter, never computed by addition, and
+  a test fails if anyone replaces the measurement with the sum.
+- **A visible reading may legally exceed it.** The index shows 96.4 of VISIBLE
+  bend at contact on the one-handed drills. That is not an over-rotated joint:
+  it is about 78 of curl-axis rotation, with the other two knuckle axes
+  contributing the rest. Quoting the two quantities against each other is the
+  error; 96.4 is visible bend and 90.0 is a rotation limit.
+
+**Never the word metacarpal.** Neither rig has one. MPFB has 30 finger bones
+and none of them is a metacarpal, and MHR's equivalent segment is
+wrist-to-knuckle. Rest bends differ per digit AND per rig, which is why a
+consumer must use its own:
+
+| digit | MHR rest bend | MPFB rest bend | difference |
+|---|---|---|---|
+| index | 18.5 | 13.80 | 4.7 |
+| middle | 8.0 | 19.39 | 11.4 |
+| ring | 1.2 | 16.78 | 15.6 |
+| pinky | 14.6 | 18.34 | 3.7 |
+
+**`anatomyLimitsDegrees.fingerBaseDeviation` is unchanged** at 40.0 and still
+means deviation. It is a calibration of one authored pose against one
+photograph, so prefer the model-derived `deviation` above, which is per digit
+and licenses ±45.8 on a finger.
 
 **Reaching and holding are different, and the difference is the whole
 possession model.** Before contact the arm decides where the hand goes, so use

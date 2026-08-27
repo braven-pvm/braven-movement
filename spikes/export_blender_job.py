@@ -32,7 +32,13 @@ sys.path.insert(0, str(SPIKE_DIR))
 
 from ball_track import has_ball  # noqa: E402
 from movement_definition import load as load_definition  # noqa: E402
-from movement_engine import definition_path, library, load_character  # noqa: E402
+from athlete import minmax_limits  # noqa: E402
+from movement_engine import (  # noqa: E402
+    definition_path,
+    joint_positions,
+    library,
+    load_character,
+)
 from possession_solve import solve_movement  # noqa: E402
 from technique import has_technique, load_technique, technique_path  # noqa: E402
 
@@ -55,12 +61,95 @@ VIEW_TARGET = [0.0, -0.15, 0.95]
 
 # Carried over from config/reference_catch.v1.json, which measured them against
 # a photograph of a real athlete.
+#
+# These are a calibration of one authored pose, not anatomical limits, and
+# fingerBaseDeviation was being used on the receiving side to bound knuckle
+# FLEXION. Deviation and flexion are different axes: this model licenses plus
+# or minus 45.8 of deviation and up to 90 of flexion, so a deviation-sized
+# number was capping a flexion axis and the fingers stopped 26 to 35 mm short
+# of the ball. knuckleLimitsDegrees below is the replacement. This block is
+# left exactly as it was, because deviation still means deviation.
 ANATOMY_LIMITS = {
     "forearmRoll": 75.0,
     "wristBend": 45.0,
     "fingerJointBend": 25.0,
     "fingerBaseDeviation": 40.0,
 }
+
+# The thumb is included. Its knuckle is thumb1, with the same axis naming
+# as a finger, and its limits are materially tighter.
+DIGITS = ("index", "middle", "ring", "pinky", "thumb")
+
+
+def knuckle_limits(character) -> dict[str, dict]:
+    """What each knuckle is licensed to do, measured rather than stated.
+
+    ROTATIONS about the joint's own axes, per digit, in degrees. A consumer
+    must resolve its own rotation into that frame before comparing.
+
+    The quantity matters and the first version of this got it wrong. A POSE
+    crosses a body boundary as geometry, because a rotation only means
+    something against the rest pose it was measured in and two rigs do not
+    share one. A RANGE OF MOTION crosses as a rotation about the anatomical
+    axis, because that is an anatomical fact about the joint rather than a
+    configuration. This is a range of motion. Exporting it as visible bend
+    made it comparable to nothing a consumer computes.
+
+    Visible bend is still reported, clearly labelled, because it is what stops
+    someone clipping a legal pose. It is measured by driving the curl axis to
+    its limit with the other two at zero, never computed by addition: the
+    index rests at 18.5 with a rotation limit of 90 and reaches 90.0 of
+    visible bend, not 108.5.
+    """
+    names = list(character.parameter_transform.names)
+    limits = minmax_limits(character)
+    index = {n: i for i, n in enumerate(character.skeleton.joint_names)}
+    zero = np.zeros(character.parameter_transform.size, dtype=np.float32)
+
+    def bend(points, a, b, c):
+        first = points[index[b]] - points[index[a]]
+        second = points[index[c]] - points[index[b]]
+        cosine = np.dot(first, second) / (
+            np.linalg.norm(first) * np.linalg.norm(second)
+        )
+        return float(np.degrees(np.arccos(np.clip(cosine, -1.0, 1.0))))
+
+    def degrees(parameter: str) -> dict | None:
+        if parameter not in limits or parameter not in names:
+            return None
+        low, high = limits[parameter]
+        return {
+            "min": round(float(np.degrees(low)), 1),
+            "max": round(float(np.degrees(high)), 1),
+        }
+
+    found: dict[str, dict] = {}
+    for digit in DIGITS:
+        curl = f"l_{digit}1_rz"
+        flexion = degrees(curl)
+        if flexion is None:
+            continue
+        posed = zero.copy()
+        posed[names.index(curl)] = limits[curl][1]
+        found[digit] = {
+            # About the joint's own curl axis. Resolve into that frame first.
+            "flexion": flexion,
+            # About the joint's own deviation axis, side to side.
+            "deviation": degrees(f"l_{digit}1_ry"),
+            # Informational. What the hand visibly does at the flexion limit
+            # with the other two axes at zero. Not a ceiling: the solve reaches
+            # 96.4 on the index, legally, with the other axes contributing.
+            "visibleBendAtFlexionLimit": round(
+                bend(
+                    joint_positions(character, posed),
+                    "l_wrist",
+                    f"l_{digit}1",
+                    f"l_{digit}2",
+                ),
+                1,
+            ),
+        }
+    return found
 
 
 def to_blender(point) -> np.ndarray:
@@ -231,6 +320,18 @@ def build(character, movement_id: str, every: int = 0) -> dict:
         "skill": definition.skill,
         "sport": definition.sport,
         "anatomyLimitsDegrees": dict(ANATOMY_LIMITS),
+        # Additive. A reader that does not know this field keeps working on
+        # the block above; a reader that does should prefer it for the
+        # knuckle, because the block above has no flexion number in it and
+        # bounds nothing about the thumb at all.
+        #
+        # ROTATIONS about each knuckle's OWN axes, per digit, including the
+        # thumb. Resolve your rotation into that frame before comparing. A
+        # scalar bend taken in the plane that points a finger at the ball is
+        # not this quantity: off the flexion axis it mixes flexion with
+        # deviation, and bounding the mixture by the flexion licence permits
+        # a deviation the joint does not have.
+        "knuckleLimitsDegrees": knuckle_limits(character),
         "views": {
             name: {
                 "resolutionPx": list(VIEW_RESOLUTION),
