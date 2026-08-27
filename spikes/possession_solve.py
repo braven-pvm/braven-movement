@@ -228,7 +228,22 @@ def solve_movement(
             elif not frame.holding:
                 # The free hand of a one hand drill waits. Only the hand that
                 # is taking the ball goes out to meet it.
-                centres[side] = frame.waiting
+                #
+                # This line used to send BOTH hands to `waiting`, because the
+                # test above it asks only whether she is holding the ball yet
+                # and never which hand is doing the catching. So on the two
+                # drills that join a second hand, the CATCHING hand waited too
+                # and then arrived on the ball in a single frame: the wrist sat
+                # 39.5 cm from the ball centre on the frame before contact and
+                # 15.2 cm on the frame of it, a 19.9 cm step, and the upper arm
+                # swung 48.1 degrees following it. That was the largest step in
+                # the library. Every drill without a second hand takes the
+                # branch above and steps 1.7 to 4.2 cm.
+                #
+                # The comment was right and the code did not do what it said.
+                centres[side] = (
+                    frame.presented if side in method.sides else frame.waiting
+                )
             else:
                 # The same squared ramp the catching hand uses. Easing this
                 # one in at both ends with a smoothstep was tried and made no
@@ -267,11 +282,11 @@ def solve_movement(
                     ),
                 ),
                 elbow_poles(
-                    character, index, placed[number], targets, reach_cm, sides
+                    character, index, placed[number], targets, reach_cm, sides,
+                    method.elbow_angle_degrees,
                 ),
                 upper_arm_aim(
-                    character, index, placed[number], targets, reach_cm, sides,
-                    method.elbow_width,
+                    character, index, placed[number], targets, reach_cm, sides
                 ),
                 continuity,
                 solver2.LimitErrorFunction(character, weight=LIMIT_WEIGHT),

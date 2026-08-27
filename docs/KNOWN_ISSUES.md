@@ -44,16 +44,27 @@ configuration records its SHA-256 and dimensions so an authorised local copy can
 
 # Movement
 
-## Three coaching phases cannot fail
+## Four coaching phases cannot fail
 
 `build_library.py` reports these in every receipt under `phaseSeparation`, and
 flags the movement rather than calling it ok.
 
-| drill | phase | its measures move |
-|---|---|---|
-| Double Foot Landing | land | 0.33 |
-| 1 Hand Snatches to Other Hand | reach | 0.21 |
-| 2 Hand Snatches and Pull In | react | 0.17 |
+| drill | phase | its measures move | was |
+|---|---|---|---|
+| Double Foot Landing | **flight** | **1.97** | **5.70, so it could fail** |
+| Double Foot Landing | land | 0.16 | 0.33 |
+| 1 Hand Snatches to Other Hand | reach | 0.15 | 0.21 |
+| 2 Hand Snatches and Pull In | react | 0.00 | 0.17 |
+
+**The flight row is new, and the elbow pole pack caused it.** Its measure is
+`leftShoulderElevationDegrees`, and a pole with constant authority makes the
+shoulder vary less between the approach and the flight. It was 5.70 before,
+which is 0.70 above the threshold, so it was already marginal. The other three
+all moved closer to zero for the same reason.
+
+Nothing is retimed and no band is widened to recover it, for the reason the
+whole entry gives below. This is the cost of a smoother arm, stated rather
+than absorbed, and it goes to the coach morning with the other three.
 
 A checkpoint grades a measure at a phase. If that measure reads the same as at
 the previous phase, the checkpoint cannot tell them apart, so it cannot fail.
@@ -127,8 +138,21 @@ Starting points, recorded so they are not rediscovered:
    Recorded this way because a debt entry that sends the fixer to the wrong
    frames is worse than no entry at all.
 
-The return pass adds three new instances of this, with named frames. Refer to
-"The follow-through is rough where the arm now moves".
+The elbow pole pack moved this a long way. Per-frame arm direction steps above
+each threshold, across both arms and both arm segments, whole library:
+
+| | >5 | >10 | >15 | >20 | >30 | worst |
+|---|---|---|---|---|---|---|
+| before the ball pack | 71 | 14 | 5 | 4 | 1 | 48.1 |
+| after the ball pack | 134 | 26 | 9 | 8 | 1 | 48.1 |
+| after the catching-hand fix | 141 | 21 | 6 | 6 | 0 | 26.1 |
+| after the pole angle | **109** | **9** | **2** | **0** | **0** | **19.3** |
+
+The >20 column is empty for the first time. What remains at >15 is both on
+`netball_hooks_outside_hand`, and is the free-arm flip recorded below.
+
+This entry stays open. 19.3 degrees between two frames at 60 frames a second is
+still not a movement a person makes.
 
 When a coach number arrives for the chest catches, the 25 cm threshold in
 `test_upper_arm_aim.py` needs rework alongside it: the `technique.py` comment
@@ -352,3 +376,164 @@ position that is a straight line between two authored ones.
 
 Event-anchored phases, already queued for the cannot-fail entry, would fix
 both. Recorded here so the two are fixed together rather than separately.
+
+## A comment is not a test
+
+Three defects this month were a comment describing the right behaviour sitting
+directly above code that did the opposite:
+
+- the bisection's "never inside";
+- `curved_directions` and its first bone;
+- `possession_solve`'s "only the hand that is taking the ball goes out to meet
+  it", above a line that sent both hands to wait.
+
+The third was the largest single-frame step in the library: 19.9 cm of wrist
+travel in the contact frame and a 48.1 degree arm swing behind it.
+
+Every one was found by an instrument reading output. None was found by anyone
+reading the code, including the people who read that code closely enough to
+change the lines around it. A comment states intent, and intent is not
+enforced by anything.
+
+The practical consequence for this project: when a comment states a behaviour,
+that is a candidate for a test, not evidence that the behaviour happens.
+
+## The free arm starts 46 degrees off and snaps through 41 frames later
+
+`netball_hooks_outside_hand`, frame 41, left arm, 19.3 degrees on the upper and
+18.6 on the forearm between two frames while the wrist moves 1.15 cm. It is the
+largest step left anywhere in the library.
+
+**The cause is the first frame, not frame 41.** The free arm's elbow angle about
+the shoulder-to-wrist axis, against the 34.6 degrees the pole asks for:
+
+| frame | 0 | 10 | 20 | 30 | 40 | **41** | 42 | 50 | 60 | 95 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| angle | 81 | 84 | 84 | 72 | 66 | **12** | −13 | 20 | 28 | 30 |
+
+It starts 46 degrees away and every one of the 41 frames before the snap sits
+more than 20 degrees off. Then it crosses the whole gap in one frame,
+overshoots, and settles at 28 to 30 for the remaining 57 frames. The catching
+arm starts at 27.2 and stays between 27 and 30 throughout.
+
+Before contact the free hand's only positional target is `waiting`, which
+barely constrains the elbow's rotation about the reach axis. So the first
+solve leaves the elbow almost straight out to her side, the continuity term
+carries that faithfully, and the pole wins abruptly rather than gradually.
+
+The trunk goes with it. The shoulder line jerks −2.26 degrees at that frame
+against a steady +0.85 either side, and this drill has no authored turn at all,
+so that rotation is entirely emergent.
+
+**This is a snap-through, not a mode flip:** a term that is correct, opposed by
+continuity, winning all at once. The fix belongs at frame 0.
+
+**An earlier version of this entry was wrong** and said the pole pack reduced a
+21.7 degree flip at frame 47 to 19.3. The frame-47 flip has gone: it is now
+under 8 degrees. The 19.3 is a different event at a different frame, and the
+two were conflated by reading a per-drill worst without asking where it was.
+
+## What is left above 10 degrees, in full
+
+So the remaining surface is small enough to name completely:
+
+| drill | frame | segment | step |
+|---|---|---|---|
+| hooks outside hand | 41 | left upper, left fore | 19.3, 18.6 |
+| deflect high | 37 | right upper, right fore | 11.5, 12.4 |
+| deflect high | 71 to 73 | both forearms | 10.2 to 12.1 |
+
+Nothing else in the library exceeds 10 degrees on any arm segment on any frame.
+Frame 37 on the deflect is its contact frame, so that one is the contact join.
+Frames 71 to 73 are its follow-through.
+
+## How wide the elbows sit with the ball at the chest
+
+The pole pack brought the most folded band from 62.9 cm between the elbows to
+52.7. The manual's reference is 38.6 cm, and it does not apply here: those
+photographs are a snatch AT CONTACT, with the arm at 0.85 to 0.90 of full
+extension. No evidence in this project describes a folded arm.
+
+So 52.7 is published rather than aimed at. Nothing was tuned to make it any
+particular number, and the mechanical change that produced it needed no coach.
+
+Some of the remaining relationship is real. Elbow separation still correlates
+with arm extension at -0.847, against -0.865 before, and it should: a folded
+arm's elbow IS further off the line from shoulder to hand. What the pack
+removed is the artificial amplification on top of that, worth about 10 cm.
+
+A coach looking at the pull-in should be asked whether 52.7 cm is right. If it
+is not, `elbowAngleDegrees` in the technique file is the dial, in degrees, and
+it now reaches the mechanism that decides the answer.
+
+## The pole's frame is not orthogonal, so the target is not always reachable
+
+`elbow_poles` builds its frame by projecting `out` and `down` off the reach
+axis. It never orthogonalises them against each other. On a reach that is
+oblique to both they are not perpendicular, `down * cos + out * sin` is not a
+unit vector, and the target leaves the circle the elbow can occupy.
+
+Measured over a spread of reach directions, worst deviation **10.2 cm**, where
+the hand sits nearly below the shoulder and `out . down` reaches −0.963. On
+that family the point target does argue with the reach — the one thing the
+angle form was chosen to avoid.
+
+**The calibration survives and the stated property does not.** 34.6 degrees was
+bisected through the whole solve, not derived from the geometry, so it already
+absorbs whatever the basis does. Every gate is green with the basis as it is.
+What was wrong is the claim in the comment and the name of the test.
+
+The guard exercises reaches along one axis, where `out . down` is exactly zero,
+so it tests the family the defect cannot reach. It is left that way on purpose:
+widening it turns the branch red for a defect whose fix moves figures.
+
+**Filed as follow-up, after the render window:** an orthonormal basis by
+Gram-Schmidt, then re-read the angle, then regenerate every table that depends
+on it. It is not urgent, because nothing measured is wrong. It is not optional,
+because the code claims a property it does not have.
+
+## The dial was wired to a term that could not honour it
+
+`elbowWidth` was a technique property, named for the case where a chest catch
+folds the elbows where a snatch spreads them. It scaled the aim vector in
+`upper_arm_aim`.
+
+Sweeping that term's weight from 2.0 down to 0.0 moved folded elbow separation
+by **0.2 cm**, from 65.4 to 65.6. So a coach could have set that dial to
+anything and the athlete's elbows would not have moved.
+
+No technique file ever authored it, which is the only reason no harm was done.
+Had a coach been asked for a number at the review morning, the number would
+have been recorded, honoured in the file, and ignored by the engine.
+
+It is now `elbowAngleDegrees` on the elbow pole, which does control separation,
+and it is in degrees rather than in multiples of nothing.
+
+**The general shape, worth more than the instance:** a dial is not connected to
+what its name says until something measures the connection. Before asking a
+coach for any number, sweep the parameter it will feed and confirm the athlete
+moves.
+
+## The snap check flags the wrong frame, and there is a real hitch to find
+
+Adjudicated during the pole pack's review. Both halves stand.
+
+**The instrument is faulty.** `spike_report` divides a step by the mean of its
+two immediate neighbours. A two-value mean has a breakdown point of zero, so
+one small neighbour drags the ratio however it likes: a perfectly normal step
+beside a stall is flagged, and a snap out of stillness cannot be seen at all
+because the skip-gate exempts it. Filed as follow-up: a median over a window of
+two or three either side, excluding the frame itself, with a floored
+denominator in place of the skip-gate, and possibly a second-difference
+statistic that names a hitch at its own frame. `SNAP_RATIO` recalibrates once
+the denominator is robust, and not before.
+
+**And there is a real hitch.** On the `wide` variant of
+`netball_two_hand_snatch_pull_in` the elbow steps 8.50, then 0.19 at the
+contact frame, then 4.41. That one-frame stall was introduced by the pole pack.
+It is the same family as `netball_deflect_high` at frame 37: a discontinuity
+where the approach hands over to the carry.
+
+So the red row is honest about there being something wrong, and dishonest about
+where and by how much. Neither half excuses the other.
+

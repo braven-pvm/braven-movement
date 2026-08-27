@@ -87,22 +87,42 @@ TWIST_SEEDS = (-2.0, -1.0, 0.0, 1.0)
 # brings the worst palm gap to 0.05 cm. Higher starts to overpower the grip
 # again: 1.5 puts it back to 9.8 cm.
 CONTACT_POLE_WEIGHT = 0.8
-# Where the elbow is pushed, in centimetres, on the reference athlete.
+# Where the elbow sits round the shoulder-to-wrist axis, in degrees. Zero is
+# straight down from that axis and ninety is straight out to her side.
 #
-# The movement solver's 5 out and 11 down tucked the elbows into the ribs: the
-# shoulders are 38.6 cm apart and the elbows came out 17.5 cm apart, 12 cm
-# inboard of each shoulder. The manual's own photographs show them out and up.
-# Swept across the library, 16 out and 6 down opens them to 27.3 cm and also
-# quietens the two drills that were already rough, from 36 to 21.
+# This replaces an absolute offset of 16 cm out and 6 cm down. That offset was
+# swept against ONE regime — the manual's photographs, which are a snatch AT
+# CONTACT, arm at 0.85 to 0.90 of full extension — and then applied everywhere.
+# It was also gated by `slack = 1 - span / reach`, so its authority GREW as the
+# arm folded. The term was therefore strongest exactly where no photograph was
+# taken and silent exactly where the evidence was measured, which is the
+# opposite of what the pull-in cue asks for. Measured over 353 holding frames,
+# elbow separation and arm extension correlated at -0.865: a 62.9 cm mean in
+# the most folded band against 34.8 cm in the most extended, on a 38.6 cm
+# reference.
 #
-# It does not reach the 38.6 cm the photographs show. Pushing the pole further,
-# or up rather than down, gets the width but costs the movement: at 22 out and
-# 6 up the elbows are 45 cm apart and the worst spike on a clean drill goes
-# from 2.1 to 11.3. A point target on the elbow is a tie breaker, and the right
-# instrument for holding the elbows up is a term on the upper arm's
-# orientation, which is engine work rather than a constant.
-ELBOW_POLE_OUT_CM = 16.0
-ELBOW_POLE_DOWN_CM = 6.0
+# The value is READ, not chosen. It is the angle at which the SOLVED mean elbow
+# separation across the library's contact frames is 38.6 cm, which is the
+# manual's own figure and the same comparison PR #4 used. Found by bisecting
+# the whole solve rather than by placing elbows geometrically: a kinematic
+# bisection on the solved shoulders and wrists answered 22.4 degrees, and
+# running that through the solver gave 34.1 cm rather than 38.6, because the
+# grip, the aim term and the limits move the arm as well. Bisecting the solve
+# itself gives 34.6 degrees and 38.58 cm.
+#
+# It is deliberately NOT read from the solve's own pole angle in the evidenced
+# band. That spreads from -14 to +75 degrees over 16 frames, so its mean would
+# be calibrating against noise.
+#
+# What the folded regime then does is a FINDING, not a target. No evidence says
+# how wide the elbows should be with the ball at the chest, so nothing here is
+# tuned to make that number anything in particular.
+ELBOW_POLE_ANGLE_DEGREES = 34.6
+# How much of the arm is upper arm, on this model. Needed to place the elbow on
+# the circle it can actually occupy for a given shoulder and wrist, which is
+# what lets the pole ask for a direction without arguing about the reach.
+# Measured on the rest skeleton and guarded by `test_upper_arm_fraction`.
+UPPER_ARM_FRACTION = 0.487473
 # Where the upper arm points, as a direction rather than as a place.
 #
 # The pole above is a point target on the elbow, and a point target cannot hold
@@ -241,34 +261,84 @@ def elbow_poles(
     targets: dict,
     reach_cm: float,
     sides: tuple[str, ...],
+    angle_degrees: float | None = None,
 ) -> solver2.PositionErrorFunction:
-    """The same tie breaker the movement solver uses, aimed at the palm."""
+    """Where the elbow sits round the shoulder-to-wrist axis.
+
+    An angle rather than an offset, for one reason that decides everything
+    else: rotating the elbow about that axis moves neither the shoulder nor the
+    wrist. So this cannot argue with the reach, and the slack gate the old
+    offset needed — which had to yield near full extension because a point
+    target argues with the hand — is not merely removed, it has nothing left
+    to do.
+
+    THE TARGET IS NOT ALWAYS EXACTLY ON THE ELBOW CIRCLE, AND AN EARLIER
+    VERSION OF THIS COMMENT SAID IT WAS. `out` and `down` below are each
+    projected off the reach axis, but they are never orthogonalised against
+    EACH OTHER, so on an oblique reach they are not perpendicular and
+    `down * cos + out * sin` is not a unit vector. Measured across a spread of
+    reach directions, the target lands up to 10.2 cm off the circle, worst
+    where the hand is nearly below the shoulder and `out . down` reaches
+    -0.963. On that family the term does argue with the reach a little, which
+    is the very thing the paragraph above claims it cannot.
+
+    What survives is the calibration, because 34.6 degrees was bisected
+    through the whole solve rather than derived from the geometry, so it
+    absorbs whatever the basis actually does. What does NOT survive is the
+    stated property. `test_the_target_is_on_the_elbow_circle_where_the_basis_
+    is_orthogonal` is the real guard, and its name says how far it reaches:
+    it exercises reaches along one axis family, and that is exactly where the
+    flaw disappears.
+
+    An orthonormal basis by Gram-Schmidt, and re-reading the angle afterwards,
+    is filed as follow-up. It would move figures again, so it waits.
+
+    The geometry also retires the gate's other job for free. As the arm
+    straightens, `off` goes to zero and every angle names the same point, so
+    the term fades where it should without anything switching it off.
+    """
+    angle = (
+        ELBOW_POLE_ANGLE_DEGREES if angle_degrees is None else float(angle_degrees)
+    )
+    turn = np.radians(angle)
+    upper = UPPER_ARM_FRACTION * reach_cm
+    fore = reach_cm - upper
     error = solver2.PositionErrorFunction(character, weight=1.0)
     for side in sides:
         sign = 1.0 if side == "l" else -1.0
-        shoulder = placed.shoulders[side]
+        shoulder = np.asarray(placed.shoulders[side], dtype=np.float64)
         hand = np.asarray(targets[f"{side}_wrist"], dtype=np.float64)
-        midpoint = (shoulder + hand) / 2.0
-        span = float(np.linalg.norm(hand - shoulder))
-        slack = max(0.0, min(1.0, 1.0 - span / max(reach_cm, 1e-6)))
-        if slack <= 0.0:
+        axis = hand - shoulder
+        span = float(np.linalg.norm(axis))
+        # A straight arm has no elbow circle, and a target beyond her reach has
+        # no triangle at all. Both are silence rather than a guess.
+        if span < 1e-6 or span >= upper + fore:
             continue
-        # Down and out relative to the athlete, not to the world. On the
-        # only drill in the library with a large authored turn, a world aligned
-        # pole pushes the elbow across her body instead of away from it.
-        # Scaled by the athlete's own arm. These were absolute centimetres
-        # measured on the reference body, so on a shorter arm the same pole was
-        # a proportionally harder pull and the elbow came out at a different
-        # angle for the same movement.
-        pole = midpoint + slack * (reach_cm / REFERENCE_ARM_CM) * (
-            placed.rotation
-            @ np.array([sign * ELBOW_POLE_OUT_CM, -ELBOW_POLE_DOWN_CM, 0.0])
+        axis = axis / span
+        along = (upper * upper - fore * fore + span * span) / (2.0 * span)
+        off_squared = upper * upper - along * along
+        if off_squared <= 1e-9:
+            continue
+        off = float(off_squared ** 0.5)
+        # Out and down relative to the athlete, not to the world. On the only
+        # drill in the library with a large authored turn, a world aligned pole
+        # pushes the elbow across her body instead of away from it.
+        out = placed.rotation @ np.array([sign, 0.0, 0.0])
+        out = out - np.dot(out, axis) * axis
+        down = placed.rotation @ np.array([0.0, -1.0, 0.0])
+        down = down - np.dot(down, axis) * axis
+        if np.linalg.norm(out) < 1e-6 or np.linalg.norm(down) < 1e-6:
+            continue
+        out = out / np.linalg.norm(out)
+        down = down / np.linalg.norm(down)
+        pole = shoulder + axis * along + off * (
+            down * np.cos(turn) + out * np.sin(turn)
         )
         error.add_constraint(
             index[f"{side}_lowarm"],
             target=np.asarray(pole, dtype=np.float32),
             offset=np.zeros(3, dtype=np.float32),
-            weight=CONTACT_POLE_WEIGHT * slack,
+            weight=CONTACT_POLE_WEIGHT,
         )
     return error
 
@@ -280,7 +350,6 @@ def upper_arm_aim(
     targets: dict,
     reach_cm: float,
     sides: tuple[str, ...],
-    width: float = 1.0,
 ):
     """Ask each upper arm to point out and down, without moving the hand.
 
@@ -300,11 +369,13 @@ def upper_arm_aim(
     for side in sides:
         sign = 1.0 if side == "l" else -1.0
         shoulder = placed.shoulders[side]
-        # `width` is the technique's own, so a chest catch can fold the
-        # elbows in where a snatch spreads them.
-        wanted = np.array(
-            [sign * UPPER_ARM_AIM_OUT * width, -UPPER_ARM_AIM_DOWN, 0.0]
-        )
+        # No technique dial here any more. `elbowWidth` used to scale this
+        # vector, and a weight sweep from 2.0 down to 0.0 moved folded elbow
+        # separation by 0.2 cm, so the dial named for the folded case was
+        # attached to a term that does not control it. It now sets the pole
+        # angle, in degrees. This term keeps the one job it is good at:
+        # holding the upper arm up.
+        wanted = np.array([sign * UPPER_ARM_AIM_OUT, -UPPER_ARM_AIM_DOWN, 0.0])
         wanted = wanted / float(np.linalg.norm(wanted))
         # Out and down in the athlete's frame, not the world's, so a drill that
         # turns keeps its elbows beside her rather than beside the court.
@@ -421,10 +492,12 @@ def solve_contact(
                 index,
                 foot_targets(track, phase, placed, rest_positions, index, reach_cm),
             ),
-            elbow_poles(character, index, placed, targets, reach_cm, method.sides),
-            upper_arm_aim(
+            elbow_poles(
                 character, index, placed, targets, reach_cm, method.sides,
-                method.elbow_width,
+                method.elbow_angle_degrees,
+            ),
+            upper_arm_aim(
+                character, index, placed, targets, reach_cm, method.sides
             ),
             solver2.LimitErrorFunction(character, weight=LIMIT_WEIGHT),
         ],
