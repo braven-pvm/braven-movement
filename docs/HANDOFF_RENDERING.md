@@ -466,12 +466,18 @@ Blender.
 
 Ordered by how much they cost.
 
-1. **She does not grip the ball. No finger touches it.** The ball floats beside
-   a nearly open hand. This is the first thing a coach will see, and it is on
-   every manual figure of a held phase.
+1. **CLOSED. She gripped nothing. The knuckle never flexed.** Kept in full
+   because the reasoning is the lane's most useful record, and because
+   `scripts/report_clearance.py` refers to this number.
 
-   Measured with `finger_surface_clearance`, and against the evaluated skin
-   mesh, on three phases across two drills:
+   **State on 2026-08-27, measured from `out/coach-stills2`:** 180 digits over
+   eight drills. 170 close on the ball, and every one of those falls from
+   knuckle to tip. The ten that do not are the free hand fault below, not this
+   defect. The text that follows is history. Do not read it as current.
+
+   The defect, as it read before the fix. Measured with
+   `finger_surface_clearance`, and against the evaluated skin mesh, on three
+   phases across two drills:
 
    | Drill and phase | Nearest finger bone | Nearest skin | Vertices inside |
    |---|---|---|---|
@@ -631,9 +637,11 @@ Measured on 2026-08-27, on `lane/rendering`, which carries `main` at `84fd600`.
 
 - All eight drills render in ONE Blender session: 33 phases, 99 images, 8
   receipts, every one PASS. The athlete is built once.
-- **The grip closes.** 159 digits on the ball across eight drills, tips 0 to 8
-  mm from the surface. This morning the same fingers were 26 to 35 mm short
-  and CLIMBING from knuckle to tip.
+- **The grip closes.** 170 digits of 180 on the ball across eight drills, tips
+  0 to 8 mm from the surface, every one falling from knuckle to tip. This
+  morning the same fingers were 26 to 35 mm short and CLIMBING. The 10 that do
+  not close are two hands on two drills, both named under the pose faults
+  below, and both belong to the job and not to the renderer.
 - **Animation batching**, proven on two instruments that fail differently.
   Curve counts equal at 533 and 533 with no orphans, where the defect showed
   as 533 against 1063. Bone paths 53.3 mm apart, so the two files carry
@@ -643,8 +651,22 @@ Measured on 2026-08-27, on `lane/rendering`, which carries `main` at `84fd600`.
 - The reference generator is unchanged by the knuckle work: elbows 106.67 and
   114.73 degrees, 30 finger bones weighted, and its receipt diffed against the
   pre-fix one to 2.265e-06, which is 0.0004 mm of fingertip travel.
-- 62 repository tests pass. Every guard was verified FAILING with its fix
-  reverted; a guard that has never failed has proven nothing.
+- The suite runs 63 tests and passes. **17 of the 63 skip**: they are the
+  Blender integration set, and they run only when
+  `BRAVEN_RUN_BLENDER_INTEGRATION=1`. So 46 tests execute by default. Report
+  the suite that way. "63 pass" reads as 63 executed, and 17 of them did not.
+- This lane added **eight guards**. One of the eight, the clearance profile
+  guard, was rewritten once when the instrument it guards changed shape. Every
+  guard was verified FAILING with its fix reverted; a guard that has never
+  failed has proven nothing.
+- **Defect 1 has no direct guard, and nothing in the suite blocks its return.**
+  The eight guards cover the seven other defects. The knuckle flexion fix is
+  held only by the clearance profile, which is an instrument in a receipt and
+  not a test. A guard that asserts on the source text would pass on a file that
+  computes the wrong angle, so it would be a guard in name only. The honest one
+  calls `curved_directions` and reads the angles, and that needs the function
+  lifted out of the Blender module so it imports without `bpy`. That extraction
+  is follow-up work, agreed with the reviewer, and it is not in this branch.
 
 **Not verified, and do not report otherwise.**
 
@@ -656,18 +678,46 @@ Measured on 2026-08-27, on `lane/rendering`, which carries `main` at `84fd600`.
 
 **Open pose faults, measured and handed to the movement lane.**
 
-Four phases have the athlete inside the ball by 15 to 41 mm:
-`hooks_outside_hand contact` (558 vertices), `deflect_high control` (406, the
-ball through her face), `hooks_jump_pull_in release` (116) and
-`two_hand_catch_chest release` (99). Two of the four are RELEASE phases on
-unrelated drills, which points at ball trajectory at release rather than
-placement.
+Measured from `out/coach-stills2`, the 2026-08-27 evening build, on all eight
+drills. **One fault survives.**
 
-Nine further phases show 3 to 20 vertices at 0.3 to 1.8 mm. That is contact,
-not intersection: the render treats the ball as rigid and a real netball
-yields several millimetres under a catch. The gap between the two groups is
-13.4 mm and 79 vertices, which is in the data and not a threshold anyone
-chose.
+| Phase | Vertices inside | Deepest |
+|---|---|---|
+| `hooks_outside_hand contact` | 469 | 37.1 mm |
+
+The other twelve phases that report anything read 1 to 21 vertices at 0.0 to
+1.8 mm. That is contact, not intersection: the render treats the ball as rigid
+and a real netball yields several millimetres under a catch. The gap between
+the survivor and that group is 35 mm and 448 vertices, which is in the data and
+not a threshold anyone chose.
+
+Three faults from the morning table are GONE. `deflect_high control`, which put
+the ball through her face at 406 vertices, now reads 4 vertices at 0.4 mm. Both
+RELEASE faults are gone, and no release phase reports anything, so the morning
+reading that pointed at ball trajectory at release no longer has evidence
+behind it. **What closed them is not isolated.** The two builds differ by the
+engine work merged into main today AND by this lane's grip fixes, and nobody
+ran the one against the other. Do not credit either until somebody does.
+
+**The survivor is one fault seen by both instruments, and it is the FREE hand.**
+On `hooks_outside_hand contact` the per digit table reads the left hand thumb
+pointing away, +78 mm at the knuckle to +99 at the tip, with the ring and pinky
+tips 17 and 35 mm INSIDE the ball. The arm target sweeps a 182 mm hand through
+the ball, and the fingers then solve against a surface their palm is already
+behind. The renderer places the hand where the job asks. Fixing this by moving
+the hand in the renderer would hide it, so three images are held behind a
+placeholder instead.
+
+One further hand is judged and should not be. On
+`one_hand_snatch_to_other_hand contact` the left hand reads all five digits 101
+to 134 mm short. The job carries a grip for the receiving hand at a phase where
+that hand has not reached the ball. That is a job question for the movement
+lane, not a renderer defect.
+
+The 10 digits that do not close divide between exactly these two hands.
+`one_hand_snatch_to_other_hand` contributes 5 short.
+`hooks_outside_hand` contributes 2 short, 1 pointing away and 2 inside. No
+third hand is flagged on any drill.
 
 **Known limits of the 2026-08-27 batch.**
 
