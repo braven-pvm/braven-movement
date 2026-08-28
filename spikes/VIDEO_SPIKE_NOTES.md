@@ -271,6 +271,70 @@ the trunk landmarks. That is usable. Fast phases disagree by **100 to 340 mm**
 on the hands, which is not, and no amount of care with the lift fixes it: the
 fix is a clap.
 
+## The elbow curve, and what survived
+
+Left arm only. The side camera sees her in profile, so the right wrist has 28
+usable readings against the left's 731. A curve drawn on 28 readings would be a
+drawing.
+
+**A convention error was caught before it published a number.** The first
+version measured the INCLUDED angle at the elbow, where a straight arm is 180.
+The engine's `elbow_flexion_degrees` is `180 - included`, where a straight arm
+is ZERO. Laying one beside the other would have compared two different
+quantities that both read in degrees — the same fault class as everything else
+in this ledger. The video curve now uses the engine's definition.
+
+### Two video instruments, and they do not agree
+
+| | range | median |
+|---|---|---|
+| from the 3D lift | 9.2 to 150.9 deg | 80.0 |
+| from the side view alone | 3.0 to 174.0 deg | 91.3 |
+
+They differ by a **median of 21.2 degrees**, 90th 63.1, worst 125.7, and
+correlate at only **+0.377**.
+
+The two fail differently on purpose: the lift needs the sync and uses both
+cameras; the side view needs no sync at all and is blind to any motion toward
+its own lens. Twenty degrees apart means **neither can be called a measurement
+of this joint on this material**.
+
+### Two explanations tested, both refuted
+
+**Sync.** The residual-versus-speed correlation is +0.327 and the disagreement
+does not grow with speed above 1 m/s. Sync bounds it and does not explain it.
+
+**Projection geometry.** The hypothesis was that a forearm pointing along the
+side camera's viewing axis is foreshortened to nothing, so its projected angle
+is meaningless. Measured, the correlation is **+0.088** and the disagreement is
+flat at about 20 degrees across every alignment band, from 0.0 to 1.0 of the
+forearm lying along that axis. Refuted.
+
+So a roughly constant 20-degree disagreement remains and neither candidate
+accounts for it. The untested one, which needs the thing this material lacks:
+the lift's depth axis is scaled by matching a torso length between two cameras
+at unknown distances with unknown lenses, and a wrong depth scale distorts a 3D
+angle systematically. **That is what a calibration reference is for**, and its
+absence is a shoot finding rather than a puzzle.
+
+### What DID survive: the shape
+
+One catch cycle, left elbow flexion, engine convention:
+
+| | before the catch | at the catch | pulling in |
+|---|---|---|---|
+| video, from the lift | 60 to 75 | 58 | 122 to 126 |
+| engine, snatch pull in | 89 | 80 | 113 to 145 |
+
+Both dip slightly as she reaches to meet the ball and then fold sharply to
+bring it in. **The shape is right and the numbers are not**, which is exactly
+what a rig with no calibration and a 150 ms sync should be expected to give.
+
+For the record the comparison is against `netball_two_hand_snatch_pull_in`, the
+closest in arm shape. The filmed drill is self-fed and the library drill is fed
+by a passer, so this is the same joint doing a similar shape and never the same
+drill.
+
 ## What the proper shoot must change
 
 Confirmed from this material rather than assumed:
