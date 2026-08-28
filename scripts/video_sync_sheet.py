@@ -155,12 +155,22 @@ def degraded(sharpness: float, reference: float, luma: float) -> bool:
     """True when a frame is too smeared or too dark to read a pose from.
 
     This exists because the author of this tool read an overhead pose off a
-    frame at 26 percent of its clip's sharpness, during camera handling, and
-    reported it as a sync mismatch. The sheet had shown the picture and said
-    nothing about its quality, so the picture looked like evidence. Half the
-    clip's own median is the threshold, measured: the sample material sat
-    within 4 percent of its median for every good frame, fell to 39 percent
-    within two frames of the camera being lifted, and reached zero after.
+    frame during camera handling and reported it as a sync mismatch. The sheet
+    had shown the picture and said nothing about its quality, so the picture
+    looked like evidence.
+
+    TWO REFERENCES, AND THEY GIVE DIFFERENT NUMBERS FOR THE SAME FRAME. A sweep
+    of every frame against the clip's settled baseline at 23 to 24 s puts that
+    frame at 26 percent, and 25.900 s at 39 percent. THIS function judges each
+    frame against the median of the frames on the sheet, which is a different
+    set, and it puts the same frame at 21 percent. Both are right in their own
+    reference and neither is right in the other's. Quote the reference with the
+    number, always: a figure measured against one baseline and spent against
+    another is the fault this project has removed five times.
+
+    Half the clip's own median is the threshold, and the separation is measured
+    rather than chosen: good frames sit at 94 to 108 percent of the sheet's
+    median, the handling frame at 21, the dark tail at 0.
     """
     return sharpness < reference * 0.5 or luma < 40.0
 

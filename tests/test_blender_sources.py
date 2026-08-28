@@ -157,11 +157,25 @@ def _statements_that_run(function: ast.AST):
             if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef,
                                   ast.Lambda, ast.ClassDef)):
                 continue
+            if _is_dead_branch(child):
+                # `if False:` parses, keeps its line numbers, and never runs.
+                # The else branch still does.
+                for statement in child.orelse:
+                    yield statement
+                    yield from walk(statement)
+                continue
             if hasattr(child, "lineno"):
                 yield child
             yield from walk(child)
 
     yield from walk(function)
+
+
+def _is_dead_branch(node: ast.AST) -> bool:
+    """An `if` or `while` whose test is a literal that is always false."""
+    if not isinstance(node, (ast.If, ast.While)):
+        return False
+    return isinstance(node.test, ast.Constant) and not node.test.value
 
 
 def _without_string_content(node: ast.AST) -> str:
@@ -181,6 +195,18 @@ def _without_string_content(node: ast.AST) -> str:
 
         def visit_JoinedStr(self, node):
             return ast.copy_location(ast.Constant(value=""), node)
+
+        def visit_Lambda(self, node):
+            # A lambda's body does not run where the lambda is written, and
+            # skipping the Lambda NODE is not enough: the enclosing assignment
+            # unparses the body straight back, exactly as it did for strings.
+            return ast.copy_location(ast.Constant(value=""), node)
+
+        def visit_If(self, node):
+            if _is_dead_branch(node):
+                kept = [self.visit(item) for item in node.orelse]
+                return kept or ast.copy_location(ast.Pass(), node)
+            return self.generic_visit(node)
 
     copied = Blank().visit(copy.deepcopy(node))
     ast.fix_missing_locations(copied)
@@ -363,6 +389,83 @@ class BlenderSourceContractTest(unittest.TestCase):
                     places=9,
                 )
 
+    def test_the_receipt_drift_fields_rank_by_magnitude_and_not_by_sign(self):
+        """`dominantAxis` and `dominanceMarginDegrees` are the drift instrument.
+
+        Which way a knuckle turns depends on the rig's axis orientation, and
+        the two hands mirror, so the dominant component is negative about half
+        the time. `within_limits` takes abs() of the flexion component for that
+        reason. A ranking that compared signed values would name the wrong axis
+        on every left hand and the receipt would report drift that is not
+        there.
+
+        THIS COVERAGE WAS LOST ONCE ALREADY. It was added when the abs()
+        mutation first came back green, and then deleted by a later rewrite
+        that replaced this block wholesale instead of adding to it, which put
+        both functions back to being called by no test while they still fed
+        two receipt fields. Mutation lists have to be cumulative.
+        """
+        self.assertEqual(0, dominant_axis((-52.0, 7.0, 11.0)))
+        self.assertEqual(2, dominant_axis((6.0, -8.0, -37.0)))
+        self.assertEqual(2, dominant_axis((12.0, -9.0, 31.0)))
+        self.assertEqual(0, dominant_axis((44.0, 3.0, -6.0)))
+
+        # The margin is the gap to the next largest, by magnitude, so a big
+        # negative runner-up narrows it exactly as a big positive one would.
+        self.assertAlmostEqual(19.0, dominance_margin((12.0, -9.0, 31.0)), places=9)
+        self.assertAlmostEqual(15.0, dominance_margin((-52.0, 37.0, 11.0)), places=9)
+
+    def test_the_solve_calls_the_axis_rule_and_fills_the_receipt(self):
+        """The rule is tested; this checks that Blender code CALLS it.
+
+        Deleting the whole `axis_complaint` call from `within_limits` left the
+        suite green, and so did deleting the block that fills `axis_report`.
+        A rule nothing invokes protects nothing, and the code that invokes it
+        runs only inside Blender, where these tests skip.
+
+        Matched on AST shape rather than on source text, so a mention in a
+        comment or a docstring cannot satisfy it.
+        """
+        catch = ast.parse(
+            (MODULE_DIR / "blender_mpfb_reference_catch.py").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        def calls_named(function_name: str, callee: str) -> bool:
+            for node in ast.walk(catch):
+                if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    continue
+                if node.name != function_name:
+                    continue
+                for inner in ast.walk(node):
+                    if (
+                        isinstance(inner, ast.Call)
+                        and isinstance(inner.func, ast.Name)
+                        and inner.func.id == callee
+                    ):
+                        return True
+            return False
+
+        self.assertTrue(
+            calls_named("within_limits", "axis_complaint"),
+            "within_limits must CALL the axis rule, not merely mention it",
+        )
+        self.assertTrue(
+            calls_named("pose_articulated_hand", "axis_share"),
+            "the solve must fill the receipt's share from the same measurement",
+        )
+
+        # And the receipt block must actually write into axis_report.
+        writes = [
+            node
+            for node in ast.walk(catch)
+            if isinstance(node, ast.Subscript)
+            and isinstance(node.value, ast.Name)
+            and node.value.id == "axis_report"
+        ]
+        self.assertTrue(writes, "nothing fills axis_report")
+
     def test_the_share_is_a_fraction_of_the_largest_turn(self):
         """Rank flips on the thumb between hands; share does not."""
         self.assertAlmostEqual(1.0, axis_share((58.3, -4.7, 8.5), 0), places=6)
@@ -385,6 +488,9 @@ class BlenderSourceContractTest(unittest.TestCase):
             "comment": ["    # bpy.ops.export_scene.gltf(x)"],
             "nested def": ["    def later():",
                            "        bpy.ops.export_scene.gltf(x)"],
+            "lambda body": ["    f = lambda: bpy.ops.export_scene.gltf(x)"],
+            "dead branch": ["    if False:",
+                            "        bpy.ops.export_scene.gltf(x)"],
         }
         for name, body in decoys.items():
             with self.subTest(decoy=name):
@@ -408,6 +514,21 @@ class BlenderSourceContractTest(unittest.TestCase):
         self.assertIn("bpy.ops.export_scene.gltf",
                       _code_positions(real, "render_job", needles),
                       "real running code must still be found")
+
+        # The ELSE of a dead branch does run, and must still be found. Pruning
+        # the whole statement would be the opposite error to the one above.
+        live_else = "\n".join([
+            "def render_job(s, j):",
+            "    bpy.context.scene.render.fps = fps",
+            "    if False:",
+            "        pass",
+            "    else:",
+            "        bpy.ops.export_scene.gltf(x)",
+            "",
+        ])
+        self.assertIn("bpy.ops.export_scene.gltf",
+                      _code_positions(live_else, "render_job", needles),
+                      "the else of a dead branch is live code")
 
     def test_the_knuckle_takes_the_angle_it_is_given(self):
         """Defect 1, guarded at last by reading the angle instead of the text.

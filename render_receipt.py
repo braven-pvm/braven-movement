@@ -30,3 +30,13 @@ def render_outcome(phase_count: int, animation: object | None) -> str:
     if phase_count <= 0 and not animation:
         return NOTHING_RENDERED
     return PASS
+
+
+# THE EXIT CODE IS 0 EITHER WAY, and a script must not read it as a result.
+# NOTHING RENDERED is not a failure: a turntable-only or animation-only run is
+# legitimate, and so is a phase filter that matches nothing in this job. The
+# renderer exits non-zero only when it actually raises.
+#
+# So a caller that wants to know whether anything was measured must read the
+# receipt's `phases`, or match this word on the console. Reading the exit code
+# alone is how eight empty runs looked like eight clean ones.

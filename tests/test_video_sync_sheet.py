@@ -88,6 +88,12 @@ class SyncSheetTimeTest(unittest.TestCase):
     def test_a_smeared_or_dark_frame_is_named_as_not_footage(self):
         """A picture taken while the camera was lifted is not evidence.
 
+        Every percentage here is against THE SHEET'S OWN sampled median, which
+        is what `degraded` is given. A sweep of every frame against the clip's
+        settled baseline at 23 to 24 s puts the same handling frame at 26
+        percent instead of 21. Both are right in their own reference. Say which
+        one, every time.
+
         This lane read an overhead pose off a front frame at 21 percent of its
         clip's sharpness and reported it as a sync mismatch. The pose was real
         but earlier; the frame was camera handling. The sheet had shown the

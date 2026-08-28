@@ -736,6 +736,10 @@ def pose_articulated_hand(
         apply(digit, best_angle)
         retreat_into_limits(digit, best_angle)
 
+    # A hand that is not holding the ball never enters the solve above, so
+    # `axis_report` stays EMPTY for it and the receipt carries `flexionAxis:
+    # {}`. That is absence of measurement, not agreement: there was no flexion
+    # to measure. A reader must not treat an empty report as a clean one.
     if axis_report is not None:
         # What the flexion turned, against what FLEXION_AXIS says it turns.
         # Carried into the receipt so that a share falling towards the limit is
