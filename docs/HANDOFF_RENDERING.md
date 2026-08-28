@@ -35,6 +35,10 @@ Start by proving the pipeline still runs end to end on one drill. Refer to
 | `spikes/export_figure_check.py` | One figure, full size, through the rasteriser. **Debug view only**, and the last place SMPL-X reaches a page. |
 | `config/reference_catch.v1.json` | The one authored reference pose, calibrated against a photograph. |
 | `scripts/render-reference.ps1`, `scripts/test-blender.ps1` | The runners. |
+| `finger_curl.py` | The geometry of a closing finger, and the flexion-axis rule, with **no Blender in it**. Extracted so a test can call it. Refer to known defect 1. |
+| `render_receipt.py` | What a render run may claim about itself. `PASS` only when something was produced. |
+| `scripts/video_sync_sheet.py` | Front and side frames of the real athlete video, paired at matched wall clock. Refer to "The video instruments". |
+| `scripts/keypoint_overlay.py` | The movement lane's keypoints drawn over the video they came from. It draws and it does not solve. |
 
 ## What this lane must not touch
 
@@ -248,6 +252,71 @@ Tests. The Blender ones need Blender; the rest do not.
 ```bash
 python -m unittest discover -s tests
 ```
+
+## The video instruments
+
+Vision point 2 is the real player. Marius filmed a sample session on
+2026-08-28: two drill sets, each from a front and a side camera about 90
+degrees apart. The material is at `.assets/video-samples/session-1.0/`, four
+mp4 files, read only.
+
+**The movement lane owns the extraction**: the sync, the 2D keypoints and the
+two-view 3D lift. This lane owns every picture a person looks at. The keypoint
+file is the boundary, and its shape is settled in
+`spikes/VIDEO_KEYPOINT_SCHEMA.md`.
+
+### Facts about the material, measured and not assumed
+
+- The front files carry **rotation metadata of -90**. Their containers say
+  1024x576 and their decoded frames are 576x1024. Check the decoded pixels,
+  never the container.
+- The side files are **variable rate**, but barely: intervals run 33.22 to
+  33.42 ms with five distinct values and NO dropped frames.
+- **The side camera's clock runs 0.0398 percent faster than the front's.** Four
+  derivations agree. Over a 29 s clip that is 11 ms, one third of a frame, so
+  drift is ignorable at this length and is NOT ignorable over a ten minute
+  shoot, where the same ratio is 240 ms.
+- **There is no clap.** The audio route failed honestly. The first shared event
+  is her first ball catch, about 9.25 s on the front and 8.25 s on the side.
+- The sample is a **self-fed toss and catch** and matches none of the eight
+  drills.
+- `front 0.1` degrades from **25.700 s**: sharpness is 87 percent of baseline
+  there with the inter-frame motion tripled, 39 percent at 25.900, and the
+  frame goes dark at 26.267. Treat 25.7 as its usable end. The other three
+  files have no bad tail.
+
+### The two offset conventions, and how they map
+
+They agree on this material and carry OPPOSITE SIGNS in their own definitions,
+which is exactly where a consumer trips.
+
+    video_sync_sheet   --offset                    side_time = front_time + offset
+    keypoint file      offsetSecondsToReference    add it to a time in THIS file
+                                                   to reach the reference clock
+
+    For the non-reference view, offsetSecondsToReference = -(--offset).
+    This material: --offset -1.0 and offsetSecondsToReference +1.0 both put
+    the front at 9.25 s and the side at 8.25 s.
+
+Neither is wrong and either alone is unambiguous. `keypoint_overlay.py`
+asserts the direction against the file's own worked example on load, so a sign
+error stops rather than draws.
+
+### What these instruments refuse to do
+
+- The sheet **prints the time each frame truly carries**, never the time asked
+  for. `ffmpeg -ss` serves the first frame at or after the request, which is up
+  to a full frame late and always late, and always late is a bias that reads as
+  a sync error.
+- The sheet **stamps NOT FOOTAGE** on a frame that is smeared or dark, against
+  that clip's own median. Quote the reference with any such percentage: the
+  same handling frame reads 26 percent against the clip's settled baseline and
+  21 against the median of a sheet's own samples.
+- The overlay **refuses to invent a skeleton**. Edges come from the keypoint
+  file. `--assume-topology` lets a person override, and the picture is then
+  stamped as guessed.
+- The overlay **prints what produced its landmarks**, read from the file. A
+  viewer cannot tell a real solve from a placeholder by looking at a skeleton.
 
 ## Hard-won gotchas
 
