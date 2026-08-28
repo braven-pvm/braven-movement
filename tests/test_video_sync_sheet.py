@@ -14,6 +14,7 @@ sys.path.insert(0, str(MODULE_DIR / "scripts"))
 
 from video_sync_sheet import (  # noqa: E402
     choose_nearest,
+    degraded,
     pair_stamps_to_images,
     sample_times,
 )
@@ -83,6 +84,36 @@ class SyncSheetTimeTest(unittest.TestCase):
         self.assertTrue(times)
         self.assertLessEqual(max(times), front_duration)
         self.assertLessEqual(max(times) + offset, side_duration)
+
+    def test_a_smeared_or_dark_frame_is_named_as_not_footage(self):
+        """A picture taken while the camera was lifted is not evidence.
+
+        This lane read an overhead pose off a front frame at 21 percent of its
+        clip's sharpness and reported it as a sync mismatch. The pose was real
+        but earlier; the frame was camera handling. The sheet had shown the
+        picture and said nothing, so it looked like footage.
+
+        The real numbers from the sample material: good frames sat at 94 to 108
+        percent of the clip median, the handling frame at 21 percent, and the
+        final dark frame at 0 percent with a luminance of 35 against a normal
+        120. Nothing real lies between 50 and 94 percent.
+        """
+        median = 850.0
+
+        self.assertFalse(degraded(sharpness=0.94 * median, reference=median, luma=121))
+        self.assertFalse(degraded(sharpness=1.08 * median, reference=median, luma=116))
+        self.assertTrue(degraded(sharpness=0.21 * median, reference=median, luma=123),
+                        "the camera-handling frame must be named")
+        self.assertTrue(degraded(sharpness=0.0, reference=median, luma=35),
+                        "the dark tail must be named")
+
+    def test_a_dark_frame_is_named_even_when_it_is_sharp(self):
+        """Darkness and blur are different faults and either one disqualifies.
+
+        A lens covered by a hand can be perfectly sharp and carry no athlete.
+        Judging on sharpness alone would pass it.
+        """
+        self.assertTrue(degraded(sharpness=900.0, reference=850.0, luma=12))
 
     def test_clips_that_do_not_overlap_produce_no_samples(self):
         """An offset larger than the clip is a caller error, not an empty sheet."""

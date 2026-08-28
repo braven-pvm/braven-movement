@@ -44,11 +44,13 @@ import json
 import math
 import re
 import shutil
+import statistics
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
+import numpy
 from PIL import Image, ImageDraw, ImageFont
 
 PTS = re.compile(r"pts_time:([0-9.]+)")
@@ -133,6 +135,34 @@ def sample_times(
         return [first]
     step = (last - first) / (samples - 1)
     return [first + step * index for index in range(samples)]
+
+
+def frame_quality(path: Path) -> dict:
+    """How sharp and how bright this frame is, in its own units.
+
+    A camera being picked up while it still records produces frames that are
+    smeared and then dark. They are pictures, and they are not footage.
+    """
+    grey = numpy.asarray(Image.open(path).convert("L"), dtype=numpy.float32)
+    laplacian = (
+        grey[:-2, 1:-1] + grey[2:, 1:-1] + grey[1:-1, :-2] + grey[1:-1, 2:]
+        - 4.0 * grey[1:-1, 1:-1]
+    )
+    return {"sharpness": float(laplacian.var()), "luma": float(grey.mean())}
+
+
+def degraded(sharpness: float, reference: float, luma: float) -> bool:
+    """True when a frame is too smeared or too dark to read a pose from.
+
+    This exists because the author of this tool read an overhead pose off a
+    frame at 26 percent of its clip's sharpness, during camera handling, and
+    reported it as a sync mismatch. The sheet had shown the picture and said
+    nothing about its quality, so the picture looked like evidence. Half the
+    clip's own median is the threshold, measured: the sample material sat
+    within 4 percent of its median for every good frame, fell to 39 percent
+    within two frames of the camera being lifted, and reached zero after.
+    """
+    return sharpness < reference * 0.5 or luma < 40.0
 
 
 def nearest_frame(path: Path, target: float, work: Path, tag: str) -> tuple[Path, float]:
@@ -220,9 +250,32 @@ def build_sheet(
                 "frontErrorMs": round((front_at - front_time) * 1000.0, 2),
                 "sideErrorMs": round((side_at - side_time) * 1000.0, 2),
                 "residualMs": round(residual_ms, 2),
+                "frontQuality": frame_quality(front_image),
+                "sideQuality": frame_quality(side_image),
                 "_front": front_image,
                 "_side": side_image,
             })
+
+        # Each clip is judged against ITS OWN median. The two cameras differ in
+        # exposure and lens, so one absolute threshold would condemn the softer
+        # camera everywhere and catch nothing on the sharper one.
+        reference = {
+            side_key: statistics.median(
+                pair[side_key]["sharpness"] for pair in pairs
+            )
+            for side_key in ("frontQuality", "sideQuality")
+        }
+        for pair in pairs:
+            for side_key in ("frontQuality", "sideQuality"):
+                quality = pair[side_key]
+                quality["ofMedian"] = round(
+                    quality["sharpness"] / reference[side_key], 3
+                ) if reference[side_key] else 0.0
+                quality["degraded"] = degraded(
+                    quality["sharpness"], reference[side_key], quality["luma"]
+                )
+                quality["sharpness"] = round(quality["sharpness"], 1)
+                quality["luma"] = round(quality["luma"], 1)
 
         thumbs = []
         for pair in pairs:
@@ -262,11 +315,27 @@ def build_sheet(
             sheet.paste(front_thumb, (x, y + label_h))
             sheet.paste(side_thumb, (x + front_thumb.width + gap, y + label_h))
             flag = abs(pair["residualMs"]) > 16.7
-            draw.text((x, y + 2), f"front {pair['frontAtS']:8.3f} s",
+            bad = [name for name, key in (("front", "frontQuality"),
+                                          ("side", "sideQuality"))
+                   if pair[key]["degraded"]]
+            draw.text((x, y + 2), f"front {pair['frontAtS']:8.3f} s"
+                      f"    sharp {pair['frontQuality']['ofMedian']:.0%}"
+                      f" / {pair['sideQuality']['ofMedian']:.0%}",
                       font=label_font, fill=(235, 235, 240))
             draw.text((x, y + 17), f"side  {pair['sideAtS']:8.3f} s  "
                       f"residual {pair['residualMs']:+.1f} ms", font=label_font,
                       fill=(240, 160, 120) if flag else (150, 190, 150))
+            if bad:
+                # Say it ON the picture. A degraded frame that merely looks odd
+                # invites a reader to explain the oddness as a sync fault.
+                warning = f"NOT FOOTAGE: {' and '.join(bad)} smeared or dark"
+                box = draw.textbbox((0, 0), warning, font=label_font)
+                draw.rectangle(
+                    (x, y + label_h, x + box[2] + 10, y + label_h + box[3] + 8),
+                    fill=(150, 40, 30),
+                )
+                draw.text((x + 5, y + label_h + 4), warning, font=label_font,
+                          fill=(255, 235, 230))
 
         out.parent.mkdir(parents=True, exist_ok=True)
         sheet.save(out)
@@ -283,6 +352,10 @@ def build_sheet(
         "front": probe(front),
         "side": probe(side),
         "worstResidualMs": max(abs(pair["residualMs"]) for pair in pairs),
+        "degradedPairs": [
+            pair["frontAtS"] for pair in pairs
+            if pair["frontQuality"]["degraded"] or pair["sideQuality"]["degraded"]
+        ],
         "frameMs": 33.333,
         "pairs": pairs,
     }
