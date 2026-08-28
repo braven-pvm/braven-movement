@@ -265,22 +265,35 @@ def build_overlay(
 
     gap, strip, pad, header = 10, 54, 14, 78
     total = sum(panel[1].width for panel in panels) + gap * (len(panels) - 1)
-    sheet = Image.new("RGB", (pad * 2 + total, header + pad + height + strip),
-                      (24, 24, 27))
-    canvas = ImageDraw.Draw(sheet)
-    canvas.text((pad, 10), f"keypoints over the video, at {reference_seconds:.3f} s "
-                "on the reference clock", font=head, fill=(240, 240, 245))
-    # WHERE THE NUMBERS CAME FROM, on the picture. A viewer cannot tell a real
-    # solve from a placeholder by looking at a skeleton, and a picture that
-    # does not say what produced it will eventually be read as a result.
+    title = (f"keypoints over the video, at {reference_seconds:.3f} s "
+             "on the reference clock")
     tools = sorted({
         (document.get("model") or {}).get("tool", "unnamed")
         for document in documents
     })
+    legend = ("solid joint seen, faint joint barely seen, absent not seen.")
+    # A single portrait panel is narrower than the header, and a clipped
+    # header is a caption that stops mid-sentence on the one artefact a
+    # person is asked to trust. Size the sheet to whichever is wider.
+    measure = ImageDraw.Draw(Image.new("RGB", (1, 1)))
+    widest_text = max(
+        measure.textbbox((0, 0), title, font=head)[2],
+        measure.textbbox((0, 0), f"landmarks from: {', '.join(tools)}", font=label)[2],
+        measure.textbbox((0, 0), legend, font=label)[2],
+    )
+    sheet = Image.new(
+        "RGB",
+        (pad * 2 + max(total, widest_text), header + pad + height + strip),
+        (24, 24, 27),
+    )
+    canvas = ImageDraw.Draw(sheet)
+    canvas.text((pad, 10), title, font=head, fill=(240, 240, 245))
+    # WHERE THE NUMBERS CAME FROM, on the picture. A viewer cannot tell a real
+    # solve from a placeholder by looking at a skeleton, and a picture that
+    # does not say what produced it will eventually be read as a result.
     canvas.text((pad, 36), f"landmarks from: {', '.join(tools)}",
                 font=label, fill=(255, 200, 120))
-    canvas.text((pad, 54), "solid joint seen, faint joint barely seen, "
-                "absent not seen.", font=label, fill=(170, 170, 180))
+    canvas.text((pad, 54), legend, font=label, fill=(170, 170, 180))
 
     x = pad
     for view, picture, frame, shown_at, quality, guessed, counts in panels:
