@@ -39,6 +39,7 @@ Start by proving the pipeline still runs end to end on one drill. Refer to
 | `render_receipt.py` | What a render run may claim about itself. `PASS` only when something was produced. |
 | `scripts/video_sync_sheet.py` | Front and side frames of the real athlete video, paired at matched wall clock. Refer to "The video instruments". |
 | `scripts/keypoint_overlay.py` | The movement lane's keypoints drawn over the video they came from. It draws and it does not solve. |
+| `scripts/compare_lift_against_view.py` | A lifted 3D joint angle against the same angle read from one camera. Reports the PROJECTION FLOOR, which is the disagreement that is geometry. |
 
 ## What this lane must not touch
 
@@ -301,6 +302,48 @@ which is exactly where a consumer trips.
 Neither is wrong and either alone is unambiguous. `keypoint_overlay.py`
 asserts the direction against the file's own worked example on load, so a sign
 error stops rather than draws.
+
+### The projection floor: a 3D angle and a camera's angle are not one quantity
+
+Measured on 2026-08-28 with `scripts/compare_lift_against_view.py`, over 730
+frames of the left arm.
+
+A camera cannot see the axis it looks along. The side camera reads the elbow
+angle PROJECTED into its own plane, and that differs from the true 3D angle
+even when the 3D is perfect. Take the movement lane's lifted arm, compute the
+angle in 3D, then drop `across` and compute it again, which is exactly what a
+flawless side camera would read:
+
+    median 4.6 degrees, p90 15.2, worst 55.8
+
+and it grows with how much of the arm lies along the axis the side camera
+cannot see, which is the signature it must have:
+
+| the arm's share along `across` | median difference |
+|---|---|
+| 0.17 to 0.30 | 2.1 degrees |
+| 0.30 to 0.42 | 3.7 |
+| 0.42 to 0.49 | 5.4 |
+| 0.49 to 0.61 | 6.4 |
+| 0.62 to 0.98 | 10.6 |
+
+**So any comparison of a 3D solve against an angle read from one camera carries
+about 5 degrees of built-in disagreement that is geometry and not a defect.**
+On this material a lift-versus-side elbow comparison measured 12.8 degrees
+median, of which the floor above is roughly a third. Quote the floor beside any
+such number, or a real agreement reads as an error.
+
+The same warning applies to the engine: comparing a solved 3D pose against a
+coach's video by eye compares a 3D angle with a projected one.
+
+### A reprojection check on this lift would measure nothing
+
+The lift is not a triangulation. The front view supplies `across`, the side
+supplies `ahead`, and each camera's pixels pass through to its own axis, so
+reprojecting the 3D into either camera returns the 2D it came from, to
+rounding, BY CONSTRUCTION. It would look like a clean verification and would
+verify that addition is reversible. A reprojection check is only evidence when
+the 3D was solved jointly from both views.
 
 ### What these instruments refuse to do
 
