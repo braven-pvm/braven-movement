@@ -7,6 +7,13 @@ from pathlib import Path
 MODULE_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(MODULE_DIR))
 
+from finger_curl import (  # noqa: E402
+    angle_between_degrees,
+    cumulative_angles,
+    curl_directions,
+    dominance_margin,
+    dominant_axis,
+)
 from movement_contract import normalization_transform  # noqa: E402
 
 HELPER_MODULE = "blender_mpfb_reference_catch"
@@ -74,6 +81,51 @@ def _calls_into_helpers(source: str, signatures: dict[str, dict]) -> list[str]:
     return complaints
 
 
+def _code_positions(source: str, function_name: str, needles: tuple[str, ...]) -> dict:
+    """Where each needle sits in the CODE of one function, not in its text.
+
+    `source.index(needle)` finds a character offset anywhere in the file. It
+    matches inside a comment and inside a docstring, and this lane has already
+    been bitten by a comment that described the correct behaviour above a line
+    doing the opposite. It also cannot tell that two statements moved into
+    different functions, where the file order and the run order disagree.
+
+    This reads the parsed tree, skips every string constant, and keeps the
+    SMALLEST node that carries each needle, so the position belongs to the
+    statement itself rather than to whatever block encloses it. A needle that
+    survives only in a comment or a docstring is reported missing, which is
+    what it is.
+    """
+    tree = ast.parse(source)
+    function = next(
+        (
+            node
+            for node in ast.walk(tree)
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and node.name == function_name
+        ),
+        None,
+    )
+    if function is None:
+        return {}
+
+    found: dict[str, tuple[tuple[int, int], int]] = {}
+    for node in ast.walk(function):
+        if isinstance(node, ast.Constant):
+            continue
+        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant):
+            continue
+        if not hasattr(node, "lineno"):
+            continue
+        text = ast.unparse(node)
+        for needle in needles:
+            if needle not in text:
+                continue
+            if needle not in found or len(text) < found[needle][1]:
+                found[needle] = ((node.lineno, node.col_offset), len(text))
+    return {needle: place for needle, (place, _) in found.items()}
+
+
 class BlenderSourceContractTest(unittest.TestCase):
     def test_normalization_scales_height_centres_xy_and_places_feet_at_zero(self):
         transform = normalization_transform(
@@ -106,6 +158,138 @@ class BlenderSourceContractTest(unittest.TestCase):
         self.assertIn('render_engine("BLENDER_EEVEE_NEXT")', source)
         self.assertIn("max_rgba_alpha(image.pixels)", source)
         self.assertNotIn("pixels[3::4]", source)
+
+    def test_the_flexion_axis_is_judged_by_dominance_and_not_by_purity(self):
+        """The thumb's flexion is real and is not a clean single-axis turn.
+
+        FLEXION_AXIS names one euler component per digit as flexion; the other
+        two are deviation and carry a different licence. Nothing checked that
+        name against the rig for a day. Name it wrong and real flexion is
+        bounded by the deviation limit, or deviation gets the flexion licence,
+        and neither raises.
+
+        A purity test would be the obvious guard and would be WRONG: it fails
+        on a correct thumb. The thumb turns mostly about its own Z and carries
+        substantial X and Y with it.
+        """
+        # A thumb-like rotation: Z leads, and the other two are far from zero.
+        thumb = (12.0, -9.0, 31.0)
+
+        self.assertEqual(2, dominant_axis(thumb))
+        self.assertAlmostEqual(19.0, dominance_margin(thumb), places=9)
+
+        # A finger-like rotation: X leads.
+        self.assertEqual(0, dominant_axis((44.0, 3.0, -6.0)))
+
+        # And the dominant component is often NEGATIVE, because which way a
+        # knuckle turns depends on the rig's axis orientation. `within_limits`
+        # takes abs() of the flexion component for that reason. A dominance
+        # test that compared signed values would name the wrong axis here and
+        # every case above would still pass it.
+        self.assertEqual(0, dominant_axis((-52.0, 7.0, 11.0)))
+        self.assertEqual(2, dominant_axis((6.0, -8.0, -37.0)))
+
+    def test_the_margin_shrinks_before_the_axis_flips(self):
+        """The receipt carries the margin so drift is visible while it is drift.
+
+        An assertion that only fires on the flip reports a fault that has
+        already happened. The margin falls towards zero first, and the receipt
+        carries it per digit for exactly that reason.
+        """
+        comfortable = (40.0, 5.0, 8.0)
+        thin = (20.0, 19.0, 3.0)
+        flipped = (18.0, 25.0, 3.0)
+
+        self.assertGreater(dominance_margin(comfortable), dominance_margin(thin))
+        self.assertEqual(0, dominant_axis(comfortable))
+        self.assertEqual(0, dominant_axis(thin), "still correct, and only just")
+        self.assertEqual(1, dominant_axis(flipped), "this one has gone")
+
+    def test_the_solve_refuses_a_knuckle_whose_axis_lost_dominance(self):
+        """The wrong axis must stop the render, not quietly bend a finger.
+
+        A figure posed against swapped limits looks like a hand and is not one.
+        This lane has shipped that class of picture before, so the solve raises
+        rather than returns.
+        """
+        catch = (MODULE_DIR / "blender_mpfb_reference_catch.py").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("FLEXION_DOMINANCE_FLOOR_DEGREES", catch)
+        self.assertIn("observed = dominant_axis(parts)", catch)
+        self.assertIn("raise RuntimeError(", catch)
+        # And the receipt reader exists beside the clearance profile.
+        self.assertIn("def flexion_axis_dominance(", catch)
+        renderer = (MODULE_DIR / "blender_movement_render.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('hands[side]["flexionAxis"]', renderer)
+
+    def test_the_knuckle_takes_the_angle_it_is_given(self):
+        """Defect 1, guarded at last by reading the angle instead of the text.
+
+        `curved_directions` built its chain as `(0.0, first, first + second)`,
+        so the FIRST bone of every finger took zero rotation. Only the middle
+        and distal joints bent, by 8 and 12 degrees. A grip flexes the knuckle
+        hardest and that one did not flex it at all, so every finger pointed
+        away from the ball. It shipped 99 images looking plausible, with the
+        receipt reading PASS.
+
+        For a day this had no guard, because the function is a closure in a
+        module that imports `bpy`. A guard on the source text would pass on a
+        file that computes the wrong angle. This calls the function.
+        """
+        base = (1.0, 0.0, 0.0)
+        bend = (0.0, 0.0, 1.0)
+
+        directions = curl_directions(base, bend, 40.0, (8.0, 12.0))
+
+        # The knuckle bone itself must have turned by the angle asked for.
+        self.assertAlmostEqual(
+            40.0, angle_between_degrees(base, directions[0]), places=6,
+            msg="the knuckle bone did not take the knuckle angle",
+        )
+        # And the two joints beyond it continue from there, never restart.
+        self.assertAlmostEqual(48.0, angle_between_degrees(base, directions[1]), places=6)
+        self.assertAlmostEqual(60.0, angle_between_degrees(base, directions[2]), places=6)
+
+    def test_a_flexed_finger_closes_further_along_every_joint(self):
+        """A grip falls from knuckle to tip. A pointing finger climbs.
+
+        The defect's signature was a clearance profile running the wrong way:
+        +46 mm at the knuckle out to +76 at the tip, when a real grip runs
+        about 40 down to 7. Each bone must turn FURTHER than the one before it,
+        for any knuckle angle including zero.
+        """
+        base, bend = (0.0, 1.0, 0.0), (0.0, 0.0, -1.0)
+
+        for knuckle in (0.0, 15.0, 40.0, 80.0):
+            with self.subTest(knuckle=knuckle):
+                angles = [
+                    angle_between_degrees(base, direction)
+                    for direction in curl_directions(base, bend, knuckle, (8.0, 12.0))
+                ]
+                self.assertEqual(sorted(angles), angles, "the chain must close")
+                self.assertLess(angles[0], angles[1])
+                self.assertLess(angles[1], angles[2])
+
+    def test_the_knuckle_angle_reaches_all_three_bones(self):
+        """Every bone moves when the knuckle moves, because they follow it.
+
+        The defect held the first bone still while the others bent. Testing
+        only the tip would have passed it: the tip DID move, just not from the
+        joint that matters.
+        """
+        curl = (8.0, 12.0)
+
+        straight = cumulative_angles(0.0, curl)
+        flexed = cumulative_angles(40.0, curl)
+
+        self.assertEqual((0.0, 8.0, 20.0), straight)
+        self.assertEqual((40.0, 48.0, 60.0), flexed)
+        for before, after in zip(straight, flexed):
+            self.assertAlmostEqual(40.0, after - before, places=9)
 
     def test_every_rendered_phase_records_how_near_the_hands_came(self):
         """Whether she touched the ball must be a number, not an opinion.
@@ -163,11 +347,15 @@ class BlenderSourceContractTest(unittest.TestCase):
             encoding="utf-8"
         )
 
-        set_rate = source.index("bpy.context.scene.render.fps = fps")
-        exported = source.index("bpy.ops.export_scene.gltf(")
+        rate, export = "bpy.context.scene.render.fps = fps", "bpy.ops.export_scene.gltf"
+        places = _code_positions(source, "render_job", (rate, export))
+
+        # Both must be CODE, in the one function, so file order is run order.
+        self.assertIn(rate, places, "the scene rate is not set in render_job")
+        self.assertIn(export, places, "the export does not run in render_job")
         self.assertLess(
-            set_rate,
-            exported,
+            places[rate],
+            places[export],
             "the scene rate must be set before the glTF export reads it",
         )
 
@@ -188,9 +376,13 @@ class BlenderSourceContractTest(unittest.TestCase):
         self.assertIn("bpy.data.actions.remove(action)", source)
         self.assertIn("action.use_fake_user = False", source)
 
-        purge = source.index("bpy.data.actions.remove(action)")
-        exported = source.index("bpy.ops.export_scene.gltf(")
-        self.assertLess(purge, exported, "purge the actions before exporting")
+        purge, export = "bpy.data.actions.remove", "bpy.ops.export_scene.gltf"
+        places = _code_positions(source, "render_job", (purge, export))
+
+        self.assertIn(purge, places, "the actions are not purged in render_job")
+        self.assertIn(export, places, "the export does not run in render_job")
+        self.assertLess(places[purge], places[export],
+                        "purge the actions before exporting")
 
     def test_the_receipt_carries_a_second_instrument_and_a_holding_flag(self):
         """One table cannot say whether the figure is right.

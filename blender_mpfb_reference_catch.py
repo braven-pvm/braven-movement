@@ -17,6 +17,11 @@ TOOL_DIR = Path(__file__).resolve().parent
 if str(TOOL_DIR) not in sys.path:
     sys.path.insert(0, str(TOOL_DIR))
 
+from finger_curl import (  # noqa: E402
+    curl_directions,
+    dominance_margin,
+    dominant_axis,
+)
 from movement_contract import inspect_glb, max_rgba_alpha  # noqa: E402
 from reference_pose_calibration import (  # noqa: E402
     PoseCalibrationError,
@@ -359,6 +364,46 @@ FINGER_DIGITS = ("thumb", "index", "middle", "ring", "pinky")
 FINGER_AIM = 0.04
 
 
+def flexion_axis_dominance(
+    armature: bpy.types.Object,
+    *,
+    side: str,
+) -> dict[str, dict[str, float]]:
+    """Per digit, how firmly FLEXION_AXIS still names the dominant axis.
+
+    Read AFTER the hand is posed, the way the clearance profile is. The solve
+    raises if the named axis has lost dominance outright; this carries the
+    MARGIN into the receipt, so a rig drifting towards that flip is visible
+    while it is still only drifting.
+
+    `marginDegrees` is how far the largest euler component exceeds the next
+    largest. A small margin on a digit is not yet a fault and is not silence
+    either: it says the assumption behind the flexion and deviation limits is
+    getting thin for that digit.
+    """
+    report: dict[str, dict[str, float]] = {}
+    for digit in FINGER_DIGITS:
+        rotation = armature.pose.bones[f"{digit}_01_{side}"].matrix_basis.to_euler(
+            "XYZ"
+        )
+        parts = (
+            math.degrees(rotation.x),
+            math.degrees(rotation.y),
+            math.degrees(rotation.z),
+        )
+        largest = max(abs(value) for value in parts)
+        report[digit] = {
+            "namedAxis": FLEXION_AXIS[digit],
+            "observedAxis": dominant_axis(parts) if largest else FLEXION_AXIS[digit],
+            "marginDegrees": round(dominance_margin(parts), 3),
+            "largestDegrees": round(largest, 3),
+            # Below the floor the solve does not judge the axis, so a reader
+            # must not treat agreement here as a measurement.
+            "measured": largest >= FLEXION_DOMINANCE_FLOOR_DEGREES,
+        }
+    return report
+
+
 def finger_surface_clearance(
     armature: bpy.types.Object,
     *,
@@ -426,6 +471,9 @@ KNUCKLE_ITERATIONS = 14
 # fingertip toward the palm. The four fingers curl about local X and the thumb
 # about local Z. The sign mirrors between hands, so magnitudes are compared.
 FLEXION_AXIS = {"index": 0, "middle": 0, "ring": 0, "pinky": 0, "thumb": 2}
+# Below this the rotation is too small to have a reliable direction, and
+# the largest component is noise rather than flexion.
+FLEXION_DOMINANCE_FLOOR_DEGREES = 5.0
 # The bone sits inside the flesh, so a bone clearance of about 8 mm puts the
 # skin on the surface. Contact, not a dent.
 CONTACT_CLEARANCE_M = 0.008
@@ -523,14 +571,17 @@ def pose_articulated_hand(
         if bend.length < 1e-8:
             raise RuntimeError(f"cannot establish {side} {digit} curl plane")
         bend.normalize()
-        first, second = finger_curl_degrees[digit]
-        cumulative = (knuckle, knuckle + first, knuckle + first + second)
+        # The arithmetic lives in finger_curl, which imports without bpy, so
+        # the knuckle angle can be READ by a test instead of asserted about in
+        # source text. Do not reimplement it here.
         return [
-            (
-                base * math.cos(math.radians(angle))
-                + bend * math.sin(math.radians(angle))
-            ).normalized()
-            for angle in cumulative
+            Vector(direction)
+            for direction in curl_directions(
+                tuple(base),
+                tuple(bend),
+                knuckle,
+                tuple(finger_curl_degrees[digit]),
+            )
         ]
 
     def apply(digit: str, knuckle: float) -> None:
@@ -589,6 +640,22 @@ def pose_articulated_hand(
         parts = [math.degrees(rotation.x), math.degrees(rotation.y),
                  math.degrees(rotation.z)]
         axis = FLEXION_AXIS[digit]
+        # FLEXION_AXIS is an assumption about the rig, and nothing checked it.
+        # Name the wrong axis and this function bounds real flexion by the
+        # DEVIATION licence and deviation by the flexion licence. The finger
+        # stops early or runs far past the joint, and neither raises. So the
+        # named axis must be the one that actually dominates the rotation once
+        # the rotation is large enough to have a direction at all.
+        if max(abs(value) for value in parts) >= FLEXION_DOMINANCE_FLOOR_DEGREES:
+            observed = dominant_axis(parts)
+            if observed != axis:
+                raise RuntimeError(
+                    f"FLEXION_AXIS says {side} {digit} flexes about axis {axis}, "
+                    f"but axis {observed} dominates at "
+                    f"x={parts[0]:.1f} y={parts[1]:.1f} z={parts[2]:.1f} degrees. "
+                    "The flexion and deviation limits are being applied to the "
+                    "wrong components."
+                )
         flexion = abs(parts[axis])
         deviation = math.hypot(
             *[value for index, value in enumerate(parts) if index != axis]

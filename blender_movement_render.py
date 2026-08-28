@@ -47,6 +47,7 @@ from blender_mpfb_reference_catch import (  # noqa: E402
     orient_hand,
     orient_head_to_ball,
     pose_arm,
+    flexion_axis_dominance,
     pose_articulated_hand,
     render_view,
     rotate_bone_toward,
@@ -380,6 +381,10 @@ def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
         hands[side]["surfaceClearanceMm"] = finger_surface_clearance(
             rig, side=side, ball_centre=ball_centre, radius=radius
         )
+        # Which axis the knuckle actually turned about, against the one the
+        # limits assume. The solve raises on an outright flip; this carries the
+        # margin so the drift towards one is readable in the receipt first.
+        hands[side]["flexionAxis"] = flexion_axis_dominance(rig, side=side)
     orient_head_to_ball(rig, ball_centre)
     receipt = {
         # Whether she is holding it, so a reader never has to guess why a hand
