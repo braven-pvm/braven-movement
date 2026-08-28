@@ -193,6 +193,84 @@ They come from the same measurements `build_library` grades, so a video curve
 is compared against the engine's own definition of the angle rather than a
 second definition invented for the comparison.
 
+## The 3D lift, and the residual that measures it
+
+There is no calibration board, so this is **not triangulation**. It is one
+assumption stated and then tested: the cameras are 90 degrees apart and roughly
+level, so the front view reads ACROSS and UP and the side view reads AHEAD and
+UP. **Up is therefore measured twice, independently, and the disagreement is
+the residual.** A lift with no way to be wrong tells you nothing.
+
+Scale comes from the athlete's own numbers rather than an anthropometric table.
+Wingspan 1.82 minus twice the 0.77 one-arm reach leaves **0.280 m across the
+shoulders**, which is visible in the front view every frame. The side view sees
+her in profile where shoulder width is useless, so its scale is tied to the
+front's by requiring the torso — shoulder midpoint to hip midpoint — to be the
+same length in metres in both. That is one length seen twice, and it needs no
+anthropometry at all.
+
+    front   2.0176 mm per pixel   (median shoulder span 138.8 px)
+    side    3.1817 mm per pixel   (median torso 163.5 px, torso 0.520 m)
+
+### The residual, on 735 frame pairs and 5088 landmark readings
+
+| | median | 90th | worst |
+|---|---|---|---|
+| all landmarks | **15.0 mm** | 146.4 mm | 535.7 mm |
+
+| landmark | readings | median | 90th |
+|---|---|---|---|
+| left shoulder | 735 | 14.2 | 39.8 |
+| right shoulder | 735 | 17.3 | 46.0 |
+| left knee | 442 | 13.4 | 27.2 |
+| left elbow | 734 | 65.8 | 193.7 |
+| left ankle | 199 | 90.2 | 125.5 |
+| left wrist | 731 | 140.9 | 336.4 |
+| left hip, right hip | 735 | 3.7 | 8.5 |
+
+**The hips are the vertical origin of both views, so their 3.7 mm is nearly
+circular and is not a measure of accuracy.** The shoulders and the knees are
+the honest readings: **13 to 17 mm**.
+
+The right-side landmarks barely appear — 28 readings for the right wrist, 14
+for the right ankle — because the side camera sees her in profile and the far
+limb is occluded. **A two-camera rig at 90 degrees cannot see one whole side of
+the body.** That is a shoot finding in itself.
+
+### Is the residual sync-dominated? Partly, and my own prediction was too big
+
+The prediction, accepted before it was tested, was that the residual should be
+about the landmark's speed times the 150 ms sync uncertainty. Measured:
+
+| landmark speed | readings | predicted | measured |
+|---|---|---|---|
+| under 0.25 m/s | 4172 | 6 mm | **11 mm** |
+| 0.25 to 0.5 | 391 | 50 mm | **45 mm** |
+| 0.5 to 1.0 | 281 | 103 mm | **82 mm** |
+| 1.0 to 2.0 | 193 | 202 mm | **105 mm** |
+| over 2.0 | 51 | 368 mm | **106 mm** |
+
+Correlation between speed and residual is **+0.327** — real, and far from
+total.
+
+**The prediction holds to about 1 m/s and over-predicts by two to three times
+above it.** The residual settles near 105 mm instead of growing. So sync
+explains the slow and moderate readings and is an UPPER BOUND on the fast ones,
+not a description of them.
+
+A candidate reason, untested here: both views blur and lag the same fast motion,
+so their errors are correlated rather than independent, and a correlated error
+cancels in the difference. Whatever the cause, the honest statement is the
+measured one — **"a hand at 2 m/s is displaced 30 cm between views" is a bound
+the data does not reach.**
+
+### What this means for the pipeline
+
+Slow phases — stance, hold, ready — agree between views to **13 to 17 mm** on
+the trunk landmarks. That is usable. Fast phases disagree by **100 to 340 mm**
+on the hands, which is not, and no amount of care with the lift fixes it: the
+fix is a clap.
+
 ## What the proper shoot must change
 
 Confirmed from this material rather than assumed:
