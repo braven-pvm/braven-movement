@@ -32,6 +32,7 @@ against it on load rather than trusted.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 import tempfile
@@ -57,6 +58,11 @@ GLIMPSED = 0.2      # below this a landmark is not drawn at all
 def read_keypoints(path: Path) -> dict:
     document = json.loads(path.read_text(encoding="utf-8"))
     check_sync_direction(document, path)
+    # The hash of the file ACTUALLY READ, carried into the receipt. A relayed
+    # constant from someone's report goes stale the moment the producer
+    # regenerates, which happened within an hour of this being written; a
+    # reader compares this against whatever report they hold.
+    document["_readFrom"] = {"path": str(path), "sha256": sha256_of(path)}
     return document
 
 
@@ -166,6 +172,43 @@ def find_video(named: str, root: Path | None) -> Path:
     )
 
 
+def sha256_of(path: Path) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for block in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def verify_video(video: Path, claimed: str | None) -> dict:
+    """Is this the recording the keypoints were actually read from?
+
+    The overlay PRINTS the model that produced the landmarks, which is a claim
+    about provenance it was not checking. Drawing a skeleton over a different
+    recording of the same drill produces a picture that is entirely wrong and
+    entirely plausible: a body, a skeleton, and no relation between them.
+
+    A mismatch REFUSES rather than stamps. There is no honest picture of
+    keypoints drawn on a recording they did not come from, so there is nothing
+    for a warning label to make acceptable.
+
+    No claim in the file is reported as unverified, never as verified. Absence
+    of a check is not a passing check.
+    """
+    if not claimed:
+        return {"claimed": None, "actual": None, "verified": None}
+    actual = sha256_of(video)
+    if actual != claimed:
+        raise SystemExit(
+            f"{video.name} is NOT the recording these keypoints were read "
+            f"from. The keypoint file names sha256 {claimed[:16]}... and the "
+            f"file on this machine is {actual[:16]}.... Drawing one on the other "
+            "would produce a picture with no relation between the body and the "
+            "skeleton."
+        )
+    return {"claimed": claimed, "actual": actual, "verified": True}
+
+
 def edges_for(document: dict, assumed: list[tuple[str, str]] | None):
     """The skeleton's connections, from the file or refused."""
     model = document.get("model") or {}
@@ -260,6 +303,7 @@ def build_overlay(
     for document in documents:
         source = document["source"]
         video = find_video(source["videoFile"], video_root)
+        provenance = verify_video(video, source.get("videoSha256"))
 
         # With --local the caller means each file's OWN clock, so nothing is
         # converted and the panels are NOT one instant. The sheet says so.
@@ -289,7 +333,8 @@ def build_overlay(
         width = max(1, round(picture.width * height / picture.height))
         panels.append((source.get("view", "view"), picture.resize((width, height),
                                                                   Image.LANCZOS),
-                       frame, shown_at, quality, guessed, counts))
+                       frame, shown_at, quality, guessed, counts,
+                       provenance["verified"]))
         report.append({
             "view": source.get("view"),
             "videoFile": str(video),
@@ -301,11 +346,14 @@ def build_overlay(
                 (shown_at - frame["ptsSeconds"]) * 1000.0, 2
             ),
             "landmarksFrom": (document.get("model") or {}).get("tool"),
+            "videoVerified": provenance["verified"],
+            "videoSha256": provenance["actual"],
+            "keypointFileSha256": (document.get("_readFrom") or {}).get("sha256"),
             "topologyGuessed": guessed,
             **counts,
         })
 
-    gap, strip, pad, header = 10, 54, 14, 78
+    gap, strip, pad, header = 10, 54, 14, 96
     total = sum(panel[1].width for panel in panels) + gap * (len(panels) - 1)
     unsynchronised = local_clock and len(panels) > 1
     if local_clock:
@@ -349,8 +397,23 @@ def build_overlay(
     canvas.text((pad, 54), legend, font=label,
                 fill=(255, 140, 120) if unsynchronised else (170, 170, 180))
 
+    # Provenance, VERIFIED rather than asserted. A mismatch never reaches here
+    # because it refuses, so this line says either "checked and it holds" or
+    # "the file made no claim to check", and never nothing at all.
+    checked = [panel[7] for panel in panels]
+    if all(state is True for state in checked):
+        note, colour = ("video verified by hash against the recording the "
+                        "keypoints name"), (150, 190, 150)
+    elif any(state is True for state in checked):
+        note, colour = ("SOME VIEWS UNVERIFIED: a keypoint file carries no "
+                        "video hash to check"), (255, 200, 120)
+    else:
+        note, colour = ("VIDEO NOT VERIFIED: the keypoint files carry no video "
+                        "hash to check against"), (255, 200, 120)
+    canvas.text((pad, 72), note, font=label, fill=colour)
+
     x = pad
-    for view, picture, frame, shown_at, quality, guessed, counts in panels:
+    for view, picture, frame, shown_at, quality, guessed, counts, verified in panels:
         sheet.paste(picture, (x, header + pad))
         canvas.text((x, header + pad + height + 4),
                     f"{view}   video {shown_at:.3f} s   keypoints "

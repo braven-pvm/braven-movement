@@ -301,6 +301,64 @@ class VideoResolutionTest(unittest.TestCase):
         self.assertIn("--video-root", message)
 
 
+class VideoProvenanceTest(unittest.TestCase):
+    """The overlay printed where its landmarks came from and never checked it.
+
+    A skeleton drawn over a different recording of the same drill is a body, a
+    skeleton, and no relation between them. It looks entirely plausible.
+    """
+
+    def test_the_right_recording_verifies(self):
+        import keypoint_overlay
+
+        with tempfile.TemporaryDirectory() as folder:
+            video = Path(folder) / "side 0.1.mp4"
+            video.write_bytes(b"pretend this is a recording")
+            digest = keypoint_overlay.sha256_of(video)
+
+            result = keypoint_overlay.verify_video(video, digest)
+
+            self.assertTrue(result["verified"])
+            self.assertEqual(digest, result["actual"])
+
+    def test_the_wrong_recording_refuses_rather_than_warns(self):
+        """There is no honest picture for a label to make acceptable.
+
+        A stamp works for a guessed topology, because the drawing is still of
+        the thing named. Here the drawing is of a different recording, so
+        nothing on the page could make it worth looking at.
+        """
+        import keypoint_overlay
+
+        with tempfile.TemporaryDirectory() as folder:
+            video = Path(folder) / "front 0.1.mp4"
+            video.write_bytes(b"a different recording")
+
+            with self.assertRaises(SystemExit) as refusal:
+                keypoint_overlay.verify_video(video, "0" * 64)
+
+            message = str(refusal.exception)
+            self.assertIn("NOT the recording", message)
+            self.assertIn("front 0.1.mp4", message)
+
+    def test_a_file_with_no_hash_is_unverified_and_never_verified(self):
+        """Absence of a check must not read as a passing check.
+
+        The receipt and the picture both say unverified, which is the honest
+        state for a producer that carries no hash.
+        """
+        import keypoint_overlay
+
+        with tempfile.TemporaryDirectory() as folder:
+            video = Path(folder) / "side 0.1.mp4"
+            video.write_bytes(b"anything")
+
+            result = keypoint_overlay.verify_video(video, None)
+
+            self.assertIsNone(result["verified"])
+            self.assertIsNot(result["verified"], True)
+
+
 class ImportWithoutPillowTest(unittest.TestCase):
     def test_the_overlay_s_rules_import_with_no_image_library(self):
         """The same failure that turned main red this morning, one file over.
