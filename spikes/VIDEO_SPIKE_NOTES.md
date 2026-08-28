@@ -86,14 +86,34 @@ Two catches, located by reading frame contact sheets:
 | A, first catch | 9.133 s | 8.133 s | **−1.000 s** |
 | B, a catch 15 s later | 24.067 s | 22.800 s | **−1.267 s** |
 
-The two disagree by **267 ms**, which is eight frames. The clock drift over
-that interval is about 6 ms, so the disagreement is not drift: it is how
-precisely a catch can be located by eye on a 150-pixel-wide tile.
+The two disagree by **267 ms**, which is eight frames. That is how precisely a
+catch can be located by eye on a small tile, and nothing more.
+
+**No drift figure may be derived from these two events.** A single frame is
+33 ms, so an event pair cannot resolve a clock difference of 11 ms however far
+apart the events are. Event B's role is a gross-error check on the offset — it
+confirms there is no whole-cycle mismatch — and it is not a drift measurement.
+The drift number comes from the frame timestamps, below.
 
 So the honest answer for this material is an offset of about **−1.1 s with an
 uncertainty near ±150 ms**. For a feasibility spike that is enough to pair
-frames for a look. For reading joint angles off two views it is not: a hand
-moves a long way in eight frames.
+frames for a look. For reading joint angles off two views it is not.
+
+**What ±150 ms costs downstream.** A hand travelling at 2 m/s is displaced
+about 30 cm between the two views at that sync error. Two-view 3D from this
+sample therefore certifies that the pipeline runs; it yields usable numbers
+only where the athlete is nearly still — stance, hold, ready — and in fast
+phases it is illustrative and never a measurement. The clap is not a
+convenience: it bounds the 3D accuracy of everything downstream.
+
+### Drift is real, ignorable here, and not ignorable on a long take
+
+The side clock runs about 0.04 percent fast. Over a 28 second clip that is
+11 ms, a third of a frame, and it can be ignored. Over a **five minute** take
+it is **120 ms, four frames**, which cannot.
+
+So a long take needs **a clap at both ends**, not only at the start: two
+anchors measure the rate as well as the offset, and one anchor cannot.
 
 ## Mistakes made in this spike, kept deliberately
 
@@ -101,10 +121,19 @@ moves a long way in eight frames.
   front 0.1 show heavy motion blur and a changing viewpoint, and at tile size
   it looked like the athlete leaving the ground. The side view showed her
   standing throughout, which read as a contradiction in the sync until I
-  looked at the whole clip and found the front camera simply stops at about
-  26 s. The lesson is the one this project keeps meeting: a disagreement
-  between two instruments is a question, not a verdict, and the answer was in
-  neither instrument but in the framing.
+  looked at the whole clip and found the front camera simply stops.
+
+  A third instrument settled it independently: frame strips from the
+  orchestrator's own check put the overhead moment as her own toss, caught in
+  the side view at 24.50 to 24.75 s and thrown in the front view at 25.50 to
+  25.75 s — consistent with −1.0 s and inside the ±150 ms. **Nobody jumps.**
+  Front 0.1 is camera handling from 26.0 s and dark from 26.267 s.
+
+  **Treat front 0.1 as ending at 25.9 s for every downstream use.**
+
+  The lesson is the one this project keeps meeting: a disagreement between two
+  instruments is a question, not a verdict, and the answer was in neither
+  instrument but in the framing.
 
 ## Licence position
 
@@ -148,7 +177,8 @@ sense: the same joint doing a similar thing, not the same drill.
 
 **For the shoot: film the drills the library actually contains, with a passer.**
 Self-fed repetitions test the camera rig and nothing about the movement the
-engine models.
+engine models. A perfect two-camera capture of a self-toss still grades
+nothing, which is why this outranks most of the rig findings below.
 
 ## Angle references are recorded
 
@@ -173,6 +203,10 @@ Confirmed from this material rather than assumed:
 2. **Constant frame rate on every camera**, or the VFR documented. The
    measured cost here is small, about a third of a frame, but it is free to
    avoid.
+2b. **A clap at BOTH ENDS of any take longer than about a minute.** The side
+   clock runs 0.04 percent fast, which is 11 ms over 28 seconds and 120 ms —
+   four frames — over five minutes. Two anchors measure the rate as well as the
+   offset; one anchor cannot.
 3. **Do not stop a camera while the drill is still running.** front 0.1's last
    two seconds are the phone being picked up.
 4. **One drill per clip.** Set 0.1 contains eight seconds of talking before any
