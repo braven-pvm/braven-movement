@@ -10,17 +10,22 @@ planning the real shoot.
 Not yet from footage like this — but the reason is specific, cheap to fix, and
 none of it is about the phones.
 
-The pipeline runs end to end. Two camera views became 3,665 frames of tracked
-keypoints in about 160 seconds, lifted into 3D, and turned into a joint angle
-against time. **It recovers the right movement.** Laid beside the engine's own
+The pipeline runs end to end. Two camera views became **3,439 tracked frames
+out of 3,665** in about 160 seconds, lifted into 3D, and turned into a joint
+angle against time. **It recovers the right movement.** Laid beside the engine's own
 curve for the nearest drill, one catch cycle of left elbow flexion reads:
 
 | | before the catch | at the catch | pulling in |
 |---|---|---|---|
-| measured from the video | 60 to 75° | 58° | 122 to 126° |
+| measured from the video | 60 to 75° | 58° | 122 to 131° |
 | the engine's snatch pull-in | 89° | 80° | 113 to 145° |
 
 Both dip as she reaches to meet the ball, then fold sharply to bring it in.
+
+The video row reads one catch cycle from `elbow-curve-0.1.json`: the catch is at
+9.13 s, the pull-in window is 9.2 to 9.6 s, and 131° is the raw peak at 9.37 s
+across all 13 frames in that window. An earlier draft said "122 to 126" from a
+printout sampling every third frame, which understated the peak by 5 degrees.
 
 **The shape is right. The numbers are not.** Two independent readings of that
 same elbow, from the same footage, disagree by a median of 21 degrees. Nothing
@@ -61,17 +66,27 @@ about a minute, clap at **both ends** — the two phone clocks differ by 0.04
 percent, which is 11 ms over 28 seconds and 120 ms over five minutes. Two
 anchors measure the rate as well as the offset; one anchor cannot.
 
+**And between the clap and the first repetition, nobody speaks.** The clap
+makes the talking harmless, so this is insurance rather than a second rule: if
+the clap is missed in one view, the fallback is correlation, and correlation is
+what speech defeats. It costs a sentence of silence.
+
 ### 2. A calibration reference in frame
 
 Two independent readings of the same elbow disagree by a median of 21 degrees
-(90th 63°, worst 126°, correlation +0.377). Two explanations were tested and
-both refuted: sync uncertainty bounds the disagreement rather than explaining
-it, and forearm foreshortening correlates at only +0.088.
+(90th 63°). Four explanations were raised and all four were refuted — the table
+is further down, under the elbow angle.
 
-What remains untested is the one thing this footage cannot answer. The depth
-axis is scaled by matching a torso length between two cameras at unknown
-distances with unknown lenses. A wrong depth scale distorts a 3D angle
-systematically, and there is no way to check it without a known object.
+**So the case for a calibration reference is not that it fixes a known cause.**
+Nothing tested explains that 21 degrees. The case is that without a known
+object in shot, the depth axis has to be scaled by matching a body length
+between two cameras at unknown distances with unknown lenses, and there is no
+way to check that scale at all — not to confirm it, and not to rule it out.
+
+The deeper reason is comparison. A calibration reference makes a future
+measurement **like-for-like**, and the absence of one is why this disagreement
+was so hard to read: every candidate had to be tested against correlations too
+weak to exclude a minor contributor.
 
 **Instruction: put a rigid object of known size in both cameras' view for the
 whole take.** A printed checkerboard is ideal. A metre rule taped to the floor,
@@ -92,9 +107,23 @@ tossed straight up arrives slowly, vertically, and at a moment she chose.
 **A perfect two-camera capture of a self-toss still grades nothing.**
 
 **Instruction: film the drills by name, with a passer feeding the ball as the
-manual describes.** One drill per clip.
+manual describes.**
 
-### 4. A 90-degree camera pair cannot see one side of the body
+### 4. One drill per clip
+
+Set 0.1 runs a single drill for 28 seconds, eight of them spent talking before
+any movement.
+
+The engine's reference curves are indexed by PHASE, running 0 to 1 across ONE
+movement — that is stated in `reference-curves.json`'s own note. A clip holding
+two drills cannot be phase-matched to either curve, because there is no single
+movement for the phase to run across. This is not a tidiness preference: it is
+what makes a comparison against the engine possible at all.
+
+**Instruction: start a clip, clap, do one drill, stop. Then start the next
+clip.**
+
+### 5. A 90-degree camera pair cannot see one side of the body
 
 Usable readings from the two views together, set 0.1:
 
@@ -110,20 +139,20 @@ entirely. No analysis recovers a joint the cameras never saw.
 athlete turned around between them; or choose drills where the near arm is the
 working one, and say which arm each clip is for.
 
-### 5. Cameras within about four metres
+### 6. Cameras within about four metres
 
 The pose model's own card puts people further than about 4 metres out of scope.
 
 **Instruction: keep both cameras inside 4 metres of the athlete.**
 
-### 6. Nobody else in frame
+### 7. Nobody else in frame
 
 The model tracks one person. A second person entering frame is a tracking
 hazard, and one enters the right edge of `side 0.2` late in the clip.
 
 **Instruction: clear the background. One person in shot.**
 
-### 7. Whole body in frame, throughout
+### 8. Whole body in frame, throughout
 
 `front 0.1` crops her feet for part of the clip. Ankle readings drop to 199 of
 730 frames as a result.
@@ -131,7 +160,7 @@ hazard, and one enters the right edge of `side 0.2` late in the clip.
 **Instruction: frame for the whole body including the feet, and check it after
 the first repetition rather than at the end.**
 
-### 8. Do not stop a camera while the drill is still running
+### 9. Do not stop a camera while the drill is still running
 
 `front 0.1` is camera handling from 26.0 s and dark from 26.267 s. Its usable
 content ends at **25.7 s**, measured per frame.
@@ -142,16 +171,19 @@ past the usable end, because a smeared body is still body-shaped.
 **Instruction: let the camera run for three seconds after the last repetition,
 then stop it.**
 
-### 9. Constant frame rate, or document it
+### 10. Constant frame rate, or document it
 
 The front cameras run at exactly 30.000 fps. The side cameras run at 30.012,
 which is variable and drifts 11 to 13 ms over a clip — about a third of a frame.
 Small here, free to avoid.
 
 **Instruction: lock the frame rate if the phone allows it. 60 fps is better than
-30 for a fast catch, if both phones can hold it.**
+30 for a fast catch, if both phones can hold it. If a phone cannot lock its
+rate, write down the phone model and the camera setting used, per take** — the
+analysis can measure the drift afterwards, but only if it knows which clip came
+from which camera and at what setting.
 
-### 10. Camera originals, not messaging transcodes
+### 11. Camera originals, not messaging transcodes
 
 These files are 1.4 to 1.8 Mbps and 576p-class. They have been through a
 messaging app.
@@ -180,6 +212,57 @@ same landmark:
 **The hips are the vertical origin of both views, so their 3.7 mm is nearly
 circular and is not a measure of accuracy.** It is the most quotable number here
 and it means the least. Read the shoulders and the knees.
+
+### The elbow angle: nothing tested explains the disagreement
+
+Two independent readings of the same left elbow — one from the 3D lift, one
+from the side view alone — differ by a **median of 21.2 degrees**, 90th 63.0.
+This is measured on 730 frames, five fewer than the residual table's 735,
+because it additionally requires shoulder, elbow and wrist all visible in
+**both** views rather than one landmark at a time.
+
+**It is a symmetric spread, not a constant offset.** The signed median is
++1.6 degrees. Those two point at different causes and only the second would
+suggest a fixable bias.
+
+**About 5.0 degrees of it is geometry rather than error.** A 3D angle and a
+side-view 2D angle are not the same quantity: the side camera cannot see the
+across axis, so it reads the arm projected into its own plane. That floor was
+isolated by taking the same 3D and dropping `across` — no second instrument
+enters, so nothing else can be blamed. It is about a quarter of the 21.
+
+**Four explanations were raised and all four were refuted**, two by each lane,
+and each lane killed one of its own:
+
+| candidate | test | verdict |
+|---|---|---|
+| sync uncertainty | does not grow with speed above 1 m/s | refuted |
+| projection alignment | correlation +0.088, flat across every band | refuted |
+| depth scale error | banding is U-shaped, not monotonic rising | refuted |
+| camera foreshortening | banding also U-shaped | refuted |
+
+**Nothing tested explains the 21 degrees.** No fifth candidate is offered here:
+a report that ends on an untested hypothesis reads as an explanation, and there
+is not one.
+
+**What that refutation is worth, stated honestly.** These are correlations
+against a quantity whose median is 21 degrees with a wide spread. That gives
+good power to refute an effect that DOMINATES and poor power to exclude one
+contributing a few degrees. None of the four is ruled out as a minor
+contributor, and this data cannot distinguish "small effect" from "none". The
+case is bounded, not closed.
+
+**A correlation quoted without the exact definition of both quantities is not a
+measurement.** The two lanes computed the same refutation on identical frames
+and got +0.023 and +0.140 — a six-fold difference, caused by one taking the
+larger across-extent of the two arm SEGMENTS and the other the shoulder-to-wrist
+span. Neither wrote the choice down. The refutation survives all four readings
+taken, and the discrepancy is the sharper lesson: it is the same fault as a
+number quoted without its instrument.
+
+**One unexplained fact, recorded without a story.** Every banding either lane
+has tried is U-shaped — worst at both extremes of the range, best in the
+middle. Nobody can say why.
 
 ### Where the sync uncertainty bites
 
@@ -239,7 +322,12 @@ Computed at the time of writing. Any regeneration supersedes these.
 | `elbow-curve-0.1.json` | 0.1 MB | `e4f7bcfa057aa3e438149d0fda8f5c5c` |
 | `reference-curves.json` | 0.1 MB | `30c75d10d013b7ed0dd1e9bcb5e7810b` |
 
-All under `spikes/poc-output/video/`, generated at commit `e4f0983`. Set 0.2's
+All under `spikes/poc-output/video/`. **Their own `generatedFrom` stamps read
+commit `a3efaf4` with `treeWasClean: false`, written 12:48 to 12:50 UTC** — the
+extractor was uncommitted when it ran and was committed afterwards. An earlier
+draft said "generated at commit e4f0983", which is a commit that did not exist
+when these files were written. The stamps are the authority; quote them rather
+than a commit chosen later. Set 0.2's
 two views carry `"measured": false` in their sync block: only set 0.1 has a
 measured offset between the cameras.
 
