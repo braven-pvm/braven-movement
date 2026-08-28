@@ -99,6 +99,35 @@ def frame_nearest(document: dict, local_seconds: float) -> dict | None:
     return min(frames, key=lambda frame: abs(frame["ptsSeconds"] - local_seconds))
 
 
+SAMPLES = Path("F:/Repositories/braven-movement/.assets/video-samples/session-1.0")
+
+
+def find_video(named: str, root: Path | None) -> Path:
+    """Resolve the keypoint file's `videoFile` to something on this machine.
+
+    The schema records a BARE FILENAME, "side 0.1.mp4", which is right: the
+    keypoint file describes a recording and not a directory on whoever's disk
+    wrote it. So a reader must resolve it, and this one looks in the directory
+    given, then beside the sample material, then as an outright path.
+
+    Found by reading the schema again rather than by waiting for the first real
+    file to be refused.
+    """
+    candidates = []
+    if root is not None:
+        candidates.append(root / named)
+    candidates.append(SAMPLES / named)
+    candidates.append(Path(named))
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    looked = ", ".join(str(candidate) for candidate in candidates)
+    raise SystemExit(
+        f"the keypoint file names the recording {named!r}, and it is not on "
+        f"this machine. Looked in: {looked}. Pass --video-root."
+    )
+
+
 def edges_for(document: dict, assumed: list[tuple[str, str]] | None):
     """The skeleton's connections, from the file or refused."""
     model = document.get("model") or {}
@@ -181,6 +210,7 @@ def build_overlay(
     *,
     assumed_topology=None,
     height: int = 640,
+    video_root: Path | None = None,
 ) -> dict:
     require_imaging()
     work = Path(tempfile.mkdtemp(prefix="overlay_"))
@@ -190,9 +220,7 @@ def build_overlay(
 
     for document in documents:
         source = document["source"]
-        video = Path(source["videoFile"])
-        if not video.exists():
-            raise SystemExit(f"{video} is not on disk. Pass a path this machine has.")
+        video = find_video(source["videoFile"], video_root)
 
         local = reference_to_local(document, reference_seconds)
         frame = frame_nearest(document, local)
@@ -285,6 +313,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="seconds on the REFERENCE view's clock")
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--height", type=int, default=640)
+    parser.add_argument("--video-root", type=Path, default=None,
+                        help="where the recordings named in the keypoint files "
+                             "live on this machine")
     parser.add_argument("--assume-topology", type=Path, default=None,
                         help="a JSON list of [from, to] name pairs, used only "
                              "when the keypoint file carries no landmarkEdges. "
@@ -302,7 +333,8 @@ def main(argv: list[str] | None = None) -> int:
 
     documents = [read_keypoints(path) for path in arguments.keypoints]
     receipt = build_overlay(documents, arguments.at, arguments.out,
-                            assumed_topology=assumed, height=arguments.height)
+                            assumed_topology=assumed, height=arguments.height,
+                            video_root=arguments.video_root)
     arguments.out.with_suffix(".json").write_text(
         json.dumps(receipt, indent=2), encoding="utf-8"
     )

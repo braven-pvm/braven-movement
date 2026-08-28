@@ -8,6 +8,7 @@ a confident picture.
 
 import json
 import subprocess
+import tempfile
 import sys
 import unittest
 from pathlib import Path
@@ -194,6 +195,41 @@ class TopologyTest(unittest.TestCase):
         self.assertEqual([("left_shoulder", "left_elbow"),
                           ("left_elbow", "left_wrist")], edges)
         self.assertFalse(guessed)
+
+
+class VideoResolutionTest(unittest.TestCase):
+    def test_a_bare_filename_from_the_schema_is_resolved(self):
+        """The schema records `"videoFile": "side 0.1.mp4"`, and it is right to.
+
+        A keypoint file describes a RECORDING, not a directory on the disk of
+        whoever wrote it. So a reader has to resolve the name, and a first
+        version of this treated it as a path and refused every real file.
+
+        Found by reading their schema again while waiting for their data,
+        rather than by watching the first real file be refused.
+        """
+        import keypoint_overlay
+
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "side 0.1.mp4").write_bytes(b"not a real clip")
+
+            found = keypoint_overlay.find_video("side 0.1.mp4", root)
+
+            self.assertEqual(root / "side 0.1.mp4", found)
+
+    def test_a_recording_that_is_nowhere_says_where_it_looked(self):
+        """A path error must name the paths, or the reader guesses."""
+        import keypoint_overlay
+
+        with tempfile.TemporaryDirectory() as folder:
+            with self.assertRaises(SystemExit) as refusal:
+                keypoint_overlay.find_video("no such clip.mp4", Path(folder))
+
+        message = str(refusal.exception)
+        self.assertIn("no such clip.mp4", message)
+        self.assertIn(folder, message)
+        self.assertIn("--video-root", message)
 
 
 class ImportWithoutPillowTest(unittest.TestCase):
