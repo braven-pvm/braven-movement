@@ -314,7 +314,7 @@ even when the 3D is perfect. Take the movement lane's lifted arm, compute the
 angle in 3D, then drop `across` and compute it again, which is exactly what a
 flawless side camera would read:
 
-    median 4.6 degrees, p90 15.2, worst 55.8
+    median 5.0 degrees, p90 22.8, worst 55.3
 
 and it grows with how much of the arm lies along the axis the side camera
 cannot see, which is the signature it must have:
@@ -329,9 +329,46 @@ cannot see, which is the signature it must have:
 
 **So any comparison of a 3D solve against an angle read from one camera carries
 about 5 degrees of built-in disagreement that is geometry and not a defect.**
-On this material a lift-versus-side elbow comparison measured 12.8 degrees
-median, of which the floor above is roughly a third. Quote the floor beside any
-such number, or a real agreement reads as an error.
+On this material the lift-versus-side elbow comparison measured 21.2 degrees
+median, of which the floor above is roughly a quarter. Quote the floor beside
+any such number, or a real agreement reads as an error.
+
+### Do not build the 3D from the view you are testing it against
+
+This one cost a retraction, and the mistake was not obvious.
+
+The lift measures `up` twice, once per camera. Averaging the two is the better
+ESTIMATE of where the arm was, because two unbiased readings beat one. It is
+the WRONG 3D for testing agreement with the side view, because a mean-up 3D
+takes half its `up` from the very instrument it is being compared with. Over
+the same 730 frames:
+
+| `up` taken from | shares with the side view | median disagreement |
+|---|---|---|
+| front only | nothing | 21.2 degrees |
+| mean of both | half of the `up` | 12.8 |
+| side only | all of the `up` | 3.8 |
+
+At the bottom rung the disagreement equals the projection floor exactly, which
+is the proof rather than the pattern: with `up` from the side, the two
+quantities share two of three coordinates and only the definitional difference
+remains. **A smaller disagreement is not a better measurement when it was
+bought by asking an instrument about itself.**
+
+`scripts/compare_lift_against_view.py` defaults to `--up front` for that
+reason. Two jobs, and one number cannot do both: a best estimate of the pose,
+and a test of whether two views agree.
+
+### A correlation without both definitions is not a measurement
+
+Testing the same prediction on the same 730 frames, the correlation moved
+between **+0.023 and +0.140** depending on whether the arm's extent along
+`across` was taken as the larger of the two SEGMENTS or as the shoulder to
+wrist span. Neither lane had thought that choice worth writing down.
+
+That is not imprecision. It is the same fault as a number quoted without its
+instrument, and a reader given one figure rather than the other would form a
+different impression of the same result.
 
 The same warning applies to the engine: comparing a solved 3D pose against a
 coach's video by eye compares a 3D angle with a projected one.

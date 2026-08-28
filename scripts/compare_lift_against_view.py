@@ -9,6 +9,26 @@ error would be zero and would mean nothing.
 
 So this measures the thing a reprojection was meant to localise, directly.
 
+WHICH READING OF `up` BUILDS THE 3D DECIDES THE ANSWER, AND THE OBVIOUS CHOICE
+IS WRONG. The lift measures `up` twice, once per camera. Averaging the two is
+the better ESTIMATE of where the arm was, and it is the wrong 3D for THIS test,
+because the comparison is against the side view and a mean-up 3D borrows half
+its `up` from that same view. Measured on 730 frames:
+
+    up taken from   shares with the side view   median disagreement
+    front only      nothing                            21.2 deg
+    mean of both    half of the up                     12.8
+    side only       all of the up                       3.8
+
+A ladder, and at the bottom rung the disagreement equals the projection floor
+exactly: with `up` from the side, the two quantities share two of three
+coordinates and only the definitional difference is left. So the default here
+is `front`, the view NOT being compared against. Choosing `mean` reports a
+better agreement bought by asking the instrument about itself.
+
+Two jobs, and one number cannot do both: a best estimate of the pose, and a
+test of whether two views agree.
+
 THE PREDICTION THE DEPTH-SCALE HYPOTHESIS MAKES. The side view's elbow angle
 uses only side pixels, and both its axes share one scale, so the angle is
 scale free. The lift's elbow angle mixes `across` (front scale) with `ahead`
@@ -43,6 +63,12 @@ def parse_args():
                         help="the keypoint file for the view to compare against")
     parser.add_argument("--joint", nargs=3, default=list(ARM),
                         metavar=("PROXIMAL", "MIDDLE", "DISTAL"))
+    # THE DEFAULT MATTERS AND IT IS NOT THE OBVIOUS ONE. Refer to the note on
+    # circularity in the docstring above.
+    parser.add_argument("--up", choices=("front", "mean", "side"), default="front",
+                        help="which reading of UP builds the 3D. Use the view "
+                             "you are NOT comparing against, or the test "
+                             "borrows from the instrument it is testing.")
     return parser.parse_args()
 
 
@@ -70,6 +96,14 @@ def correlation(xs, ys):
 
 
 ARM = tuple(ARGUMENTS.joint)
+
+
+def up_of(row: dict) -> float:
+    if ARGUMENTS.up == "front":
+        return row["upFrontMetres"]
+    if ARGUMENTS.up == "side":
+        return row["upSideMetres"]
+    return 0.5 * (row["upFrontMetres"] + row["upSideMetres"])
 lift = json.loads(ARGUMENTS.lift.read_text(encoding="utf-8"))
 side = json.loads(ARGUMENTS.view.read_text(encoding="utf-8"))
 offset = float(lift["syncApplied"]["offsetSecondsToReference"])
@@ -103,8 +137,7 @@ for when in sorted(by_time):
     # gap, because the file's note says that gap is dominated by sync.
     def point(name):
         r = marks[name]
-        up = 0.5 * (r["upFrontMetres"] + r["upSideMetres"])
-        return (r["acrossMetres"], r["aheadMetres"], up), r
+        return (r["acrossMetres"], r["aheadMetres"], up_of(r)), r
 
     (ps, rs), (pe, re), (pw, rw) = point("left_shoulder"), point("left_elbow"), point("left_wrist")
     lifted = angle(ps, pe, pw)
@@ -142,7 +175,7 @@ for when in sorted(by_time):
         "visibility": min(seen[n].get("visibility", 1.0) for n in ARM),
     })
 
-print(f"{len(rows)} frame pairs where both instruments read the left elbow")
+print(f"{len(rows)} frame pairs, up taken from the {ARGUMENTS.up.upper()} view")
 gaps = [abs(r["gap"]) for r in rows]
 print(f"disagreement: median {statistics.median(gaps):.1f} deg, "
       f"mean {statistics.mean(gaps):.1f}, p90 {sorted(gaps)[int(0.9*len(gaps))]:.1f}, "
@@ -200,7 +233,7 @@ for when in sorted(by_time):
     def whole(name):
         r = marks[name]
         return (r["acrossMetres"], r["aheadMetres"],
-                0.5 * (r["upFrontMetres"] + r["upSideMetres"]))
+                up_of(r))
     ps, pe, pw = whole(ARM[0]), whole(ARM[1]), whole(ARM[2])
     full = angle(ps, pe, pw)
     flat = angle((ps[1], ps[2]), (pe[1], pe[2]), (pw[1], pw[2]))
