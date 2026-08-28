@@ -50,8 +50,29 @@ import sys
 import tempfile
 from pathlib import Path
 
-import numpy
-from PIL import Image, ImageDraw, ImageFont
+try:
+    import numpy
+    from PIL import Image, ImageDraw, ImageFont
+except ImportError:  # pragma: no cover - exercised by a subprocess test
+    # The RULES in this module are arithmetic on timestamps and need no image
+    # library. Only the drawing does. Importing Pillow at module level made the
+    # guards unimportable without it and turned main's CI red, where a hosted
+    # runner has no Pillow: the tests did not fail, they failed to LOAD.
+    #
+    # A blanket skip would have hidden them instead, which is the regression
+    # class the runner exists to catch. So the rules import anywhere, and only
+    # the drawing asks for the library.
+    numpy = None
+    Image = ImageDraw = ImageFont = None
+
+
+def require_imaging() -> None:
+    """Fail with the package name, not with an AttributeError on None."""
+    if Image is None or numpy is None:
+        raise RuntimeError(
+            "drawing a contact sheet needs Pillow and numpy: "
+            "python -m pip install pillow numpy"
+        )
 
 PTS = re.compile(r"pts_time:([0-9.]+)")
 WINDOW_HALF_S = 0.07
@@ -143,6 +164,7 @@ def frame_quality(path: Path) -> dict:
     A camera being picked up while it still records produces frames that are
     smeared and then dark. They are pictures, and they are not footage.
     """
+    require_imaging()
     grey = numpy.asarray(Image.open(path).convert("L"), dtype=numpy.float32)
     laplacian = (
         grey[:-2, 1:-1] + grey[2:, 1:-1] + grey[1:-1, :-2] + grey[1:-1, 2:]
@@ -213,7 +235,8 @@ def nearest_frame(path: Path, target: float, work: Path, tag: str) -> tuple[Path
     raise RuntimeError(f"no frame decoded near {target:.3f}s in {path.name}")
 
 
-def load_font(size: int) -> ImageFont.ImageFont:
+def load_font(size: int):
+    require_imaging()
     for name in ("consola.ttf", "arial.ttf", "DejaVuSansMono.ttf"):
         try:
             return ImageFont.truetype(name, size)
@@ -231,6 +254,7 @@ def build_sheet(
     height: int = 300,
     per_row: int = 4,
 ) -> dict:
+    require_imaging()
     work = Path(tempfile.mkdtemp(prefix="syncsheet_"))
     label_font = load_font(13)
     head_font = load_font(17)

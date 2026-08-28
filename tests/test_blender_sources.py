@@ -203,6 +203,17 @@ def _without_string_content(node: ast.AST) -> str:
             return ast.copy_location(ast.Constant(value=""), node)
 
         def visit_If(self, node):
+            return self._prune(node)
+
+        def visit_While(self, node):
+            # `while False:` is dead exactly as `if False:` is, and the walker
+            # already skipped both. The transformer covered only If, so a dead
+            # while NESTED inside a live for or with was carried back by the
+            # enclosing node's unparse. Unnested it was hidden, which is why
+            # the hole survived a decoy set that only tested unnested cases.
+            return self._prune(node)
+
+        def _prune(self, node):
             if _is_dead_branch(node):
                 kept = [self.visit(item) for item in node.orelse]
                 return kept or ast.copy_location(ast.Pass(), node)
@@ -491,6 +502,26 @@ class BlenderSourceContractTest(unittest.TestCase):
             "lambda body": ["    f = lambda: bpy.ops.export_scene.gltf(x)"],
             "dead branch": ["    if False:",
                             "        bpy.ops.export_scene.gltf(x)"],
+            "dead loop": ["    while False:",
+                          "        bpy.ops.export_scene.gltf(x)"],
+            # NESTED, because an unnested decoy proves less than it looks.
+            # Unnested, nothing encloses the dead body but the function, which
+            # this walker never yields, so it is hidden whether the transformer
+            # prunes it or not. Inside a live block the enclosing node IS
+            # yielded and unparses the dead body straight back. A dead `while`
+            # inside a `for` was fooled for exactly that reason, while the same
+            # `while` unnested looked closed.
+            "dead branch in a for": ["    for i in r:",
+                                     "        if False:",
+                                     "            bpy.ops.export_scene.gltf(x)"],
+            "dead loop in a for": ["    for i in r:",
+                                   "        while False:",
+                                   "            bpy.ops.export_scene.gltf(x)"],
+            "dead loop in a with": ["    with open(p) as f:",
+                                    "        while False:",
+                                    "            bpy.ops.export_scene.gltf(x)"],
+            "lambda in a for": ["    for i in r:",
+                                "        f = lambda: bpy.ops.export_scene.gltf(x)"],
         }
         for name, body in decoys.items():
             with self.subTest(decoy=name):

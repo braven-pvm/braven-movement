@@ -5,6 +5,7 @@ below produce a sheet that looks correct, carries confident labels, and is
 wrong by about one frame, which is the size of the thing it is measuring.
 """
 
+import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -18,6 +19,56 @@ from video_sync_sheet import (  # noqa: E402
     pair_stamps_to_images,
     sample_times,
 )
+
+
+class ImportWithoutPillowTest(unittest.TestCase):
+    def test_the_rules_import_and_run_with_no_image_library(self):
+        """The timestamp rules must not need Pillow to be loaded.
+
+        This module imported Pillow at the top and main's CI went red: a hosted
+        runner has none, so the tests did not fail, they failed to LOAD. Every
+        guard in this file was unreachable and the suite reported one error
+        instead of five silences.
+
+        CI now installs Pillow so the DRAWING is reachable there. That is why
+        this test blocks the import itself: with Pillow present on every
+        machine that runs the suite, nothing else would ever exercise the path
+        that broke, and it would rot until the next runner without it.
+        """
+        script = "\n".join([
+            "import sys, importlib.abc, importlib.machinery",
+            "class NoPillow(importlib.abc.MetaPathFinder):",
+            "    def find_spec(self, name, path=None, target=None):",
+            "        if name == 'PIL' or name.startswith('PIL.'):",
+            "            raise ImportError('No module named PIL')",
+            "        return None",
+            "sys.meta_path.insert(0, NoPillow())",
+            f"sys.path.insert(0, {str(MODULE_DIR / 'scripts')!r})",
+            "import video_sync_sheet as v",
+            "assert v.Image is None, 'Pillow was not actually blocked'",
+            "assert v.choose_nearest([1.0, 2.0, 3.0], 2.4) == 1",
+            "assert v.pair_stamps_to_images([1.0, 2.0, 3.0], 2) == [1.0, 2.0]",
+            "assert v.sample_times(28.9, 28.8, -1.0, 4)",
+            "assert v.degraded(100.0, 850.0, 120.0) is True",
+            "try:",
+            "    v.build_sheet(None, None, 0.0, [], None)",
+            "except RuntimeError as error:",
+            "    assert 'Pillow' in str(error), error",
+            "else:",
+            "    raise AssertionError('drawing must refuse without Pillow')",
+            "print('ok')",
+        ])
+
+        finished = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True, text=True,
+        )
+
+        self.assertEqual(
+            0, finished.returncode,
+            f"the rules must import without Pillow\n{finished.stderr}",
+        )
+        self.assertIn("ok", finished.stdout)
 
 
 class SyncSheetTimeTest(unittest.TestCase):
