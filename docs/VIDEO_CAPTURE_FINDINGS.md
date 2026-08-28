@@ -32,8 +32,10 @@ same elbow, from the same footage, disagree by a median of 21 degrees. Nothing
 in the analysis fixes that, because the information needed is not in the
 footage.
 
-**The difference between a shape and a number is a calibration reference in
-frame.** That, and a clap. Both cost nothing and neither was present.
+**A shape cannot become a number without a calibration reference in frame.**
+That, and a clap. Neither is sufficient on its own — nothing tested explains
+the whole disagreement — but both are necessary, both cost nothing, and neither
+was present.
 
 ## What to change, in order of consequence
 
@@ -155,7 +157,7 @@ hazard, and one enters the right edge of `side 0.2` late in the clip.
 ### 8. Whole body in frame, throughout
 
 `front 0.1` crops her feet for part of the clip. Ankle readings drop to 199 of
-730 frames as a result.
+the 735 usable frame pairs as a result.
 
 **Instruction: frame for the whole body including the feet, and check it after
 the first repetition rather than at the end.**
@@ -216,13 +218,13 @@ and it means the least. Read the shoulders and the knees.
 ### The elbow angle: nothing tested explains the disagreement
 
 Two independent readings of the same left elbow — one from the 3D lift, one
-from the side view alone — differ by a **median of 21.2 degrees**, 90th 63.0.
+from the side view alone — differ by a **median of 21.2 degrees**, 90th 63.1.
 This is measured on 730 frames, five fewer than the residual table's 735,
 because it additionally requires shoulder, elbow and wrist all visible in
 **both** views rather than one landmark at a time.
 
 **It is a symmetric spread, not a constant offset.** The signed median is
-+1.6 degrees. Those two point at different causes and only the second would
++1.6 degrees, taking the lift's angle minus the side view's. Those two point at different causes and only the second would
 suggest a fixable bias.
 
 **About 5.0 degrees of it is geometry rather than error.** A 3D angle and a
@@ -301,12 +303,17 @@ would be the opposite convention, and laying the two side by side compares
 different quantities that both read in degrees. This was caught before it
 published a number, by reading the definition rather than assuming it.
 
-**Two readings of the same joint disagreed by ~20 degrees and neither was
-averaged into the other.** Two hypotheses were tested and refuted: sync
-(correlation +0.327, no growth above 1 m/s) and forearm foreshortening
-(correlation +0.088, disagreement flat across every alignment band). The cause
-remains unidentified, and the honest statement is that neither reading is a
-measurement of that joint on this material.
+**Two readings of the same joint disagreed by 21.2 degrees and neither was
+averaged into the other.** Four candidates were raised and all four refuted —
+the table is above, under the elbow angle — and the cause remains unidentified.
+The honest statement is that neither reading is a measurement of that joint on
+this material.
+
+Every correlation in that table carries a definition, and they are not
+interchangeable. The projection-alignment figure of +0.088 is the FOREARM's
+share along the side camera's viewing axis against the absolute gap, computed
+on the front-only `up`. Quoting it without that clause would be the same fault
+the paragraph above it describes.
 
 ## Artifacts
 
@@ -322,7 +329,10 @@ Computed at the time of writing. Any regeneration supersedes these.
 | `elbow-curve-0.1.json` | 0.1 MB | `e4f7bcfa057aa3e438149d0fda8f5c5c` |
 | `reference-curves.json` | 0.1 MB | `30c75d10d013b7ed0dd1e9bcb5e7810b` |
 
-All under `spikes/poc-output/video/`. **Their own `generatedFrom` stamps read
+All under `spikes/poc-output/video/`. **Only the four keypoint files carry
+`generatedFrom` stamps**; the lift, elbow-curve and reference-curve files carry
+none, so their provenance is the keypoint files they were derived from. **The
+keypoint stamps read
 commit `a3efaf4` with `treeWasClean: false`, written 12:48 to 12:50 UTC** — the
 extractor was uncommitted when it ran and was committed afterwards. An earlier
 draft said "generated at commit e4f0983", which is a commit that did not exist
