@@ -15,8 +15,12 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
+      # Pillow is here so the sync sheet's drawing is REACHABLE on the runner.
+      # Its rules import without Pillow by design, so leaving it out would let
+      # those tests run and quietly leave the drawing untested, which is the
+      # regression class this workflow exists to catch.
       - name: Install what the engine-side tests read
-        run: python -m pip install --quiet numpy
+        run: python -m pip install --quiet numpy pillow
       - name: Run host-side contracts
         run: python -m unittest discover -s tests -v
       # The engine-side suite, which used to run only on a machine with the
