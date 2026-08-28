@@ -31,6 +31,7 @@ MODULE_DIR = Path(__file__).resolve().parent
 if str(MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(MODULE_DIR))
 
+from render_receipt import render_outcome  # noqa: E402
 from reference_pose_config import (  # noqa: E402
     DEFAULT_CONFIG_PATH,
     load_reference_catch_config,
@@ -366,6 +367,11 @@ def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
         # ready phase came out with a hand mangled across her face. Before
         # contact the arm decides where the hand goes, which is the same rule
         # the possession model states for the wrist.
+        # What the knuckle flexion actually turned, against what FLEXION_AXIS
+        # says it turns. Filled by the solve, which measures the DIFFERENCE
+        # from the unflexed pose; reading matrix_basis after the fact would
+        # carry the aim and the splay with it and report the wrong quantity.
+        axis_report: dict[str, dict] = {}
         pose_articulated_hand(
             rig,
             side=side,
@@ -373,6 +379,7 @@ def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
             finger_curl_degrees=finger_curl_degrees,
             ball_radius=radius if (grip and side in grip) else None,
             knuckle_limits=knuckle_limits,
+            axis_report=axis_report,
         )
         # Millimetres from the ball surface, negative inside it. A fingertip
         # out of the top of the ball is the only symptom a coach sees, so the
@@ -380,6 +387,10 @@ def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
         hands[side]["surfaceClearanceMm"] = finger_surface_clearance(
             rig, side=side, ball_centre=ball_centre, radius=radius
         )
+        # Which axis the knuckle actually turned about, against the one the
+        # limits assume. The solve raises on an outright flip; this carries the
+        # margin so the drift towards one is readable in the receipt first.
+        hands[side]["flexionAxis"] = axis_report
     orient_head_to_ball(rig, ball_centre)
     receipt = {
         # Whether she is holding it, so a reader never has to guess why a hand
@@ -434,6 +445,13 @@ class Studio:
 
 
 def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) -> None:
+    # Delete any receipt from an earlier run BEFORE rendering. The solve can
+    # raise part way through, and `--output` reuses its directory, so a PASS
+    # receipt from a previous run would otherwise sit beside the fresh partial
+    # images of a failed one and describe them.
+    stale = output / f"{job['movementId']}.render.json"
+    if stale.exists():
+        stale.unlink()
     config, world_colour = studio.config, studio.world_colour
     rig, human, assets = studio.rig, studio.human, studio.assets
     basis, foot_baseline = studio.basis, studio.foot_baseline
@@ -610,7 +628,13 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
         ),
         encoding="utf-8",
     )
-    print(f"[movement-render] PASS receipt={receipt_path}")
+    # Never the bare word PASS. A run that posed no phase measured nothing,
+    # and `--no-stills` took exactly that path over eight drills and printed
+    # PASS eight times.
+    print(
+        f"[movement-render] {render_outcome(len(rendered), animation)} "
+        f"receipt={receipt_path}"
+    )
 
 
 def main() -> None:

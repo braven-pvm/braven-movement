@@ -17,6 +17,15 @@ TOOL_DIR = Path(__file__).resolve().parent
 if str(TOOL_DIR) not in sys.path:
     sys.path.insert(0, str(TOOL_DIR))
 
+from finger_curl import (  # noqa: E402
+    ASSERTED_DIGITS,
+    axis_complaint,
+    axis_share,
+    relative_rotation,
+    curl_directions,
+    dominance_margin,
+    dominant_axis,
+)
 from movement_contract import inspect_glb, max_rgba_alpha  # noqa: E402
 from reference_pose_calibration import (  # noqa: E402
     PoseCalibrationError,
@@ -426,6 +435,11 @@ KNUCKLE_ITERATIONS = 14
 # fingertip toward the palm. The four fingers curl about local X and the thumb
 # about local Z. The sign mirrors between hands, so magnitudes are compared.
 FLEXION_AXIS = {"index": 0, "middle": 0, "ring": 0, "pinky": 0, "thumb": 2}
+# Below this the flexion has not moved far enough to have a direction, and the
+# largest component of the difference is noise.
+FLEXION_MEASURE_FLOOR_DEGREES = 5.0
+# The share a named axis must carry, and which digits are judged by it, live
+# in finger_curl beside the measurements that set them.
 # The bone sits inside the flesh, so a bone clearance of about 8 mm puts the
 # skin on the surface. Contact, not a dent.
 CONTACT_CLEARANCE_M = 0.008
@@ -478,6 +492,7 @@ def pose_articulated_hand(
     finger_aim: float | None = None,
     ball_radius: float | None = None,
     knuckle_limits: dict[str, dict] | None = None,
+    axis_report: dict[str, dict] | None = None,
 ) -> dict[str, list[list[float]]]:
     """Close one hand's fingers onto the ball.
 
@@ -494,6 +509,33 @@ def pose_articulated_hand(
     reference catch wants: that pose is calibrated against a photograph.
     """
     result: dict[str, list[list[float]]] = {}
+    # Filled once the knuckles are at zero, then used as the reference for
+    # every flexion measurement below.
+    unflexed: dict[str, Matrix] = {}
+
+    def knuckle_turn(digit: str) -> tuple[float, float, float]:
+        """What the FLEXION turned this knuckle, in degrees, or zero.
+
+        The relative rotation between the unflexed pose and now. Subtracting
+        euler components instead would not be the delta at all: rotations do
+        not commute, and measured against this the euler difference was wrong
+        by up to 4.5 degrees on one axis under a large aim.
+        """
+        rest = unflexed.get(digit)
+        if rest is None:
+            return (0.0, 0.0, 0.0)
+        now = armature.pose.bones[f"{digit}_01_{side}"].matrix_basis
+        relative = Matrix(
+            relative_rotation(
+                [list(row) for row in rest.to_3x3()],
+                [list(row) for row in now.to_3x3()],
+            )
+        ).to_euler("XYZ")
+        return (
+            math.degrees(relative.x),
+            math.degrees(relative.y),
+            math.degrees(relative.z),
+        )
     wrist = world_head(armature, f"hand_{side}")
     palm_direction = (palm_centre(armature, side) - wrist).normalized()
     toward_ball = (ball_centre - wrist).normalized()
@@ -523,14 +565,17 @@ def pose_articulated_hand(
         if bend.length < 1e-8:
             raise RuntimeError(f"cannot establish {side} {digit} curl plane")
         bend.normalize()
-        first, second = finger_curl_degrees[digit]
-        cumulative = (knuckle, knuckle + first, knuckle + first + second)
+        # The arithmetic lives in finger_curl, which imports without bpy, so
+        # the knuckle angle can be READ by a test instead of asserted about in
+        # source text. Do not reimplement it here.
         return [
-            (
-                base * math.cos(math.radians(angle))
-                + bend * math.sin(math.radians(angle))
-            ).normalized()
-            for angle in cumulative
+            Vector(direction)
+            for direction in curl_directions(
+                tuple(base),
+                tuple(bend),
+                knuckle,
+                tuple(finger_curl_degrees[digit]),
+            )
         ]
 
     def apply(digit: str, knuckle: float) -> None:
@@ -589,6 +634,24 @@ def pose_articulated_hand(
         parts = [math.degrees(rotation.x), math.degrees(rotation.y),
                  math.degrees(rotation.z)]
         axis = FLEXION_AXIS[digit]
+        # FLEXION_AXIS is an assumption about the rig and nothing checked it.
+        # Name the wrong axis and this function bounds real flexion by the
+        # DEVIATION licence and deviation by the flexion licence; the finger
+        # stops early or runs far past the joint and neither raises.
+        #
+        # Judge the DIFFERENCE from the unflexed pose, never `parts` itself.
+        # `matrix_basis` carries the aim and the splay as well as the flexion,
+        # and a first version of this check judged that total. It fired on a
+        # correct rig and killed a render, because at a small knuckle angle the
+        # aim is most of the rotation and the flexion has barely started.
+        complaint = axis_complaint(
+            digit,
+            knuckle_turn(digit),
+            axis,
+            floor_degrees=FLEXION_MEASURE_FLOOR_DEGREES,
+        )
+        if complaint:
+            raise RuntimeError(f"FLEXION_AXIS: {side} {complaint}")
         flexion = abs(parts[axis])
         deviation = math.hypot(
             *[value for index, value in enumerate(parts) if index != axis]
@@ -613,6 +676,12 @@ def pose_articulated_hand(
 
     for digit in FINGER_DIGITS:
         apply(digit, 0.0)
+
+    # The knuckle euler with the knuckle at zero: aim and splay, no flexion.
+    # Every later reading is judged against this, so that what is measured is
+    # what the FLEXION moved and not where the finger was aimed.
+    for digit in FINGER_DIGITS:
+        unflexed[digit] = armature.pose.bones[f"{digit}_01_{side}"].matrix_basis.copy()
 
     if ball_radius is None:
         return result
@@ -666,6 +735,33 @@ def pose_articulated_hand(
         # Land on the best angle measured, which is never inside the ball.
         apply(digit, best_angle)
         retreat_into_limits(digit, best_angle)
+
+    # A hand that is not holding the ball never enters the solve above, so
+    # `axis_report` stays EMPTY for it and the receipt carries `flexionAxis:
+    # {}`. That is absence of measurement, not agreement: there was no flexion
+    # to measure. A reader must not treat an empty report as a clean one.
+    if axis_report is not None:
+        # What the flexion turned, against what FLEXION_AXIS says it turns.
+        # Carried into the receipt so that a share falling towards the limit is
+        # readable while it is still falling, rather than only when it trips.
+        for digit in FINGER_DIGITS:
+            turned = knuckle_turn(digit)
+            largest = max(abs(value) for value in turned)
+            axis_report[digit] = {
+                "namedAxis": FLEXION_AXIS[digit],
+                "turnedDegrees": [round(value, 3) for value in turned],
+                "namedAxisShare": round(axis_share(turned, FLEXION_AXIS[digit]), 4),
+                "dominantAxis": dominant_axis(turned),
+                "dominanceMarginDegrees": round(dominance_margin(turned), 3),
+                # Below the floor the flexion has no direction, so a reader
+                # must not take agreement here for a measurement.
+                "measured": largest >= FLEXION_MEASURE_FLOOR_DEGREES,
+                # The thumb is recorded and NOT asserted: its share runs 0.600
+                # to 1.000 over 18 readings and its worst plausible value sits
+                # near the floor a finger is safe at. This field is how that
+                # calibration finishes with data.
+                "asserted": digit in ASSERTED_DIGITS,
+            }
 
     return result
 
