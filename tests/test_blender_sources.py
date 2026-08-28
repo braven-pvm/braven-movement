@@ -1,4 +1,6 @@
 import ast
+import copy
+import math
 import sys
 import unittest
 from pathlib import Path
@@ -8,13 +10,22 @@ MODULE_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(MODULE_DIR))
 
 from finger_curl import (  # noqa: E402
+    ASSERTED_DIGITS,
     angle_between_degrees,
+    axis_complaint,
+    axis_share,
     cumulative_angles,
     curl_directions,
     dominance_margin,
     dominant_axis,
+    relative_rotation,
 )
 from movement_contract import normalization_transform  # noqa: E402
+from render_receipt import (  # noqa: E402
+    NOTHING_RENDERED,
+    PASS,
+    render_outcome,
+)
 
 HELPER_MODULE = "blender_mpfb_reference_catch"
 IMPORTING_MODULES = ("blender_movement_render.py",)
@@ -49,6 +60,16 @@ def _calls_into_helpers(source: str, signatures: dict[str, dict]) -> list[str]:
             imported.update(alias.name for alias in node.names)
 
     complaints = []
+    # A name imported from the helper that the helper no longer defines. The
+    # call check below SKIPS these, because it looks the name up in the
+    # signatures and finds nothing, so deleting a helper used to pass the guard
+    # and fail only when Blender loaded the module. That happened today.
+    for missing in sorted(imported - set(signatures)):
+        complaints.append(
+            f"{missing} is imported from {HELPER_MODULE}, which no longer "
+            "defines it"
+        )
+
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Name):
             continue
@@ -110,20 +131,63 @@ def _code_positions(source: str, function_name: str, needles: tuple[str, ...]) -
         return {}
 
     found: dict[str, tuple[tuple[int, int], int]] = {}
-    for node in ast.walk(function):
-        if isinstance(node, ast.Constant):
-            continue
-        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant):
-            continue
-        if not hasattr(node, "lineno"):
-            continue
-        text = ast.unparse(node)
+    for node in _statements_that_run(function):
+        text = _without_string_content(node)
         for needle in needles:
             if needle not in text:
                 continue
             if needle not in found or len(text) < found[needle][1]:
                 found[needle] = ((node.lineno, node.col_offset), len(text))
     return {needle: place for needle, (place, _) in found.items()}
+
+
+def _statements_that_run(function: ast.AST):
+    """Every node in the function body, but NOT inside a nested definition.
+
+    A statement moved into a nested `def` still parses inside the function and
+    still has a line number in the right order, and it never runs unless
+    something calls it. Skipping every constant was not enough on its own.
+    """
+    def walk(node):
+        for child in ast.iter_child_nodes(node):
+            # A nested definition is a child of the body like any other
+            # statement, so there is no level at which this exemption is safe.
+            # Exempting the outermost one, which a first version did, let the
+            # nested-def case straight through.
+            if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef,
+                                  ast.Lambda, ast.ClassDef)):
+                continue
+            if hasattr(child, "lineno"):
+                yield child
+            yield from walk(child)
+
+    yield from walk(function)
+
+
+def _without_string_content(node: ast.AST) -> str:
+    """The node's source with every string literal blanked.
+
+    Skipping `Constant` nodes does NOT hide a string, because every enclosing
+    node's unparse carries the text back. A needle sitting only in a docstring
+    was found at the enclosing function, which is how a commented-out line and
+    a docstring line could both read as live code. Blank the strings first,
+    then match.
+    """
+    class Blank(ast.NodeTransformer):
+        def visit_Constant(self, node):
+            if isinstance(node.value, str):
+                return ast.copy_location(ast.Constant(value=""), node)
+            return node
+
+        def visit_JoinedStr(self, node):
+            return ast.copy_location(ast.Constant(value=""), node)
+
+    copied = Blank().visit(copy.deepcopy(node))
+    ast.fix_missing_locations(copied)
+    try:
+        return ast.unparse(copied)
+    except (AttributeError, TypeError, ValueError):
+        return ""
 
 
 class BlenderSourceContractTest(unittest.TestCase):
@@ -159,77 +223,196 @@ class BlenderSourceContractTest(unittest.TestCase):
         self.assertIn("max_rgba_alpha(image.pixels)", source)
         self.assertNotIn("pixels[3::4]", source)
 
-    def test_the_flexion_axis_is_judged_by_dominance_and_not_by_purity(self):
-        """The thumb's flexion is real and is not a clean single-axis turn.
+    def test_a_wrong_flexion_axis_is_refused_by_calling_the_rule(self):
+        """The rule that stops a render must be exercised, not asserted about.
 
-        FLEXION_AXIS names one euler component per digit as flexion; the other
-        two are deviation and carry a different licence. Nothing checked that
-        name against the rig for a day. Name it wrong and real flexion is
-        bounded by the deviation limit, or deviation gets the flexion licence,
-        and neither raises.
+        The only guard this had was an `assertIn` on the source text, which is
+        the guard class defect 1 was fixed to stop relying on. It sat green at
+        76 tests while every real render failed, because the code it guarded
+        runs only inside Blender and those tests skip.
 
-        A purity test would be the obvious guard and would be WRONG: it fails
-        on a correct thumb. The thumb turns mostly about its own Z and carries
-        substantial X and Y with it.
+        Numbers from the rig, 90 knuckle rotations over 5 drills: the four
+        fingers turn about X with a share of 1.000 every time. Naming Y instead
+        would carry 0.08 and naming Z would carry 0.16.
         """
-        # A thumb-like rotation: Z leads, and the other two are far from zero.
-        thumb = (12.0, -9.0, 31.0)
+        turned_like_a_finger = (58.3, -4.7, 8.5)
 
-        self.assertEqual(2, dominant_axis(thumb))
-        self.assertAlmostEqual(19.0, dominance_margin(thumb), places=9)
-
-        # A finger-like rotation: X leads.
-        self.assertEqual(0, dominant_axis((44.0, 3.0, -6.0)))
-
-        # And the dominant component is often NEGATIVE, because which way a
-        # knuckle turns depends on the rig's axis orientation. `within_limits`
-        # takes abs() of the flexion component for that reason. A dominance
-        # test that compared signed values would name the wrong axis here and
-        # every case above would still pass it.
-        self.assertEqual(0, dominant_axis((-52.0, 7.0, 11.0)))
-        self.assertEqual(2, dominant_axis((6.0, -8.0, -37.0)))
-
-    def test_the_margin_shrinks_before_the_axis_flips(self):
-        """The receipt carries the margin so drift is visible while it is drift.
-
-        An assertion that only fires on the flip reports a fault that has
-        already happened. The margin falls towards zero first, and the receipt
-        carries it per digit for exactly that reason.
-        """
-        comfortable = (40.0, 5.0, 8.0)
-        thin = (20.0, 19.0, 3.0)
-        flipped = (18.0, 25.0, 3.0)
-
-        self.assertGreater(dominance_margin(comfortable), dominance_margin(thin))
-        self.assertEqual(0, dominant_axis(comfortable))
-        self.assertEqual(0, dominant_axis(thin), "still correct, and only just")
-        self.assertEqual(1, dominant_axis(flipped), "this one has gone")
-
-    def test_the_solve_refuses_a_knuckle_whose_axis_lost_dominance(self):
-        """The wrong axis must stop the render, not quietly bend a finger.
-
-        A figure posed against swapped limits looks like a hand and is not one.
-        This lane has shipped that class of picture before, so the solve raises
-        rather than returns.
-        """
-        catch = (MODULE_DIR / "blender_mpfb_reference_catch.py").read_text(
-            encoding="utf-8"
+        self.assertIsNone(
+            axis_complaint("index", turned_like_a_finger, 0, floor_degrees=5.0),
+            "the correct axis must not complain",
+        )
+        complaint = axis_complaint("index", turned_like_a_finger, 2, floor_degrees=5.0)
+        self.assertIsNotNone(complaint, "naming Z for a finger must be refused")
+        self.assertIn("0.15", complaint)
+        self.assertIsNotNone(
+            axis_complaint("index", turned_like_a_finger, 1, floor_degrees=5.0),
+            "naming Y for a finger must be refused",
         )
 
-        self.assertIn("FLEXION_DOMINANCE_FLOOR_DEGREES", catch)
-        self.assertIn("observed = dominant_axis(parts)", catch)
-        self.assertIn("raise RuntimeError(", catch)
-        # And the receipt reader exists beside the clearance profile.
-        self.assertIn("def flexion_axis_dominance(", catch)
+    def test_a_knuckle_that_has_barely_turned_is_not_judged(self):
+        """Below the floor the rotation has no direction to name.
+
+        The bisection calls this at every trial angle, including tiny ones. A
+        rule that judged those would fire on noise.
+        """
+        # The share here is 0.12, far below the floor a real turn must clear,
+        # so this case FAILS the share rule and must be saved by the floor
+        # alone. A case whose share already passes would prove nothing: the
+        # rule returns None either way and deleting the floor leaves it green.
+        barely = (0.4, -0.2, 0.05)
+        self.assertLess(axis_share(barely, 2), 0.5)
+
+        self.assertIsNone(
+            axis_complaint("index", barely, 2, floor_degrees=5.0),
+            "a knuckle that has not turned has no axis to judge",
+        )
+        # And the same shape, once it HAS turned, is refused.
+        self.assertIsNotNone(
+            axis_complaint("index", (40.0, -20.0, 5.0), 2, floor_degrees=5.0)
+        )
+
+    def test_the_thumb_is_recorded_and_never_refused(self):
+        """Measured, its share runs 0.600 to 1.000. A finger's floor is unsafe.
+
+        The curl plane runs 47 to 61 degrees off the thumb's flexion axis, per
+        the measured note in `within_limits`, and cos(61) is 0.48. A threshold
+        that is safe for a finger could refuse a CORRECT thumb in a pose nobody
+        has rendered, and three of the eight drills are still unmeasured. So
+        the thumb is carried in the receipt and never raises.
+        """
+        self.assertNotIn("thumb", ASSERTED_DIGITS)
+
+        # Its worst measured reading, and a reading below its plausible floor.
+        for turned in ((21.1, -3.8, 12.7), (21.1, -3.8, 10.1)):
+            self.assertIsNone(
+                axis_complaint("thumb", turned, 2, floor_degrees=5.0),
+                "the thumb must never stop a render on a rule it is not "
+                "calibrated for",
+            )
+
+    def test_a_run_that_rendered_nothing_does_not_report_a_pass(self):
+        """PASS must mean something was produced, not that the code returned.
+
+        `--no-stills` without `--animate` skips the phase loop. Run that way
+        over the eight drills it printed PASS eight times and wrote eight
+        receipts carrying zero phases. The receipts were honest and the word
+        was not, and a script reading the console, or the exit code, sees a
+        clean run over nothing.
+
+        It must not say FAILED either. A turntable-only or animation-only run
+        is legitimate. It says what happened.
+        """
+        self.assertEqual(NOTHING_RENDERED, render_outcome(0, None))
+        self.assertEqual(NOTHING_RENDERED, render_outcome(0, {}))
+
+        self.assertEqual(PASS, render_outcome(4, None))
+        self.assertEqual(PASS, render_outcome(0, {"frames": 49}))
+
+    def test_a_stale_receipt_cannot_outlive_the_run_that_replaces_it(self):
+        """The solve can raise part way, and --output reuses its directory.
+
+        The receipt is written once at the end. A run that raises never
+        reaches it, so a PASS receipt from an earlier run would sit beside the
+        fresh partial images of a failed one and describe them.
+        """
         renderer = (MODULE_DIR / "blender_movement_render.py").read_text(
             encoding="utf-8"
         )
-        self.assertIn('hands[side]["flexionAxis"]', renderer)
+
+        places = _code_positions(
+            renderer, "render_job", ("stale.unlink", "receipt_path.write_text")
+        )
+        self.assertIn("stale.unlink", places, "no earlier receipt is deleted")
+        self.assertLess(
+            places["stale.unlink"],
+            places["receipt_path.write_text"],
+            "delete the earlier receipt BEFORE the render, not after it",
+        )
+
+    def test_the_flexion_delta_is_a_relative_rotation_not_a_subtraction(self):
+        """What flexion turned is `rest` inverted then `now`, and nothing else.
+
+        Two wrong answers look right in a receipt. Subtracting euler components
+        is not a delta, because rotations do not commute; measured on the rig
+        it was wrong by up to 4.5 degrees on one axis. Reading `now` alone
+        carries the aim and the splay, which is the error that fired an
+        assertion on a correct rig and killed a render.
+        """
+        def about_x(degrees):
+            radians = math.radians(degrees)
+            cosine, sine = math.cos(radians), math.sin(radians)
+            return ((1.0, 0.0, 0.0), (0.0, cosine, -sine), (0.0, sine, cosine))
+
+        rest, now = about_x(30.0), about_x(50.0)
+
+        turned = relative_rotation(rest, now)
+
+        # 50 from 30 is 20, not 50, and not 80.
+        for row, expected in enumerate(about_x(20.0)):
+            for column, value in enumerate(expected):
+                self.assertAlmostEqual(value, turned[row][column], places=9)
+
+        # And a rest of no rotation leaves `now` untouched, which is the only
+        # case where reading `now` alone would have been right.
+        identity = about_x(0.0)
+        for row in range(3):
+            for column in range(3):
+                self.assertAlmostEqual(
+                    now[row][column],
+                    relative_rotation(identity, now)[row][column],
+                    places=9,
+                )
+
+    def test_the_share_is_a_fraction_of_the_largest_turn(self):
+        """Rank flips on the thumb between hands; share does not."""
+        self.assertAlmostEqual(1.0, axis_share((58.3, -4.7, 8.5), 0), places=6)
+        self.assertAlmostEqual(8.5 / 58.3, axis_share((58.3, -4.7, 8.5), 2), places=6)
+        self.assertEqual(0.0, axis_share((0.0, 0.0, 0.0), 0))
+
+    def test_the_order_check_is_not_fooled_by_strings_or_a_nested_def(self):
+        """Four ways a needle can look like running code and not be one.
+
+        A comment was closed by moving to the tree. The rest were not: skipping
+        `Constant` nodes does not hide a string, because every enclosing node's
+        unparse carries the text back, and a statement moved into a nested
+        `def` keeps its line number and never runs.
+        """
+        needles = ("bpy.context.scene.render.fps = fps", "bpy.ops.export_scene.gltf")
+        decoys = {
+            "plain string": ['    x = "bpy.ops.export_scene.gltf"'],
+            "f-string": ['    x = f"bpy.ops.export_scene.gltf {s}"'],
+            "docstring": ['    """mentions bpy.ops.export_scene.gltf"""'],
+            "comment": ["    # bpy.ops.export_scene.gltf(x)"],
+            "nested def": ["    def later():",
+                           "        bpy.ops.export_scene.gltf(x)"],
+        }
+        for name, body in decoys.items():
+            with self.subTest(decoy=name):
+                source = "\n".join(
+                    ["def render_job(s, j):"]
+                    + body
+                    + ["    bpy.context.scene.render.fps = fps", ""]
+                )
+                places = _code_positions(source, "render_job", needles)
+                self.assertNotIn(
+                    "bpy.ops.export_scene.gltf", places,
+                    f"a needle in a {name} was read as running code",
+                )
+
+        real = "\n".join([
+            "def render_job(s, j):",
+            "    bpy.context.scene.render.fps = fps",
+            "    bpy.ops.export_scene.gltf(x)",
+            "",
+        ])
+        self.assertIn("bpy.ops.export_scene.gltf",
+                      _code_positions(real, "render_job", needles),
+                      "real running code must still be found")
 
     def test_the_knuckle_takes_the_angle_it_is_given(self):
         """Defect 1, guarded at last by reading the angle instead of the text.
 
-        `curved_directions` built its chain as `(0.0, first, first + second)`,
+        The solve built its chain as `(0.0, first, first + second)`,
         so the FIRST bone of every finger took zero rotation. Only the middle
         and distal joints bent, by 8 and 12 degrees. A grip flexes the knuckle
         hardest and that one did not flex it at all, so every finger pointed
