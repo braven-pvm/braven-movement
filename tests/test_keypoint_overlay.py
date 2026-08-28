@@ -21,6 +21,7 @@ from keypoint_overlay import (  # noqa: E402
     edges_for,
     frame_nearest,
     reference_to_local,
+    sync_offset,
 )
 
 EDGES = [["left_shoulder", "left_elbow"], ["left_elbow", "left_wrist"]]
@@ -79,6 +80,74 @@ class SyncDirectionTest(unittest.TestCase):
         because nothing was stated.
         """
         check_sync_direction(side_file(offset=1.0), Path("side.json"))
+
+
+class UnmeasuredSyncTest(unittest.TestCase):
+    """Set 0.2 has no measured offset, and must not be paired as though it had.
+
+    Only set 0.1 carries two matched events. The movement lane records that
+    honestly with `measured: false` and a null offset.
+    """
+
+    def test_a_default_of_zero_is_a_claim_and_is_never_invented(self):
+        """`sync.get(field, 0.0)` says the cameras started together.
+
+        A first version of this did exactly that AND ignored `measured`, so it
+        would have paired two unsynchronised views into a picture that looks
+        matched. It happened not to, only because the movement lane wrote
+        `null` and the arithmetic threw a TypeError. Their defensiveness
+        covered for this code; nothing here did.
+        """
+        self.assertIsNone(sync_offset({"sync": {"measured": False,
+                                                "offsetSecondsToReference": 0.0}}))
+        self.assertIsNone(sync_offset({"sync": {"offsetSecondsToReference": None}}))
+        self.assertIsNone(sync_offset({"sync": {}}))
+        self.assertEqual(1.0, sync_offset({"sync": {"offsetSecondsToReference": 1.0}}))
+
+    def test_an_unmeasured_view_refuses_the_reference_clock(self):
+        """It must say why, and what to do, not raise a TypeError on None."""
+        unmeasured = {
+            "source": {"view": "side"},
+            "sync": {"referenceView": "front", "measured": False,
+                     "offsetSecondsToReference": None},
+        }
+
+        with self.assertRaises(SystemExit) as refusal:
+            reference_to_local(unmeasured, 9.0)
+
+        message = str(refusal.exception)
+        self.assertIn("no measured offset", message)
+        self.assertIn("--local", message)
+        self.assertIn("never been lined up", message)
+
+    def test_the_reference_view_needs_no_offset_to_be_drawn(self):
+        """Its own clock IS the reference, measured or not.
+
+        Set 0.2's front file says `measured: false` and is still the reference
+        view, so a single-view overlay of it must work.
+        """
+        front = {
+            "source": {"view": "front"},
+            "sync": {"referenceView": "front", "measured": False,
+                     "offsetSecondsToReference": 0.0},
+        }
+
+        self.assertAlmostEqual(12.0, reference_to_local(front, 12.0), places=9)
+
+    def test_a_file_with_no_measured_offset_still_loads(self):
+        """The direction check must not fire on an offset that is not stated.
+
+        A file that records honestly that nobody has measured it must LOAD, or
+        a single view of set 0.2 could never be drawn at all.
+        """
+        check_sync_direction(
+            {"source": {"view": "side"},
+             "sync": {"referenceView": "front", "measured": False,
+                      "offsetSecondsToReference": None,
+                      "worked": {"thisViewSeconds": 1.0,
+                                 "referenceViewSeconds": 2.0}}},
+            Path("side-0.2.json"),
+        )
 
 
 class ClockConversionTest(unittest.TestCase):

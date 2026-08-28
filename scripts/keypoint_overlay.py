@@ -70,9 +70,11 @@ def check_sync_direction(document: dict, path: Path) -> None:
     """
     sync = document.get("sync") or {}
     worked = sync.get("worked")
-    if not worked:
+    offset = sync_offset(document)
+    if not worked or offset is None:
+        # Nothing stated is not something to check. A file that says it has no
+        # measured offset must LOAD, so a single view can still be drawn.
         return
-    offset = float(sync.get("offsetSecondsToReference", 0.0))
     here = float(worked["thisViewSeconds"])
     there = float(worked["referenceViewSeconds"])
     if abs((here + offset) - there) > 0.001:
@@ -84,12 +86,48 @@ def check_sync_direction(document: dict, path: Path) -> None:
         )
 
 
+def is_reference_view(document: dict) -> bool:
+    sync = document.get("sync") or {}
+    return (sync.get("referenceView") or "") == (document["source"].get("view") or "")
+
+
+def sync_offset(document: dict) -> float | None:
+    """The measured offset to the reference clock, or None when there is none.
+
+    `measured: false` and a null offset both mean the same thing: nobody has
+    measured how these two cameras line up. Set 0.2 carries exactly that,
+    because only set 0.1 has two matched events.
+
+    A DEFAULT OF ZERO IS A CLAIM, not a fallback. It says the cameras started
+    together, which for set 0.2 is unknown and for these files is false. A
+    first version of this used `sync.get(..., 0.0)` and ignored `measured`
+    entirely, so it would have paired two unsynchronised views into a picture
+    that looks matched. It happened not to, only because the movement lane
+    wrote `null` and the arithmetic threw. Their defensiveness covered for this
+    function; nothing here did.
+    """
+    sync = document.get("sync") or {}
+    if sync.get("measured") is False:
+        return None
+    value = sync.get("offsetSecondsToReference")
+    return None if value is None else float(value)
+
+
 def reference_to_local(document: dict, reference_seconds: float) -> float:
     """A time on the reference view's clock, expressed in this file's clock."""
-    sync = document.get("sync") or {}
-    if (sync.get("referenceView") or "") == (document["source"].get("view") or ""):
+    if is_reference_view(document):
         return reference_seconds
-    return reference_seconds - float(sync.get("offsetSecondsToReference", 0.0))
+    offset = sync_offset(document)
+    if offset is None:
+        view = document["source"].get("view", "this view")
+        raise SystemExit(
+            f"{view} carries no measured offset to the reference clock, so a "
+            "time on that clock cannot be placed in this file. Draw it alone "
+            "with --local, which reads --at as this view's OWN time and says "
+            "so on the picture, or wait for the offset to be measured. Do not "
+            "pair views that have never been lined up."
+        )
+    return reference_seconds - offset
 
 
 def frame_nearest(document: dict, local_seconds: float) -> dict | None:
@@ -211,6 +249,7 @@ def build_overlay(
     assumed_topology=None,
     height: int = 640,
     video_root: Path | None = None,
+    local_clock: bool = False,
 ) -> dict:
     require_imaging()
     work = Path(tempfile.mkdtemp(prefix="overlay_"))
@@ -222,7 +261,10 @@ def build_overlay(
         source = document["source"]
         video = find_video(source["videoFile"], video_root)
 
-        local = reference_to_local(document, reference_seconds)
+        # With --local the caller means each file's OWN clock, so nothing is
+        # converted and the panels are NOT one instant. The sheet says so.
+        local = (reference_seconds if local_clock
+                 else reference_to_local(document, reference_seconds))
         frame = frame_nearest(document, local)
         if frame is None:
             raise SystemExit(
@@ -265,13 +307,24 @@ def build_overlay(
 
     gap, strip, pad, header = 10, 54, 14, 78
     total = sum(panel[1].width for panel in panels) + gap * (len(panels) - 1)
-    title = (f"keypoints over the video, at {reference_seconds:.3f} s "
-             "on the reference clock")
+    unsynchronised = local_clock and len(panels) > 1
+    if local_clock:
+        title = (f"keypoints over the video, at {reference_seconds:.3f} s in "
+                 "EACH VIEW'S OWN clock")
+    else:
+        title = (f"keypoints over the video, at {reference_seconds:.3f} s "
+                 "on the reference clock")
     tools = sorted({
         (document.get("model") or {}).get("tool", "unnamed")
         for document in documents
     })
     legend = ("solid joint seen, faint joint barely seen, absent not seen.")
+    if unsynchronised:
+        # Two panels side by side READ as one moment. If nobody has measured
+        # how these cameras line up, saying so quietly in a caption is not
+        # enough, because the layout itself makes the claim.
+        legend = ("THESE TWO VIEWS ARE NOT ONE MOMENT: no offset between "
+                  "these cameras has been measured.")
     # A single portrait panel is narrower than the header, and a clipped
     # header is a caption that stops mid-sentence on the one artefact a
     # person is asked to trust. Size the sheet to whichever is wider.
@@ -293,7 +346,8 @@ def build_overlay(
     # does not say what produced it will eventually be read as a result.
     canvas.text((pad, 36), f"landmarks from: {', '.join(tools)}",
                 font=label, fill=(255, 200, 120))
-    canvas.text((pad, 54), legend, font=label, fill=(170, 170, 180))
+    canvas.text((pad, 54), legend, font=label,
+                fill=(255, 140, 120) if unsynchronised else (170, 170, 180))
 
     x = pad
     for view, picture, frame, shown_at, quality, guessed, counts in panels:
@@ -326,6 +380,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="seconds on the REFERENCE view's clock")
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--height", type=int, default=640)
+    parser.add_argument("--local", action="store_true",
+                        help="read --at as each file's OWN clock, for a view "
+                             "whose offset has never been measured")
     parser.add_argument("--video-root", type=Path, default=None,
                         help="where the recordings named in the keypoint files "
                              "live on this machine")
@@ -347,7 +404,8 @@ def main(argv: list[str] | None = None) -> int:
     documents = [read_keypoints(path) for path in arguments.keypoints]
     receipt = build_overlay(documents, arguments.at, arguments.out,
                             assumed_topology=assumed, height=arguments.height,
-                            video_root=arguments.video_root)
+                            video_root=arguments.video_root,
+                            local_clock=arguments.local)
     arguments.out.with_suffix(".json").write_text(
         json.dumps(receipt, indent=2), encoding="utf-8"
     )
