@@ -203,8 +203,17 @@ multiplies by the container size instead.
   derivations, and over a ten minute shoot the same ratio is 240 ms, seven
   frames.
 
+- **That `detected` means the frame is usable.** It does not. `detected`
+  answers "did the model find a body"; `usableToSeconds` and `degraded` answer
+  "is this frame footage". They part company exactly where it matters: in
+  `front 0.1` the model detects a body through **26.133 s**, past the 25.7 s
+  usable end, because a smeared body is still body-shaped and it only loses her
+  at darkness. A consumer trusting `detected` alone measures a blur with
+  confidence.
+
 **Must check before use.** `visibility` on any landmark the question depends
-on, and `degraded` on any frame at all.
+on, and `degraded` on any frame at all. `detected` is not a substitute for
+either.
 
 ## Open, and deliberately so
 
