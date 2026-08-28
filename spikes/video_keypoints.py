@@ -139,6 +139,33 @@ def timestamps(path: Path) -> list[float]:
             if line.strip()]
 
 
+# How much the frame steps may vary and still count as constant. TEN
+# MICROSECONDS, and the number is measured rather than chosen: on this material
+# the front cameras spread 1.0 us across two distinct step values, which is the
+# container's own time-base quantisation of 1/30 s, and the side cameras spread
+# 200.0 us across five. Ten sits an order of magnitude above the quantisation
+# and an order of magnitude below the real variation.
+#
+# A first attempt used half a millisecond and called the VARIABLE side cameras
+# constant, because 200 us is comfortably inside 500. A threshold that cannot
+# see the thing it exists to detect is worse than the hardcoded comparison it
+# replaced.
+CONSTANT_RATE_TOLERANCE_SECONDS = 1e-5
+
+
+def constant_rate(stamps: list[float]) -> bool:
+    """True when the frame steps are all the same, whatever the rate is.
+
+    Comparing the measured rate against 30.0 would call a camera locked at 25
+    or 60 variable, and would call these side cameras constant if they happened
+    to average 30.000.
+    """
+    if len(stamps) < 3:
+        return True
+    steps = np.diff(np.asarray(stamps, dtype=np.float64))
+    return bool((steps.max() - steps.min()) < CONSTANT_RATE_TOLERANCE_SECONDS)
+
+
 def frames(path: Path, width: int, height: int):
     """Every decoded frame as RGB, streamed rather than held."""
     pipe = subprocess.Popen(
@@ -327,7 +354,10 @@ def extract(view: str, set_id: str, git_commit: str, tree_clean: bool) -> dict:
             "decodedWidthPixels": width,
             "decodedHeightPixels": height,
             **stream,
-            "constantFrameRate": abs((stream["framesPerSecondMeasured"] or 0) - 30.0) < 1e-6,
+            # Measured from the frame timestamps, not from equality with 30.0.
+            # A camera locked at 25 or 60 fps is constant-rate and would read
+            # False against a hardcoded 30.
+            "constantFrameRate": constant_rate(stamps),
             "usableToSeconds": USABLE_TO.get((view, set_id)),
         },
         "model": {

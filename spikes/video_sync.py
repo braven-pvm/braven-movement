@@ -1,5 +1,12 @@
 """Find the clap offset between the two cameras of a filmed set.
 
+THIS INSTRUMENT FAILED ON SESSION 1.0 AND IS KEPT ANYWAY. There is no clap in
+that material, and all three methods below returned peak-to-sidelobe between
+1.01 and 1.35 — no peak, so no measurement. Its numbers are cited in
+`docs/VIDEO_CAPTURE_FINDINGS.md` as the evidence for the clap instruction, and
+a report citing a measurement nobody can rerun is worse than a failed script in
+the tree. Nothing downstream reads its output.
+
 Both phones record the same drill from 90 degrees apart, started by hand, so
 the two files begin at different moments. A clap at the top of the take is the
 shared event that ties them together.
@@ -16,8 +23,9 @@ lag at the peak. It runs it twice, in two ways that fail differently:
   loud things are, so two different microphones can still agree.
 
 If those two disagree, the answer is not trustworthy and this says so rather
-than picking one. The VISUAL instrument lives in `video_clap_frames.py` and is
-the one that matters: audio and pixels fail in genuinely unrelated ways.
+than picking one. The visual instrument is `video_motion_sync.py`, which reads
+pixels instead of sound and fails differently — and on this material also
+fails, for the reason recorded there.
 
 Sample rates differ between the cameras, 44100 against 48000, so everything is
 resampled to one rate before anything is compared. Comparing at two rates would
@@ -53,14 +61,34 @@ ENVELOPE_RATE = 1000
 # a bounce or a footfall, and the two cameras were started within seconds of
 # each other by hand.
 SEARCH_SECONDS = 12.0
+# Spectral flux resolution. 256 samples at 48 kHz is 5.33 ms a step, fine
+# enough that the peak is not quantised by the analysis.
+FLUX_HOP = 256
+FLUX_WINDOW = 1024
 
 
 @dataclass
 class Offset:
-    """How far the second file lags the first, in milliseconds.
+    """The lag the cross-correlation puts between the two files, in ms.
 
-    Positive means the event happens LATER in the second file, so the second
-    file's timestamps must have this subtracted to land on the first's clock.
+    THE SIGN, WORKED, BECAUSE PROSE ABOUT DIRECTION HAS FAILED TWICE HERE.
+
+    Take the first catch of set 0.1: it is at 9.25 s in the front file and
+    8.25 s in the side file. `correlate(front, side)` returns **+1000 ms**,
+    verified against synthetic impulses at exactly those times.
+
+        side 8.25 + 1.000 = 9.25 front      correct
+        side 8.25 - 1.000 = 7.25            wrong by twice the offset
+
+    So ADD this number to a timestamp in the SECOND file to reach the first
+    file's clock. It is therefore identical to the schema's
+    `offsetSecondsToReference` for the second view, in seconds rather than
+    milliseconds, with the first file as the reference.
+
+    An earlier version of this docstring said the opposite — subtract, and
+    positive means later in the second file. Both halves were wrong, and
+    applying the stated rule to the computed number lands 2.0 s away inside
+    real footage, where nothing throws.
     """
 
     milliseconds: float
@@ -96,14 +124,31 @@ def envelope(wave: np.ndarray, rate: int = WORK_RATE) -> np.ndarray:
     return np.sqrt((blocks * blocks).mean(axis=1))
 
 
-def correlate(first: np.ndarray, second: np.ndarray, rate: int, method: str) -> Offset:
+def spectral_flux(wave: np.ndarray, rate: int = WORK_RATE) -> tuple[np.ndarray, float]:
+    """How much the spectrum BRIGHTENS frame to frame, and that series' rate.
+
+    Sharper than loudness for a transient and largely immune to gym reverb,
+    which raises the level without re-brightening the spectrum. The third
+    method, committed because the report cites its numbers.
+    """
+    window = np.hanning(FLUX_WINDOW)
+    count = 1 + (len(wave) - FLUX_WINDOW) // FLUX_HOP
+    frames = np.lib.stride_tricks.sliding_window_view(wave, FLUX_WINDOW)[::FLUX_HOP][:count]
+    spectrum = np.abs(np.fft.rfft(frames * window, axis=1))
+    return np.maximum(np.diff(spectrum, axis=0), 0.0).sum(axis=1), rate / FLUX_HOP
+
+
+def correlate(
+    first: np.ndarray, second: np.ndarray, rate: float, method: str,
+    seconds: float | None = SEARCH_SECONDS,
+) -> Offset:
     """Lag of `second` behind `first`, by cross-correlation.
 
     Both signals are mean-removed and scaled to unit energy, so the peak is a
     correlation coefficient and comparable between methods rather than a number
     whose size depends on how loud the gym was.
     """
-    window = int(SEARCH_SECONDS * rate)
+    window = len(first) if seconds is None else int(seconds * rate)
     a = first[:window].astype(np.float64)
     b = second[:window].astype(np.float64)
     a = a - a.mean()
@@ -124,7 +169,9 @@ def correlate(first: np.ndarray, second: np.ndarray, rate: int, method: str) -> 
     # How far the peak stands above everything else. A true clap match towers;
     # a room-tone match does not. The exclusion window is a tenth of a second,
     # wide enough to skip the peak's own shoulders.
-    guard = max(1, rate // 10)
+    # int() because a derived rate can be fractional: the spectral-flux series
+    # runs at 48000/256 = 187.5 Hz, and a float here indexes nothing.
+    guard = max(1, int(rate // 10))
     masked = joined.copy()
     low = max(0, best - guard)
     masked[low : best + guard] = -np.inf
@@ -145,12 +192,22 @@ def measure(name: str, front: Path, side: Path) -> dict:
     on_energy = correlate(
         envelope(raw_front), envelope(raw_side), ENVELOPE_RATE, "energy envelope"
     )
+    flux_front, flux_rate = spectral_flux(raw_front)
+    flux_side, _ = spectral_flux(raw_side)
+    on_flux = correlate(flux_front, flux_side, flux_rate, "spectral flux, 12 s")
+    # The whole clip as well, because a repetitive drill correlates differently
+    # over one cycle and over twenty, and the report cites both.
+    on_flux_all = correlate(
+        flux_front, flux_side, flux_rate, "spectral flux, whole clip",
+        seconds=None,
+    )
     gap = abs(on_wave.milliseconds - on_energy.milliseconds)
     return {
         "set": name,
         "front": front.name,
         "side": side.name,
-        "measures": [asdict(on_wave), asdict(on_energy)],
+        "measures": [asdict(on_wave), asdict(on_energy), asdict(on_flux),
+                     asdict(on_flux_all)],
         "disagreementMs": round(gap, 3),
         # One frame at 30 fps is 33.3 ms. Two methods landing inside a third of
         # that are looking at the same event.
@@ -183,15 +240,19 @@ def main(argv: list[str]) -> int:
                 f"peak/sidelobe {measure_entry['peakToSidelobe']:6.2f}"
             )
         print(
-            f"  the two methods differ by {entry['disagreementMs']:.2f} ms  ->  "
+            f"  waveform against envelope: {entry['disagreementMs']:.2f} ms "
+            f"apart  ->  "
             + ("they agree" if entry["methodsAgree"] else "THEY DISAGREE")
         )
 
     print(
-        "\nPositive means the event happens LATER in the side file, so a side\n"
-        "timestamp minus this offset lands on the front camera's clock.\n"
-        "This is ONE instrument. `video_clap_frames.py` is the other, and a\n"
-        "number that only audio believes is not yet a measurement."
+        "\nADD this offset to a side-file timestamp to reach the front file's\n"
+        "clock. Worked on set 0.1: the first catch is at 8.25 s in the side\n"
+        "file and 9.25 in the front, and 8.25 + 1.000 = 9.25. It is the\n"
+        "schema's offsetSecondsToReference for the side view, in milliseconds.\n"
+        "\nEVERY ROW ABOVE FAILED on this material: peak-to-sidelobe near 1.0\n"
+        "means the best match is no better than the next-best, so there is no\n"
+        "peak and the milliseconds beside it are not a measurement."
     )
 
     OUTPUT.mkdir(parents=True, exist_ok=True)

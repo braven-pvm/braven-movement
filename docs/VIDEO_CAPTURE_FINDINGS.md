@@ -321,23 +321,24 @@ Computed at the time of writing. Any regeneration supersedes these.
 
 | file | size | sha256, first 32 |
 |---|---|---|
-| `keypoints-front-0.1.json` | 10.0 MB | `d0f97642d08f473fda83b0d626512231` |
-| `keypoints-side-0.1.json` | 10.9 MB | `b7a51d73971230d386b1e3a6900e80f8` |
-| `keypoints-front-0.2.json` | 11.5 MB | `36bddb50cef6ecccec8eb4bdba6511f5` |
-| `keypoints-side-0.2.json` | 11.4 MB | `0e2a1fdc9e623ab0bdfd5923f83b8315` |
+| `keypoints-front-0.1.json` | 10.0 MB | `e1ded2a18569095ed53feb9e77c88dc7` |
+| `keypoints-side-0.1.json` | 10.9 MB | `c05b9f545326c81ea73cdda5c5a35cc1` |
+| `keypoints-front-0.2.json` | 11.5 MB | `3d57d4930cdce7d04e227ec8264ca918` |
+| `keypoints-side-0.2.json` | 11.4 MB | `7768feeeecfc9e8819dd1d9ced4a261a` |
 | `lift-3d-0.1.json` | 1.0 MB | `209f878249bd26714f5fe87aa35d61dd` |
 | `elbow-curve-0.1.json` | 0.1 MB | `e4f7bcfa057aa3e438149d0fda8f5c5c` |
-| `reference-curves.json` | 0.1 MB | `30c75d10d013b7ed0dd1e9bcb5e7810b` |
+| `reference-curves.json` | 0.1 MB | `4f779c6ea4f5965ae11b27cde2bd4622` |
 
-All under `spikes/poc-output/video/`. **Only the four keypoint files carry
-`generatedFrom` stamps**; the lift, elbow-curve and reference-curve files carry
-none, so their provenance is the keypoint files they were derived from. **The
-keypoint stamps read
-commit `a3efaf4` with `treeWasClean: false`, written 12:48 to 12:50 UTC** — the
-extractor was uncommitted when it ran and was committed afterwards. An earlier
-draft said "generated at commit e4f0983", which is a commit that did not exist
-when these files were written. The stamps are the authority; quote them rather
-than a commit chosen later. Set 0.2's
+All under `spikes/poc-output/video/`. **The four keypoint files and
+`reference-curves.json` carry `generatedFrom` stamps**; the lift and
+elbow-curve files carry none, so their provenance is the keypoint files they
+were derived from.
+
+**Those stamps read commit `b8d68fa` with `treeWasClean: false`** — the code
+was uncommitted when it ran and was committed immediately afterwards. An
+earlier draft of this report said "generated at commit e4f0983", a commit that
+did not exist when the files were written. The stamps are the authority; quote
+them rather than a commit chosen later. Set 0.2's
 two views carry `"measured": false` in their sync block: only set 0.1 has a
 measured offset between the cameras.
 

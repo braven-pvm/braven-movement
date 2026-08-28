@@ -42,6 +42,10 @@ NEAREST_DRILL = "netball_two_hand_snatch_pull_in"
 def angle_at(middle, first, second) -> float:
     """Elbow FLEXION at `middle`, in degrees, in THE ENGINE'S convention.
 
+    Returns NaN on a degenerate triangle. A NaN reaching the summary poisons
+    the median and the correlation silently, so a caller that cannot tolerate
+    one must filter before aggregating. Nothing in this material produces one.
+
     A straight arm is ZERO, which is `180 - included angle`. This is
     `segment_measures.elbow_flexion_degrees` and it is not a choice: a video
     curve carrying the included angle would be the opposite convention, and
@@ -63,14 +67,30 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--set", dest="set_id", default="0.1")
     arguments = parser.parse_args(argv[1:])
 
+    # THE SYNC IS CHECKED FIRST, before any file that only exists for a synced
+    # set. Loading the lift first made an unsynced set fail with a
+    # FileNotFoundError about a derived artifact, which names the symptom and
+    # hides the cause: the set has no measured offset, so no lift was ever made.
+    side = json.loads((OUTPUT / f"keypoints-side-{arguments.set_id}.json").read_text(encoding="utf-8"))
+    if not side["sync"].get("measured"):
+        raise SystemExit(
+            f"set {arguments.set_id} has no measured sync offset, so its two "
+            "views cannot be placed on one clock. Only set 0.1 has two matched "
+            "events. Refer to the sync block in its keypoint file."
+        )
     lift = json.loads((OUTPUT / f"lift-3d-{arguments.set_id}.json").read_text(encoding="utf-8"))
     front = json.loads((OUTPUT / f"keypoints-front-{arguments.set_id}.json").read_text(encoding="utf-8"))
-    side = json.loads((OUTPUT / f"keypoints-side-{arguments.set_id}.json").read_text(encoding="utf-8"))
     reference = json.loads((OUTPUT / "reference-curves.json").read_text(encoding="utf-8"))
 
     across = lift["scale"]["frontMetresPerPixel"]
     ahead = lift["scale"]["sideMetresPerPixel"]
     offset = float(side["sync"]["offsetSecondsToReference"])
+    # The assertion the schema tells every consumer to run on load.
+    worked = side["sync"]["worked"]
+    assert abs(worked["thisViewSeconds"] + offset
+               - worked["referenceViewSeconds"]) < 1e-6, (
+        "the sync block's own worked example does not hold; the sign is wrong"
+    )
 
     side_by_time = {round(f["ptsSeconds"], 6): f for f in side["frames"]}
     side_times = np.array(sorted(side_by_time))
@@ -82,6 +102,7 @@ def main(argv: list[str]) -> int:
         return side_by_time[found] if abs(found - when) <= 0.017 else None
 
     limit = front["source"].get("usableToSeconds")
+    side_limit = side["source"].get("usableToSeconds")
     rows = []
     for record in front["frames"]:
         if not record["detected"] or record["degraded"]:
@@ -90,6 +111,8 @@ def main(argv: list[str]) -> int:
             continue
         mate = side_near(record["ptsSeconds"] - offset)
         if mate is None or not mate["detected"] or mate["degraded"]:
+            continue
+        if side_limit is not None and mate["ptsSeconds"] > side_limit:
             continue
         f = {p["name"]: p for p in record["landmarks"]}
         s = {p["name"]: p for p in mate["landmarks"]}
@@ -101,7 +124,25 @@ def main(argv: list[str]) -> int:
         if min(s[n]["visibility"] for n in joints) < 0.5:
             continue
 
-        # Lifted: across and up from the front, ahead from the side.
+        # Lifted: across and up from the FRONT, ahead from the side.
+        #
+        # UP COMES FROM THE FRONT CAMERA ONLY, AND THAT IS THE POINT. Averaging
+        # the two cameras' up looks like an improvement and is not: it folds
+        # half the side view's own reading into the 3D, and then this compares
+        # that 3D against the side view. Measured, the disagreement falls from
+        # 21.2 degrees to 12.8 with the mean and to 3.8 with side-only up — a
+        # ladder that tracks how much is shared, and at the bottom rung the
+        # remainder is exactly the projection floor. Front-only shares NOTHING
+        # with the instrument it is tested against, which is what an
+        # independence test requires.
+        #
+        # If you change this to average, you will halve the reported
+        # disagreement and will not have improved anything.
+        #
+        # Both front pixels are scaled by `across`, the FRONT's metres per
+        # pixel, because across and up are both read off the front image. Only
+        # `ahead` uses the side's scale. That is correct and it reads like a
+        # copy-paste error, so it is written down.
         lifted = {
             n: (
                 f[n]["xPixel"] * across,

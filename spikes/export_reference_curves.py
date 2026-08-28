@@ -20,7 +20,9 @@ video curve means matching its shape and its phase landmarks, not its duration.
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -108,9 +110,20 @@ def main(argv: list[str]) -> int:
 
     OUTPUT.mkdir(parents=True, exist_ok=True)
     where = OUTPUT / "reference-curves.json"
+    commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,
+                            text=True, cwd=SPIKE_DIR).stdout.strip()
+    dirty = subprocess.run(["git", "status", "--porcelain"], capture_output=True,
+                           text=True, cwd=SPIKE_DIR).stdout.strip()
     where.write_text(
         json.dumps(
             {
+                "generatedFrom": {
+                    "commit": commit,
+                    "treeWasClean": not dirty,
+                    "utcTimestamp": datetime.now(timezone.utc).isoformat(
+                        timespec="seconds"
+                    ),
+                },
                 "note": (
                     "Engine curves for comparison against video. Phase runs 0 to 1 "
                     "across each movement, so a clip of a different duration can be "

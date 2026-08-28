@@ -1,5 +1,18 @@
 """Align two camera views by what MOVES, not by what is heard.
 
+THIS INSTRUMENT ALSO FAILED ON SESSION 1.0 AND IS KEPT ANYWAY. Peak-to-sidelobe
+came out between 1.01 and 1.37 and the two halves of a clip disagreed by up to
+2989 ms against a measured clock drift of 12 ms. Its numbers are cited in
+`docs/VIDEO_CAPTURE_FINDINGS.md` as the second failed sync route, and a report
+citing a measurement nobody can rerun is worse than a failed script in the
+tree. Nothing downstream reads its output.
+
+WHY IT FAILED, which is the finding: a drill is REPETITIVE. The athlete throws
+and catches on a cycle of a second or two, so the signal is nearly periodic and
+the correlation has many near-equal peaks. That holds whatever the signal is,
+sound or pixels, which is why both automatic routes failed the same way. A
+unique event is not a convenience for this method — it is a requirement.
+
 The audio route failed on session 1.0 and `video_sync.py` records why: there is
 no clap in the material, and four correlation methods returned four different
 answers with no peak worth the name.
@@ -43,8 +56,10 @@ WIDTH = 64
 # The common grid both views are resampled onto. 200 Hz is five times the frame
 # rate, so the peak can land between frames rather than being quantised to one.
 GRID_RATE = 200.0
-# A tenth of a second of guard either side of the peak, when measuring how far
-# the peak stands above everything else.
+# Half a second of guard either side of the peak, when measuring how far the
+# peak stands above everything else. Wider than the audio guard because motion
+# energy is a smoother signal: its peak has broad shoulders and a tenth of a
+# second would measure the peak against its own flank.
 GUARD_SECONDS = 0.5
 
 
@@ -198,10 +213,12 @@ def main(argv: list[str]) -> int:
         print(f"  half to half the offset moves {entry['driftMs']:+.1f} ms")
 
     print(
-        "\nPositive means the event happens LATER in the side file, so a side\n"
-        "timestamp minus this offset lands on the front camera's clock.\n"
-        "A peak/sidelobe near 1 means there is no peak and the number is not a\n"
-        "measurement, whatever it says."
+        "\nADD this offset to a side-file timestamp to reach the front file's\n"
+        "clock, the same convention as the schema's offsetSecondsToReference.\n"
+        "Worked on set 0.1: the first catch is at 8.25 s in the side file and\n"
+        "9.25 in the front, and 8.25 + 1.000 = 9.25.\n"
+        "\nA peak/sidelobe near 1 means there is no peak and the number is not\n"
+        "a measurement, whatever it says. Every row above is such a number."
     )
 
     OUTPUT.mkdir(parents=True, exist_ok=True)
