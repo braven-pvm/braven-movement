@@ -118,6 +118,51 @@ it. That download is not made in this spike.
 
 Everything else needed is already present: numpy, scipy, OpenCV, PIL, torch.
 
+## Which drill is it? None of the eight, and for one reason
+
+Both sets show the same thing: the athlete stands still, tosses the ball
+upward herself, catches it at head height with two hands, brings it in, and
+tosses it again. Set 0.1 repeats that for about seventeen seconds. Set 0.2 is
+the same pattern.
+
+**The ball is self-fed.** She begins holding it — visible in the first frame of
+side 0.1 — throws it up, and catches her own toss. No passer appears in either
+view, and the ball rises out of frame and falls back rather than arriving
+across the room.
+
+Every one of the library's eight drills is fed by a PASSER. The ball's flight
+is authored from a passer position and a catch point, and the whole possession
+model turns on a ball that arrives with speed and direction the athlete has to
+answer. A ball she has tossed straight up arrives slowly, vertically, and at a
+moment she chose.
+
+So the honest answer to "which of our eight is this" is **none of them**. The
+closest in SHAPE is a two-hand catch at head height, which resembles
+`netball_two_hand_snatch_pull_in` in what the arms do and resembles nothing in
+the library in what the ball does.
+
+That is not a criticism of the sample. It was shot to test whether phone video
+can feed the engine, and it answers that. But it means deliverable (d)'s
+comparison against a reference curve can only be qualitative in the weakest
+sense: the same joint doing a similar thing, not the same drill.
+
+**For the shoot: film the drills the library actually contains, with a passer.**
+Self-fed repetitions test the camera rig and nothing about the movement the
+engine models.
+
+## Angle references are recorded
+
+`export_reference_curves.py` writes the engine's own curves for all eight
+drills to `poc-output/video/reference-curves.json`: elbow flexion, shoulder
+elevation and trunk lean per frame, with contact and release marked, indexed by
+PHASE from 0 to 1 rather than by seconds so a clip of any tempo can be laid
+over them. Left elbow flexion ranges from 35.8 to 145.9 degrees across the
+library.
+
+They come from the same measurements `build_library` grades, so a video curve
+is compared against the engine's own definition of the angle rather than a
+second definition invented for the comparison.
+
 ## What the proper shoot must change
 
 Confirmed from this material rather than assumed:
