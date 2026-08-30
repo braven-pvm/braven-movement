@@ -191,9 +191,15 @@ per second lasts one second, so the engine authors a movement about thirty times
 faster than the movement takes to perform.
 
 The largest elbow change between neighbouring frames is 1.63 degrees. That
-number is the continuity test. Without the pull toward the previous frame, a
-solver can jump between two equally valid answers to the same hand target, and
-the movement flickers even though every single frame passes its checks.
+number is the continuity test: without it, a solver can jump between two
+equally valid answers to the same hand target, and the movement flickers even
+though every single frame passes its checks.
+
+What supplies that continuity is the SEED. Each frame is solved starting from
+the previous frame's answer. An earlier version of this paragraph said "the
+pull toward the previous frame", which named the solver term called
+`continuity`. That term has no target set, so it pulls toward the rest pose and
+not toward the neighbour. Nothing in the objective prefers the previous pose.
 
 It writes an animated GLB and a receipt that records every frame's angles.
 

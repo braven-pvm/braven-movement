@@ -569,7 +569,10 @@ def solve(
         ).reshape(-1)
         if frame == 0:
             # The first frame starts far from the answer, and a half-converged
-            # first frame biases every frame after it through the continuity term.
+            # first frame biases every frame after it THROUGH THE SEED: each
+            # frame is solved starting from the previous frame's answer. Not
+            # through the `continuity` term below, which has no target set and
+            # so pulls toward the rest pose rather than toward the neighbour.
             solved = np.asarray(
                 solver.solve(solved.reshape(-1, 1)), dtype=np.float32
             ).reshape(-1)

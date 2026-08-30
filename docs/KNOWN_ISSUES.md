@@ -311,8 +311,11 @@ The other four drills are unchanged.
 **Aggravated, not caused.** The steps are isolated single-frame spikes, on
 `netball_deflect_high` at frames 74 and 75, with 2 to 8 degrees on either side
 of them. The ramp itself is smooth. The solver picks a different branch on
-those two frames, and it does so despite the continuity term, the elbow poles
-and the upper arm aim term, all of which run on released frames.
+those two frames, and it does so despite the elbow poles and the upper arm aim
+term, both of which run on released frames. An earlier version named the
+continuity term in that list. It does not belong there: it has no target set,
+so it pulls toward the rest pose rather than resisting a change from the
+previous frame.
 
 The arm never moved here before, so the solve was never asked this question.
 Making the athlete follow through is what exposed it.
@@ -404,7 +407,24 @@ enforced by anything.
 The practical consequence for this project: when a comment states a behaviour,
 that is a candidate for a test, not evidence that the behaviour happens.
 
-## The free arm starts 46 degrees off and snaps through 41 frames later
+## RESOLVED: the free arm started 46 degrees off and snapped through at frame 41
+
+**Closed by the free-hand fix in `c3aa388`.** Measured on that tip, the left
+upper arm's worst single-frame turn on this drill is 3.50 degrees, at frame 59.
+At frame 41 it is 0.12 degrees and the forearm is 0.49. The numbers below are
+kept because they are the record of the fault, not because they still hold.
+
+The entry itself explains why it closed, in its own last paragraph: the free
+hand's only positional target before contact was `waiting`, and `waiting` is
+exactly what that fix changed. Nobody noticed at the time, because the pack
+measured the free hand's POSITION and never its arm's frame-to-frame turn.
+
+**One sentence of it was also wrong about the mechanism**, and that is
+corrected in place below. The largest step on this drill is now the RIGHT upper
+arm at 11.32 degrees at frame 45, so the "largest step left anywhere in the
+library" claim no longer holds either.
+
+## The record of it
 
 `netball_hooks_outside_hand`, frame 41, left arm, 19.3 degrees on the upper and
 18.6 on the forearm between two frames while the wrist moves 1.15 cm. It is the
@@ -424,15 +444,22 @@ arm starts at 27.2 and stays between 27 and 30 throughout.
 
 Before contact the free hand's only positional target is `waiting`, which
 barely constrains the elbow's rotation about the reach axis. So the first
-solve leaves the elbow almost straight out to her side, the continuity term
-carries that faithfully, and the pole wins abruptly rather than gradually.
+solve leaves the elbow almost straight out to her side, EACH FRAME'S SEED
+carries that faithfully into the next, and the pole wins abruptly rather than
+gradually.
+
+That sentence said "the continuity term carries that faithfully". It does not
+and cannot: it has no target set, so it pulls toward the rest pose. What
+carries a pose from one frame to the next here is the seed.
 
 The trunk goes with it. The shoulder line jerks −2.26 degrees at that frame
 against a steady +0.85 either side, and this drill has no authored turn at all,
 so that rotation is entirely emergent.
 
 **This is a snap-through, not a mode flip:** a term that is correct, opposed by
-continuity, winning all at once. The fix belongs at frame 0.
+the seed's inertia, winning all at once. The fix belongs at frame 0. That
+sentence said "opposed by continuity", which named a term that pulls toward
+rest and cannot oppose anything frame by frame.
 
 **An earlier version of this entry was wrong** and said the pole pack reduced a
 21.7 degree flip at frame 47 to 19.3. The frame-47 flip has gone: it is now
@@ -720,3 +747,62 @@ A fix belongs in the cold start rather than here: frame zero is the only frame
 not continuous with a neighbour, and a backward pass over the opening frames
 would give it what every other frame has. That is a mechanism change and it is
 not bundled into the free-hand pack.
+
+## The term named continuity is a pull toward the rest pose
+
+`possession_solve.py` and `movement_engine.py` both build a
+`solver2.ModelParametersErrorFunction`, set its weight to 0.02, and call the
+variable `continuity`. Neither ever calls `set_target_parameters`.
+
+That class "penalizes the difference between the target model parameters and
+the current model parameters". With no target set the target is zero, which is
+the rest pose. Every other use of the same class in this repository names the
+variable `prior`, which is what it is.
+
+**Frame-to-frame continuity here comes entirely from the seed.** Each frame is
+solved starting from the previous frame's answer. Nothing in the objective
+prefers the previous pose.
+
+**Five places said otherwise and all five are corrected as of this entry:** the
+comment above `CONTINUITY_WEIGHT`; the first-frame comment in
+`movement_engine.py`; the continuity paragraph in `spikes/README.md`; and two
+sentences in the free-arm snap entry above. A sixth, in the follow-through
+entry, listed the term among those resisting a branch change.
+
+**Reread any historical snap reasoning that leans on this term.** Two of the
+corrected sentences were load-bearing: "the continuity term carries that
+faithfully" and "a term that is correct, opposed by continuity". A pull toward
+rest can do neither. It cannot carry a bad pose forward and it cannot oppose a
+correct term frame by frame. Wherever an explanation in this ledger turns on
+continuity holding a pose, the mechanism is the seed and the explanation should
+be checked rather than assumed to survive the rename.
+
+**The behaviour is not changed here, and the variable is not renamed.** The
+engine works: continuity does happen, by seeding, and every drill is graded on
+what the code actually does. Only the description was wrong.
+
+### What correcting the target would cost, measured but not applied
+
+Setting the target to the previous frame was built and measured on 2026-08-30,
+then deferred. The numbers are kept so the eventual change inherits them:
+
+| | worst single-frame step, eight drills | values moved | verdicts flipped |
+|---|---|---|---|
+| target set to the previous frame | +0.10 in total | 35, at most 2.3 degrees | 0 |
+
+**It is deferred for two reasons, and the first is the stronger.** The rest
+prior is currently what lets a bad first frame ESCAPE, at the cost of a snap.
+Making the prior frame-to-frame makes the solve more faithful to frame zero, so
+a bad opening pose is carried further rather than repaired. The correction
+belongs WITH a better cold start, never instead of one. Second, Marius's ruling
+of 2026-08-30 holds the library's look still until a second coach has seen it,
+and 35 moved values is a change to the look however small.
+
+**It also does not fix the cold start, which is what it was first built for.**
+Against the knee finding above it appeared to: the knee opened at 46.4 instead
+of 34.1 and the 9.5 degree snap became 0.95. A control run — the old prior at
+frame zero, the new one everywhere after — left the knee at 34.1 and moved the
+snap to frame 9 at 6.15 degrees rather than removing it. The apparent fix was
+an under-determined joint tipped across a basin boundary by the finger
+parameters, which are the only part of the target that differs at frame zero.
+Luck, not mechanism.
