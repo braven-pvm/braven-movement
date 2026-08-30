@@ -17,7 +17,7 @@
       ],
       "contact": [
         0.6853,
-        0.5985,
+        0.5984,
         0.2544,
         1
       ],
@@ -86,17 +86,17 @@
       {
         "phase": "contact",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 42.24,
-        "clipDegrees": 42.23,
-        "gapDegrees": 0.01,
+        "engineDegrees": 41.83,
+        "clipDegrees": 41.83,
+        "gapDegrees": 0.0,
         "asserted": true
       },
       {
         "phase": "contact",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 50.05,
-        "clipDegrees": 50.02,
-        "gapDegrees": 0.03,
+        "engineDegrees": 50.12,
+        "clipDegrees": 50.13,
+        "gapDegrees": 0.01,
         "asserted": true
       },
       {
@@ -110,9 +110,9 @@
       {
         "phase": "contact",
         "measure": "rightElbowFlexionDegrees",
-        "engineDegrees": 62.89,
+        "engineDegrees": 62.9,
         "clipDegrees": 62.91,
-        "gapDegrees": 0.02,
+        "gapDegrees": 0.01,
         "asserted": true
       },
       {
@@ -134,16 +134,16 @@
       {
         "phase": "control",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 41.69,
-        "clipDegrees": 41.71,
-        "gapDegrees": 0.02,
+        "engineDegrees": 41.13,
+        "clipDegrees": 41.14,
+        "gapDegrees": 0.01,
         "asserted": true
       },
       {
         "phase": "control",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 50.9,
-        "clipDegrees": 50.88,
+        "engineDegrees": 51.13,
+        "clipDegrees": 51.11,
         "gapDegrees": 0.02,
         "asserted": true
       },
@@ -167,8 +167,8 @@
         "phase": "control",
         "measure": "leftShoulderElevationDegrees",
         "engineDegrees": 74.35,
-        "clipDegrees": 72.99,
-        "gapDegrees": 1.36,
+        "clipDegrees": 72.94,
+        "gapDegrees": 1.41,
         "asserted": false
       },
       {
@@ -190,25 +190,25 @@
       {
         "phase": "send_on",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 49.09,
+        "engineDegrees": 49.08,
         "clipDegrees": 49.1,
-        "gapDegrees": 0.01,
+        "gapDegrees": 0.02,
         "asserted": true
       },
       {
         "phase": "send_on",
         "measure": "leftElbowFlexionDegrees",
-        "engineDegrees": 35.82,
+        "engineDegrees": 35.83,
         "clipDegrees": 35.81,
-        "gapDegrees": 0.01,
+        "gapDegrees": 0.02,
         "asserted": true
       },
       {
         "phase": "send_on",
         "measure": "rightElbowFlexionDegrees",
-        "engineDegrees": 50.49,
+        "engineDegrees": 50.5,
         "clipDegrees": 50.48,
-        "gapDegrees": 0.01,
+        "gapDegrees": 0.02,
         "asserted": true
       },
       {
@@ -222,9 +222,9 @@
       {
         "phase": "send_on",
         "measure": "rightShoulderElevationDegrees",
-        "engineDegrees": 89.33,
+        "engineDegrees": 89.32,
         "clipDegrees": 87.32,
-        "gapDegrees": 2.01,
+        "gapDegrees": 2.0,
         "asserted": false
       }
     ],
@@ -235,7 +235,7 @@
     "graded": false,
     "failingCheckpoints": 1,
     "failingDetail": [
-      "send_on/leftElbowFlexionDegrees 35.82 outside 45.0 to 115.0"
+      "send_on/leftElbowFlexionDegrees 35.83 outside 45.0 to 115.0"
     ],
     "assessed": false
   },
@@ -256,19 +256,19 @@
         0
       ],
       "flight": [
-        3.3033,
+        3.3032,
         0.0466,
         0.0001,
         0
       ],
       "land": [
         0.5787,
-        0.0871,
+        0.087,
         0.0001,
         1
       ],
       "absorb": [
-        0.4632,
+        0.4633,
         -0.0205,
         -0.0,
         1
@@ -326,17 +326,17 @@
       {
         "phase": "flight",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 59.92,
-        "clipDegrees": 59.93,
-        "gapDegrees": 0.01,
+        "engineDegrees": 60.2,
+        "clipDegrees": 60.22,
+        "gapDegrees": 0.02,
         "asserted": true
       },
       {
         "phase": "flight",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 59.38,
-        "clipDegrees": 59.36,
-        "gapDegrees": 0.02,
+        "engineDegrees": 59.07,
+        "clipDegrees": 59.07,
+        "gapDegrees": 0.0,
         "asserted": true
       },
       {
@@ -374,25 +374,25 @@
       {
         "phase": "land",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 54.21,
-        "clipDegrees": 54.2,
-        "gapDegrees": 0.01,
+        "engineDegrees": 54.46,
+        "clipDegrees": 54.43,
+        "gapDegrees": 0.03,
         "asserted": true
       },
       {
         "phase": "land",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 52.06,
-        "clipDegrees": 52.08,
+        "engineDegrees": 51.78,
+        "clipDegrees": 51.8,
         "gapDegrees": 0.02,
         "asserted": true
       },
       {
         "phase": "land",
         "measure": "leftElbowFlexionDegrees",
-        "engineDegrees": 130.12,
+        "engineDegrees": 130.11,
         "clipDegrees": 130.12,
-        "gapDegrees": 0.0,
+        "gapDegrees": 0.01,
         "asserted": true
       },
       {
@@ -406,65 +406,65 @@
       {
         "phase": "land",
         "measure": "leftShoulderElevationDegrees",
-        "engineDegrees": 32.87,
+        "engineDegrees": 32.84,
         "clipDegrees": 28.76,
-        "gapDegrees": 4.11,
+        "gapDegrees": 4.08,
         "asserted": false
       },
       {
         "phase": "land",
         "measure": "rightShoulderElevationDegrees",
-        "engineDegrees": 32.83,
+        "engineDegrees": 32.79,
         "clipDegrees": 28.71,
-        "gapDegrees": 4.12,
+        "gapDegrees": 4.08,
         "asserted": false
       },
       {
         "phase": "absorb",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 78.99,
-        "clipDegrees": 79.01,
+        "engineDegrees": 78.59,
+        "clipDegrees": 78.61,
         "gapDegrees": 0.02,
         "asserted": true
       },
       {
         "phase": "absorb",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 76.76,
-        "clipDegrees": 76.78,
-        "gapDegrees": 0.02,
-        "asserted": true
-      },
-      {
-        "phase": "absorb",
-        "measure": "leftElbowFlexionDegrees",
-        "engineDegrees": 142.82,
-        "clipDegrees": 142.84,
-        "gapDegrees": 0.02,
-        "asserted": true
-      },
-      {
-        "phase": "absorb",
-        "measure": "rightElbowFlexionDegrees",
-        "engineDegrees": 142.9,
-        "clipDegrees": 142.9,
+        "engineDegrees": 77.18,
+        "clipDegrees": 77.18,
         "gapDegrees": 0.0,
         "asserted": true
       },
       {
         "phase": "absorb",
+        "measure": "leftElbowFlexionDegrees",
+        "engineDegrees": 142.83,
+        "clipDegrees": 142.84,
+        "gapDegrees": 0.01,
+        "asserted": true
+      },
+      {
+        "phase": "absorb",
+        "measure": "rightElbowFlexionDegrees",
+        "engineDegrees": 142.91,
+        "clipDegrees": 142.9,
+        "gapDegrees": 0.01,
+        "asserted": true
+      },
+      {
+        "phase": "absorb",
         "measure": "leftShoulderElevationDegrees",
-        "engineDegrees": 19.8,
-        "clipDegrees": 10.83,
-        "gapDegrees": 8.97,
+        "engineDegrees": 19.75,
+        "clipDegrees": 10.77,
+        "gapDegrees": 8.98,
         "asserted": false
       },
       {
         "phase": "absorb",
         "measure": "rightShoulderElevationDegrees",
-        "engineDegrees": 19.82,
-        "clipDegrees": 10.83,
-        "gapDegrees": 8.99,
+        "engineDegrees": 19.77,
+        "clipDegrees": 10.77,
+        "gapDegrees": 9.0,
         "asserted": false
       }
     ],
@@ -494,20 +494,20 @@
         0
       ],
       "contact": [
-        0.7853,
-        0.5844,
+        0.7851,
+        0.5841,
         0.0,
         1
       ],
       "pull_in": [
         0.4773,
-        0.0559,
+        0.056,
         -0.0001,
         1
       ],
       "release": [
         1.7592,
-        0.311,
+        0.3109,
         -0.0001,
         0
       ]
@@ -564,15 +564,15 @@
       {
         "phase": "contact",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 34.03,
+        "engineDegrees": 34.05,
         "clipDegrees": 34.03,
-        "gapDegrees": 0.0,
+        "gapDegrees": 0.02,
         "asserted": true
       },
       {
         "phase": "contact",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 38.15,
+        "engineDegrees": 38.17,
         "clipDegrees": 38.16,
         "gapDegrees": 0.01,
         "asserted": true
@@ -580,49 +580,49 @@
       {
         "phase": "contact",
         "measure": "leftElbowFlexionDegrees",
-        "engineDegrees": 77.47,
-        "clipDegrees": 77.46,
-        "gapDegrees": 0.01,
+        "engineDegrees": 77.52,
+        "clipDegrees": 77.52,
+        "gapDegrees": 0.0,
         "asserted": true
       },
       {
         "phase": "contact",
         "measure": "rightElbowFlexionDegrees",
-        "engineDegrees": 77.45,
-        "clipDegrees": 77.46,
-        "gapDegrees": 0.01,
+        "engineDegrees": 77.5,
+        "clipDegrees": 77.52,
+        "gapDegrees": 0.02,
         "asserted": true
       },
       {
         "phase": "contact",
         "measure": "leftShoulderElevationDegrees",
-        "engineDegrees": 85.95,
+        "engineDegrees": 85.91,
         "clipDegrees": 84.74,
-        "gapDegrees": 1.21,
+        "gapDegrees": 1.17,
         "asserted": false
       },
       {
         "phase": "contact",
         "measure": "rightShoulderElevationDegrees",
-        "engineDegrees": 85.97,
-        "clipDegrees": 84.8,
-        "gapDegrees": 1.17,
+        "engineDegrees": 85.93,
+        "clipDegrees": 84.74,
+        "gapDegrees": 1.19,
         "asserted": false
       },
       {
         "phase": "pull_in",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 33.22,
-        "clipDegrees": 33.23,
-        "gapDegrees": 0.01,
+        "engineDegrees": 32.8,
+        "clipDegrees": 32.77,
+        "gapDegrees": 0.03,
         "asserted": true
       },
       {
         "phase": "pull_in",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 37.68,
-        "clipDegrees": 37.7,
-        "gapDegrees": 0.02,
+        "engineDegrees": 38.05,
+        "clipDegrees": 38.04,
+        "gapDegrees": 0.01,
         "asserted": true
       },
       {
@@ -644,9 +644,9 @@
       {
         "phase": "pull_in",
         "measure": "leftShoulderElevationDegrees",
-        "engineDegrees": 24.9,
+        "engineDegrees": 24.91,
         "clipDegrees": 19.37,
-        "gapDegrees": 5.53,
+        "gapDegrees": 5.54,
         "asserted": false
       },
       {
@@ -660,7 +660,7 @@
       {
         "phase": "release",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 45.25,
+        "engineDegrees": 45.27,
         "clipDegrees": 45.26,
         "gapDegrees": 0.01,
         "asserted": true
@@ -668,7 +668,7 @@
       {
         "phase": "release",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 49.0,
+        "engineDegrees": 48.98,
         "clipDegrees": 48.99,
         "gapDegrees": 0.01,
         "asserted": true
@@ -725,30 +725,30 @@
     "hit": 0.49,
     "hitPhase": "contact",
     "momentGapSeconds": -0.034,
-    "rootTravelM": 0.001,
+    "rootTravelM": 0.0009,
     "ballAtPhases": {
       "facing_away": [
-        3.5954,
-        0.0444,
-        0.1029,
+        3.5946,
+        0.0389,
+        0.1055,
         0
       ],
       "contact": [
-        0.9559,
-        0.2406,
-        0.2858,
+        0.9557,
+        0.2446,
+        0.2882,
         1
       ],
       "gather": [
-        0.5486,
+        0.5485,
         0.1083,
-        0.0768,
+        0.077,
         1
       ],
       "pull_in": [
-        0.4335,
-        -0.02,
-        0.0304,
+        0.4334,
+        -0.0199,
+        0.0303,
         1
       ]
     },
@@ -756,119 +756,119 @@
       {
         "phase": "facing_away",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 50.61,
-        "clipDegrees": 50.59,
-        "gapDegrees": 0.02,
-        "asserted": true
-      },
-      {
-        "phase": "facing_away",
-        "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 49.95,
-        "clipDegrees": 49.96,
+        "engineDegrees": 51.9,
+        "clipDegrees": 51.91,
         "gapDegrees": 0.01,
         "asserted": true
       },
       {
         "phase": "facing_away",
+        "measure": "rightKneeFlexionDegrees",
+        "engineDegrees": 34.13,
+        "clipDegrees": 34.15,
+        "gapDegrees": 0.02,
+        "asserted": true
+      },
+      {
+        "phase": "facing_away",
         "measure": "leftElbowFlexionDegrees",
-        "engineDegrees": 74.36,
-        "clipDegrees": 74.37,
+        "engineDegrees": 145.54,
+        "clipDegrees": 145.53,
         "gapDegrees": 0.01,
         "asserted": true
       },
       {
         "phase": "facing_away",
         "measure": "rightElbowFlexionDegrees",
-        "engineDegrees": 149.12,
+        "engineDegrees": 149.13,
         "clipDegrees": 149.14,
-        "gapDegrees": 0.02,
+        "gapDegrees": 0.01,
         "asserted": true
       },
       {
         "phase": "facing_away",
         "measure": "leftShoulderElevationDegrees",
-        "engineDegrees": 54.0,
-        "clipDegrees": 52.2,
-        "gapDegrees": 1.8,
+        "engineDegrees": 18.79,
+        "clipDegrees": -5.67,
+        "gapDegrees": 24.46,
         "asserted": false
       },
       {
         "phase": "facing_away",
         "measure": "rightShoulderElevationDegrees",
-        "engineDegrees": 34.65,
-        "clipDegrees": 0.17,
-        "gapDegrees": 34.48,
+        "engineDegrees": 34.78,
+        "clipDegrees": 0.52,
+        "gapDegrees": 34.26,
         "asserted": false
       },
       {
         "phase": "contact",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 50.44,
-        "clipDegrees": 50.42,
+        "engineDegrees": 50.34,
+        "clipDegrees": 50.36,
         "gapDegrees": 0.02,
         "asserted": true
       },
       {
         "phase": "contact",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 52.02,
-        "clipDegrees": 52.02,
+        "engineDegrees": 51.81,
+        "clipDegrees": 51.8,
+        "gapDegrees": 0.01,
+        "asserted": true
+      },
+      {
+        "phase": "contact",
+        "measure": "leftElbowFlexionDegrees",
+        "engineDegrees": 145.64,
+        "clipDegrees": 145.65,
+        "gapDegrees": 0.01,
+        "asserted": true
+      },
+      {
+        "phase": "contact",
+        "measure": "rightElbowFlexionDegrees",
+        "engineDegrees": 71.97,
+        "clipDegrees": 71.96,
+        "gapDegrees": 0.01,
+        "asserted": true
+      },
+      {
+        "phase": "contact",
+        "measure": "leftShoulderElevationDegrees",
+        "engineDegrees": 18.99,
+        "clipDegrees": 2.58,
+        "gapDegrees": 16.41,
+        "asserted": false
+      },
+      {
+        "phase": "contact",
+        "measure": "rightShoulderElevationDegrees",
+        "engineDegrees": 65.13,
+        "clipDegrees": 62.51,
+        "gapDegrees": 2.62,
+        "asserted": false
+      },
+      {
+        "phase": "gather",
+        "measure": "leftKneeFlexionDegrees",
+        "engineDegrees": 52.29,
+        "clipDegrees": 52.31,
+        "gapDegrees": 0.02,
+        "asserted": true
+      },
+      {
+        "phase": "gather",
+        "measure": "rightKneeFlexionDegrees",
+        "engineDegrees": 48.19,
+        "clipDegrees": 48.19,
         "gapDegrees": 0.0,
         "asserted": true
       },
       {
-        "phase": "contact",
-        "measure": "leftElbowFlexionDegrees",
-        "engineDegrees": 84.46,
-        "clipDegrees": 84.45,
-        "gapDegrees": 0.01,
-        "asserted": true
-      },
-      {
-        "phase": "contact",
-        "measure": "rightElbowFlexionDegrees",
-        "engineDegrees": 72.18,
-        "clipDegrees": 72.19,
-        "gapDegrees": 0.01,
-        "asserted": true
-      },
-      {
-        "phase": "contact",
-        "measure": "leftShoulderElevationDegrees",
-        "engineDegrees": 47.69,
-        "clipDegrees": 45.61,
-        "gapDegrees": 2.08,
-        "asserted": false
-      },
-      {
-        "phase": "contact",
-        "measure": "rightShoulderElevationDegrees",
-        "engineDegrees": 65.21,
-        "clipDegrees": 62.62,
-        "gapDegrees": 2.59,
-        "asserted": false
-      },
-      {
-        "phase": "gather",
-        "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 49.38,
-        "clipDegrees": 49.39,
-        "gapDegrees": 0.01,
-        "asserted": true
-      },
-      {
-        "phase": "gather",
-        "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 52.49,
-        "clipDegrees": 52.48,
-        "gapDegrees": 0.01,
-        "asserted": true
-      },
-      {
         "phase": "gather",
         "measure": "leftElbowFlexionDegrees",
-        "engineDegrees": 129.85,
+        "engineDegrees": 129.81,
         "clipDegrees": 129.83,
         "gapDegrees": 0.02,
         "asserted": true
@@ -876,72 +876,72 @@
       {
         "phase": "gather",
         "measure": "rightElbowFlexionDegrees",
-        "engineDegrees": 135.45,
-        "clipDegrees": 135.45,
+        "engineDegrees": 135.5,
+        "clipDegrees": 135.5,
         "gapDegrees": 0.0,
         "asserted": true
       },
       {
         "phase": "gather",
         "measure": "leftShoulderElevationDegrees",
-        "engineDegrees": 34.26,
-        "clipDegrees": 28.93,
+        "engineDegrees": 34.32,
+        "clipDegrees": 28.99,
         "gapDegrees": 5.33,
         "asserted": false
       },
       {
         "phase": "gather",
         "measure": "rightShoulderElevationDegrees",
-        "engineDegrees": 32.26,
-        "clipDegrees": 29.34,
-        "gapDegrees": 2.92,
+        "engineDegrees": 32.21,
+        "clipDegrees": 29.28,
+        "gapDegrees": 2.93,
         "asserted": false
       },
       {
         "phase": "pull_in",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 50.29,
-        "clipDegrees": 50.31,
-        "gapDegrees": 0.02,
+        "engineDegrees": 52.42,
+        "clipDegrees": 52.43,
+        "gapDegrees": 0.01,
         "asserted": true
       },
       {
         "phase": "pull_in",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 52.24,
-        "clipDegrees": 52.25,
+        "engineDegrees": 49.63,
+        "clipDegrees": 49.62,
         "gapDegrees": 0.01,
         "asserted": true
       },
       {
         "phase": "pull_in",
         "measure": "leftElbowFlexionDegrees",
-        "engineDegrees": 145.63,
-        "clipDegrees": 145.65,
-        "gapDegrees": 0.02,
+        "engineDegrees": 145.6,
+        "clipDegrees": 145.59,
+        "gapDegrees": 0.01,
         "asserted": true
       },
       {
         "phase": "pull_in",
         "measure": "rightElbowFlexionDegrees",
-        "engineDegrees": 145.72,
-        "clipDegrees": 145.7,
+        "engineDegrees": 145.74,
+        "clipDegrees": 145.76,
         "gapDegrees": 0.02,
         "asserted": true
       },
       {
         "phase": "pull_in",
         "measure": "leftShoulderElevationDegrees",
-        "engineDegrees": 18.69,
-        "clipDegrees": 7.45,
-        "gapDegrees": 11.24,
+        "engineDegrees": 18.84,
+        "clipDegrees": 7.62,
+        "gapDegrees": 11.22,
         "asserted": false
       },
       {
         "phase": "pull_in",
         "measure": "rightShoulderElevationDegrees",
-        "engineDegrees": 18.71,
-        "clipDegrees": 9.63,
+        "engineDegrees": 18.76,
+        "clipDegrees": 9.68,
         "gapDegrees": 9.08,
         "asserted": false
       }
@@ -963,24 +963,24 @@
     "hit": 0.49,
     "hitPhase": "contact",
     "momentGapSeconds": -0.017,
-    "rootTravelM": 0.0005,
+    "rootTravelM": 0.0007,
     "ballAtPhases": {
       "ready": [
-        3.8795,
-        0.0422,
-        0.0001,
+        3.8825,
+        0.0539,
+        0.001,
         0
       ],
       "reach": [
-        3.4201,
-        0.163,
-        -0.043,
+        3.4233,
+        0.1748,
+        -0.0422,
         0
       ],
       "contact": [
-        0.9341,
-        0.2681,
-        -0.2545,
+        0.9367,
+        0.279,
+        -0.2535,
         1
       ],
       "join": [
@@ -990,7 +990,7 @@
         1
       ],
       "pull_in": [
-        0.4346,
+        0.4347,
         -0.0199,
         -0.0,
         1
@@ -1000,161 +1000,161 @@
       {
         "phase": "ready",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 56.31,
-        "clipDegrees": 56.32,
-        "gapDegrees": 0.01,
+        "engineDegrees": 52.57,
+        "clipDegrees": 52.54,
+        "gapDegrees": 0.03,
         "asserted": true
       },
       {
         "phase": "ready",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 51.84,
-        "clipDegrees": 51.85,
+        "engineDegrees": 56.16,
+        "clipDegrees": 56.15,
         "gapDegrees": 0.01,
         "asserted": true
       },
       {
         "phase": "ready",
         "measure": "leftElbowFlexionDegrees",
-        "engineDegrees": 88.86,
-        "clipDegrees": 88.87,
-        "gapDegrees": 0.01,
+        "engineDegrees": 145.76,
+        "clipDegrees": 145.76,
+        "gapDegrees": 0.0,
         "asserted": true
       },
       {
         "phase": "ready",
         "measure": "rightElbowFlexionDegrees",
-        "engineDegrees": 88.9,
-        "clipDegrees": 88.92,
-        "gapDegrees": 0.02,
+        "engineDegrees": 88.74,
+        "clipDegrees": 88.75,
+        "gapDegrees": 0.01,
         "asserted": true
       },
       {
         "phase": "ready",
         "measure": "leftShoulderElevationDegrees",
-        "engineDegrees": 45.97,
-        "clipDegrees": 43.54,
-        "gapDegrees": 2.43,
+        "engineDegrees": 19.0,
+        "clipDegrees": 9.0,
+        "gapDegrees": 10.0,
         "asserted": false
       },
       {
         "phase": "ready",
         "measure": "rightShoulderElevationDegrees",
-        "engineDegrees": 45.92,
-        "clipDegrees": 43.49,
-        "gapDegrees": 2.43,
+        "engineDegrees": 45.85,
+        "clipDegrees": 43.54,
+        "gapDegrees": 2.31,
         "asserted": false
       },
       {
         "phase": "reach",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 55.9,
-        "clipDegrees": 55.92,
-        "gapDegrees": 0.02,
-        "asserted": true
-      },
-      {
-        "phase": "reach",
-        "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 52.37,
-        "clipDegrees": 52.37,
+        "engineDegrees": 51.91,
+        "clipDegrees": 51.91,
         "gapDegrees": 0.0,
         "asserted": true
       },
       {
         "phase": "reach",
+        "measure": "rightKneeFlexionDegrees",
+        "engineDegrees": 56.39,
+        "clipDegrees": 56.38,
+        "gapDegrees": 0.01,
+        "asserted": true
+      },
+      {
+        "phase": "reach",
         "measure": "leftElbowFlexionDegrees",
-        "engineDegrees": 88.88,
-        "clipDegrees": 88.87,
+        "engineDegrees": 145.77,
+        "clipDegrees": 145.76,
         "gapDegrees": 0.01,
         "asserted": true
       },
       {
         "phase": "reach",
         "measure": "rightElbowFlexionDegrees",
-        "engineDegrees": 89.08,
-        "clipDegrees": 89.09,
-        "gapDegrees": 0.01,
+        "engineDegrees": 88.92,
+        "clipDegrees": 88.92,
+        "gapDegrees": 0.0,
         "asserted": true
       },
       {
         "phase": "reach",
         "measure": "leftShoulderElevationDegrees",
-        "engineDegrees": 45.94,
-        "clipDegrees": 43.49,
-        "gapDegrees": 2.45,
+        "engineDegrees": 19.0,
+        "clipDegrees": 8.94,
+        "gapDegrees": 10.06,
         "asserted": false
       },
       {
         "phase": "reach",
         "measure": "rightShoulderElevationDegrees",
-        "engineDegrees": 46.19,
-        "clipDegrees": 43.72,
-        "gapDegrees": 2.47,
+        "engineDegrees": 46.11,
+        "clipDegrees": 43.77,
+        "gapDegrees": 2.34,
         "asserted": false
       },
       {
         "phase": "contact",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 55.44,
-        "clipDegrees": 55.46,
-        "gapDegrees": 0.02,
+        "engineDegrees": 51.85,
+        "clipDegrees": 51.85,
+        "gapDegrees": 0.0,
         "asserted": true
       },
       {
         "phase": "contact",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 52.85,
-        "clipDegrees": 52.83,
+        "engineDegrees": 56.34,
+        "clipDegrees": 56.32,
         "gapDegrees": 0.02,
         "asserted": true
       },
       {
         "phase": "contact",
         "measure": "leftElbowFlexionDegrees",
-        "engineDegrees": 89.64,
-        "clipDegrees": 89.61,
+        "engineDegrees": 146.13,
+        "clipDegrees": 146.16,
         "gapDegrees": 0.03,
         "asserted": true
       },
       {
         "phase": "contact",
         "measure": "rightElbowFlexionDegrees",
-        "engineDegrees": 87.41,
-        "clipDegrees": 87.43,
+        "engineDegrees": 87.24,
+        "clipDegrees": 87.26,
         "gapDegrees": 0.02,
         "asserted": true
       },
       {
         "phase": "contact",
         "measure": "leftShoulderElevationDegrees",
-        "engineDegrees": 45.67,
-        "clipDegrees": 43.37,
-        "gapDegrees": 2.3,
+        "engineDegrees": 18.82,
+        "clipDegrees": 8.77,
+        "gapDegrees": 10.05,
         "asserted": false
       },
       {
         "phase": "contact",
         "measure": "rightShoulderElevationDegrees",
-        "engineDegrees": 61.7,
+        "engineDegrees": 61.61,
         "clipDegrees": 57.7,
-        "gapDegrees": 4.0,
+        "gapDegrees": 3.91,
         "asserted": false
       },
       {
         "phase": "join",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 55.87,
-        "clipDegrees": 55.86,
+        "engineDegrees": 55.34,
+        "clipDegrees": 55.35,
         "gapDegrees": 0.01,
         "asserted": true
       },
       {
         "phase": "join",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 51.96,
-        "clipDegrees": 51.97,
-        "gapDegrees": 0.01,
+        "engineDegrees": 52.54,
+        "clipDegrees": 52.54,
+        "gapDegrees": 0.0,
         "asserted": true
       },
       {
@@ -1185,31 +1185,31 @@
         "phase": "join",
         "measure": "rightShoulderElevationDegrees",
         "engineDegrees": 33.83,
-        "clipDegrees": 29.22,
-        "gapDegrees": 4.61,
+        "clipDegrees": 29.28,
+        "gapDegrees": 4.55,
         "asserted": false
       },
       {
         "phase": "pull_in",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 55.81,
-        "clipDegrees": 55.81,
-        "gapDegrees": 0.0,
+        "engineDegrees": 55.54,
+        "clipDegrees": 55.52,
+        "gapDegrees": 0.02,
         "asserted": true
       },
       {
         "phase": "pull_in",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 52.85,
-        "clipDegrees": 52.83,
-        "gapDegrees": 0.02,
+        "engineDegrees": 53.16,
+        "clipDegrees": 53.17,
+        "gapDegrees": 0.01,
         "asserted": true
       },
       {
         "phase": "pull_in",
         "measure": "leftElbowFlexionDegrees",
         "engineDegrees": 145.62,
-        "clipDegrees": 145.59,
+        "clipDegrees": 145.65,
         "gapDegrees": 0.03,
         "asserted": true
       },
@@ -1224,9 +1224,9 @@
       {
         "phase": "pull_in",
         "measure": "leftShoulderElevationDegrees",
-        "engineDegrees": 18.79,
+        "engineDegrees": 18.78,
         "clipDegrees": 8.71,
-        "gapDegrees": 10.08,
+        "gapDegrees": 10.07,
         "asserted": false
       },
       {
@@ -1242,10 +1242,12 @@
     "assertedChannels": 20,
     "structuralFault": null,
     "tracks": true,
-    "graded": true,
-    "failingCheckpoints": 0,
-    "failingDetail": [],
-    "assessed": true
+    "graded": false,
+    "failingCheckpoints": 1,
+    "failingDetail": [
+      "contact/leftElbowFlexionDegrees 146.13 outside 30.0 to 120.0"
+    ],
+    "assessed": false
   },
   "catch.netball.two-hand-chest": {
     "clipId": "catch.netball.two-hand-chest",
@@ -1264,21 +1266,21 @@
         0
       ],
       "contact": [
-        1.0141,
-        0.2117,
+        1.0142,
+        0.2118,
         0.0,
         1
       ],
       "pull_in": [
-        0.4486,
-        0.0044,
-        0.0,
+        0.4485,
+        0.0043,
+        -0.0,
         1
       ],
       "release": [
-        2.1495,
-        0.2347,
-        0.0002,
+        2.1496,
+        0.2348,
+        0.0001,
         0
       ]
     },
@@ -1334,30 +1336,22 @@
       {
         "phase": "contact",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 52.94,
-        "clipDegrees": 52.94,
+        "engineDegrees": 52.88,
+        "clipDegrees": 52.88,
         "gapDegrees": 0.0,
         "asserted": true
       },
       {
         "phase": "contact",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 49.33,
-        "clipDegrees": 49.33,
-        "gapDegrees": 0.0,
-        "asserted": true
-      },
-      {
-        "phase": "contact",
-        "measure": "leftElbowFlexionDegrees",
-        "engineDegrees": 62.26,
-        "clipDegrees": 62.28,
+        "engineDegrees": 49.41,
+        "clipDegrees": 49.39,
         "gapDegrees": 0.02,
         "asserted": true
       },
       {
         "phase": "contact",
-        "measure": "rightElbowFlexionDegrees",
+        "measure": "leftElbowFlexionDegrees",
         "engineDegrees": 62.24,
         "clipDegrees": 62.22,
         "gapDegrees": 0.02,
@@ -1365,33 +1359,41 @@
       },
       {
         "phase": "contact",
+        "measure": "rightElbowFlexionDegrees",
+        "engineDegrees": 62.21,
+        "clipDegrees": 62.22,
+        "gapDegrees": 0.01,
+        "asserted": true
+      },
+      {
+        "phase": "contact",
         "measure": "leftShoulderElevationDegrees",
-        "engineDegrees": 68.14,
-        "clipDegrees": 66.58,
-        "gapDegrees": 1.56,
+        "engineDegrees": 68.1,
+        "clipDegrees": 66.52,
+        "gapDegrees": 1.58,
         "asserted": false
       },
       {
         "phase": "contact",
         "measure": "rightShoulderElevationDegrees",
-        "engineDegrees": 68.15,
+        "engineDegrees": 68.13,
         "clipDegrees": 66.58,
-        "gapDegrees": 1.57,
+        "gapDegrees": 1.55,
         "asserted": false
       },
       {
         "phase": "pull_in",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 53.41,
-        "clipDegrees": 53.4,
-        "gapDegrees": 0.01,
+        "engineDegrees": 52.16,
+        "clipDegrees": 52.14,
+        "gapDegrees": 0.02,
         "asserted": true
       },
       {
         "phase": "pull_in",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 48.8,
-        "clipDegrees": 48.82,
+        "engineDegrees": 50.11,
+        "clipDegrees": 50.13,
         "gapDegrees": 0.02,
         "asserted": true
       },
@@ -1406,56 +1408,56 @@
       {
         "phase": "pull_in",
         "measure": "rightElbowFlexionDegrees",
-        "engineDegrees": 144.55,
+        "engineDegrees": 144.54,
         "clipDegrees": 144.56,
-        "gapDegrees": 0.01,
+        "gapDegrees": 0.02,
         "asserted": true
       },
       {
         "phase": "pull_in",
         "measure": "leftShoulderElevationDegrees",
-        "engineDegrees": 20.2,
+        "engineDegrees": 20.19,
         "clipDegrees": 12.26,
-        "gapDegrees": 7.94,
+        "gapDegrees": 7.93,
         "asserted": false
       },
       {
         "phase": "pull_in",
         "measure": "rightShoulderElevationDegrees",
-        "engineDegrees": 20.18,
+        "engineDegrees": 20.19,
         "clipDegrees": 12.2,
-        "gapDegrees": 7.98,
+        "gapDegrees": 7.99,
         "asserted": false
       },
       {
         "phase": "release",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 52.53,
-        "clipDegrees": 52.54,
-        "gapDegrees": 0.01,
+        "engineDegrees": 52.28,
+        "clipDegrees": 52.25,
+        "gapDegrees": 0.03,
         "asserted": true
       },
       {
         "phase": "release",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 48.55,
-        "clipDegrees": 48.53,
-        "gapDegrees": 0.02,
+        "engineDegrees": 48.86,
+        "clipDegrees": 48.87,
+        "gapDegrees": 0.01,
         "asserted": true
       },
       {
         "phase": "release",
         "measure": "leftElbowFlexionDegrees",
-        "engineDegrees": 40.83,
+        "engineDegrees": 40.85,
         "clipDegrees": 40.85,
-        "gapDegrees": 0.02,
+        "gapDegrees": 0.0,
         "asserted": true
       },
       {
         "phase": "release",
         "measure": "rightElbowFlexionDegrees",
-        "engineDegrees": 40.99,
-        "clipDegrees": 40.97,
+        "engineDegrees": 41.0,
+        "clipDegrees": 41.02,
         "gapDegrees": 0.02,
         "asserted": true
       },
@@ -1470,20 +1472,20 @@
       {
         "phase": "release",
         "measure": "rightShoulderElevationDegrees",
-        "engineDegrees": 79.01,
-        "clipDegrees": 76.66,
-        "gapDegrees": 2.35,
+        "engineDegrees": 78.99,
+        "clipDegrees": 76.6,
+        "gapDegrees": 2.39,
         "asserted": false
       }
     ],
-    "worstAssertedGapDegrees": 0.02,
+    "worstAssertedGapDegrees": 0.03,
     "assertedChannels": 16,
     "structuralFault": null,
     "tracks": true,
     "graded": false,
     "failingCheckpoints": 1,
     "failingDetail": [
-      "release/leftElbowFlexionDegrees 40.83 outside 55.0 to 115.0"
+      "release/leftElbowFlexionDegrees 40.85 outside 55.0 to 115.0"
     ],
     "assessed": false
   },
@@ -1510,15 +1512,15 @@
         0
       ],
       "contact": [
-        0.9367,
-        0.2656,
+        0.9368,
+        0.2657,
         0.0,
         1
       ],
       "pull_in": [
-        0.4346,
-        -0.02,
-        0.0,
+        0.4347,
+        -0.0199,
+        -0.0,
         1
       ]
     },
@@ -1574,25 +1576,25 @@
       {
         "phase": "react",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 55.87,
-        "clipDegrees": 55.86,
+        "engineDegrees": 55.7,
+        "clipDegrees": 55.69,
         "gapDegrees": 0.01,
         "asserted": true
       },
       {
         "phase": "react",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 52.36,
-        "clipDegrees": 52.37,
-        "gapDegrees": 0.01,
+        "engineDegrees": 52.6,
+        "clipDegrees": 52.6,
+        "gapDegrees": 0.0,
         "asserted": true
       },
       {
         "phase": "react",
         "measure": "leftElbowFlexionDegrees",
-        "engineDegrees": 88.86,
+        "engineDegrees": 88.87,
         "clipDegrees": 88.87,
-        "gapDegrees": 0.01,
+        "gapDegrees": 0.0,
         "asserted": true
       },
       {
@@ -1606,9 +1608,9 @@
       {
         "phase": "react",
         "measure": "leftShoulderElevationDegrees",
-        "engineDegrees": 45.96,
+        "engineDegrees": 45.95,
         "clipDegrees": 43.54,
-        "gapDegrees": 2.42,
+        "gapDegrees": 2.41,
         "asserted": false
       },
       {
@@ -1622,33 +1624,33 @@
       {
         "phase": "contact",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 55.81,
-        "clipDegrees": 55.81,
-        "gapDegrees": 0.0,
+        "engineDegrees": 55.78,
+        "clipDegrees": 55.75,
+        "gapDegrees": 0.03,
         "asserted": true
       },
       {
         "phase": "contact",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 52.71,
+        "engineDegrees": 52.72,
         "clipDegrees": 52.71,
-        "gapDegrees": 0.0,
+        "gapDegrees": 0.01,
         "asserted": true
       },
       {
         "phase": "contact",
         "measure": "leftElbowFlexionDegrees",
-        "engineDegrees": 75.81,
+        "engineDegrees": 75.78,
         "clipDegrees": 75.8,
-        "gapDegrees": 0.01,
+        "gapDegrees": 0.02,
         "asserted": true
       },
       {
         "phase": "contact",
         "measure": "rightElbowFlexionDegrees",
-        "engineDegrees": 75.81,
+        "engineDegrees": 75.78,
         "clipDegrees": 75.8,
-        "gapDegrees": 0.01,
+        "gapDegrees": 0.02,
         "asserted": true
       },
       {
@@ -1662,25 +1664,25 @@
       {
         "phase": "contact",
         "measure": "rightShoulderElevationDegrees",
-        "engineDegrees": 66.25,
-        "clipDegrees": 64.57,
-        "gapDegrees": 1.68,
+        "engineDegrees": 66.26,
+        "clipDegrees": 64.63,
+        "gapDegrees": 1.63,
         "asserted": false
       },
       {
         "phase": "pull_in",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 55.7,
-        "clipDegrees": 55.69,
-        "gapDegrees": 0.01,
+        "engineDegrees": 56.38,
+        "clipDegrees": 56.38,
+        "gapDegrees": 0.0,
         "asserted": true
       },
       {
         "phase": "pull_in",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 52.97,
-        "clipDegrees": 53.0,
-        "gapDegrees": 0.03,
+        "engineDegrees": 52.29,
+        "clipDegrees": 52.31,
+        "gapDegrees": 0.02,
         "asserted": true
       },
       {
@@ -1702,17 +1704,17 @@
       {
         "phase": "pull_in",
         "measure": "leftShoulderElevationDegrees",
-        "engineDegrees": 18.77,
+        "engineDegrees": 18.76,
         "clipDegrees": 8.65,
-        "gapDegrees": 10.12,
+        "gapDegrees": 10.11,
         "asserted": false
       },
       {
         "phase": "pull_in",
         "measure": "rightShoulderElevationDegrees",
         "engineDegrees": 18.79,
-        "clipDegrees": 8.59,
-        "gapDegrees": 10.2,
+        "clipDegrees": 8.65,
+        "gapDegrees": 10.14,
         "asserted": false
       }
     ],
@@ -1742,21 +1744,21 @@
         0
       ],
       "contact": [
-        0.985,
-        0.2542,
-        -0.0,
+        0.9849,
+        0.2543,
+        0.0,
         1
       ],
       "control": [
-        0.6133,
+        0.6134,
         0.1642,
         0.0001,
         1
       ],
       "return": [
-        2.5991,
+        2.599,
         0.2304,
-        0.0001,
+        0.0002,
         0
       ]
     },
@@ -1812,23 +1814,23 @@
       {
         "phase": "contact",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 55.88,
-        "clipDegrees": 55.86,
-        "gapDegrees": 0.02,
+        "engineDegrees": 55.98,
+        "clipDegrees": 55.98,
+        "gapDegrees": 0.0,
         "asserted": true
       },
       {
         "phase": "contact",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 52.79,
-        "clipDegrees": 52.77,
-        "gapDegrees": 0.02,
+        "engineDegrees": 52.65,
+        "clipDegrees": 52.65,
+        "gapDegrees": 0.0,
         "asserted": true
       },
       {
         "phase": "contact",
         "measure": "leftElbowFlexionDegrees",
-        "engineDegrees": 66.87,
+        "engineDegrees": 66.85,
         "clipDegrees": 66.86,
         "gapDegrees": 0.01,
         "asserted": true
@@ -1836,41 +1838,41 @@
       {
         "phase": "contact",
         "measure": "rightElbowFlexionDegrees",
-        "engineDegrees": 66.86,
-        "clipDegrees": 66.86,
-        "gapDegrees": 0.0,
+        "engineDegrees": 66.83,
+        "clipDegrees": 66.81,
+        "gapDegrees": 0.02,
         "asserted": true
       },
       {
         "phase": "contact",
         "measure": "leftShoulderElevationDegrees",
-        "engineDegrees": 68.89,
+        "engineDegrees": 68.87,
         "clipDegrees": 67.32,
-        "gapDegrees": 1.57,
+        "gapDegrees": 1.55,
         "asserted": false
       },
       {
         "phase": "contact",
         "measure": "rightShoulderElevationDegrees",
-        "engineDegrees": 68.89,
+        "engineDegrees": 68.88,
         "clipDegrees": 67.32,
-        "gapDegrees": 1.57,
+        "gapDegrees": 1.56,
         "asserted": false
       },
       {
         "phase": "control",
         "measure": "leftKneeFlexionDegrees",
-        "engineDegrees": 55.26,
-        "clipDegrees": 55.23,
-        "gapDegrees": 0.03,
+        "engineDegrees": 55.59,
+        "clipDegrees": 55.58,
+        "gapDegrees": 0.01,
         "asserted": true
       },
       {
         "phase": "control",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 52.67,
-        "clipDegrees": 52.65,
-        "gapDegrees": 0.02,
+        "engineDegrees": 52.34,
+        "clipDegrees": 52.37,
+        "gapDegrees": 0.03,
         "asserted": true
       },
       {
@@ -1884,25 +1886,25 @@
       {
         "phase": "control",
         "measure": "rightElbowFlexionDegrees",
-        "engineDegrees": 124.75,
+        "engineDegrees": 124.76,
         "clipDegrees": 124.73,
-        "gapDegrees": 0.02,
+        "gapDegrees": 0.03,
         "asserted": true
       },
       {
         "phase": "control",
         "measure": "leftShoulderElevationDegrees",
-        "engineDegrees": 41.08,
+        "engineDegrees": 41.06,
         "clipDegrees": 37.99,
-        "gapDegrees": 3.09,
+        "gapDegrees": 3.07,
         "asserted": false
       },
       {
         "phase": "control",
         "measure": "rightShoulderElevationDegrees",
-        "engineDegrees": 41.05,
+        "engineDegrees": 41.03,
         "clipDegrees": 37.99,
-        "gapDegrees": 3.06,
+        "gapDegrees": 3.04,
         "asserted": false
       },
       {
@@ -1916,40 +1918,40 @@
       {
         "phase": "return",
         "measure": "rightKneeFlexionDegrees",
-        "engineDegrees": 52.17,
-        "clipDegrees": 52.2,
-        "gapDegrees": 0.03,
+        "engineDegrees": 52.14,
+        "clipDegrees": 52.14,
+        "gapDegrees": 0.0,
         "asserted": true
       },
       {
         "phase": "return",
         "measure": "leftElbowFlexionDegrees",
-        "engineDegrees": 40.82,
-        "clipDegrees": 40.79,
-        "gapDegrees": 0.03,
+        "engineDegrees": 40.85,
+        "clipDegrees": 40.85,
+        "gapDegrees": 0.0,
         "asserted": true
       },
       {
         "phase": "return",
         "measure": "rightElbowFlexionDegrees",
-        "engineDegrees": 40.98,
-        "clipDegrees": 40.97,
-        "gapDegrees": 0.01,
+        "engineDegrees": 41.0,
+        "clipDegrees": 41.02,
+        "gapDegrees": 0.02,
         "asserted": true
       },
       {
         "phase": "return",
         "measure": "leftShoulderElevationDegrees",
-        "engineDegrees": 79.1,
-        "clipDegrees": 76.72,
-        "gapDegrees": 2.38,
+        "engineDegrees": 79.03,
+        "clipDegrees": 76.66,
+        "gapDegrees": 2.37,
         "asserted": false
       },
       {
         "phase": "return",
         "measure": "rightShoulderElevationDegrees",
-        "engineDegrees": 79.01,
-        "clipDegrees": 76.66,
+        "engineDegrees": 78.95,
+        "clipDegrees": 76.6,
         "gapDegrees": 2.35,
         "asserted": false
       }
@@ -1961,7 +1963,7 @@
     "graded": false,
     "failingCheckpoints": 1,
     "failingDetail": [
-      "return/leftElbowFlexionDegrees 40.82 outside 45.0 to 105.0"
+      "return/leftElbowFlexionDegrees 40.85 outside 45.0 to 105.0"
     ],
     "assessed": false
   }

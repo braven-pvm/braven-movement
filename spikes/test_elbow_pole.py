@@ -43,6 +43,10 @@ if SOLVER:
     from technique import has_technique, load_technique, technique_path
 
 REFERENCE_CM = 38.6
+# What the angle actually produces on the population the manual's photographs
+# describe. Marius ruled on 2026-08-30 that this is recorded and the angle is
+# deferred: refer to the class docstring below.
+MEASURED_CM = 36.5
 
 
 class Frame:
@@ -218,17 +222,56 @@ class ModelFactsThePoleRestsOn(unittest.TestCase):
 
 
 @unittest.skipUnless(SOLVER, "needs pymomentum, which lives in the pixi environment")
-class TheAngleReproducesTheEvidence(unittest.TestCase):
-    """Solves the library, so it is the slow one here. It is worth it: this is
-    the only test that says the number was read rather than chosen."""
+class TheContactSeparationOnTheEvidencedPopulation(unittest.TestCase):
+    """Solves the library, so it is the slow one here.
 
-    def test_the_mean_contact_separation_is_the_manual_figure(self) -> None:
+    THIS CLASS NO LONGER PROVES THE ANGLE WAS READ OFF THE MANUAL'S FIGURE.
+    It used to, and the proof was not sound. Read this before trusting it.
+
+    `ELBOW_POLE_ANGLE_DEGREES` is defined as the angle that puts the mean elbow
+    separation at contact on the manual's 38.6 cm. That mean was taken across
+    the whole library, and it agreed: 38.58 cm. But the 38.6 cm figure is read
+    from photographs of a snatch AT CONTACT with the arm at 0.85 to 0.90 of
+    full extension, as `docs/KNOWN_ISSUES.md` already states, and the library
+    mixes two populations. Six drills put both hands on the ball at contact and
+    averaged 36.57 cm. Two put one hand on it, so their other elbow is not on
+    the ball at all, and they averaged 44.60. The two averaged to 38.58, which
+    is 0.02 cm from the target, and no member of the population was at it.
+
+    The agreement was an artefact of the mix. It surfaced on 2026-08-30 when
+    the free-hand fix moved one population and the whole-library mean jumped to
+    41.68 cm while the six two-handed drills moved by 0.03.
+
+    So the population here is now the drills whose evidence the photographs
+    actually are: both hands on the ball at the contact frame. It is taken from
+    the SOLVE rather than from a field in a technique file, because what
+    matters is which hands are on the ball, not what a file says the drill is.
+
+    On that population the angle gives 36.5 cm against the manual's 38.6, a gap
+    of about 2.1 cm. The gap is not new. It was there before the free-hand fix
+    and moved by 0.03 cm through it.
+
+    MARIUS RULED ON 2026-08-30: record the gap, and defer the angle.
+    `ELBOW_POLE_ANGLE_DEGREES` stays at 31.3 until the coach morning provides
+    the data to re-read it, because changing it moves every drill in the
+    library and the library's look must not change before a second coach has
+    seen it. A five-point sweep puts the angle that would close the gap at
+    about 37.3 degrees; that number is evidence for the ruling, not a target.
+
+    What this class tests now is narrower and true: the separation on the
+    evidenced population is what it is measured to be, so the deferred gap
+    cannot quietly grow, and the population restriction is not a no-op.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
         character = load_character()
         index = {
             name: number
             for number, name in enumerate(character.skeleton.joint_names)
         }
-        found = []
+        cls.two_handed: dict[str, float] = {}
+        cls.one_handed: dict[str, float] = {}
         for movement_id in library():
             if not (has_ball(movement_id) and has_technique(movement_id)):
                 continue
@@ -237,22 +280,60 @@ class TheAngleReproducesTheEvidence(unittest.TestCase):
             result = solve_movement(character, movement_id)
             contact = result["possession"].contact_frame
             points = result["points"][contact]
-            found.append(
-                float(
-                    np.linalg.norm(
-                        points[index["l_lowarm"]] - points[index["r_lowarm"]]
-                    )
+            separation = float(
+                np.linalg.norm(
+                    points[index["l_lowarm"]] - points[index["r_lowarm"]]
                 )
             )
-        self.assertTrue(found, "no drill was measured, so this is empty")
-        mean = sum(found) / len(found)
-        # A whole centimetre of slack. The claim is that the angle was read off
-        # the manual's figure, not that a decimal place survives a refactor.
+            sides = set(result["possession"].frames[contact].sides)
+            where = cls.two_handed if sides == {"l", "r"} else cls.one_handed
+            where[movement_id] = separation
+
+    def test_the_population_is_not_the_whole_library(self) -> None:
+        """The anti-hollow clause. A restriction that excludes nothing is a
+        comment, and this file exists because a mean over the wrong population
+        matched its target for months."""
+        self.assertTrue(self.two_handed, "no drill puts both hands on the ball")
+        self.assertTrue(
+            self.one_handed,
+            "no drill was excluded, so the population restriction below does "
+            "nothing and this class is back to averaging the whole library",
+        )
+
+    def test_the_separation_on_the_evidenced_population(self) -> None:
+        """The measurement, pinned so the deferred gap cannot grow in silence.
+
+        Half a centimetre of slack, tighter than the whole centimetre the
+        read-off claim used to carry, because this is a recorded value rather
+        than a claim about agreement with a photograph.
+        """
+        mean = sum(self.two_handed.values()) / len(self.two_handed)
         self.assertAlmostEqual(
-            mean, REFERENCE_CM, delta=1.0,
-            msg=f"mean contact separation is {mean:.2f} cm against the manual's "
-            f"{REFERENCE_CM}. The angle no longer reproduces the evidence it "
-            "was read from.",
+            mean, MEASURED_CM, delta=0.5,
+            msg=f"the mean contact separation over the {len(self.two_handed)} "
+            f"drills that put both hands on the ball is {mean:.2f} cm, against "
+            f"the {MEASURED_CM} cm recorded when Marius deferred the angle on "
+            f"2026-08-30. The manual's figure is {REFERENCE_CM} and the "
+            f"documented gap to it is about 2.1 cm. If this moved because "
+            "ELBOW_POLE_ANGLE_DEGREES was changed, the deferral has been "
+            "overtaken and this number must be re-recorded with a ruling.",
+        )
+
+    def test_the_one_handed_drills_are_not_quietly_close(self) -> None:
+        """Guards the reason for the split rather than only its result.
+
+        If the excluded drills ever came back to the same figure, the split
+        would be costing complexity for nothing and should be reconsidered.
+        This asserts that they do not, so the split stays justified.
+        """
+        two = sum(self.two_handed.values()) / len(self.two_handed)
+        one = sum(self.one_handed.values()) / len(self.one_handed)
+        self.assertGreater(
+            one - two, 5.0,
+            f"the one-handed drills now average {one:.2f} cm against the "
+            f"two-handed {two:.2f}. They used to differ by 8 cm before the "
+            "free-hand fix and 20 after. If they have converged, the two "
+            "populations may no longer need separating.",
         )
 
 

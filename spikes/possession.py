@@ -448,6 +448,40 @@ def resolve(
             sample_offsets(carried_phases, carried_offsets, phases[number])
         )
 
+    def resting_point(number: int) -> np.ndarray:
+        """Where the hand that is NOT on the ball waits: at the chest.
+
+        Erin Burger, grading the library blind on 2026-08-30, wrote this twice
+        without being asked the same question twice. On the outside-hand
+        hooks: "touch and control ball to pull ball in to other hand and to
+        chest." On the one-hand snatch: "Don't want other hand to go away from
+        centre of body towards ball."
+
+        This was `ready_point`, which is the CATCHING hand's ready position:
+        aimed at the passer, at the full waiting distance, because that hand
+        has to meet the ball. Spent on the free hand it asks the free hand to
+        reach for the ball as well. On the snatch that parked it 46.9 cm in
+        front of her chest for the whole drill, and the wrist sat at 0.69 of
+        full reach and never came in. On the hooks it is worse, because the
+        aim is at a passer she starts with her back to: as she turns, that
+        same fixed point crosses her body, and the free wrist swept 22.1 cm
+        from one side of her chest to the other.
+
+        It is this project's recurring fault once more. A quantity measured
+        for one purpose was spent on another, and no test caught it because
+        each hand on its own got a defensible number.
+
+        The last carry key is where the ball ends up, and both one-handed
+        drills author it identically: across 0, up 0.10171, ahead 0.55938
+        torso lengths. That is the chest, and it is already in her frame, so
+        it follows her as she turns instead of being crossed by the turn.
+        Nothing in spikes/movements changes: no technique file authors a
+        free-hand place at all, which is why this sat in the solver.
+        """
+        if not carried_offsets:
+            return ready_point(number)
+        return carry_frames[number].place(carried_offsets[-1])
+
     # Where the ball is when she lets go, and how fast. A released ball keeps
     # the speed she gave it, which is what makes the pass back a pass rather
     # than the ball stopping in mid air.
@@ -568,7 +602,7 @@ def resolve(
                 sides=() if sides_at is None else tuple(sides_at(phase)),
                 centre=centre,
                 presented=presented,
-                waiting=ready_point(number),
+                waiting=resting_point(number),
                 state=state,
                 holding=holding,
             )
