@@ -325,9 +325,21 @@ def solve_movement(
             if solved is None:
                 solved = previous.copy()
         else:
-            solved = np.asarray(
-                solver.solve(previous.reshape(-1, 1)), dtype=np.float32
-            ).reshape(-1)
+            # The same two passes frame zero uses on each of its seeds, rather
+            # than one. A single Gauss-Newton solve from the previous pose is
+            # usually enough and on frame 12 of the outside-hand hooks it was
+            # not: the wrists ended 24.1 and 32.5 cm from the points they were
+            # asked for, against about 15.5 cm on every neighbouring frame, and
+            # the whole athlete moved with it — the root 13.5 cm, both feet
+            # about 50, the left shoulder elevation 19.4 to 114.8 degrees and
+            # back. That frame then seeded the next, and the right wrist never
+            # recovered: its miss sat at 22.7 cm for the rest of the drill
+            # instead of returning to 15.2.
+            #
+            # It is an unconverged frame and not a second valid pose, which is
+            # what the residual says. Frame zero already solves twice, so this
+            # removes a special case rather than adding one.
+            solved = run(previous)
         if not np.all(np.isfinite(solved)):
             solved = previous.copy()
 
