@@ -224,7 +224,12 @@ def solve_movement(
     measurements: list[dict] = []
     previous = rest.copy()
 
-    for frame in held.frames:
+    def solve_one(frame, seed, cold: bool):
+        """Solve one frame from one seed.
+
+        The seed is the only thing that differs between the two sweeps below.
+        The targets, the error terms and the weights are rebuilt identically
+        each time, so a frame cannot change because it was reached second."""
         number, phase = frame.number, frame.phase
         # Every hand the drill uses is shaped on every frame. A hand that is
         # not on the ball is shaped around the point it is moving toward, which
@@ -319,7 +324,7 @@ def solve_movement(
                 solver.solve(answer.reshape(-1, 1)), dtype=np.float32
             ).reshape(-1)
 
-        if number == 0:
+        if cold:
             # The first frame is a cold start: there is no previous pose and the
             # rest pose has the arms by the sides. Solving it once from rest
             # left the athlete in a different arm configuration from frame one,
@@ -337,7 +342,7 @@ def solve_movement(
                 if miss < best:
                     best, solved = miss, answer
             if solved is None:
-                solved = previous.copy()
+                solved = seed.copy()
         else:
             # The same two passes frame zero uses on each of its seeds, rather
             # than one. A single Gauss-Newton solve from the previous pose is
@@ -353,9 +358,9 @@ def solve_movement(
             # It is an unconverged frame and not a second valid pose, which is
             # what the residual says. Frame zero already solves twice, so this
             # removes a special case rather than adding one.
-            solved = run(previous)
+            solved = run(seed)
         if not np.all(np.isfinite(solved)):
-            solved = previous.copy()
+            solved = seed.copy()
 
         # The fingers close on the ball only once she has it. Before that they
         # stay open, which is what a hand waiting to receive actually does.
@@ -363,8 +368,40 @@ def solve_movement(
             solved = close_fingers(
                 character, index, solved, frame.centre, radius_cm, frame.sides
             )
+        return solved
+
+    # ---- the forward sweep ---------------------------------------------
+    answers: dict[int, np.ndarray] = {}
+    previous = rest.copy()
+    for frame in held.frames:
+        previous = solve_one(frame, previous, cold=(frame.number == 0))
+        answers[frame.number] = previous
+
+    # ---- the backward sweep ----------------------------------------------
+    # Frame zero is the only frame the forward sweep solves without a
+    # neighbour to start from, so an under-determined joint resolves there
+    # however the rest pose leaves it, and the drill then steps into line.
+    # On the outside-hand hooks the right knee opened at 34.1 degrees against
+    # the 47 the drill settles at, held it for six frames and stepped 9.6,
+    # with both feet reading 0.00 cm off the floor and the pelvis inside
+    # 0.02 cm throughout. A planted foot and a fixed pelvis do not determine a
+    # knee, so nothing pulled it back.
+    #
+    # The LAST frame is solved from a neighbour, so the drill is walked back
+    # from it and every earlier frame is re-solved from its successor. Frame
+    # zero then starts from frame one exactly as frame one started from frame
+    # zero, and no frame in the kept answer is a cold start. The forward sweep
+    # is still what finds the drill; this is what removes its seam.
+    backward = list(held.frames)[::-1]
+    previous = answers[backward[0].number]
+    for frame in backward[1:]:
+        previous = solve_one(frame, previous, cold=False)
+        answers[frame.number] = previous
+
+    for frame in held.frames:
+        number, phase = frame.number, frame.phase
+        solved = answers[number]
         motion[number] = solved
-        previous = solved
 
         points = joint_positions(character, solved)
         points_per_frame.append(points)

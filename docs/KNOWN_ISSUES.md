@@ -703,7 +703,45 @@ be tested against a real drill, and an untestable guard is exactly what "A
 comment is not a test" above is about. A drill authored with a free hand and no
 chest key would make it active. There is none today.
 
-## The cold start resolves the leg's redundancy differently, and snaps once
+## RESOLVED: the cold start resolved the leg's redundancy differently
+
+**Closed by the backward sweep.** Frame zero was the only frame solved without
+a neighbour to start from. It now gets one: the drill is solved forward as
+before, then walked back from the last frame, every earlier frame re-solved
+from its successor. No frame in the kept answer is a cold start.
+
+On the outside-hand hooks the right knee now opens at 49.9 against the 48 the
+drill settles at, and its worst step falls from 9.54 degrees to 2.03. The
+record of the fault is kept below.
+
+**The mechanism was proved, not inferred, after the free-hand pack shipped a
+fix that passed its acceptance test by luck.** Two controls:
+
+| build | knee at frame 0 | worst right-knee step |
+|---|---|---|
+| before | 34.1 | 9.54 at frame 6 |
+| backward sweep | 49.9 | 2.03 at frame 47 |
+| backward sweep, frame zero excluded | 34.1 | **15.43 at frame 0** |
+| a second FORWARD sweep, same cost | 34.3 | 5.46 at frame 8 |
+
+The third row is the confirmation: exclude frame zero and the whole
+disagreement lands on the frame-zero boundary, which is where the explanation
+says it should. The fourth is the refutation of "it is just more solving": the
+same number of extra solves, in the same direction, leaves frame zero where it
+was and the snap in place.
+
+**What it costs.** The solve doubles, 11.2 to 22.0 milliseconds per frame.
+
+**What it moves.** 38 measured values across the library, largest 5.34 degrees,
+and no verdict flips. The signature is a left and a right knee moving in
+opposite directions on every drill, by 0.5 to 4.8 degrees — the pelvis trading
+one leg against the other, which is the redundancy this fault lives in.
+
+`test_cold_start.py` states the rule as drift against target movement, which is
+the pairing the cold start's own docstring used. It fails on the code before
+this change and names the fault.
+
+## The record of it
 
 On `netball_hooks_outside_hand` the right knee opens at 34.1 degrees of flexion
 against 50.0 before the free-hand fix. It holds 34 to 37 for six frames, steps
