@@ -76,9 +76,23 @@ from technique import has_technique, load_technique, technique_path  # noqa: E40
 
 OUTPUT = SPIKE_DIR / "poc-output" / "library"
 
-# The same continuity term the movement solver uses, for the same reason: a
-# frame solved in isolation can pick a different arm configuration from its
-# neighbour and the movement snaps between them.
+# A weak pull toward the REST POSE, and the same one the movement solver uses.
+#
+# The name is wrong and is left alone here deliberately, so that this commit
+# changes no behaviour. `ModelParametersErrorFunction` penalises the difference
+# between the current parameters and a TARGET, and nothing below ever calls
+# `set_target_parameters`, so the target is zero: the rest pose. Every other
+# use of this class in the repository names the variable `prior`, which is what
+# it is.
+#
+# FRAME-TO-FRAME CONTINUITY IN THIS SOLVER COMES FROM THE SEED. Each frame is
+# solved starting from the previous frame's answer, and nothing in the
+# objective prefers the previous pose. That distinction matters when reading a
+# snap: a term pulling toward rest cannot carry a bad pose forward, and cannot
+# oppose a correct term frame by frame. The seed does both.
+#
+# Refer to "The term named continuity is a pull toward the rest pose" in
+# docs/KNOWN_ISSUES.md before explaining any discontinuity by this term.
 CONTINUITY_WEIGHT = 0.02
 
 
