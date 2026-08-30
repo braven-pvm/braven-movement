@@ -623,3 +623,100 @@ intended extension.
 
 A drill that both turns and releases would make it active. There is none today.
 
+
+## The mean elbow separation agreed with the manual by mixing two populations
+
+`ELBOW_POLE_ANGLE_DEGREES` is defined as the angle that puts the mean elbow
+separation at contact on the manual's 38.6 cm. Across the whole library it did:
+38.58 cm, which is 0.02 cm off. **No drill in that population was at it.**
+
+The 38.6 cm figure is read from photographs of a snatch at contact with the arm
+at 0.85 to 0.90 of full extension. That is already recorded above, under "How
+wide the elbows sit with the ball at the chest". Six drills put both hands on
+the ball at contact and averaged 36.57 cm. Two put one hand on it, so their
+other elbow is not on the ball at all, and they averaged 44.60. The two groups
+averaged to the target.
+
+It surfaced on 2026-08-30 when the free-hand fix moved one population and left
+the other alone. The whole-library mean jumped to 41.68 cm. The six two-handed
+drills moved by 0.03.
+
+**The gap is not new and the fix did not cause it.** On the population the
+photographs describe, the angle gave 36.57 cm before that change and 36.54
+after. A five-point sweep puts the angle that would close the gap at about
+37.3 degrees, against 31.3 today.
+
+**Marius ruled on 2026-08-30: record the gap, defer the angle.** The retune
+waits for the coach-morning data, because it moves every drill and the
+library's look must not change before a second coach has seen it.
+`test_elbow_pole.py` now measures the evidenced population, records 36.5, and
+states in its own docstring that it no longer proves the read-off claim.
+
+This is the sixth instance of the project's recurring fault class and the first
+of a new shape. The others spend a quantity measured in one regime on another.
+This one is a CALIBRATION whose agreement with its evidence was an artefact of
+the population it was averaged over. When you meet a calibrated constant here,
+ask what population the agreement is computed over, and whether every member of
+it is the thing the evidence describes.
+
+## A free hand with no post-contact key would rest at the contact point
+
+`resting_point` in `possession.py` puts the hand that is not on the ball at the
+last post-contact key, which is where the ball is going. Two fallbacks sit
+behind it. A technique with no post-contact key at all falls back to
+`ready_point`, which is the behaviour this replaced. A technique whose only key
+is the contact offset would rest the free hand out at the contact point.
+
+**No drill trips either.** Every technique in the library that leaves a hand
+free authors at least one key past contact, and the two that do author an
+identical chest key at across 0, up 0.10171, ahead 0.55938 torso lengths.
+
+It is recorded rather than guarded. A guard for a case no drill reaches cannot
+be tested against a real drill, and an untestable guard is exactly what "A
+comment is not a test" above is about. A drill authored with a free hand and no
+chest key would make it active. There is none today.
+
+## The cold start resolves the leg's redundancy differently, and snaps once
+
+On `netball_hooks_outside_hand` the right knee opens at 34.1 degrees of flexion
+against 50.0 before the free-hand fix. It holds 34 to 37 for six frames, steps
+9.6 degrees between frames 6 and 7, and settles at about 47 for the rest of the
+drill. The free hand's target barely moves across those frames.
+
+**Nothing is broken in the pose.** Both feet read 0.00 cm off the floor
+throughout and the pelvis holds 84.04 to 84.06 cm. With the foot planted and
+the pelvis fixed, knee flexion is not fully determined — the hip can rotate and
+reach the same foot from the same pelvis at a different knee angle. The solver
+has freedom there and resolved it one way at the cold start and another once
+the drill was running.
+
+**It is the cold start, and it is the free-hand target that moves it.** Isolated
+by building the two changes separately:
+
+| build | right knee at frame 0 | worst right-knee step |
+|---|---|---|
+| main | 50.0 | 2.10 |
+| the second solve pass alone | 50.0 | 1.06 |
+| both changes | 34.1 | 9.54 |
+
+The second pass alone leaves the opening pose alone and makes that channel
+smoother. The free-hand target is what changes which pose the solve from rest
+lands in.
+
+**It is the same fault the cold start's own docstring already describes**, in a
+new limb. That docstring says solving frame zero once from rest "left the
+athlete in a different arm configuration from frame one, and the elbow moved 33
+degrees over the first few frames while the target barely moved". The remedy
+then was several seeds scored by `contact_miss`. The seeds vary only the forearm
+twist and the score reads only hands, so neither can tell two leg poses apart.
+
+**Scale, stated so it is not read as worse than it is.** No drill's worst
+single-frame step moved by more than 0.56 degrees over eight angles, and the
+library already carries steps of 4 to 19 degrees. The graded checkpoints at
+`facing_away` barely moved: the left knee 50.6 to 51.9 and the trunk turn not at
+all. The right knee is measured and reported there but is not a checkpoint.
+
+A fix belongs in the cold start rather than here: frame zero is the only frame
+not continuous with a neighbour, and a backward pass over the opening frames
+would give it what every other frame has. That is a mechanism change and it is
+not bundled into the free-hand pack.

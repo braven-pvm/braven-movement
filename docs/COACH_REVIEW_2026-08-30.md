@@ -1,10 +1,18 @@
 # The first coach review, and what the instruments say about it
 
-Erin Burger graded the library blind on 2026-08-30. She gave 68 marks across
-eight drills, 49 met and 19 not, and 8 notes in her own words. She is an author
-of the manual the library is built from.
+Erin Burger graded the library blind. Her review is stamped
+2026-08-28T10:07:03Z, which is the morning the video spike shipped. This
+document analyses it on 2026-08-30. An earlier draft gave the 30th as the date
+she graded, which is the date of the analysis and not of the review.
+
+She gave 68 marks across eight drills, 49 met and 19 not, and 8 notes in her
+own words. She is an author of the manual the library is built from.
 
 The engine and the coach agreed on 47 of 68 marks, which is 69.1 per cent.
+
+The library holds 69 checkpoints. One went unmarked:
+`netball_hooks_jump_pull_in`, gather, `leftKneeFlexionDegrees`. Every figure
+here is out of 68, which is what she marked, not out of 69.
 
 This document does three things. It records the free-hand defect her notes
 found and the fix for it. It builds the evidence for the three release cues she
@@ -63,20 +71,38 @@ place at all, which is why this sat in the solver.
 ### Corroboration from a drill the fix does not touch
 
 The library's own pose for a hand that holds the ball at the chest is 145.6 and
-145.7 degrees of elbow flexion, at 0.30 of full reach. That is measured on
-`two_hand_snatch_pull_in` and on `double_foot_landing`, neither of which this
-change alters. The free hand now waits at 145.8 degrees and 0.30. The number
-was not chosen. It fell out, and it matches to one decimal.
+145.7 degrees of elbow flexion, at 0.30 of full reach. Those are the LEFT and
+RIGHT hands of one drill, `two_hand_snatch_pull_in`, which this change does not
+alter. The free hand now waits at 145.8 degrees and 0.30. The number was not
+chosen. It fell out, and it matches to one decimal.
+
+An earlier draft named `double_foot_landing` as a second drill giving the same
+pair. It does not. It reads 142.8 and 142.9 at 0.32 of reach, because its chest
+key is authored at ahead 0.58989 torso lengths rather than 0.55938. That is a
+different key, so a different answer, and quoting it as the same number was
+wrong. It is worth keeping for the opposite reason: a drill with a chest key
+5 per cent further out sits 3 degrees further open, which is what a reader
+should expect and is a second check that the pose follows the key.
 
 ### The solve needed a second pass
+
+The figures in this section describe the intermediate build: the free-hand
+target corrected, the second solve pass not yet added. They are the reason for
+that pass. On the shipped tip the same frame moves the root 0.00 cm and no
+joint more than 0.16, so a reader measuring the tip will not find them.
 
 With the free hand near her chest, frame 12 of the outside-hand hooks stopped
 converging. Both wrists ended 24.1 and 32.5 cm from the points they were asked
 for, against about 15.5 cm on either side of that frame. The root moved 13.5
-cm, both feet about 50, and the left shoulder elevation went 19.4 to 114.8
-degrees and back in one frame. That frame then seeded the next, and the right
-wrist never recovered: its miss sat at 22.7 cm for the rest of the drill
-instead of returning to 15.2.
+cm, the right foot 46.2 and the left 9.4, and the left shoulder elevation went
+19.4 to 114.8 degrees and back in one frame. That frame then seeded the next,
+and the right wrist never recovered: its miss sat at 22.7 cm for the rest of
+the drill instead of returning to 15.2.
+
+An earlier draft said "both feet about 50". That came from a list of the
+twelve joints that moved most, which held four right-side foot joints between
+46 and 57 cm and no left-side one. The collapse was asymmetric and the pair
+above is the honest reading.
 
 The residual says unconverged, not a second valid pose. Frame zero already
 solves twice per seed, so every frame now uses that same helper. This removes a
@@ -229,18 +255,14 @@ to 0.29 of full reach at phase 0.76, which is exactly where the drill's
 library's chest is 0.30 of reach. That note is satisfied, so it does not
 explain her mark.
 
-## 4. An open finding about the elbow pole
+## 4. The elbow pole: a mixing artefact, found and then deferred
 
-This is reported rather than acted on, because acting on it moves every drill
-in the library.
-
-`test_elbow_pole.py` checks that the mean elbow separation at contact, across
+`test_elbow_pole.py` checked that the mean elbow separation at contact, across
 the library, is the manual's 38.6 cm. `ELBOW_POLE_ANGLE_DEGREES` is defined as
-the angle that reproduces that figure.
+the angle that reproduces that figure. The free-hand fix moved the mean to
+41.68 cm and the test failed.
 
-The free-hand fix moves the mean to 41.68 cm, and the test fails.
-
-The reason is the population, not the angle:
+The cause is the population, not the angle:
 
 | population | before the fix | after the fix | drills |
 |---|---|---|---|
@@ -256,9 +278,10 @@ figure read from a two-handed photograph mixes two populations.
 
 **The agreement before the fix was a mixing artefact.** Six two-handed drills
 at 36.57 and two one-handed drills at 44.60 average to 38.58, which is 0.02 cm
-from the manual's figure. On the population the photographs actually describe,
-the angle gave 36.57 before this change and gives 36.54 after. The gap of about
-2 cm existed already. The fix did not create it. The fix exposed it.
+from the manual's figure, and no member of the population was at it. On the
+population the photographs actually describe, the angle gave 36.57 before this
+change and gives 36.54 after. The gap of about 2 cm existed already. The fix
+did not create it. The fix exposed it.
 
 The two readings pull the angle in opposite directions. From a five-point
 sweep, with linear interpolation between the points:
@@ -268,9 +291,47 @@ sweep, with linear interpolation between the points:
 | all eight drills | about 22.8 degrees |
 | the six two-handed drills | about 37.3 degrees |
 
-The angle is 31.3 today. The choice between about 22.8 and about 37.3 is a
-15-degree spread and it changes every drill in the library, so this lane does
-not make it. It goes to Marius with this evidence.
+That is a 15-degree spread and it changes every drill in the library, so this
+lane did not make the choice.
 
-Until it is settled, the branch carries one failing test. That failure is real
-and it is stated here rather than adjusted away.
+### The ruling
+
+**Marius ruled on 2026-08-30: repopulate the test to the manual's own
+population, and defer the angle.** `ELBOW_POLE_ANGLE_DEGREES` stays at 31.3.
+The retune waits for the coach-morning data, because the library's look must
+not change before a second coach has seen it.
+
+`test_elbow_pole.py` now measures the drills that put both hands on the ball at
+the contact frame, taken from the solve rather than from a field in a technique
+file. It records 36.5 cm against the manual's 38.6, states the 2.1 cm gap and
+the deferral in its own docstring, and says plainly that it no longer proves
+the angle was read off the manual's figure. Two guards come with it: one
+asserts that the population restriction excludes something, because a
+restriction that excludes nothing is a comment, and one asserts that the two
+populations have not converged, so the split stays justified.
+
+The suite is green again on 282 tests. That is not the gap closing. It is the
+gap being recorded where the next person will find it.
+
+### One note for a reader of the checks
+
+The whole solver suite, including this test, needs `pymomentum`, which lives in
+the pixi environment. Continuous integration does not have it, so continuous
+integration never ran this test and never saw it red. A green check on this
+repository is not evidence about anything in this section. Run it with pixi.
+
+## 5. A latent edge, recorded rather than guarded
+
+The free hand now waits at the last post-contact key. A technique with NO
+post-contact key at all would fall back to `ready_point`, which is the old
+behaviour, and a technique whose only key is the contact offset would rest the
+free hand out at the contact point.
+
+No drill in the library trips this. Every technique that leaves a hand free
+authors at least one key past contact, and both that do author an identical
+chest key. It is written down here rather than guarded, because a guard for a
+case no drill reaches cannot be tested against a real drill, and an untestable
+guard is the thing this project keeps finding under a comment.
+
+If a drill is ever authored with a free hand and no chest key, this is where
+to look first.
