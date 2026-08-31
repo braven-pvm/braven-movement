@@ -34,6 +34,26 @@ moved *with* the solve, which is the only question a re-export has to settle.
     pixi run python verify_tactics_clip.py --against clip-baseline.json
     pixi run python verify_tactics_clip.py --baseline clip-baseline.json
 
+IF THIS DIES WITH NO OUTPUT, TRY MKL_THREADING_LAYER=SEQUENTIAL
+--------------------------------------------------------------
+
+A reviewer running this gate on 2026-08-31 hit a hard process crash,
+`0xC06D007F`, inside a numpy matrix multiply, on both `main` and the branch
+under review. Setting `MKL_THREADING_LAYER=SEQUENTIAL` fixed it. The crash
+kills the process rather than raising, so THIS GATE CAN DIE WITHOUT SAYING
+ANYTHING, and a gate that dies silently reads like a gate that has not been
+run.
+
+    MKL_THREADING_LAYER=SEQUENTIAL pixi run python verify_tactics_clip.py
+
+**It did not reproduce in the movement lane's worktree**, and that is recorded
+rather than smoothed over, because the difference tells the next person which
+situation they are in. There, with the variable unset, `numpy.__config__`
+reports BLAS `blas 3.9.0` rather than MKL, and a 512 by 512 matmul and inverse
+both complete. So this is an environment difference between checkouts and not a
+property of the code. Check what your own numpy reports before assuming either
+way.
+
 What it gates on, and what it only reports
 ------------------------------------------
 **It exits non-zero for one thing: a clip that no longer carries its own solve.**
