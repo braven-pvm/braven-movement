@@ -1163,3 +1163,25 @@ therefore refused every real archive on the first attempt. Twelve tests against
 hand-built fixtures all passed; running the script once on the real library
 found it immediately. The fixtures were built from what the code expected to
 see rather than from what the directory holds.
+
+## The ball speed for the whole library is one undocumented constant
+
+Raised on 2026-08-31, from a file-level audit that needed no solver. Measured
+in `docs/BALL_SPEED_PROVENANCE.md`.
+
+The athlete returns the ball at the speed it was thrown at her, which
+`possession.return_velocity` derives from the passer's flight. That reuse
+works, and every drill in the library derives 600 cm/s from a flight that
+`author_flight.DEFAULT_SPEED_CM` authored at 600 cm/s. Eight drills, flights
+from 0.219 to 0.315 seconds, one speed.
+
+**The agreement is a tautology.** It proves the derivation and says nothing
+about the value. 600 cm/s has no coach, no measurement and no source, and its
+own comment says a game pass is faster. Nothing grades it.
+
+Two questions for the coach morning, neither of them a code change: is 6.00
+m/s a drill feed, and should she return the ball at the pace it arrived. The
+second is already marked PROVISIONAL in `return_velocity`.
+
+The failure mode that docstring warns about — an early hold making her throw
+harder — does NOT fire today. Every drill has a real parabola.
