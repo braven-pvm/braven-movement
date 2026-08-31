@@ -13,6 +13,13 @@ a receipt for something that was never in the repository.
 
     pixi run python export_coach_animations.py
     pixi run python export_coach_animations.py netball_two_hand_snatch_pull_in
+
+A PREVIEW is the same export with one constant changed, for a look decision a
+coach is being asked to make. It writes beside the shipped file, never over it,
+and its payload says at the top what it is. Refer to `preview_variants.py`.
+
+    pixi run python export_coach_animations.py --preview mirror
+    pixi run python export_coach_animations.py --preview pole-37.3
 """
 
 from __future__ import annotations
@@ -27,6 +34,7 @@ SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
 
 from athlete import reference  # noqa: E402
+from preview_variants import applied, preview_output, stamp  # noqa: E402
 from ball_track import has_ball  # noqa: E402
 from movement_definition import load as load_definition  # noqa: E402
 from movement_engine import definition_path, library, load_character  # noqa: E402
@@ -127,7 +135,18 @@ def animation(character, movement_id: str) -> dict:
 
 
 def main(argv: list[str]) -> int:
-    wanted = argv[1:] or [
+    arguments = list(argv[1:])
+    variant = None
+    if "--preview" in arguments:
+        where = arguments.index("--preview")
+        try:
+            variant = arguments[where + 1]
+        except IndexError:
+            print("--preview needs a variant name")
+            return 1
+        del arguments[where : where + 2]
+
+    wanted = arguments or [
         name
         for name in library()
         if has_ball(name)
@@ -137,13 +156,16 @@ def main(argv: list[str]) -> int:
     character = load_character()
 
     drills = {}
-    for movement_id in wanted:
-        drills[movement_id] = animation(character, movement_id)
-        item = drills[movement_id]
-        print(
-            f"  {movement_id:42s} {len(item['frames']):3d} frames  "
-            f"{len(item['bones']):3d} bones  {len(item['phases'])} phases"
-        )
+    # The variant is in force ONLY here. Outside this block nothing in the
+    # solver is patched, which is what `test_preview_variants` proves.
+    with applied(variant):
+        for movement_id in wanted:
+            drills[movement_id] = animation(character, movement_id)
+            item = drills[movement_id]
+            print(
+                f"  {movement_id:42s} {len(item['frames']):3d} frames  "
+                f"{len(item['bones']):3d} bones  {len(item['phases'])} phases"
+            )
 
     payload = {
         "schemaVersion": 1,
@@ -151,8 +173,14 @@ def main(argv: list[str]) -> int:
         "unitsNote": "joint and ball positions are centimetres, Y up",
         "movements": drills,
     }
-    OUTPUT.mkdir(parents=True, exist_ok=True)
-    path = OUTPUT / "animations.json"
+    if variant is not None:
+        # At the TOP of the payload, so a reader that does not know the field
+        # still cannot open this file believing it is the current build.
+        payload = {"preview": stamp(variant), **payload}
+        path = preview_output(variant)
+    else:
+        path = OUTPUT / "animations.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload) + "\n", encoding="utf-8")
     where = payload["generatedFrom"]
     clean = where["treeWasClean"]
