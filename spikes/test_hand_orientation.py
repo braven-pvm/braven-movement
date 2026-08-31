@@ -30,7 +30,7 @@ from hand_orientation import (
     thumb_to_ball_degrees,
     thumb_up_degrees,
 )
-from hand_orientation_crosscheck import _atan2_degrees, recompute
+from hand_orientation_crosscheck import _atan2_degrees, recompute, same_build
 from segment_measures import SegmentMeasureError
 
 # Only a genuinely absent solver may skip. Catching every exception here would
@@ -215,6 +215,17 @@ class TheTwoFormulationsAgree(unittest.TestCase):
                     _atan2_degrees(ray, WORLD_UP),
                     places=6,
                 )
+
+    def test_two_different_builds_refuse_to_compare(self) -> None:
+        """Agreement between two different builds certifies nothing, so the
+        crosscheck must refuse it, and must NOT refuse the same build or an
+        unstamped artifact, where the frame check still stands guard."""
+        stamped = {"commit": "a" * 40, "treeWasClean": True}
+        other = {"commit": "b" * 40, "treeWasClean": True}
+        self.assertIsNotNone(same_build(stamped, other))
+        self.assertIsNone(same_build(stamped, dict(stamped)))
+        self.assertIsNone(same_build(None, stamped))
+        self.assertIsNone(same_build(stamped, {"commit": None}))
 
     def test_through_the_crosscheck_row_reader(self) -> None:
         """recompute() on unrounded joints equals the primary measure."""

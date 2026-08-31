@@ -146,11 +146,33 @@ def crosscheck(movement_id: str, receipt: dict, animation: dict) -> list[dict]:
     return rows
 
 
+def same_build(receipt_stamp: dict | None, export_stamp: dict | None) -> str | None:
+    """Refuse the comparison outright when the artifacts name different builds.
+
+    Both artifacts carry a generatedFrom stamp (PR #22 for the receipts, the
+    exporter since it existed). Two clean stamps naming different commits are
+    two different builds, and agreement between them would certify nothing.
+    A missing or dirty stamp is not proof of a mismatch, so it does not
+    refuse; the per-phase frame check below still applies either way.
+    """
+    if not receipt_stamp or not export_stamp:
+        return None
+    ours, theirs = receipt_stamp.get("commit"), export_stamp.get("commit")
+    if not ours or not theirs or ours == theirs:
+        return None
+    return (
+        f"the receipts come from {ours[:12]} and the animations export from "
+        f"{theirs[:12]}: two different builds, so agreement between them "
+        "would certify nothing. Rebuild both from one tree."
+    )
+
+
 def main(argv: list[str]) -> int:
     if not ANIMATIONS.is_file():
         print(f"missing {ANIMATIONS}: run export_coach_animations.py first")
         return 1
-    animations = json.loads(ANIMATIONS.read_text(encoding="utf-8"))["movements"]
+    payload = json.loads(ANIMATIONS.read_text(encoding="utf-8"))
+    animations = payload["movements"]
 
     wanted = argv[1:] or sorted(animations)
     checked, disagreements = 0, []
@@ -160,6 +182,12 @@ def main(argv: list[str]) -> int:
             print(f"missing {receipt_path}: run build_library.py first")
             return 1
         receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        mismatch = same_build(
+            receipt.get("generatedFrom"), payload.get("generatedFrom")
+        )
+        if mismatch:
+            print(f"{movement_id}: {mismatch}")
+            return 1
         rows = crosscheck(movement_id, receipt, animations[movement_id])
         checked += len(rows)
         worst = max(rows, key=lambda row: row["gapDegrees"])
