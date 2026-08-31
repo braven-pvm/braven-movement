@@ -62,6 +62,7 @@ from movement_engine import (  # noqa: E402
     motion_path,
     trunk_frame,
 )
+from snap_report import spike_report  # noqa: E402, F401
 from movement_definition import (  # noqa: E402
     MINIMUM_MEANINGFUL_BAND_DEGREES,
     load as load_definition,
@@ -534,41 +535,6 @@ def step_report(measurements: list[dict]) -> dict:
         steps = [abs(series[i + 1] - series[i]) for i in range(len(series) - 1)]
         worst[key] = round(max(steps), 2) if steps else 0.0
     return worst
-
-
-def spike_report(measurements: list[dict]) -> dict:
-    """Find frames where a measured angle jumps against its own neighbours.
-
-    A snap is a local spike, not a fast movement. Comparing the largest step in
-    a run against the largest step in an easier run measures which run is
-    easier, which is a different question and the wrong one: a wide ball is
-    taken faster than a central one by a real athlete too.
-
-    So each step is judged against the two either side of it. Anything more
-    than three times its neighbours is a frame the movement jumps at.
-    """
-    worst_ratio = 0.0
-    worst_where = None
-    for key, value in measurements[0].items():
-        if not key.endswith("Degrees") or not isinstance(value, (int, float)):
-            continue
-        series = [frame[key] for frame in measurements]
-        steps = [abs(series[i + 1] - series[i]) for i in range(len(series) - 1)]
-        for number in range(1, len(steps) - 1):
-            neighbours = (steps[number - 1] + steps[number + 1]) / 2.0
-            # A step of a fraction of a degree is noise, not a movement, and
-            # dividing by it produces enormous ratios that mean nothing.
-            if steps[number] < MINIMUM_MEANINGFUL_BAND_DEGREES or neighbours < 0.2:
-                continue
-            ratio = steps[number] / neighbours
-            if ratio > worst_ratio:
-                worst_ratio = ratio
-                worst_where = {"measure": key, "frame": number + 1,
-                               "stepDegrees": round(steps[number], 2)}
-    return {
-        "worstNeighbourRatio": round(worst_ratio, 2),
-        "at": worst_where,
-    }
 
 
 def build(character, movement_id: str, variant: str | None = None) -> dict:

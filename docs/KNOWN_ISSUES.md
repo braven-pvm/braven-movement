@@ -547,8 +547,11 @@ read at two thresholds, and the larger one is the honest headline.
 no circle point to name and `pole_target` returns None. The skewed basis
 emitted a point anyway. Verified directly rather than by sweep: six coronal
 directions all return None, and one two hundredths off the plane still returns
-a point, so it is the plane and not a region. A grid sweep will not find this,
-because a sampling grid steps over an exact plane rather than landing on it.
+a point, so it is the plane and not a region. A grid sweep MAY MISS IT ENTIRELY, and
+whether it does depends on the grid: this lane's sampled at half-step offsets
+and stepped over the plane, finding 0 of 576, while the reviewer's landed on it
+and found 48 of 576. Neither count is a property of the code. Both are
+properties of a grid, which is why the direct test is the one to trust.
 
 `pole_target` now lives outside `elbow_poles` so the guard calls the same code
 the solver calls. The measurement that first found the 12.30 cm reimplemented
@@ -609,7 +612,61 @@ what its name says until something measures the connection. Before asking a
 coach for any number, sweep the parameter it will feed and confirm the athlete
 moves.
 
-## The snap check flags the wrong frame, and there is a real hitch to find
+## RESOLVED: the snap check now sees a stall, and does not see a turn
+
+**The instrument is rebuilt and lives in `snap_report.py`**, stdlib only, so a
+test of it runs wherever the tests run. It used to sit in `possession_solve.py`
+behind a solver import, which is why an instrument this wrong went this long
+with no test at all.
+
+Three faults, two recorded here before and one found while fixing them:
+
+- **It divided by the MEAN of two neighbours**, breakdown point zero. Now the
+  MEDIAN over three steps either side, excluding the frame itself.
+- **It could not see a stall.** Its skip-gate exempted any frame whose
+  neighbours were under 0.2 degrees, which is a snap out of stillness, and its
+  significance gate required the STEP to be large, which a stall never is. The
+  ratio is now symmetric and a frame is judged when EITHER its step or its
+  neighbourhood is meaningful.
+- **A stall test with no further condition flags every TURNING POINT.** An
+  angle that reverses has a step through zero at the reversal. The first
+  version of the fix scored 32.75 on `netball_double_foot_landing` for an elbow
+  that simply stopped folding and began to open. The discriminator is the SIGN
+  of the steps either side, and at an edge the one neighbour that exists
+  decides — a version that returned "same direction" wherever a neighbour was
+  missing reported the jump hooks' last-frame reversal as a stall of 7.74.
+
+**`SNAP_RATIO` stays at 3.0 and was NOT recalibrated.** The entry said to
+recalibrate once the denominator was robust. Having made it robust, the honest
+reading is that 3.0 separates real hitches from ordinary movement, which is
+what a threshold is for. Moving it to make today's library pass would be tuning
+the threshold to the answer.
+
+**So four rows now read over threshold, and they are findings rather than a
+broken build.** Nothing in the test suite gates on `SNAP_RATIO`; `proof.py` and
+`retarget.py` are reports.
+
+| drill | ratio | kind | where |
+|---|---|---|---|
+| `two_hand_snatch_straight_back` | 9.42 | stall | right elbow, frame 88 |
+| `two_hand_catch_chest` | 8.52 | stall | left elbow, frame 90 |
+| `deflect_high` | 7.72 | stall | left elbow, frame 70 |
+| `hooks_jump_pull_in` | 3.30 | stall | right elbow, frame 102 |
+
+Two are one-frame pauses in the middle of a monotonic movement — the chest
+catch runs -4.15, then -0.96, then -12.06 degrees per frame. One, the deflect,
+is a different shape: the elbow is nearly still for six frames and then launches
+at 10 to 13 degrees per frame, and the statistic names the last quiet frame
+rather than the first fast one. Both frames are honest names for a change that
+happens between them.
+
+**AND THE HITCH THIS ENTRY RECORDED IS GONE.** It read "on the `wide` variant of
+`netball_two_hand_snatch_pull_in` the elbow steps 8.50, then 0.19 at the contact
+frame, then 4.41". Measured now, those steps read 11.36, 8.28, 3.92 — no stall.
+Some later pack closed it, and nobody noticed because the instrument that would
+have said so was the broken one.
+
+## The record of it
 
 Adjudicated during the pole pack's review. Both halves stand.
 
