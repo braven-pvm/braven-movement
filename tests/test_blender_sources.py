@@ -268,9 +268,11 @@ class BlenderSourceContractTest(unittest.TestCase):
         76 tests while every real render failed, because the code it guarded
         runs only inside Blender and those tests skip.
 
-        Numbers from the rig, 90 knuckle rotations over 5 drills: the four
-        fingers turn about X with a share of 1.000 every time. Naming Y instead
-        would carry 0.08 and naming Z would carry 0.16.
+        Numbers from the rig, 170 knuckle rotations over all eight drills,
+        measured on the solves before and after the cold-start sweep: the four
+        fingers turn about X with a share of 1.000 in every one of 136
+        readings. Naming Y instead would carry at most 0.09 and naming Z at
+        most 0.18.
         """
         turned_like_a_finger = (58.3, -4.7, 8.5)
 
@@ -309,23 +311,34 @@ class BlenderSourceContractTest(unittest.TestCase):
         )
 
     def test_the_thumb_is_recorded_and_never_refused(self):
-        """Measured, its share runs 0.600 to 1.000. A finger's floor is unsafe.
+        """The calibration is finished, and the answer is record-only.
 
-        The curl plane runs 47 to 61 degrees off the thumb's flexion axis, per
-        the measured note in `within_limits`, and cos(61) is 0.48. A threshold
-        that is safe for a finger could refuse a CORRECT thumb in a pose nobody
-        has rendered, and three of the eight drills are still unmeasured. So
-        the thumb is carried in the receipt and never raises.
+        Measured 2026-08-31 over all eight drills, 34 gripping hands, on the
+        solves before and after the cold-start sweep: the named-Z share runs
+        0.599 to 1.000, median 0.831 — and on EVERY reading the other
+        curl-plane axis, X, carries 0.989 or more, because the curl plane
+        runs 47 to 61 degrees off the thumb's own flexion axis. A floor low
+        enough to pass every correct reading is passed by a mis-named thumb
+        more comfortably than by a correct one, so no share threshold
+        separates right from wrong for this digit. An assertion here could
+        never catch the swap it exists to catch, and could still refuse a
+        correct pose. The share stays in the receipt as the drift record.
         """
         self.assertNotIn("thumb", ASSERTED_DIGITS)
 
-        # Its worst measured reading, and a reading below its plausible floor.
-        for turned in ((21.1, -3.8, 12.7), (21.1, -3.8, 10.1)):
-            self.assertIsNone(
-                axis_complaint("thumb", turned, 2, floor_degrees=5.0),
-                "the thumb must never stop a render on a rule it is not "
-                "calibrated for",
-            )
+        # The worst CORRECT reading in the library: two_hand_snatch_pull_in
+        # at pull_in, right hand. The named Z carries 0.599 of the turn.
+        worst_correct = (33.363, 6.042, -19.977)
+        self.assertAlmostEqual(0.599, axis_share(worst_correct, 2), places=3)
+        self.assertIsNone(
+            axis_complaint("thumb", worst_correct, 2, floor_degrees=5.0),
+            "the thumb must never stop a render on a rule that cannot tell "
+            "right from wrong for it",
+        )
+        # The same turn judged by the WRONG name: X is the dominant axis of
+        # this correct pose, so a mis-named thumb reads a BETTER share than a
+        # correctly named one. That pair of numbers is the whole ruling.
+        self.assertAlmostEqual(1.0, axis_share(worst_correct, 0), places=6)
 
     def test_a_run_that_rendered_nothing_does_not_report_a_pass(self):
         """PASS must mean something was produced, not that the code returned.

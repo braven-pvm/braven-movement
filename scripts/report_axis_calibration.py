@@ -1,16 +1,19 @@
 """Read render receipts and report what the flexion-axis instrument saw.
 
-Two calibrations in `finger_curl.py` were left open with notes instead of
-numbers, and this reads the receipts that close them:
+Two calibrations in `finger_curl.py` were once left open with notes instead
+of numbers, and this is the instrument that closed them (2026-08-31, all
+eight drills, run twice across the cold-start merge; both rulings and their
+numbers now live beside `FLEXION_MEASURE_FLOOR_DEGREES` and
+`ASSERTED_DIGITS`). It stays useful for the next calibration question:
 
-1. `FLEXION_MEASURE_FLOOR_DEGREES` is 5.0 with the note that no rig reading
-   says 5 rather than 3 or 8. The below-floor population answers what actually
-   sits under the floor: real small flexions with a direction, or the residue
-   of digits that never flexed.
+1. The below-floor population: what actually sits under the measure floor —
+   real small flexions with a direction, or the residue of digits that never
+   flexed. (Measured: the residue only; nothing turns between 0 and 20.2
+   degrees.)
 
-2. The thumb is recorded and not asserted, on 18 readings over 5 drills. Its
-   per-drill shares here are the data that finish that calibration, one way
-   or the other.
+2. The thumb's per-drill named-Z share, beside what X carries on the same
+   turn. (Measured: X carries 0.989 or more on every reading, so no share
+   threshold separates a correct thumb from a mis-named one.)
 
     python report_axis_calibration.py <render directory>
 

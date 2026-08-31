@@ -116,24 +116,33 @@ def axis_share(components: Vector3, axis: int) -> float:
     return abs(components[axis]) / largest
 
 
-# Measured over 90 knuckle rotations, 5 drills, several phases, on the real
-# rig, using the relative rotation and not a difference of euler angles.
+# Measured over 170 knuckle rotations, ALL EIGHT drills, 34 gripping hands,
+# on the real rig, using the relative rotation and not a difference of euler
+# angles — and measured twice, on the solve before the cold-start sweep and
+# on the solve after it, with every number below identical in both runs.
+# (This finishes the 90-rotation, five-drill calibration that first set
+# these values; that run read the same for everything it could see.)
 #
-#   index, middle, ring, pinky   share 1.000 in every one of 72 readings
-#   thumb                        share 0.600 to 1.000, median 0.831
+#   index, middle, ring, pinky   share 1.000 in every one of 136 readings
+#   thumb                        share 0.599 to 1.000, median 0.831
 #
-# A wrong name is wrong by an order of magnitude: naming Y for the index would
-# carry 0.08 and naming Z would carry 0.16. So for the four fingers a floor of
-# 0.5 sits a factor of six clear of both sides and is safe.
+# A wrong name on a finger is wrong by an order of magnitude: over the same
+# readings the index's Y carries at most 0.09 and its Z at most 0.18, and the
+# dominance margin never falls below 30.9 degrees. So for the four fingers a
+# floor of 0.5 sits a factor of three clear of the worst wrong name and
+# infinitely clear of the right one.
 #
-# THE THUMB IS NOT ASSERTED, and the reason is measurement and not caution.
-# Its observed floor of 0.600 is close to its worst plausible value: the curl
-# plane runs 47 to 61 degrees off the thumb's flexion axis, per the measured
-# note in `within_limits`, and cos(61) is 0.48. A threshold safe for the
-# fingers could fire on a correct thumb in a pose nobody has rendered yet, and
-# three of the eight drills are still unmeasured. The thumb's share is RECORDED
-# in the receipt every phase, so the calibration finishes with data rather than
-# with a guess.
+# THE THUMB IS NOT ASSERTED, and with all eight drills measured that is the
+# ruling, not a gap waiting for data. The curl plane runs 47 to 61 degrees
+# off the thumb's flexion axis, so the OTHER curl-plane axis, X, carries
+# 0.989 or more of the turn on EVERY one of the 34 readings — more than the
+# named Z carries on most of them (Z grazes 0.599 on the pull-in poses). A
+# floor low enough to pass every correct reading is therefore passed by a
+# mis-named thumb more comfortably than by a correct one: the share cannot
+# separate right from wrong for this digit, and an assertion here would be a
+# guard that cannot fail on the defect it guards, while remaining able to
+# fire on a correct pose. The share stays RECORDED in the receipt as the
+# drift instrument, and that is all it can honestly be.
 ASSERTED_DIGITS = ("index", "middle", "ring", "pinky")
 MIN_AXIS_SHARE = 0.5
 
