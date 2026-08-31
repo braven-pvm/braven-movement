@@ -825,7 +825,30 @@ Measured on 2026-08-27, on `lane/rendering`, which carries `main` at `84fd600`.
   vertices inside it, so the INSTRUMENT failed and no number was delivered. A
   zero from an instrument that cannot reach the face is worse than no zero.
 
-**Open pose faults, measured and handed to the movement lane.**
+**RESOLVED: both open pose faults, re-measured 2026-08-31.**
+
+Re-rendered on the solve at main `2b01aef` (the free-hand fix and the
+cold-start sweep both merged), receipts in `out/coldstart-stills`, and the
+same numbers from a second render on the solve one merge earlier in
+`out/axis-floor`:
+
+- `hooks_outside_hand contact` reads **7 vertices at 0.9 mm** against the 469
+  at 37.1 mm below — inside the contact class the next paragraph defines. The
+  free hand no longer sweeps through the ball: it waits at the chin, every
+  digit 166 to 262 mm clear of the ball, none inside. The three held images
+  are re-rendered and publishable by measurement; only the hand-to-face gap
+  remains eyeball-only, because the skull instrument named under "Not
+  verified" above still does not exist.
+- `one_hand_snatch_to_other_hand contact` no longer judges the receiving
+  hand: the job stopped exporting a grip for it, so it is a free hand at 237
+  to 315 mm, and the axis report carries the honest empty `{}` for it.
+- Every gripping digit on both one-handed drills reads **held**, tips 6.5 to
+  10 mm, falling knuckle to tip. Across the whole batch the worst phase is 22
+  vertices at 1.8 mm, which is the contact class, and no phase approaches the
+  35 mm gap the survivor once sat across.
+
+The record of the faults as they stood, kept because the mechanism is the
+lane's most useful teaching:
 
 Measured from `out/coach-stills2`, the 2026-08-27 evening build, on all eight
 drills. **One fault survives.**
