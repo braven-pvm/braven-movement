@@ -151,18 +151,39 @@ and it leads with the verdict rather than burying it under evidence.
     "unmeasuredNote": "An unmeasured condition is not a near-miss…"
   },
 
-  "conditions": [
+  "capture": [
     {
-      "name": "alignment agrees",
-      "question": "Do the two alignments place the repetition alike?",
-      "reading": 0.2653, "units": "phase", "threshold": 0.0139,
-      "thresholdKind": "derived",
-      "thresholdWhy": "the clinical threshold divided by the 90th percentile slope…",
+      "name": "sync",
+      "question": "Are the two views on one clock to within a frame?",
+      "reading": 0.15, "units": "seconds", "threshold": 0.0333,
+      "thresholdKind": "chosen",
+      "thresholdWhy": "one frame, because that is the finest this material can resolve…",
       "passes": false,
-      "why": "A phase error costs degrees at the rate the reference is climbing…",
-      "instrument": "phase-alignment-<set>.json, anchored against warped"
+      "why": "A hand at 2 m/s is displaced 30 cm between the views at 150 ms…",
+      "instrument": "the sync block in the keypoint file"
     }
   ],
+
+  "measures": {
+    "leftKneeFlexionDegrees": {
+      "unit": "degrees",
+      "carriable": true,
+      "verdict": {"mayShowNumbers": false, "…": "…"},
+      "conditions": [
+        {
+          "name": "the engine half exists",
+          "question": "Is there an engine reference curve for this measure?",
+          "reading": false, "units": "", "threshold": true,
+          "thresholdKind": "measured",
+          "thresholdWhy": "the measure is either a key in reference-curves.json or it is not",
+          "passes": false,
+          "why": "…export_reference_curves writes five measures; the library grades nine.",
+          "instrument": "reference-curves.json, per docs/REFERENCE_CURVE_WIDENING.md"
+        }
+      ]
+    }
+  },
+  "measuresNote": "…taken from MovementDefinition.graded_measures()…",
 
   "shape": {
     "status": "ILLUSTRATIVE, NEVER A MEASUREMENT AT THIS CALIBRATION…",
@@ -184,7 +205,10 @@ and it leads with the verdict rather than burying it under evidence.
 }
 ```
 
-### The eight conditions
+### The eleven conditions, in two groups
+
+**Five belong to the CAPTURE**, asked once. A second camera and a clap are not
+properties of an elbow.
 
 | condition | bar | kind |
 |---|---|---|
@@ -192,13 +216,34 @@ and it leads with the verdict rather than burying it under evidence.
 | calibration | 10 mm worked residual | chosen |
 | camera separation | 45 degrees | measured |
 | sync | one frame | chosen |
+| the drill is in the library | first place on every repetition | chosen |
+
+**Six belong to a MEASURE**, asked of every measure a checkpoint reads. The
+right elbow being invisible says nothing about the left knee.
+
+| condition | bar | kind |
+|---|---|---|
+| the modality carries it | a reader exists at all | measured |
+| the graded joint was seen | 100 readings of its scarcest landmark | chosen |
+| the engine half exists | a curve for this measure | measured |
+| the units agree | the registry's unit | measured |
 | two instruments agree | 5 degrees | measured |
 | alignment agrees | clinical threshold ÷ reference slope | **derived** |
-| the drill is in the library | first place on every repetition | chosen |
-| the graded joint was seen | 100 readings | chosen |
+
+**Which measures** comes from `MovementDefinition.graded_measures()`, never
+from a list written in the gate.
 
 `passes` takes three values and they are not two: `true`, `false`, and `null`
 for a condition nothing could read. **`null` blocks.**
+
+**A measure's own verdict includes the capture-wide conditions**, because no
+measure can be shown on a capture that cannot carry a number at all. The
+movement's verdict is every condition at once: a drill is not gradeable on
+three checkpoints of four.
+
+**Blockers are deduplicated and counted.** The same condition is now asked of
+every measure, so `blockedBy` reads `the units agree (x4)` rather than naming
+it four times in the one sentence a reader is most likely to read.
 
 ### What a consumer may and may not assume
 
