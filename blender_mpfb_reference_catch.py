@@ -435,8 +435,16 @@ KNUCKLE_ITERATIONS = 14
 # fingertip toward the palm. The four fingers curl about local X and the thumb
 # about local Z. The sign mirrors between hands, so magnitudes are compared.
 FLEXION_AXIS = {"index": 0, "middle": 0, "ring": 0, "pinky": 0, "thumb": 2}
-# Below this the flexion has not moved far enough to have a direction, and the
-# largest component of the difference is noise.
+# Below this the reading is the residual of a knuckle that never flexed, not
+# a direction. Calibrated 2026-08-31 over all eight drills, twice — before and
+# after the cold-start sweep, 34 gripping hands and 170 readings each run: the
+# smallest flexion any solved digit turns is 20.2 degrees, and nothing at all
+# reads between zero and that, so every floor from just above zero to 20
+# behaves identically on every receipt this library produces. The
+# decomposition itself does not go noisy at small angles — the euler share of
+# a fixed-axis turn is flat down to 0.01 degrees — so the floor is not
+# protecting the 3-to-8 band; it is masking the zeros. 5.0 is kept, a factor
+# of four clear of both ends of the empty gap.
 FLEXION_MEASURE_FLOOR_DEGREES = 5.0
 # The share a named axis must carry, and which digits are judged by it, live
 # in finger_curl beside the measurements that set them.
@@ -756,10 +764,12 @@ def pose_articulated_hand(
                 # Below the floor the flexion has no direction, so a reader
                 # must not take agreement here for a measurement.
                 "measured": largest >= FLEXION_MEASURE_FLOOR_DEGREES,
-                # The thumb is recorded and NOT asserted: its share runs 0.600
-                # to 1.000 over 18 readings and its worst plausible value sits
-                # near the floor a finger is safe at. This field is how that
-                # calibration finishes with data.
+                # The thumb is recorded and NOT asserted, and that is the
+                # finished ruling, not an interim state: measured over all
+                # eight drills, its named-Z share runs 0.599 to 1.000 while X
+                # carries 0.989 or more on every reading, so no threshold
+                # passes a correct thumb and fails a mis-named one. The full
+                # reasoning sits with ASSERTED_DIGITS in finger_curl.
                 "asserted": digit in ASSERTED_DIGITS,
             }
 

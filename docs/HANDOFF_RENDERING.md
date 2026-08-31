@@ -35,6 +35,11 @@ Start by proving the pipeline still runs end to end on one drill. Refer to
 | `spikes/export_figure_check.py` | One figure, full size, through the rasteriser. **Debug view only**, and the last place SMPL-X reaches a page. |
 | `config/reference_catch.v1.json` | The one authored reference pose, calibrated against a photograph. |
 | `scripts/render-reference.ps1`, `scripts/test-blender.ps1` | The runners. |
+| `finger_curl.py` | The geometry of a closing finger, and the flexion-axis rule, with **no Blender in it**. Extracted so a test can call it. Refer to known defect 1. |
+| `render_receipt.py` | What a render run may claim about itself. `PASS` only when something was produced. |
+| `scripts/video_sync_sheet.py` | Front and side frames of the real athlete video, paired at matched wall clock. Refer to "The video instruments". |
+| `scripts/keypoint_overlay.py` | The movement lane's keypoints drawn over the video they came from. It draws and it does not solve. |
+| `scripts/compare_lift_against_view.py` | A lifted 3D joint angle against the same angle read from one camera. Reports the PROJECTION FLOOR, which is the disagreement that is geometry. |
 
 ## What this lane must not touch
 
@@ -248,6 +253,150 @@ Tests. The Blender ones need Blender; the rest do not.
 ```bash
 python -m unittest discover -s tests
 ```
+
+## The video instruments
+
+Vision point 2 is the real player. Marius filmed a sample session on
+2026-08-28: two drill sets, each from a front and a side camera about 90
+degrees apart. The material is at `.assets/video-samples/session-1.0/`, four
+mp4 files, read only.
+
+**The movement lane owns the extraction**: the sync, the 2D keypoints and the
+two-view 3D lift. This lane owns every picture a person looks at. The keypoint
+file is the boundary, and its shape is settled in
+`spikes/VIDEO_KEYPOINT_SCHEMA.md`.
+
+### Facts about the material, measured and not assumed
+
+- The front files carry **rotation metadata of -90**. Their containers say
+  1024x576 and their decoded frames are 576x1024. Check the decoded pixels,
+  never the container.
+- The side files are **variable rate**, but barely: intervals run 33.22 to
+  33.42 ms with five distinct values and NO dropped frames.
+- **The side camera's clock runs 0.0398 percent faster than the front's.** Four
+  derivations agree. Over a 29 s clip that is 11 ms, one third of a frame, so
+  drift is ignorable at this length and is NOT ignorable over a ten minute
+  shoot, where the same ratio is 240 ms.
+- **There is no clap.** The audio route failed honestly. The first shared event
+  is her first ball catch, about 9.25 s on the front and 8.25 s on the side.
+- The sample is a **self-fed toss and catch** and matches none of the eight
+  drills.
+- `front 0.1` degrades from **25.700 s**: sharpness is 87 percent of baseline
+  there with the inter-frame motion tripled, 39 percent at 25.900, and the
+  frame goes dark at 26.267. Treat 25.7 as its usable end. The other three
+  files have no bad tail.
+
+### The two offset conventions, and how they map
+
+They agree on this material and carry OPPOSITE SIGNS in their own definitions,
+which is exactly where a consumer trips.
+
+    video_sync_sheet   --offset                    side_time = front_time + offset
+    keypoint file      offsetSecondsToReference    add it to a time in THIS file
+                                                   to reach the reference clock
+
+    For the non-reference view, offsetSecondsToReference = -(--offset).
+    This material: --offset -1.0 and offsetSecondsToReference +1.0 both put
+    the front at 9.25 s and the side at 8.25 s.
+
+Neither is wrong and either alone is unambiguous. `keypoint_overlay.py`
+asserts the direction against the file's own worked example on load, so a sign
+error stops rather than draws.
+
+### The projection floor: a 3D angle and a camera's angle are not one quantity
+
+Measured on 2026-08-28 with `scripts/compare_lift_against_view.py`, over 730
+frames of the left arm.
+
+A camera cannot see the axis it looks along. The side camera reads the elbow
+angle PROJECTED into its own plane, and that differs from the true 3D angle
+even when the 3D is perfect. Take the movement lane's lifted arm, compute the
+angle in 3D, then drop `across` and compute it again, which is exactly what a
+flawless side camera would read:
+
+    median 5.0 degrees, p90 22.8, worst 55.3
+
+and it grows with how much of the arm lies along the axis the side camera
+cannot see, which is the signature it must have:
+
+| the arm's share along `across` | median difference |
+|---|---|
+| 0.17 to 0.30 | 2.1 degrees |
+| 0.30 to 0.42 | 3.7 |
+| 0.42 to 0.49 | 5.4 |
+| 0.49 to 0.61 | 6.4 |
+| 0.62 to 0.98 | 10.6 |
+
+**So any comparison of a 3D solve against an angle read from one camera carries
+about 5 degrees of built-in disagreement that is geometry and not a defect.**
+On this material the lift-versus-side elbow comparison measured 21.2 degrees
+median, of which the floor above is roughly a quarter. Quote the floor beside
+any such number, or a real agreement reads as an error.
+
+### Do not build the 3D from the view you are testing it against
+
+This one cost a retraction, and the mistake was not obvious.
+
+The lift measures `up` twice, once per camera. Averaging the two is the better
+ESTIMATE of where the arm was, because two unbiased readings beat one. It is
+the WRONG 3D for testing agreement with the side view, because a mean-up 3D
+takes half its `up` from the very instrument it is being compared with. Over
+the same 730 frames:
+
+| `up` taken from | shares with the side view | median disagreement |
+|---|---|---|
+| front only | nothing | 21.2 degrees |
+| mean of both | half of the `up` | 12.8 |
+| side only | all of the `up` | 3.8 |
+
+At the bottom rung the disagreement equals the projection floor exactly, which
+is the proof rather than the pattern: with `up` from the side, the two
+quantities share two of three coordinates and only the definitional difference
+remains. **A smaller disagreement is not a better measurement when it was
+bought by asking an instrument about itself.**
+
+`scripts/compare_lift_against_view.py` defaults to `--up front` for that
+reason. Two jobs, and one number cannot do both: a best estimate of the pose,
+and a test of whether two views agree.
+
+### A correlation without both definitions is not a measurement
+
+Testing the same prediction on the same 730 frames, the correlation moved
+between **+0.023 and +0.140** depending on whether the arm's extent along
+`across` was taken as the larger of the two SEGMENTS or as the shoulder to
+wrist span. Neither lane had thought that choice worth writing down.
+
+That is not imprecision. It is the same fault as a number quoted without its
+instrument, and a reader given one figure rather than the other would form a
+different impression of the same result.
+
+The same warning applies to the engine: comparing a solved 3D pose against a
+coach's video by eye compares a 3D angle with a projected one.
+
+### A reprojection check on this lift would measure nothing
+
+The lift is not a triangulation. The front view supplies `across`, the side
+supplies `ahead`, and each camera's pixels pass through to its own axis, so
+reprojecting the 3D into either camera returns the 2D it came from, to
+rounding, BY CONSTRUCTION. It would look like a clean verification and would
+verify that addition is reversible. A reprojection check is only evidence when
+the 3D was solved jointly from both views.
+
+### What these instruments refuse to do
+
+- The sheet **prints the time each frame truly carries**, never the time asked
+  for. `ffmpeg -ss` serves the first frame at or after the request, which is up
+  to a full frame late and always late, and always late is a bias that reads as
+  a sync error.
+- The sheet **stamps NOT FOOTAGE** on a frame that is smeared or dark, against
+  that clip's own median. Quote the reference with any such percentage: the
+  same handling frame reads 26 percent against the clip's settled baseline and
+  21 against the median of a sheet's own samples.
+- The overlay **refuses to invent a skeleton**. Edges come from the keypoint
+  file. `--assume-topology` lets a person override, and the picture is then
+  stamped as guessed.
+- The overlay **prints what produced its landmarks**, read from the file. A
+  viewer cannot tell a real solve from a placeholder by looking at a skeleton.
 
 ## Hard-won gotchas
 
@@ -676,7 +825,30 @@ Measured on 2026-08-27, on `lane/rendering`, which carries `main` at `84fd600`.
   vertices inside it, so the INSTRUMENT failed and no number was delivered. A
   zero from an instrument that cannot reach the face is worse than no zero.
 
-**Open pose faults, measured and handed to the movement lane.**
+**RESOLVED: both open pose faults, re-measured 2026-08-31.**
+
+Re-rendered on the solve at main `2b01aef` (the free-hand fix and the
+cold-start sweep both merged), receipts in `out/coldstart-stills`, and the
+same numbers from a second render on the solve one merge earlier in
+`out/axis-floor`:
+
+- `hooks_outside_hand contact` reads **7 vertices at 0.9 mm** against the 469
+  at 37.1 mm below — inside the contact class the next paragraph defines. The
+  free hand no longer sweeps through the ball: it waits at the chin, every
+  digit 166 to 262 mm clear of the ball, none inside. The three held images
+  are re-rendered and publishable by measurement; only the hand-to-face gap
+  remains eyeball-only, because the skull instrument named under "Not
+  verified" above still does not exist.
+- `one_hand_snatch_to_other_hand contact` no longer judges the receiving
+  hand: the job stopped exporting a grip for it, so it is a free hand at 237
+  to 315 mm, and the axis report carries the honest empty `{}` for it.
+- Every gripping digit on both one-handed drills reads **held**, tips 6.5 to
+  10 mm, falling knuckle to tip. Across the whole batch the worst phase is 22
+  vertices at 1.8 mm, which is the contact class, and no phase approaches the
+  35 mm gap the survivor once sat across.
+
+The record of the faults as they stood, kept because the mechanism is the
+lane's most useful teaching:
 
 Measured from `out/coach-stills2`, the 2026-08-27 evening build, on all eight
 drills. **One fault survives.**
