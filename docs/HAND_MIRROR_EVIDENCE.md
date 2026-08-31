@@ -1,7 +1,9 @@
 # The right hand is not the mirror of the left, and the evidence for changing it
 
-Every number here was taken on `378fea0` with a clean tree. Nothing in this
-document changes any code. The change it describes moves the look of every
+Sections 1 to 5 were taken on `378fea0` with a clean tree. Section 6 was added
+later and its numbers come from `044f8c7`; the solve did not move between them,
+and the section says which build it read. Nothing in this document changes any
+code. The change it describes moves the look of every
 drill, so it waits for Marius alongside the elbow pole angle.
 
 ## What the code does
@@ -183,7 +185,9 @@ end.
 
 ## Provenance
 
-Every figure above comes from `378fea0` with a clean tree. Pieces 1 and 2 are
+Sections 1 to 5 come from `378fea0` with a clean tree. Section 6 comes from
+`044f8c7`, measured when a coach's remark asked a new question of the same
+build. Pieces 1 and 2 are
 rest-pose geometry and need no solve. Pieces 3, 4 and 5 come from the solved
 library and its receipts, whose `generatedFrom` records that commit.
 
