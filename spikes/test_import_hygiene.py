@@ -24,8 +24,20 @@ checked here"; a load error says "eleven checks became one error" while looking
 like a single red line.
 
 So this walks every test module and imports it in a subprocess with
-`pymomentum` blocked at the import hook. It is the cheapest possible instrument
-for a fault that has now cost three review cycles.
+`pymomentum` blocked at the import hook.
+
+AND THEN IT RUNS THE WHOLE SUITE THAT WAY TOO, because loading is not the only
+way to reach a solver. The FOURTH instance imported one INSIDE a test body: the
+module loaded cleanly, this file was satisfied, and two tests errored on the
+runner anyway. A load check is narrower than the fault class.
+
+The run check subsumes it — an unimportable module errors under both — but both
+are kept, because the load check names the module and the run check names the
+test, and the first message is the more useful one when it applies.
+
+WHAT THE RUN CHECK ALLOWS is a pass or a SKIP. What it refuses is an ERROR.
+That is exactly what the hosted runner reports, computed here in a few seconds
+rather than after a push, a review and a merge.
 """
 
 from __future__ import annotations
@@ -54,6 +66,39 @@ def blocked(name, *arguments, **keywords):
 builtins.__import__ = blocked
 sys.path.insert(0, {spikes!r})
 import {module}
+"""
+
+
+# Runs the whole suite under the same block and reports how many ERRORED. A
+# skip is expected and fine; an error is a test that meant to run and could
+# not. Excludes this file, which would otherwise recurse.
+SUITE = """
+import builtins, sys, unittest
+real = builtins.__import__
+
+
+def blocked(name, *arguments, **keywords):
+    if name == "pymomentum" or name.startswith("pymomentum."):
+        raise ImportError("No module named 'pymomentum'")
+    return real(name, *arguments, **keywords)
+
+
+builtins.__import__ = blocked
+sys.path.insert(0, {spikes!r})
+loader = unittest.TestLoader()
+suite = unittest.TestSuite(
+    loader.loadTestsFromName(name)
+    for name in sorted(
+        path.stem
+        for path in __import__("pathlib").Path({spikes!r}).glob("test_*.py")
+        if path.stem != "test_import_hygiene"
+    )
+)
+result = unittest.TextTestRunner(verbosity=0, stream=open(1, "w")).run(suite)
+for test, trace in result.errors:
+    print("ERRORED:", test)
+    print(trace.strip().splitlines()[-1])
+sys.exit(1 if result.errors else 0)
 """
 
 
@@ -95,6 +140,32 @@ class EveryTestModuleLoadsWithoutASolver(unittest.TestCase):
                     "came through a module that merely happened to import the "
                     f"solver at its top.\n\n{done.stderr.strip()[-900:]}",
                 )
+
+    def test_nothing_reaches_a_solver_at_RUN_time_either(self) -> None:
+        """The fourth instance, which the load check above could not see.
+
+        `test_preview_variants` imported `possession_solve` inside two test
+        bodies, to patch the second binding of a function. The module loaded
+        fine and the runner still reported two errors.
+
+        A skip is fine and expected: most engine tests skip here. An ERROR is
+        not, because that is a test that intended to run and could not.
+        """
+        done = subprocess.run(
+            [sys.executable, "-c", SUITE.format(spikes=str(SPIKE_DIR))],
+            capture_output=True,
+            text=True,
+            cwd=SPIKE_DIR,
+        )
+        self.assertEqual(
+            done.returncode,
+            0,
+            "running the suite without a solver produced errors, so on the "
+            "hosted runner those tests will error rather than run or skip. A "
+            "skip says 'not checked here'; an error says a test meant to run "
+            "and could not. The errors follow. "
+            + done.stdout.strip()[-1200:],
+        )
 
     def test_the_probe_would_notice(self) -> None:
         """The anti-hollow clause, and it needs to be here.

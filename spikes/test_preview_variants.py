@@ -15,6 +15,18 @@ The other two guards are cases as well: a preview may never be written where
 the coach pack reads, and every preview payload says at its top what it is.
 
 Most of this needs no solver, and it says so where it does.
+
+TWO OF THESE TESTS DO, AND THE REASON IS AN IRONY WORTH KEEPING. The mirror
+variant has to patch BOTH bindings of `spread_fingers`, because
+`possession_solve` copied the function into its own namespace — and patching
+both means importing `possession_solve`, which imports the solver. So the fix
+that made the preview real is what made these two tests need a solver, and the
+broken module-only version they replaced would have run happily on the runner
+while previewing nothing.
+
+They are skipped rather than reworked: without `possession_solve` importable
+there is genuinely no second binding to guard, so there is nothing for them to
+check.
 """
 
 from __future__ import annotations
@@ -44,6 +56,7 @@ class TheDefaultPathIsUntouched(unittest.TestCase):
             self.assertIs(finger_wrap.spread_fingers, before)
         self.assertIs(finger_wrap.spread_fingers, before)
 
+    @unittest.skipUnless(SOLVER, "the second binding lives in possession_solve")
     def test_a_variant_is_undone_when_its_block_ends(self) -> None:
         before = finger_wrap.spread_fingers
         with applied("mirror"):
@@ -58,6 +71,7 @@ class TheDefaultPathIsUntouched(unittest.TestCase):
             "in this process would carry it, including a default export.",
         )
 
+    @unittest.skipUnless(SOLVER, "the second binding lives in possession_solve")
     def test_it_is_undone_even_when_the_block_raises(self) -> None:
         """A patch that survives an exception is the worst form of leak: the
         run that failed is the one nobody looks at afterwards."""

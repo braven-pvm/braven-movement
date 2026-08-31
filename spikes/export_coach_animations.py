@@ -34,7 +34,12 @@ SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
 
 from athlete import reference  # noqa: E402
-from preview_variants import applied, preview_output, stamp  # noqa: E402
+from preview_variants import (  # noqa: E402
+    VARIANTS,
+    applied,
+    preview_output,
+    stamp,
+)
 from ball_track import has_ball  # noqa: E402
 from movement_definition import load as load_definition  # noqa: E402
 from movement_engine import definition_path, library, load_character  # noqa: E402
@@ -153,6 +158,15 @@ def main(argv: list[str]) -> int:
         and has_technique(name)
         and load_technique(technique_path(name)).possession_ready
     ]
+    if variant is not None and variant not in VARIANTS:
+        # One line rather than a traceback: a mistyped variant is a typo, and a
+        # KeyError up the stack reads like a defect in the exporter.
+        print(
+            f"{variant!r} is not a preview variant. Known: "
+            f"{', '.join(sorted(VARIANTS))}"
+        )
+        return 1
+
     character = load_character()
 
     drills = {}
