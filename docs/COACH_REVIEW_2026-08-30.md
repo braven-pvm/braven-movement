@@ -161,9 +161,12 @@ possession state's first `released` frame.
 So Erin was judging the release and the engine was grading the follow-through,
 which is exactly why she marked all three of her release cues MET. **The
 question for the morning is not "should these bands move?" but "which frame is
-the release?"** Nothing is retimed without her word and Marius's. Refer to
-`docs/KNOWN_ISSUES.md` for the table and for the check that retiming would not
-leave a blind phase.
+the release?"** Nothing is retimed without her word and Marius's. Retiming leaves no blind phase, and the margin is worth knowing: each retimed
+phase still differs from the one before it by 7.28 to 45.36 degrees against a
+5.0 threshold. The deflect is the thin one at 7.28. An earlier version of this
+document said 21.46 to 45.49, which measured every angle rather than only the
+measures the phase grades — refer to `docs/KNOWN_ISSUES.md`, where the table
+and the correction are.
 
 The receipts say the bands are provisional and that no coach set them. This is
 the first coach reading of them. The bands are unchanged here, and setting them

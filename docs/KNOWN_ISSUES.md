@@ -299,9 +299,28 @@ frame.
 **Erin marked all three of her release cues MET**, which is consistent with a
 coach judging the release and an engine grading the follow-through.
 
-**Retiming would not create a blind phase.** Moved to the declared release,
-each of the four still differs from the phase before it by 21.46 to 45.49
-degrees, against a 5.0 threshold.
+**Retiming would not create a blind phase, but the margin is thinner than
+first printed.** Moved to the declared release, each of the four still differs
+from the phase before it by **7.28 to 45.36 degrees**, against a 5.0 threshold.
+
+| drill | as graded today | retimed to the release |
+|---|---|---|
+| `deflect_high` send_on | 70.16 | **7.28** |
+| `two_hand_snatch_straight_back` return | 83.78 | 37.34 |
+| `hooks_jump_pull_in` release | 91.48 | 42.08 |
+| `two_hand_catch_chest` release | 103.34 | 45.36 |
+
+**An earlier version of this said "21.46 to 45.49", and it was the wrong
+measurement rather than a wrong tip.** It compared the two frames on EVERY
+measured angle. `MovementDefinition.separation` — the rule this project already
+has — compares them only on the measures THAT PHASE GRADES, which is the right
+question: an angle no checkpoint reads cannot tell a coach two phases apart. On
+the deflect the widest graded difference is 7.28 degrees where the widest
+difference on any angle is 21.46.
+
+The conclusion is unchanged and the comfort is not. Every drill clears the
+threshold; the deflect clears it by 2.28 degrees, and the morning should hear
+that rather than a figure three times too generous.
 
 **Nothing is retimed here.** The question for the coach morning changes from
 "should these bands be widened?" to "which frame is the release?", and that is

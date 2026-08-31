@@ -136,6 +136,14 @@ class Launch:
     centimetres per second for the same reason, and a second unit for one
     quantity is a conversion waiting to be forgotten.
 
+    IT IS THE HORIZONTAL COMPONENT, not the speed the ball leaves the hand at.
+    The vertical is solved from gravity so the ball arrives at the target, the
+    same way `incoming_speed_cm` reads horizontal for the same reason: only the
+    horizontal is steady, and it is what joins two points under gravity. An
+    authored 624 leaves the hand at 655 on the test geometry, 624 along the
+    ground and 200.6 upward. AN AUTHOR AIMING A LOB MUST KNOW THAT, because a
+    lob's vertical is most of its speed and none of this field.
+
     `target` IS in arm lengths, because it is a place in the stance frame and
     every other offset in this file is.
     """
