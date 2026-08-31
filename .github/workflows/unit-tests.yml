@@ -19,8 +19,22 @@ jobs:
       # Its rules import without Pillow by design, so leaving it out would let
       # those tests run and quietly leave the drawing untested, which is the
       # regression class this workflow exists to catch.
+      #
+      # OpenCV is here for the same reason and it is the same precedent.
+      # test_video_calibration.py is the whole guard on the calibration
+      # ingestion: 43 tests, every sign convention held by a mutation, and not
+      # one of them needs a solver or a frame of footage. Without OpenCV on the
+      # runner that file cannot even import, so the hosted verdict would be
+      # green while nothing about the calibration had been checked. Headless
+      # because a runner has no display and the GUI build pulls in libGL.
+      #
+      # SciPy is here on the same precedent a third time.
+      # test_video_phase_align.py holds the alignment's guards, including the
+      # refusal path that session 1.0's own footage never reaches, and
+      # `find_peaks` is the one thing in that module a runner cannot supply for
+      # itself.
       - name: Install what the engine-side tests read
-        run: python -m pip install --quiet numpy pillow
+        run: python -m pip install --quiet numpy pillow opencv-python-headless scipy
       - name: Run host-side contracts
         run: python -m unittest discover -s tests -v
       # The engine-side suite, which used to run only on a machine with the

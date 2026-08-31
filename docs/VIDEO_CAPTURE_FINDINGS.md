@@ -95,6 +95,16 @@ whole take.** A printed checkerboard is ideal. A metre rule taped to the floor,
 or a marked pole, will do. It must not move and it must be visible throughout,
 not just at the start.
 
+**Superseded in one detail, and extended in two.** Added 2026-08-31 by the
+video-readiness lane, which built the code that reads the reference
+(`spikes/video_calibration.py`). A metre rule gives two points and fits no lens
+— **use a printed checkerboard**, and no known-object route is built. The
+board's square size must be measured with a rule and supplied, because it is
+the one quantity nothing in the footage can check: every angle stays correct
+and every length scales with it. **Instructions 12 and 13 say what to do with
+the board**, and they belong to this instruction rather than to the end of the
+list.
+
 ### 3. Film the drills the library contains, with a passer
 
 Both sets show the same thing: she stands still, **tosses the ball upward
@@ -192,6 +202,81 @@ messaging app.
 
 **Instruction: transfer the original files off the phones — cable, AirDrop, or a
 file-sharing link, not a chat app.**
+
+**This buys calibration accuracy as well as sharpness, which is more than this
+instruction originally claimed for itself.** Added 2026-08-31 by the
+video-readiness lane, from `spikes/video_calibration.py` and its tests. The
+calibration fit has no bias of its own — at zero detector noise it recovers
+every camera parameter exactly — so everything a real calibration gets wrong is
+the footage's noise coming out the other end. Measured on a synthetic 36-view
+rig, five seeds a row, with the corner detector's noise as the only variable:
+
+| detector noise | focal error | pair rotation error | pair translation error |
+|---|---|---|---|
+| 0.30 px | 0.25 % | 1.23 deg | 42.1 mm |
+| 0.15 px | 0.12 % | 0.61 deg | 21.0 mm |
+| 0.05 px | 0.04 % | 0.20 deg | 7.0 mm |
+
+**One degree of pair rotation error puts about 50 mm into a point triangulated
+at three metres** — the size of the elbow residual this report could not
+explain. Sub-pixel corner detection on a 576p messaging transcode is not
+0.05 pixels.
+
+### 12. Shoot a separate board clip per camera, and vary the board through it
+
+Added 2026-08-31 by the video-readiness lane. Intrinsics belong to a phone, a
+lens and a capture resolution — not to a take — and recovering them needs the
+board at many angles and distances. One person waves the board in front of ONE
+camera for about twenty seconds. The other camera is not involved and no clock
+is shared, so this pass needs no clap.
+
+**On a synthetic rig of 16 board views at 0.15 pixels of detector noise, one
+seed, a board kept at one distance and one small tilt fit the focal length 1.93
+percent wrong where a varied sequence fit it 0.85 percent wrong on the same
+number of frames.** An earlier version of this line gave those two figures
+without naming the rig they came from, which made a single seed read like a
+property of boards.
+
+The more useful statement comes from a different rig — 36 views at 0.05 pixels
+— where **the narrow sequence was worse on 12 of 12 seeds measured**, median
+0.145 percent against 0.066 percent, a ratio of medians of 2.19. The direction
+is robust across every seed tried. The ratio is not, running from 1.29 to 193
+per seed, so do not quote a single factor.
+
+**Twelve seeds is what was measured. Six is what a test enforces.**
+`VarietyTest` in `spikes/test_video_calibration.py` sweeps the first six of
+those twelve and requires the narrow sequence to be worse on every one of them,
+and requires the per-seed ratio to be visibly unstable. An earlier version of
+this line said the test "holds" the twelve-seed figure, which claimed more
+enforcement than exists.
+
+**Instruction: per camera, record twenty seconds of the board moving through
+the frame — near and far, tilted left and right, in the corners as well as the
+middle. One camera at a time.**
+
+### 13. For the pair clip, put the board on a stand and leave it
+
+Added 2026-08-31 by the video-readiness lane. The two cameras' relative pose
+belongs to the take, and recovering it needs both cameras to see the board at
+the SAME INSTANT — which normally demands the sync this material never had. It
+does not demand sync if the board does not move: a still board is in the same
+place in every frame, so any frame of one camera pairs with any frame of the
+other.
+
+`video_calibration.py --pairing static` takes that route and then MEASURES
+whether the board really held still, refusing the run with the measured
+movement if it did not. An assumption nobody checks is how a wrong number gets
+a provenance stamp.
+
+**Instruction: place the board where both cameras see it, on a stand or against
+a wall, and record a few seconds on both cameras without touching it. Then
+shoot the drills.**
+
+**Note on ordering.** Instructions 12 and 13 are additions to instruction 2 and
+not replacements for it: 2 says a rigid object of known size must be in shot,
+and these two say what to do with it. A printed checkerboard is what the code
+reads. A metre rule gives two points and fits no lens, and no known-object
+route is built.
 
 ## What was measured, and how well
 
