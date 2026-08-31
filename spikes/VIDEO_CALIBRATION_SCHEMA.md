@@ -280,11 +280,17 @@ Two instructions this work adds, both from measurement rather than preference:
    same number of frames. **Those two figures are one seed of one rig**, and the
    rig went unnamed in an earlier version of this line.
 
-   What `VarietyTest` actually holds is the rig it runs on — 36 views at 0.05
-   pixels — where the narrow sequence was worse on **12 of 12 seeds**, median
-   0.145 percent against 0.066 percent, a ratio of medians of 2.19. The
-   DIRECTION is robust across every seed tried; the ratio is not, running from
-   1.29 to 193 per seed, so no single factor should be quoted.
+   On the rig `VarietyTest` runs — 36 views at 0.05 pixels — the narrow
+   sequence was worse on **12 of 12 seeds measured**, median 0.145 percent
+   against 0.066 percent, a ratio of medians of 2.19. The DIRECTION is robust
+   across every seed tried. The ratio is not, running from 1.29 to 193 per
+   seed, so no single factor should be quoted.
+
+   **Twelve seeds is what was measured and six is what the test enforces.**
+   `VarietyTest` sweeps the first six of the twelve, requires the narrow
+   sequence to be worse on every one of them, and requires the per-seed ratio
+   to be visibly unstable. An earlier version of this paragraph said the test
+   "holds" the twelve-seed figure, which claimed more enforcement than exists.
 2. **For the pair clip, put the board on a stand and leave it.** Then the pair
    pose needs no sync at all, and `pairing.boardMovement` proves the board held
    still rather than assuming it.

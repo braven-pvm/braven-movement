@@ -237,12 +237,18 @@ number of frames.** An earlier version of this line gave those two figures
 without naming the rig they came from, which made a single seed read like a
 property of boards.
 
-The measurement `VarietyTest` in `spikes/test_video_calibration.py` actually
-holds runs on a different rig — 36 views at 0.05 pixels — and it is the more
-useful statement: **the narrow sequence was worse on 12 of 12 seeds**, median
+The more useful statement comes from a different rig — 36 views at 0.05 pixels
+— where **the narrow sequence was worse on 12 of 12 seeds measured**, median
 0.145 percent against 0.066 percent, a ratio of medians of 2.19. The direction
 is robust across every seed tried. The ratio is not, running from 1.29 to 193
 per seed, so do not quote a single factor.
+
+**Twelve seeds is what was measured. Six is what a test enforces.**
+`VarietyTest` in `spikes/test_video_calibration.py` sweeps the first six of
+those twelve and requires the narrow sequence to be worse on every one of them,
+and requires the per-seed ratio to be visibly unstable. An earlier version of
+this line said the test "holds" the twelve-seed figure, which claimed more
+enforcement than exists.
 
 **Instruction: per camera, record twenty seconds of the board moving through
 the frame — near and far, tilted left and right, in the corners as well as the

@@ -383,10 +383,11 @@ def split_half_agreement(
             "the right ORDER of the true focal error and NOT a multiplier: on a "
             "synthetic rig the ratio of gap to true error is stable to two "
             "decimals within one set of board poses across a tenfold range of "
-            "detector noise, and swings from 1.11 to 2.49 between seed sets, "
-            "with a per-seed interquartile range of 0.48 to 3.91. Do not divide "
-            "by it. It is also NOT a ceiling: it exceeded the true error in 29 "
-            "of 50 runs. What it does reliably is scale with the noise."
+            "detector noise, and swings from 1.11 to 2.49 between seed sets on "
+            "one rig, while a second rig reached 3.16. The per-seed "
+            "interquartile range is 0.48 to 3.91. Do not divide by it. It is "
+            "also NOT a ceiling: it exceeded the true error in 29 of 50 runs. "
+            "What it does reliably is scale with the noise."
         ),
     }
 
@@ -777,7 +778,8 @@ def camera_block(
             "splitHalfAgreement is the reading to judge the LENS by: two fits "
             "on disjoint halves. It is the right ORDER of the true focal error "
             "and NOT a multiplier — the ratio swings from 1.11 to 2.49 between "
-            "seed sets — and it is not a ceiling."
+            "seed sets on one rig, and a second rig reached 3.16 — and it is "
+            "not a ceiling."
         ),
     }
 
