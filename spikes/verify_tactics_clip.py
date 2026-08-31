@@ -39,20 +39,39 @@ IF THIS DIES WITH NO OUTPUT, TRY MKL_THREADING_LAYER=SEQUENTIAL
 
 A reviewer running this gate on 2026-08-31 hit a hard process crash,
 `0xC06D007F`, inside a numpy matrix multiply, on both `main` and the branch
-under review. Setting `MKL_THREADING_LAYER=SEQUENTIAL` fixed it. The crash
-kills the process rather than raising, so THIS GATE CAN DIE WITHOUT SAYING
-ANYTHING, and a gate that dies silently reads like a gate that has not been
-run.
+under review. Setting `MKL_THREADING_LAYER=SEQUENTIAL` fixed it.
 
     MKL_THREADING_LAYER=SEQUENTIAL pixi run python verify_tactics_clip.py
 
-**It did not reproduce in the movement lane's worktree**, and that is recorded
-rather than smoothed over, because the difference tells the next person which
-situation they are in. There, with the variable unset, `numpy.__config__`
-reports BLAS `blas 3.9.0` rather than MKL, and a 512 by 512 matmul and inverse
-both complete. So this is an environment difference between checkouts and not a
-property of the code. Check what your own numpy reports before assuming either
-way.
+**Set it if you are unsure. It costs a little speed and nothing else.** The
+crash kills the process rather than raising, so THIS GATE CAN DIE WITHOUT
+SAYING ANYTHING, and a gate that dies silently reads exactly like a gate that
+was never run.
+
+**What is NOT known: which environments are affected.** Two candidate rules
+were proposed and both are refuted, so neither is repeated here as guidance.
+
+- "Check what numpy reports for BLAS." It cannot tell you.
+  `numpy.__config__` is BUILD-time metadata and reads `blas 3.9.0` on every
+  variant. An earlier version of this note used it as evidence, which was
+  wrong.
+- "Check whether the environment carries MKL." Also insufficient. The movement
+  lane's own worktree environment holds `mkl_rt.3.dll`,
+  `mkl_intel_thread.3.dll`, `mkl_core.3.dll` and 25 MKL libraries with NO
+  `libopenblas.dll` at all — the same signature the crash was attributed to —
+  and it ran this gate and the full suite more than a dozen times, with the
+  variable unset, without ever crashing.
+
+**What survives.** The reviewer reports that the shared environment at
+`.assets/pixi-env` self-identifies as a RELOCATED COPY of a worktree
+environment that no longer exists, with its embedded paths still pointing at
+the old location. `0xC06D007F` is a delay-load failure, and an environment
+whose embedded paths are stale is a plausible way for a delay-load of
+`mkl_intel_thread` to fail where an environment sitting where it was built
+does not. That is a hypothesis with a mechanism, not a confirmed cause, and
+nobody has tested it by moving an environment on purpose.
+
+So the honest rule is the first line: set the variable if you are unsure.
 
 What it gates on, and what it only reports
 ------------------------------------------
