@@ -27,6 +27,7 @@ import pymomentum.geometry as geometry
 SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
 
+from build_stamp import generated_from  # noqa: E402
 from isb_angles import AAOS_LIMITS  # noqa: E402
 from movement_definition import (  # noqa: E402
     MINIMUM_MEANINGFUL_BAND_DEGREES,
@@ -199,6 +200,7 @@ def build_one(character, movement_id: str) -> dict:
         },
         "visualQa": {"referenceCompared": False},
         "contractStatus": "pending_visual_comparison",
+        "generatedFrom": generated_from(),
     }
     (OUTPUT / f"{movement_id}.json").write_text(
         json.dumps(receipt, indent=2) + "\n", encoding="utf-8"
@@ -281,7 +283,12 @@ def main() -> int:
                         )
 
     (OUTPUT / "index.json").write_text(
-        json.dumps({"movements": summaries}, indent=2) + "\n", encoding="utf-8"
+        json.dumps(
+            {"generatedFrom": generated_from(), "movements": summaries},
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
     )
     print(f"\nindex: {OUTPUT / 'index.json'}")
     return 1 if failures else 0
