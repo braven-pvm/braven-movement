@@ -219,15 +219,26 @@ class OneFaultAtATime(unittest.TestCase):
     """Eleven mutations, each of which must shut the gate and NAME ITS OWN
     condition among the blockers.
 
-    MEMBERSHIP, NOT EQUALITY. Counted: most block exactly one, and two block
-    two, because the evidence they remove feeds two conditions —
+    MEMBERSHIP, NOT EQUALITY, and the spread is wider than "one, sometimes
+    two". Counted across the thirteen mutations below: TEN block exactly one,
+    TWO block two, and ONE blocks FOUR.
 
-        one camera      blocks two views AND sync; the sync block lives in
-                        the side view's own keypoint file
-        no calibration  blocks calibration AND camera separation; the
-                        separation is read from the calibration
+        one camera      2 — two views AND sync; the sync block lives in the
+                        side view's own keypoint file
+        no calibration  2 — calibration AND camera separation; the separation
+                        is read from the calibration
+        the knee        4 — judged on a bundle built for the elbow, the knee
+                        has no engine curve, so it also has no unit to compare
+                        against, no second reader and no alignment. One absent
+                        artefact leaves four conditions unreadable.
 
-    Both second blocks are correct consequences rather than leakage.
+    A measure the modality cannot carry at all is further still: judged on its
+    own, `trunkTurnDegrees` blocks ALL SIX per-measure conditions, because
+    nothing downstream of "there is no reader" can be answered either.
+
+    None of these is leakage. Each extra block is a correct consequence of the
+    same missing evidence, which is why the assertions test MEMBERSHIP — that
+    the mutated condition is among the blockers — and never equality.
     """
 
     def shut(self, bundle: dict, name: str, measure: str = MEASURE):
@@ -344,6 +355,50 @@ class OneFaultAtATime(unittest.TestCase):
         found = self.shut(bundle, "alignment agrees")
 
         self.assertIn("alignment agrees", found["unmeasured"])
+
+    # --- the counts this class's docstring claims, held rather than asserted ---
+
+    def test_one_absent_artefact_leaves_four_conditions_unreadable(self):
+        """The knee judged on a bundle built for the elbow. No engine curve
+        means no unit to compare against either, and nothing has read the knee,
+        so four conditions go unread from ONE missing artefact. A count line in
+        a docstring is prose; this is the reading behind it."""
+        found = verdict(both(good(), "leftKneeFlexionDegrees"))
+        blocked = {row.split(" (")[0] for row in found["blockedBy"]}
+
+        self.assertEqual(blocked, {
+            "the engine half exists", "the units agree",
+            "two instruments agree", "alignment agrees"})
+
+    def test_a_measure_the_modality_cannot_carry_blocks_all_six(self):
+        """Nothing downstream of "there is no reader" can be answered either."""
+        rows = judge_measure(good(), MOVEMENT, "trunkTurnDegrees")
+        blocked = [row["name"] for row in rows if row["passes"] is not True]
+
+        self.assertEqual(len(blocked), 6)
+        self.assertEqual(len(rows), 6, "every one of them, not merely most")
+
+    def test_the_units_instrument_names_the_missing_declaration(self):
+        """The reviewer's second fold. `thresholdWhy` said the curve declares
+        no unit and `instrument` named only the two sources, so a reader who
+        looked at the instrument field alone could not tell which side was
+        silent."""
+        bundle = good()
+        bundle["reference"]["movements"][MOVEMENT]["curves"][MEASURE] = engine_curve()
+
+        row = named(both(bundle), "the units agree")
+
+        self.assertIsNone(row["passes"])
+        self.assertIn("INSTRUMENT THAT DOES NOT EXIST", row["instrument"])
+        self.assertIn("declares none", row["instrument"])
+
+    def test_a_declared_unit_names_both_sources_instead(self):
+        """The decoy. If the instrument field always carried the missing-
+        declaration wording it would be wrong whenever a unit exists."""
+        row = named(both(good()), "the units agree")
+
+        self.assertIs(row["passes"], True)
+        self.assertNotIn("DOES NOT EXIST", row["instrument"])
 
 
 class UnmeasuredIsNotAPass(unittest.TestCase):

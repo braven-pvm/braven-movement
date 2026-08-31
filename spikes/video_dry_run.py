@@ -442,7 +442,13 @@ def judge_measure(evidence: dict, movement: str, name: str) -> list[dict]:
         "One graded measure is CENTIMETRES and every threshold here is degrees. "
         "Two lanes spelling a unit independently is where this fault class "
         "lives, so the two spellings are compared rather than assumed equal.",
-        "video_measures.MEASURES against reference-curves.json",
+        "video_measures.MEASURES against reference-curves.json"
+        if declared_unit else
+        "video_measures.MEASURES against THE INSTRUMENT THAT DOES NOT EXIST: a "
+        "unit declaration in reference-curves.json, which today declares none "
+        "for any curve. The registry's own unit is known and is not the "
+        "question — the question is whether the two agree, and one side is "
+        "silent.",
     ))
 
     readings = instrument_readings(evidence).get(name, {})
