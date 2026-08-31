@@ -1,0 +1,61 @@
+{
+  "movementId": "netball_chest_pass",
+  "frames": 96,
+  "framesPerSecond": 60,
+  "rateNote": "60 frames per second, matching the rest of the library. The rate was settled on the catch drills, where a real pass at 6 m per second crossed the whole reachable span in two frames at 24. A pass leaves the hand at the same speed a caught pass arrives, so the same argument applies here and no separate measurement was taken.",
+  "notes": "Hand positions are fractions of arm length, measured from the chest. across is out to the side, up is above the chest, ahead is in front. 1.0 ahead is a fully straight arm reaching forward. This is the first movement in the library that STARTS with the ball. The athlete holds it at her chest, steps, drives it away and follows through.",
+  "ballNote": "NO BALL FILE AND NO TECHNIQUE FILE YET, deliberately. The ball model authors one incoming flight and derives the outgoing launch from it, so a pass cannot state where it sends the ball or how fast. That capability is with the movement lane. Until it lands this movement solves the old way, from these hand keys, which measures the arm correctly and does not pretend a ball is present.",
+  "stance": {
+    "hipDropFraction": 0.1003,
+    "note": "The same hip drop as the chest catch, which is the pose this pass starts from. A pass begins where a catch ends.",
+    "unitNote": "Stance is measured in leg lengths, not arm lengths. hipDrop, the foot placements and the root travel were all written in arm lengths, which made them depend on the wrong limb: two athletes of the same height with the same legs, differing only in reach, came out with knees 5 degrees apart. Every stance number here was multiplied by 0.626885, the reference athlete's arm over her leg, so her poses are exactly what they were and only other bodies change."
+  },
+  "stepNote": "The step is authored as a weight transfer through hipDrop, not as a foot placement. The manual's cue is a LENGTH, 'give a small step' and 'don't give a too big step', and no measure in this engine reports step length. Authoring feet would put a number in the file that nothing reads back. Refer to the definition's stepMeasureNote.",
+  "keys": [
+    {
+      "atPhase": 0.0,
+      "name": "ready",
+      "across": 0.22,
+      "up": 0.04,
+      "ahead": 0.36,
+      "hipDrop": 0.1003,
+      "note": "Ball held at the chest in two hands. These are the chest catch's own secured-ball numbers, unchanged, because a chest pass starts in the pose a chest catch finishes in."
+    },
+    {
+      "atPhase": 0.34,
+      "name": "step",
+      "across": 0.22,
+      "up": 0.05,
+      "ahead": 0.38,
+      "hipDrop": 0.14,
+      "note": "She steps and the ball does not move. The hands hold their position to within 0.02 of an arm length, which is about 1 cm. This is the whole coaching point of the phase and it is why the hand keys barely change here while the hips do. THE MOVEMENT OBEYS THE CUE AND NOTHING GRADES IT: a mutation moving this key 13.2 cm back to the shoulder changed the largest measured angle by 5.1 degrees, so the pull-back is invisible to every measure this engine has. Refer to the definition's pullBackMeasureNote."
+    },
+    {
+      "atPhase": 0.62,
+      "name": "drive",
+      "across": 0.26,
+      "up": 0.1,
+      "ahead": 0.64,
+      "hipDrop": 0.11,
+      "note": "The arms extend and the ball leaves the chest. The hands rise as they go, because a chest pass is thrown slightly upward to a receiver's hands."
+    },
+    {
+      "atPhase": 0.8,
+      "name": "release",
+      "across": 0.28,
+      "up": 0.13,
+      "ahead": 0.86,
+      "hipDrop": 0.085,
+      "note": "The ball leaves the hands. 0.86 ahead is where the four releasing catch drills in this library actually let go of the ball, measured from their solved ballState rather than copied from their keys."
+    },
+    {
+      "atPhase": 1.0,
+      "name": "follow_through",
+      "across": 0.3,
+      "up": 0.14,
+      "ahead": 0.97,
+      "hipDrop": 0.08,
+      "note": "Extended through the pass, fingers after the ball. A separate phase from the release, not the same one graded late. Refer to the definition's releaseAnchorNote."
+    }
+  ]
+}
