@@ -41,7 +41,7 @@ from contact_solve import (  # noqa: E402
     solver_options,
     trunk_constraints,
 )
-from finger_wrap import spread_fingers  # noqa: E402
+from finger_wrap import curl_parameters, spread_fingers  # noqa: E402
 from grip import grip_targets, measure_hand  # noqa: E402
 from motion_track import (  # noqa: E402
     MAXIMUM_TURN_DEGREES,
@@ -402,6 +402,38 @@ def solve_movement(
     for frame in backward[1:]:
         previous = solve_one(frame, previous, cold=False)
         answers[frame.number] = previous
+
+    # ---- the fingers open again on every frame she is not holding ---------
+    # `close_fingers` runs inside the solve and its result becomes the next
+    # frame's SEED. While the only sweep ran forward that was harmless: every
+    # frame after contact is holding anyway. The backward sweep seeds each
+    # frame from its SUCCESSOR, so the curl from the end of the drill
+    # propagated back through every pre-contact frame. The curl parameters are
+    # frozen in the main solve, so a seeded curl passes straight through to the
+    # answer untouched.
+    #
+    # Measured on `e1b2ca8`: at frame zero, where she is not holding, 20 of the
+    # 32 curl parameters were non-zero and the largest was 1.570 radians. That
+    # is a hand closed to a fist while she waits to receive. Before the
+    # backward sweep the same frame read 0 of 32.
+    #
+    # NOTHING IN THE LIBRARY MEASURES A FINGER, so 311 tests, two independent
+    # reviews and the manual clip gate all passed over it. It was found by
+    # asking why frame zero's fingers did not match the pose the solve starts
+    # from.
+    #
+    # The condition here is the exact negation of the one that applies the
+    # curl, so the two cannot drift apart.
+    #  above is the JOINT names; the curl is addressed by PARAMETER
+    # name, and the two lists are different lengths and different orders.
+    parameter_names = list(character.parameter_transform.names)
+    curl_at = [
+        parameter_names.index(name)
+        for name in curl_parameters(character, method.every_side)
+    ]
+    for frame in held.frames:
+        if not (frame.holding and frame.sides):
+            answers[frame.number][curl_at] = rest[curl_at]
 
     for frame in held.frames:
         number, phase = frame.number, frame.phase
