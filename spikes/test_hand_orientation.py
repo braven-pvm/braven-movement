@@ -365,8 +365,14 @@ class TheMeasuresReadASolvedDrill(unittest.TestCase):
         ray = points[index["l_thumb3"]] - base
         ahead = measure_hand(points, index, "l", base + 4.0 * ray)
         behind = measure_hand(points, index, "l", base - 4.0 * ray)
-        self.assertAlmostEqual(ahead["ThumbToBallDegrees"], 0.0, places=6)
-        self.assertAlmostEqual(behind["ThumbToBallDegrees"], 180.0, places=6)
+        # places=3, not 6: the joints are float32 and acos is at its least
+        # precise exactly here, at the parallel case this test constructs.
+        # The cold-start fix of PR #21 moved the solved thumb a hair and a
+        # places=6 assertion failed on 1.2e-06 degrees of that fuzz. The
+        # mutation this test exists for reads about 68 degrees, five orders
+        # of magnitude above this tolerance.
+        self.assertAlmostEqual(ahead["ThumbToBallDegrees"], 0.0, places=3)
+        self.assertAlmostEqual(behind["ThumbToBallDegrees"], 180.0, places=3)
         self.assertGreater(true["ThumbToBallDegrees"], 5.0)
         self.assertLess(true["ThumbToBallDegrees"], 175.0)
         # And the up measures must NOT move: they take no ball at all.
