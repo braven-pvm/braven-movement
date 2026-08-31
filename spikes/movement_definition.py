@@ -111,6 +111,10 @@ class Phase:
         if not self.checkpoints:
             raise MovementDefinitionError(f"{self.name}: at least one checkpoint")
 
+    def graded_measures(self) -> set[str]:
+        """Every measure a checkpoint of this phase reads."""
+        return {checkpoint.measure for checkpoint in self.checkpoints}
+
 
 @dataclass(frozen=True)
 class MovementDefinition:
@@ -126,6 +130,30 @@ class MovementDefinition:
         ordered = [phase.at_phase for phase in self.phases]
         if ordered != sorted(ordered):
             raise MovementDefinitionError("phases must be ordered by at_phase")
+
+    def graded_measures(self) -> set[str]:
+        """Every measure any checkpoint in this movement reads.
+
+        WHAT IT IS FOR. Several things downstream pick their own list of
+        measures and none of them was ever reconciled with what the coaching
+        layer actually grades. `export_reference_curves.WANTED` is five angles
+        chosen for what a two-camera lift can plausibly recover, and
+        `leftKneeFlexionDegrees` — graded by every drill in the library — is
+        not among them. A consumer that wants "the measures that matter" has
+        had to hand-write a list and let it drift.
+
+        This is the definition's own answer to that question, so a consumer
+        can ask rather than guess. It is a SET: order is not meaningful, a
+        measure graded at three phases appears once, and callers that want a
+        stable order sort it themselves.
+
+        It reads the definition alone and needs no solve, so a caller without
+        a solver can ask it.
+        """
+        found: set[str] = set()
+        for phase in self.phases:
+            found |= phase.graded_measures()
+        return found
 
     def separation(
         self, measurements_by_phase: Sequence[Mapping[str, float]]
