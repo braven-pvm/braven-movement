@@ -1,7 +1,14 @@
 # The right hand is not the mirror of the left, and the evidence for changing it
 
-Every number here was taken on `378fea0` with a clean tree. Nothing in this
-document changes any code. The change it describes moves the look of every
+Sections 1 to 5 were taken on `378fea0` with a clean tree. Section 6 was added
+later and its numbers come from `044f8c7`. **Other quantities did move between
+those builds** — PR #29's pole fix shifted the hooks trunk lean by 10.15
+degrees — so every section names the build it read rather than relying on one
+line at the top. Section 6's figures are WITHIN-HAND distances between
+fingertips, which are invariant to where the trunk and the elbow are placed,
+and on the drill measured they match the earlier build to a few hundredths.
+
+Nothing in this document changes any code. The change it describes moves the look of every
 drill, so it waits for Marius alongside the elbow pole angle.
 
 ## What the code does
@@ -116,6 +123,59 @@ one that says the fix touches only what it should:
 **The right hand moves and the left does not.** A right-hand-only defect,
 corrected, should look exactly like this.
 
+## 6. A coach saw it, in a wireframe, without being asked
+
+Reading the review pages on 2026-08-31, Marius wrote:
+
+> the fingers in all the right hands are welded together, seemingly at the
+> tips?
+
+He had not been told there was a hand investigation. He was looking at a
+skeletal animation and something about the right hand was wrong.
+
+**The answer to his question mark is yes.** The tips converge and nothing is
+shortened. Pairwise distance between the five fingertips, on
+`netball_two_hand_catch_chest`:
+
+| | | left mean / max | right mean / max |
+|---|---|---|---|
+| shipped | rest | 10.66 / 15.86 cm | **4.83 / 9.86** |
+| shipped | contact | 8.87 / 14.51 cm | **3.22 / 5.73** |
+| with the mirror fix | rest | 10.66 / 15.86 cm | 10.66 / 15.86 |
+| with the mirror fix | contact | 8.87 / 14.51 cm | 8.87 / 14.51 |
+
+Wrist-to-tip lengths on the shipped build are ordinary on both sides: left 10.8
+to 15.2 cm, right 10.4 to 15.1. **The fingers are full length and converged.**
+The wrong sign closes the right fan instead of opening it, on every drill and
+every frame, and with the fix the right hand reads the left's numbers exactly.
+
+Measured twice and independently. The orchestrator read the page EXPORT and got
+mean 4.8 / max 9.8 at rest closing to 3.2 / 5.9 at contact; this lane read the
+SOLVE and got the table above. The two agree to a few hundredths, which is
+export rounding.
+
+### Why this piece is not like the other five
+
+Pieces 1 to 5 are instruments. A rig convention, a fan width, a mirrored-segment
+control, an instrument's thumb rows, a cost measurement. **Every one of them
+required knowing what to measure**, and every one was pointed at this hand
+because somebody had already been told to look at it.
+
+The sixth is a person watching a figure move.
+
+This defect has been in the engine for the whole life of the library. It
+survived every pack, every independent review, and every instrument named in
+this document — because none of those instruments read a finger, and the ones
+that could were only built once the hunt was on. What surfaced it, unprompted,
+was a coach glancing at a wireframe.
+
+The rest of this document reads as though instruments found the hand mirror.
+They did not. They CONFIRMED it, thoroughly and from six angles, after the
+content lane's agent found the negation in the code and after Erin's note about
+thumbs pointed at the hands. The order matters, and it is the argument for
+keeping a person in front of the figures at every stage rather than only at the
+end.
+
 ## What is not settled
 
 - **No coach has read any of it.** The instrument is report-only and has no
@@ -130,7 +190,15 @@ corrected, should look exactly like this.
 
 ## Provenance
 
-Every figure above comes from `378fea0` with a clean tree. Pieces 1 and 2 are
+Sections 1 to 5 come from `378fea0` with a clean tree. Section 6 comes from
+`044f8c7`, measured when a coach's remark asked a new question.
+
+An earlier version of the header said "the solve did not move between them".
+NOBODY MEASURED THAT, and it is false as written: PR #29 moved the hooks trunk
+lean by 10.15 degrees between the two. What is measured is narrower and enough
+— section 6 reads distances WITHIN a hand, which do not depend on where that
+hand is carried, and those match across the builds on the drill measured. A
+provenance line may only claim what somebody checked. Pieces 1 and 2 are
 rest-pose geometry and need no solve. Pieces 3, 4 and 5 come from the solved
 library and its receipts, whose `generatedFrom` records that commit.
 
