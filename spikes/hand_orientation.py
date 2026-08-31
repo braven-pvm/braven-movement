@@ -121,3 +121,154 @@ reported, not assumed.
 """
 
 from __future__ import annotations
+
+from segment_measures import SegmentMeasureError, angle_between_degrees
+
+Vector = tuple[float, float, float]
+
+# The same up the trunk lean is measured against. movement_engine.py owns the
+# constant but also imports pymomentum, which this module must not need, so the
+# value is restated here and test_hand_orientation.py asserts the two are equal
+# whenever the solver is present. MHR is Y up.
+WORLD_UP: Vector = (0.0, 1.0, 0.0)
+
+# The verdict that marks a row as published rather than graded. Coaching rows
+# say below, within or above; a reported row says only what was measured.
+REPORTED = "reported"
+
+# What each measure's zero and ninety mean, carried inside the receipt so a
+# reader of the row does not need this file open to read the number.
+CONVENTIONS = {
+    "ThumbUpDegrees": (
+        "thumb base to thumb tip, against world up: 0 is a thumb pointing "
+        "straight up, 90 is level, 180 is straight down"
+    ),
+    "FingerUpDegrees": (
+        "wrist to middle knuckle, against world up: 0 is the fingers pointing "
+        "straight up, 90 is level, 180 is straight down"
+    ),
+    "ThumbToBallDegrees": (
+        "thumb base to thumb tip, against the direction to the ball centre: "
+        "0 is a thumb pointing at the middle of the ball, 90 is along its "
+        "surface, 180 is away from it"
+    ),
+}
+
+
+def _as_vector(point) -> Vector:
+    return (float(point[0]), float(point[1]), float(point[2]))
+
+
+def _ray(start, end, name: str) -> Vector:
+    first = _as_vector(start)
+    second = _as_vector(end)
+    ray = (second[0] - first[0], second[1] - first[1], second[2] - first[2])
+    if ray == (0.0, 0.0, 0.0):
+        raise SegmentMeasureError(f"{name} has coincident endpoints")
+    return ray
+
+
+def thumb_up_degrees(*, thumb_base, thumb_tip, up: Vector = WORLD_UP) -> float:
+    """Measure 1. Space: world. 0 is thumbs-up, 90 level, 180 down."""
+    return angle_between_degrees(
+        _ray(thumb_base, thumb_tip, "thumb ray"), up, "thumb against up"
+    )
+
+
+def finger_up_degrees(*, wrist, middle_knuckle, up: Vector = WORLD_UP) -> float:
+    """Measure 2. Space: world. 0 is fingers-up, 90 level, 180 down."""
+    return angle_between_degrees(
+        _ray(wrist, middle_knuckle, "finger direction"), up, "fingers against up"
+    )
+
+
+def thumb_to_ball_degrees(*, thumb_base, thumb_tip, ball_centre) -> float:
+    """Measure 3. Space: world, frame-invariant. 0 points at the ball's middle."""
+    return angle_between_degrees(
+        _ray(thumb_base, thumb_tip, "thumb ray"),
+        _ray(thumb_base, ball_centre, "thumb base to ball centre"),
+        "thumb against the ball centre",
+    )
+
+
+def measure_hand(points, index: dict[str, int], side: str, ball_centre) -> dict:
+    """All three measures for one hand, from one solved frame's joint centres.
+
+    ``points`` is the solved skeleton's world joint positions in centimetres,
+    ``index`` maps joint names to rows, ``side`` is "l" or "r", and
+    ``ball_centre`` is the possession model's ball centre for the same frame.
+    There is no per-side special case anywhere below; the measures are
+    side-agnostic by construction, and the tests hold them to that.
+    """
+    thumb_base = points[index[f"{side}_thumb1"]]
+    thumb_tip = points[index[f"{side}_thumb3"]]
+    return {
+        "ThumbUpDegrees": thumb_up_degrees(
+            thumb_base=thumb_base, thumb_tip=thumb_tip
+        ),
+        "FingerUpDegrees": finger_up_degrees(
+            wrist=points[index[f"{side}_wrist"]],
+            middle_knuckle=points[index[f"{side}_middle1"]],
+        ),
+        "ThumbToBallDegrees": thumb_to_ball_degrees(
+            thumb_base=thumb_base, thumb_tip=thumb_tip, ball_centre=ball_centre
+        ),
+    }
+
+
+def receipt_rows(points, index: dict[str, int], ball_centre) -> list[dict]:
+    """Both hands of one frame, as report-only rows shaped like coaching rows.
+
+    ``band`` is null and ``verdict`` is "reported": these rows grade nothing.
+    The ``cue`` slot carries the measure's own convention, so the row reads
+    without this file open. Left before right, measures in definition order,
+    so receipts diff cleanly between builds.
+    """
+    rows = []
+    for side, prefix in (("l", "left"), ("r", "right")):
+        measured = measure_hand(points, index, side, ball_centre)
+        for suffix, value in measured.items():
+            rows.append(
+                {
+                    "measure": f"{prefix}{suffix}",
+                    "measured": round(value, 2),
+                    "band": None,
+                    "verdict": REPORTED,
+                    "cue": CONVENTIONS[suffix],
+                }
+            )
+    return rows
+
+
+def receipt_section(result: dict, definition) -> dict:
+    """The handOrientation section of one movement's receipt.
+
+    ``result`` is what possession_solve.solve_movement returned; ``definition``
+    is the movement's coaching definition. Each coaching phase reads the frame
+    the grading reads: round(atPhase * (frames - 1)), the same formula
+    MovementDefinition.assess uses, so a reported value and a graded value at
+    the same phase come from the same solved frame.
+    """
+    held = result["possession"]
+    points = result["points"]
+    index = result["index"]
+    last = len(points) - 1
+    phases = {}
+    for phase in definition.phases:
+        number = round(phase.at_phase * last)
+        frame = held.frames[number]
+        phases[phase.name] = {
+            "frame": number,
+            "holdingTheBall": bool(frame.holding),
+            "rows": receipt_rows(points[number], index, frame.centre),
+        }
+    return {
+        "status": "report-only",
+        "note": (
+            "no band and no verdict: bands are coaching content, and no coach "
+            "has read these numbers yet. thumbToBallDegrees is a grip "
+            "statement only on phases where she holds the ball; elsewhere it "
+            "reads the hand against a ball still in flight."
+        ),
+        "phases": phases,
+    }

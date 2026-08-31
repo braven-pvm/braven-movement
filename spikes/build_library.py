@@ -46,6 +46,7 @@ from movement_definition import (  # noqa: E402
     load as load_definition,
 )
 from ball_track import has_ball  # noqa: E402
+from hand_orientation import receipt_section  # noqa: E402
 from possession_solve import solve_movement, spike_report  # noqa: E402
 from technique import (  # noqa: E402
     has_technique,
@@ -169,6 +170,18 @@ def build_one(character, movement_id: str) -> dict:
             "violations": violations,
         },
         "possession": possession_receipt,
+        # Report-only hand orientation, the measures Erin's contact cues need
+        # (docs/COACH_REVIEW_2026-08-30.md, "supports neither"). Not part of
+        # coaching.phases: those rows are graded and counted, these are read.
+        "handOrientation": (
+            receipt_section(result, definition)
+            if possession
+            else {
+                "status": "unavailable",
+                "note": "no possession solve, so no ball to measure against",
+                "phases": {},
+            }
+        ),
         "coaching": assessment.to_receipt(),
         # Whether each phase's own checkpoints can tell it apart from the phase
         # before it. A checkpoint that cannot fail is not a check, and it
