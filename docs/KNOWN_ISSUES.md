@@ -499,7 +499,69 @@ A coach looking at the pull-in should be asked whether 52.7 cm is right. If it
 is not, `elbowAngleDegrees` in the technique file is the dial, in degrees, and
 it now reaches the mechanism that decides the answer.
 
-## The pole's frame is not orthogonal, so the target is not always reachable
+## RESOLVED: the pole's frame is now orthonormal
+
+**Fixed by Gram-Schmidt.** `down` is kept and `out` is orthogonalised against
+it, not the other way round, because `down` is where the angle is measured
+FROM: orthogonalising `down` instead would silently redefine what zero means.
+
+Swept over 576 reach directions, calling the solver's own `pole_target` rather
+than a copy of it, the deviation from the elbow circle is **0.000000 cm**,
+including on the family where the raw `out . down` reaches 0.991. Before, the
+worst was 12.30 cm and the median 4.02.
+
+**The feared consequence did not happen, and that is the finding.** This entry
+said the angle would have to be re-read and every table depending on it
+regenerated. The two-handed calibration mean moves from **36.58** to **36.43
+cm**, which is inside the 0.5 cm the test records, so
+`ELBOW_POLE_ANGLE_DEGREES` needs no re-read at all. One item leaves the coach
+conversation rather than joining it.
+
+Read that twice before taking it as good news. The angle was bisected through
+the whole SOLVE rather than derived from the geometry, so it had already
+absorbed the basis error. A calibration robust to a 12.30 cm geometry fault is
+robust because it is loosely coupled to the geometry, which is not entirely a
+compliment.
+
+**What it does move**: 54 graded values, no verdicts flipped, worst
+`hooks_outside_hand` facing_away left knee 51.13 to 35.40 and its pull_in trunk
+lean 1.90 to 12.05. Those are a different pose rather than a defect: measured
+across that drill the trunk lean's worst single-frame step is 0.12 degrees and
+the knee's 0.33, both flat throughout. It is still a change to the library's
+look and goes to Marius as one.
+
+**And the largest move on that drill is not graded at all.** The RIGHT knee at
+contact goes 50.3 to 74.2 degrees, about 24, and it is not a checkpoint on
+`netball_hooks_outside_hand`, so no graded figure carries it. It is smoother
+than before rather than rougher — its worst single-frame step falls from 2.03
+degrees to 0.15, and it holds 72.9 to 75.0 across the whole drill. The look
+record should carry the whole body, not only the parts a checkpoint happens to
+name.
+
+**On the hand-orientation rows**: 105 is the count above 0.05 degrees. At the
+precision the receipts are written to, 177 rows move. Both are the same change
+read at two thresholds, and the larger one is the honest headline.
+
+**A reach in her coronal plane now correctly gets NO pole.** There `out` and
+`down` collapse onto the same line once the reach axis is removed, so there is
+no circle point to name and `pole_target` returns None. The skewed basis
+emitted a point anyway. Verified directly rather than by sweep: six coronal
+directions all return None, and one two hundredths off the plane still returns
+a point, so it is the plane and not a region. A grid sweep will not find this,
+because a sampling grid steps over an exact plane rather than landing on it.
+
+`pole_target` now lives outside `elbow_poles` so the guard calls the same code
+the solver calls. The measurement that first found the 12.30 cm reimplemented
+the basis in a script, which is a second copy of the thing under test.
+
+The guard lost a clause from its name. It was
+`test_the_target_is_on_the_elbow_circle_where_the_basis_is_orthogonal`, and its
+reaches ran along one axis, where `out . down` is exactly zero and the flaw
+vanishes. Its directions are now deliberately oblique, and a second test
+asserts they are — otherwise a later edit could make them axis-aligned again
+and the guard would pass for the old reason.
+
+## The record of it
 
 `elbow_poles` builds its frame by projecting `out` and `down` off the reach
 axis. It never orthogonalises them against each other. On a reach that is

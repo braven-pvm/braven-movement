@@ -43,6 +43,22 @@ if SOLVER:
     from technique import has_technique, load_technique, technique_path
 
 REFERENCE_CM = 38.6
+# Reaches oblique to BOTH `out` and `down`, which is where a basis that is not
+# orthonormalised goes wrong. A reach along one axis is the case the old basis
+# got right by accident, so a list of those cannot fail.
+#
+# ONE LIST, READ BY BOTH TESTS BELOW. The obliqueness guard used to assert over
+# its own hardcoded copy of these, which made it a statement of convention
+# rather than a guard: editing the circle test's directions to axis-aligned
+# left everything passing, including with the orthogonalisation removed.
+OBLIQUE_DIRECTIONS = (
+    (0.0, 0.0, 1.0),
+    (0.3, -0.9, 0.3),
+    (0.6, -0.7, 0.4),
+    (-0.5, -0.8, 0.3),
+    (0.1, -0.99, 0.05),
+    (0.7, -0.5, -0.5),
+)
 # What the angle actually produces on the population the manual's photographs
 # describe. Marius ruled on 2026-08-30 that this is recorded and the angle is
 # deferred: refer to the class docstring below.
@@ -101,46 +117,72 @@ class ThePoleTargetSitsWhereTheElbowCanReach(unittest.TestCase):
             contact_solve.solver2.PositionErrorFunction = real
         return found, shoulder
 
-    def test_the_target_is_on_the_elbow_circle_where_the_basis_is_orthogonal(
-        self,
-    ) -> None:
-        """What this proves, and what it does not.
+    def test_the_target_is_on_the_elbow_circle(self) -> None:
+        """The target is exactly one upper arm from the shoulder and one
+        forearm from the wrist, at every angle and every reachable span.
 
-        It proves the target is exactly one upper arm from the shoulder and one
-        forearm from the wrist, at every angle and every reachable span, FOR
-        REACHES ALONG THE AXIS FAMILY BELOW.
+        THE NAME LOST A CLAUSE, and the clause is the point. This used to be
+        `..._where_the_basis_is_orthogonal`, and its docstring said so: `out`
+        and `down` were each projected off the reach axis but never
+        orthogonalised against EACH OTHER, so on an oblique reach the target
+        landed up to 12.30 cm off the circle. Every case below reached along
+        +Z, where `out . down` is exactly zero and the flaw vanishes, so the
+        test exercised precisely the family the defect could not reach. It was
+        left that way on purpose, because widening it would have turned the
+        branch red for a defect whose fix moves figures.
 
-        It does NOT prove that in general, and the name now says so. Review
-        found that `out` and `down` are each projected off the reach axis but
-        never orthogonalised against each other, so on an oblique reach they
-        are not perpendicular and the target lands up to 10.2 cm off the
-        circle. Every case here reaches along +Z, where `out . down` is exactly
-        0.000 and the flaw vanishes — so this test exercises precisely the
-        family the defect cannot reach.
-
-        It is left as it is deliberately. Widening it would turn the branch red
-        for a defect whose fix moves figures, and that fix is filed as
-        follow-up. The dishonesty was the name and the claim, not the coverage.
+        The basis is orthonormal now, so the clause is gone and so are the
+        axis-aligned reaches. The directions below are deliberately OBLIQUE,
+        including the family where the raw `out . down` reaches -0.99.
         """
         shoulder = np.array([20.0, 140.0, 0.0])
         checked = 0
-        for span in (15.0, 25.0, 35.0, 45.0, 50.0):
-            for angle in (-20.0, 0.0, 22.4, 34.6, 60.0, 90.0):
-                wrist = shoulder + np.array([0.0, 0.0, span])
-                found, shoulder_used = self.targets_for(wrist, angle)
-                if "target" not in found:
-                    continue
-                checked += 1
-                pole = found["target"]
-                self.assertAlmostEqual(
-                    float(np.linalg.norm(pole - shoulder_used)), self.upper, places=3,
-                    msg=f"span {span}, angle {angle}: not one upper arm from the shoulder",
-                )
-                self.assertAlmostEqual(
-                    float(np.linalg.norm(pole - wrist)), self.fore, places=3,
-                    msg=f"span {span}, angle {angle}: not one forearm from the wrist",
-                )
-        self.assertGreater(checked, 10, "no reachable case was checked")
+        for direction in [np.array(one) for one in OBLIQUE_DIRECTIONS]:
+            direction = direction / np.linalg.norm(direction)
+            for span in (15.0, 25.0, 35.0, 45.0, 50.0):
+                for angle in (-20.0, 0.0, 22.4, 34.6, 60.0, 90.0):
+                    wrist = shoulder + direction * span
+                    found, shoulder_used = self.targets_for(wrist, angle)
+                    if "target" not in found:
+                        continue
+                    checked += 1
+                    pole = found["target"]
+                    where = (f"direction {np.round(direction, 2)}, span {span}, "
+                             f"angle {angle}")
+                    self.assertAlmostEqual(
+                        float(np.linalg.norm(pole - shoulder_used)), self.upper,
+                        places=3,
+                        msg=f"{where}: not one upper arm from the shoulder",
+                    )
+                    self.assertAlmostEqual(
+                        float(np.linalg.norm(pole - wrist)), self.fore, places=3,
+                        msg=f"{where}: not one forearm from the wrist",
+                    )
+        self.assertGreater(checked, 50, "no reachable case was checked")
+
+    def test_the_oblique_family_is_actually_oblique(self) -> None:
+        """The anti-hollow clause for the test above.
+
+        Its directions are only worth more than the old ones if the raw basis
+        they build is genuinely non-perpendicular. If a later edit made them
+        axis-aligned again, the test above would pass for the reason the old
+        one did.
+        """
+        worst = 0.0
+        for direction in OBLIQUE_DIRECTIONS:
+            axis = np.array(direction, dtype=np.float64)
+            axis = axis / np.linalg.norm(axis)
+            out = np.array([1.0, 0.0, 0.0]) - axis[0] * axis
+            down = np.array([0.0, -1.0, 0.0]) + axis[1] * axis
+            dot = abs(float(np.dot(out / np.linalg.norm(out),
+                                   down / np.linalg.norm(down))))
+            worst = max(worst, dot)
+        self.assertGreater(
+            worst, 0.5,
+            "the reach directions above are nearly axis aligned, so the raw "
+            "`out` and `down` are nearly perpendicular already and the circle "
+            "test cannot see a basis that is not orthonormalised",
+        )
 
     def test_the_weight_does_not_depend_on_how_folded_the_arm_is(self) -> None:
         """The gate, stated as its absence. This is the defect the pack exists
