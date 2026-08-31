@@ -43,6 +43,22 @@ if SOLVER:
     from technique import has_technique, load_technique, technique_path
 
 REFERENCE_CM = 38.6
+# Reaches oblique to BOTH `out` and `down`, which is where a basis that is not
+# orthonormalised goes wrong. A reach along one axis is the case the old basis
+# got right by accident, so a list of those cannot fail.
+#
+# ONE LIST, READ BY BOTH TESTS BELOW. The obliqueness guard used to assert over
+# its own hardcoded copy of these, which made it a statement of convention
+# rather than a guard: editing the circle test's directions to axis-aligned
+# left everything passing, including with the orthogonalisation removed.
+OBLIQUE_DIRECTIONS = (
+    (0.0, 0.0, 1.0),
+    (0.3, -0.9, 0.3),
+    (0.6, -0.7, 0.4),
+    (-0.5, -0.8, 0.3),
+    (0.1, -0.99, 0.05),
+    (0.7, -0.5, -0.5),
+)
 # What the angle actually produces on the population the manual's photographs
 # describe. Marius ruled on 2026-08-30 that this is recorded and the angle is
 # deferred: refer to the class docstring below.
@@ -120,18 +136,8 @@ class ThePoleTargetSitsWhereTheElbowCanReach(unittest.TestCase):
         including the family where the raw `out . down` reaches -0.99.
         """
         shoulder = np.array([20.0, 140.0, 0.0])
-        # Oblique on purpose. A reach along one axis is the case the old basis
-        # got right by accident, so a test made of those cannot fail.
-        directions = [
-            np.array([0.0, 0.0, 1.0]),
-            np.array([0.3, -0.9, 0.3]),
-            np.array([0.6, -0.7, 0.4]),
-            np.array([-0.5, -0.8, 0.3]),
-            np.array([0.1, -0.99, 0.05]),
-            np.array([0.7, -0.5, -0.5]),
-        ]
         checked = 0
-        for direction in directions:
+        for direction in [np.array(one) for one in OBLIQUE_DIRECTIONS]:
             direction = direction / np.linalg.norm(direction)
             for span in (15.0, 25.0, 35.0, 45.0, 50.0):
                 for angle in (-20.0, 0.0, 22.4, 34.6, 60.0, 90.0):
@@ -162,9 +168,8 @@ class ThePoleTargetSitsWhereTheElbowCanReach(unittest.TestCase):
         axis-aligned again, the test above would pass for the reason the old
         one did.
         """
-        shoulder = np.array([20.0, 140.0, 0.0])
         worst = 0.0
-        for direction in ([0.3, -0.9, 0.3], [0.1, -0.99, 0.05], [0.7, -0.5, -0.5]):
+        for direction in OBLIQUE_DIRECTIONS:
             axis = np.array(direction, dtype=np.float64)
             axis = axis / np.linalg.norm(axis)
             out = np.array([1.0, 0.0, 0.0]) - axis[0] * axis

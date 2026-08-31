@@ -55,21 +55,35 @@ were proposed and both are refuted, so neither is repeated here as guidance.
   `numpy.__config__` is BUILD-time metadata and reads `blas 3.9.0` on every
   variant. An earlier version of this note used it as evidence, which was
   wrong.
-- "Check whether the environment carries MKL." Also insufficient. The movement
-  lane's own worktree environment holds `mkl_rt.3.dll`,
-  `mkl_intel_thread.3.dll`, `mkl_core.3.dll` and 25 MKL libraries with NO
-  `libopenblas.dll` at all — the same signature the crash was attributed to —
-  and it ran this gate and the full suite more than a dozen times, with the
-  variable unset, without ever crashing.
+- "Check whether the environment carries MKL." Also insufficient, and the
+  reason is sharper than it first looked. An earlier version of this note
+  compared "the movement lane's worktree environment" against the shared one
+  and reported that the first never crashed. THEY ARE THE SAME DIRECTORY: that
+  worktree's `spikes/.pixi` is a junction to `.assets/pixi-env`, proved by both
+  paths resolving to one file and one stat.
 
-**What survives.** The reviewer reports that the shared environment at
-`.assets/pixi-env` self-identifies as a RELOCATED COPY of a worktree
-environment that no longer exists, with its embedded paths still pointing at
-the old location. `0xC06D007F` is a delay-load failure, and an environment
-whose embedded paths are stale is a plausible way for a delay-load of
-`mkl_intel_thread` to fail where an environment sitting where it was built
-does not. That is a hypothesis with a mechanism, not a confirmed cause, and
-nobody has tested it by moving an environment on purpose.
+  So the honest observation is that THE SAME ENVIRONMENT, the same files,
+  crashes for one caller and has never crashed across dozens of runs by
+  another. Both carrier hypotheses die with that: it is not the MKL runtime,
+  because the runtime is identical, and it is not the relocation, because the
+  relocation is identical too. Whatever separates the cases is in the
+  invocation or the calling process, not in the directory.
+
+  Nobody knows why. That sentence is the current state of it, and it is better
+  than a comparison between two environments that turned out to be one.
+
+**What survives is less than it was.** The environment is indeed a relocated
+copy — its `conda-meta/pixi_env_prefix` still names a path it no longer sits
+at — and `0xC06D007F` is a delay-load failure, which relocation could plausibly
+cause. But the relocation is the same for every caller, and only some callers
+crash, so it cannot be the whole cause either.
+
+**One operational rule, unrelated to the crash and worth more than it.** That
+environment has no lockfile beside it and its manifest is newer than its lock,
+so a plain `pixi run` RE-SOLVES AND UPGRADES IT IN PLACE. One such run died
+mid-transaction and gutted numpy. Use `pixi run --frozen` to execute, and
+`pixi install --frozen` if the fingerprint ever reads `pixi:installing!` —
+`run --frozen` works around it and only `install --frozen` repairs it.
 
 So the honest rule is the first line: set the variable if you are unsure.
 

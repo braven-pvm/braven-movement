@@ -342,26 +342,31 @@ def elbow_poles(
     target argues with the hand — is not merely removed, it has nothing left
     to do.
 
-    THE TARGET IS NOT ALWAYS EXACTLY ON THE ELBOW CIRCLE, AND AN EARLIER
-    VERSION OF THIS COMMENT SAID IT WAS. `out` and `down` below are each
-    projected off the reach axis, but they are never orthogonalised against
-    EACH OTHER, so on an oblique reach they are not perpendicular and
-    `down * cos + out * sin` is not a unit vector. Measured across a spread of
-    reach directions, the target lands up to 10.2 cm off the circle, worst
-    where the hand is nearly below the shoulder and `out . down` reaches
-    -0.963. On that family the term does argue with the reach a little, which
-    is the very thing the paragraph above claims it cannot.
+    THE TARGET IS ON THE ELBOW CIRCLE. `pole_target` above builds an
+    orthonormal basis, so `down * cos + out * sin` is a unit vector and the
+    point is exactly one upper arm from the shoulder and one forearm from the
+    wrist. Swept over 576 reach directions the deviation is 0.000000 cm.
 
-    What survives is the calibration, because 34.6 degrees was bisected
-    through the whole solve rather than derived from the geometry, so it
-    absorbs whatever the basis actually does. What does NOT survive is the
-    stated property. `test_the_target_is_on_the_elbow_circle_where_the_basis_
-    is_orthogonal` is the real guard, and its name says how far it reaches:
-    it exercises reaches along one axis family, and that is exactly where the
-    flaw disappears.
+    IT WAS NOT ALWAYS SO, and this docstring said both things in turn before
+    it said the right one. `out` and `down` used to be projected off the reach
+    axis and never orthogonalised against each other, so on an oblique reach
+    the target left the circle by up to 12.30 cm, median 4.02. That is fixed;
+    what is left here is the record, because the paragraph above claims a
+    property this term did not have for several packs.
 
-    An orthonormal basis by Gram-Schmidt, and re-reading the angle afterwards,
-    is filed as follow-up. It would move figures again, so it waits.
+    The calibration barely noticed. `ELBOW_POLE_ANGLE_DEGREES` was bisected
+    through the whole solve rather than derived from the geometry, so it had
+    absorbed the basis error: correcting a 12.30 cm geometry fault moved the
+    two-handed mean contact separation from 36.58 cm to 36.43, and the angle
+    needed no re-read. That is worth reading twice. A calibration robust to a
+    12 cm geometry error is robust because it is loosely coupled to the
+    geometry, which is not entirely a compliment.
+
+    A REACH IN HER CORONAL PLANE NOW CORRECTLY GETS NO POLE. There `out` and
+    `down` collapse onto the same line once the axis is removed, so there is
+    no circle point to name and `pole_target` returns None. The skewed basis
+    emitted a point anyway. A direction two hundredths off that plane still
+    gets one, so this is the plane itself and not a region.
 
     The geometry also retires the gate's other job for free. As the arm
     straightens, `off` goes to zero and every angle names the same point, so
