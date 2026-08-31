@@ -1,9 +1,14 @@
 # The right hand is not the mirror of the left, and the evidence for changing it
 
 Sections 1 to 5 were taken on `378fea0` with a clean tree. Section 6 was added
-later and its numbers come from `044f8c7`; the solve did not move between them,
-and the section says which build it read. Nothing in this document changes any
-code. The change it describes moves the look of every
+later and its numbers come from `044f8c7`. **Other quantities did move between
+those builds** — PR #29's pole fix shifted the hooks trunk lean by 10.15
+degrees — so every section names the build it read rather than relying on one
+line at the top. Section 6's figures are WITHIN-HAND distances between
+fingertips, which are invariant to where the trunk and the elbow are placed,
+and on the drill measured they match the earlier build to a few hundredths.
+
+Nothing in this document changes any code. The change it describes moves the look of every
 drill, so it waits for Marius alongside the elbow pole angle.
 
 ## What the code does
@@ -186,8 +191,14 @@ end.
 ## Provenance
 
 Sections 1 to 5 come from `378fea0` with a clean tree. Section 6 comes from
-`044f8c7`, measured when a coach's remark asked a new question of the same
-build. Pieces 1 and 2 are
+`044f8c7`, measured when a coach's remark asked a new question.
+
+An earlier version of the header said "the solve did not move between them".
+NOBODY MEASURED THAT, and it is false as written: PR #29 moved the hooks trunk
+lean by 10.15 degrees between the two. What is measured is narrower and enough
+— section 6 reads distances WITHIN a hand, which do not depend on where that
+hand is carried, and those match across the builds on the drill measured. A
+provenance line may only claim what somebody checked. Pieces 1 and 2 are
 rest-pose geometry and need no solve. Pieces 3, 4 and 5 come from the solved
 library and its receipts, whose `generatedFrom` records that commit.
 
