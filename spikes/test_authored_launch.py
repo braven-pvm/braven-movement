@@ -30,19 +30,26 @@ from pathlib import Path
 import numpy as np
 
 from ball_track import (
+    BALL_SUFFIX,
+    MOVEMENT_DIR,
     BallKey,
     BallOffset,
     BallTrack,
     BallTrackError,
     Launch,
-    ball_path,
-    ball_variants,
-    has_ball,
     load_ball,
     stance_frame,
 )
-from movement_engine import library
 from possession import return_velocity
+
+# NOT `movement_engine.library`, which is only a directory glob but lives in a
+# module that imports the solver at its top. Importing it here made this whole
+# file fail to LOAD on the hosted runner, so eleven tests became one error —
+# the third time that has happened in this repository and the second time to
+# me. `ball_track` knows where the movements are and needs no solver.
+#
+# `test_import_hygiene.py` now asserts every test module imports without one,
+# so a fourth instance fails on the machine that writes it.
 
 ARM_CM = 52.7
 SECONDS_PER_PHASE = 1.0
@@ -95,20 +102,17 @@ def minimal(**extra) -> dict:
 class ItIsAdditive(unittest.TestCase):
     """The claim that nothing existing changes, measured rather than asserted."""
 
-    def test_every_drill_in_the_library_still_derives(self) -> None:
+    def test_every_ball_file_in_the_library_still_derives(self) -> None:
         found = 0
-        for movement_id in sorted(library()):
-            if not has_ball(movement_id):
-                continue
-            for variant in ball_variants(movement_id):
-                ball = load_ball(ball_path(movement_id, variant))
-                found += 1
-                with self.subTest(movement=movement_id, variant=variant):
-                    self.assertIsNone(
-                        ball.launch,
-                        f"{movement_id} authors a launch, so this file's claim "
-                        "that the change is additive no longer holds for it",
-                    )
+        for path in sorted(MOVEMENT_DIR.glob("*" + BALL_SUFFIX)):
+            ball = load_ball(path)
+            found += 1
+            with self.subTest(ball=path.name):
+                self.assertIsNone(
+                    ball.launch,
+                    f"{path.name} authors a launch, so this file's claim that "
+                    "the change is additive no longer holds for it",
+                )
         self.assertGreater(found, 5, "no ball file was read")
 
     def test_a_file_without_a_launch_loads_without_one(self) -> None:
