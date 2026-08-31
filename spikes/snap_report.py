@@ -17,8 +17,14 @@ from statistics import median
 
 # Below this a band cannot be judged, and a step under it is not a movement
 # worth naming. It is the same figure `movement_definition` uses, restated here
-# rather than imported, because importing it would drag the solver back in.
-# `test_snap_report` asserts the two agree.
+# rather than imported.
+#
+# THE REASON IS WEAKER THAN THE ONE FIRST WRITTEN HERE, which said importing it
+# would drag the solver back in. That is false: `movement_definition` is
+# stdlib-only today. The honest reason is that this module must not depend on a
+# module that may later grow a solver import, and a one-line constant is a
+# cheap price for that independence. `test_snap_report` asserts the two agree,
+# which is what makes restating it safe rather than merely convenient.
 MINIMUM_MEANINGFUL_BAND_DEGREES = 5.0
 
 
@@ -39,12 +45,16 @@ def _same_direction(signed: list[float], number: int) -> bool:
     Reads the nearest step either side that actually moves, so a run of tiny
     steps between two real ones does not read as a reversal by accident.
 
-    AT AN EDGE, THE ONE NEIGHBOUR THAT EXISTS DECIDES. An earlier version
-    returned True where either side was missing, which let an edge turning
-    point through: the jump-and-pull-in hooks ends with steps of -14.67 and
-    then +1.56, a reversal on the drill's very last frame, and it was reported
-    as a stall of ratio 7.74. With no neighbour at all there is no evidence
-    either way, so it returns False and nothing is flagged.
+    AT AN EDGE, THE ONE NEIGHBOUR THAT EXISTS DECIDES, AT BOTH EDGES. An
+    earlier version returned True where either side was missing, which let an
+    edge turning point through: the jump-and-pull-in hooks ends with steps of
+    -14.67 and then +1.56, a reversal on the drill's very last frame, reported
+    as a stall of ratio 7.74. Fixing that at the END edge only left the START
+    edge doing what the sentence above says it does not — an opening reversal
+    read 8.00 where the same series reversed at the end read 1.00. No drill in
+    the library opens with one, which is exactly why it survived a pack, a
+    review and a merge. With no neighbour at all there is no evidence either
+    way, so it returns False and nothing is flagged.
     """
     before = next(
         (signed[i] for i in range(number - 1, -1, -1)
@@ -59,7 +69,12 @@ def _same_direction(signed: list[float], number: int) -> bool:
     if before is None and after is None:
         return False
     if before is None:
-        return True
+        # Only the step after exists, at the drill's opening. The MIRROR of
+        # the case below, and an earlier version returned True here — so a
+        # drill that OPENED with a reversal read a stall of 8.00 where the
+        # identical series reversed at the end read 1.00. The rule in this
+        # docstring was written for both edges and implemented on one.
+        return after * signed[number] >= 0
     if after is None:
         # Only the step before exists. A step that reverses against it is the
         # movement turning round at the end of the drill, not pausing in it.
@@ -93,9 +108,13 @@ def spike_report(measurements: list[dict]) -> dict:
     worth judging when EITHER its step or its neighbourhood is meaningful.
 
     `SNAP_RATIO` in proof.py and retarget.py is the threshold this feeds, and
-    it was recalibrated only after this denominator became robust, never
-    before: a threshold tuned against a statistic with breakdown point zero is
-    tuned against noise.
+    it was NOT recalibrated. The ledger said to recalibrate once the
+    denominator was robust; having made it robust, 3.0 does separate real
+    hitches from ordinary movement, and moving it so the library of the day
+    passed would be tuning the threshold to the answer. Four rows read over it
+    and they are findings. An earlier version of this paragraph said the
+    threshold "was recalibrated", which the ledger has never said and which
+    would have been the wrong thing to do.
     """
     worst_ratio = 0.0
     worst_where = None

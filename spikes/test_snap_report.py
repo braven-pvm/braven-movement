@@ -118,6 +118,40 @@ class WhatItShouldNotFlag(unittest.TestCase):
             f"an end-of-drill reversal was reported as {found['at']}",
         )
 
+    def test_a_reversal_on_the_first_frame(self) -> None:
+        """The MIRROR of the test above, and it is here because the mirror was
+        not.
+
+        The end edge was fixed and the start edge was not, so an identical
+        series reversed at its opening read a stall of 8.00 where reversed at
+        its close it read 1.00 — while the docstring said the one neighbour
+        that exists decides at an edge. No drill in the library opens with a
+        reversal, which is why an asymmetry in a rule survived a pack, a review
+        and a merge.
+
+        A rule stated for both ends wants a case at both ends.
+        """
+        found = spike_report(walk([1.5] + [-12.0] * 6))
+        self.assertLessEqual(
+            found["worstNeighbourRatio"],
+            SNAP_RATIO,
+            f"an opening reversal was reported as {found['at']}",
+        )
+
+    def test_the_two_edges_agree(self) -> None:
+        """Stated as an equality, so neither edge can be fixed alone again.
+
+        The same steps, reversed. Nothing about a snap depends on which way
+        time runs through a series, so the two must read alike.
+        """
+        forward = [1.5] + [-12.0] * 6
+        backward = [-one for one in reversed(forward)]
+        self.assertAlmostEqual(
+            spike_report(walk(forward))["worstNeighbourRatio"],
+            spike_report(walk(backward))["worstNeighbourRatio"],
+            places=6,
+        )
+
     def test_a_still_series(self) -> None:
         """Nothing is moving, so nothing can snap. The floor is what stops a
         near-zero denominator inventing a ratio here."""
