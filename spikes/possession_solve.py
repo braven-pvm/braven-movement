@@ -412,9 +412,12 @@ def solve_movement(
     # frozen in the main solve, so a seeded curl passes straight through to the
     # answer untouched.
     #
-    # Measured on `e1b2ca8`: at frame zero, where she is not holding, 20 of the
-    # 32 curl parameters were non-zero and the largest was 1.570 radians. That
-    # is a hand closed to a fist while she waits to receive. Before the
+    # Measured on e1b2ca8: at frame zero, where she is not holding, 20 of the
+    # 30 curl parameters were non-zero and the largest was 1.570 radians. That
+    # is a hand closed to a fist while she waits to receive. (The first write-up
+    # of this said 32, from an ad-hoc list of finger parameters ending in _rz
+    # rather than the set curl_parameters actually returns. The denominator
+    # here is that set, 15 per hand.) Before the
     # backward sweep the same frame read 0 of 32.
     #
     # NOTHING IN THE LIBRARY MEASURES A FINGER, so 311 tests, two independent
@@ -422,18 +425,38 @@ def solve_movement(
     # asking why frame zero's fingers did not match the pose the solve starts
     # from.
     #
-    # The condition here is the exact negation of the one that applies the
-    # curl, so the two cannot drift apart.
-    #  above is the JOINT names; the curl is addressed by PARAMETER
-    # name, and the two lists are different lengths and different orders.
+    # THE CONDITION IS PER SIDE, and a frame-level version of it is not
+    # enough. `close_fingers` curls only the hands in `frame.sides`. A first
+    # version of this reset skipped every HOLDING frame, so a hand that is off
+    # the ball on a frame where the OTHER hand holds it fell into neither
+    # branch: not curled, and not reset. It kept whatever the seed had, which
+    # from the backward sweep is the fist of the joined phase.
+    #
+    # That is one hand fisted for 15 frames on the outside-hand hooks, 46 to
+    # 60, and 12 on the one-hand snatch, 47 to 58 — about two tenths of a
+    # second each, exactly while she takes the ball one-handed and the other
+    # hand waits to join. It sat identically on the build before this reset, so
+    # no consequence diff could show it, and a frame-level test cannot see it
+    # either: SOME finger on that frame is legitimately curled.
+    #
+    # Written per side, the condition is the exact negation of the one that
+    # applies the curl, so the two cannot drift apart.
+    #
+    # `names` earlier in this function is the JOINT names. The curl is
+    # addressed by PARAMETER name, and the two lists differ in both length and
+    # order.
     parameter_names = list(character.parameter_transform.names)
-    curl_at = [
-        parameter_names.index(name)
-        for name in curl_parameters(character, method.every_side)
-    ]
+    curl_at = {
+        side: [
+            parameter_names.index(name)
+            for name in curl_parameters(character, (side,))
+        ]
+        for side in method.every_side
+    }
     for frame in held.frames:
-        if not (frame.holding and frame.sides):
-            answers[frame.number][curl_at] = rest[curl_at]
+        for side, where in curl_at.items():
+            if not (frame.holding and side in frame.sides):
+                answers[frame.number][where] = rest[where]
 
     for frame in held.frames:
         number, phase = frame.number, frame.phase
