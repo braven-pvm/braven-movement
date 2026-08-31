@@ -844,3 +844,29 @@ snap to frame 9 at 6.15 degrees rather than removing it. The apparent fix was
 an under-determined joint tipped across a basin boundary by the finger
 parameters, which are the only part of the target that differs at frame zero.
 Luck, not mechanism.
+
+## The residual the cold-start test cannot see, and why it is excluded
+
+`test_cold_start.py` compares the drift over a drill's opening window against
+later windows whose hand target moved no further. A drill whose opening target
+genuinely moves is excluded, because a pose that follows a moving target is
+doing its job.
+
+**That exclusion hides a real residual on `netball_hooks_jump_pull_in`.** Its
+opening still drifts 5.65 degrees at the right knee over twelve frames, down
+from 6.12 before the backward sweep. The test never looks, because the hand
+target moves 2.15 cm over those frames and the rule only applies under 1 cm.
+
+**The exclusion is right and the residual is real.** Both. A rule that failed
+that drill would be measuring the drill rather than the solver, and would be
+switched off the first time somebody read it. `netball_double_foot_landing` is
+the clearer case: it drifts 26 degrees at the knee over its opening, which is
+the landing.
+
+So this is recorded here rather than tightened into the test. **It is a known
+blind spot, not a gap somebody still has to find.** Anyone who rediscovers a
+drifting opening on that drill has found this, not something new.
+
+Closing it needs a discriminator the current one does not have: a way to say
+how much of an opening's drift the target actually accounts for, rather than
+whether the target moved at all. Nobody has built that.

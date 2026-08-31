@@ -222,7 +222,6 @@ def solve_movement(
     motion = np.zeros((track.frames, count), dtype=np.float32)
     points_per_frame: list[np.ndarray] = []
     measurements: list[dict] = []
-    previous = rest.copy()
 
     def solve_one(frame, seed, cold: bool):
         """Solve one frame from one seed.
@@ -331,9 +330,15 @@ def solve_movement(
             # and the elbow moved 33 degrees over the first few frames while the
             # target barely moved. Every later frame continues from its
             # neighbour and needs none of this.
+            # `start`, not `seed`: this loop used to rebind the parameter, so
+            # the fallback below copied the last twist seed rather than the
+            # pose the caller asked to start from. It needs every seed to come
+            # back non-finite to reach, so no drill has ever taken it, and a
+            # branch that is wrong only when everything else has failed is the
+            # worst place to be wrong.
             best, solved = float("inf"), None
-            for seed in seeds(character, rest, None):
-                answer = run(seed)
+            for start in seeds(character, rest, None):
+                answer = run(start)
                 if not np.all(np.isfinite(answer)):
                     continue
                 miss = contact_miss(
