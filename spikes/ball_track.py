@@ -105,6 +105,54 @@ class BallOffset:
 
 
 @dataclass(frozen=True)
+class Launch:
+    """Where the athlete's own pass goes, and how fast, when the drill says.
+
+    OPTIONAL AND ADDITIVE. Without it the outgoing pass is derived from the
+    incoming flight — its target is where the passer stood and its speed is the
+    speed he threw at — and every drill in the library at the time of writing
+    does exactly that. Deriving is right for a catch-and-return: the ball goes
+    back the way it came, at the pace it came.
+
+    IT IS WRONG WHENEVER THERE IS NO MEANINGFUL INCOMING FLIGHT, which is what
+    the content lane's pass family found. Two probes, both confidently wrong
+    with no error raised:
+
+    - A drill where she holds the ball from phase 0 has its release at 0, so
+      the derived target is `offset_at(0)` — the ball in her own hands. The
+      pass then launched BACKWARDS over her shoulder, [0, +486.3, -179.0]
+      against a real catch's [0, +99.4, +594.2].
+    - The derived speed is the flight's length over its duration, so a short
+      fictional incoming flight authored only to satisfy `arrival` sets the
+      throw: 0.02 of a phase gave 55.5 metres per second, 0.10 gave 11.1, 0.25
+      gave 4.4, against the library's real 6.24. The earlier she holds it, the
+      harder she throws it.
+
+    `speed_cm_per_second` is NOT in arm lengths, and that is deliberate against
+    this project's usual unit discipline. Reach is in arm lengths and carry in
+    torso lengths because those are body-scaled quantities. How fast a ball
+    leaves a hand is not: a netball crosses a court at a speed the throw sets,
+    not one the thrower's arm length sets. `incoming_speed_cm` already returns
+    centimetres per second for the same reason, and a second unit for one
+    quantity is a conversion waiting to be forgotten.
+
+    IT IS THE HORIZONTAL COMPONENT, not the speed the ball leaves the hand at.
+    The vertical is solved from gravity so the ball arrives at the target, the
+    same way `incoming_speed_cm` reads horizontal for the same reason: only the
+    horizontal is steady, and it is what joins two points under gravity. An
+    authored 624 leaves the hand at 655 on the test geometry, 624 along the
+    ground and 200.6 upward. AN AUTHOR AIMING A LOB MUST KNOW THAT, because a
+    lob's vertical is most of its speed and none of this field.
+
+    `target` IS in arm lengths, because it is a place in the stance frame and
+    every other offset in this file is.
+    """
+
+    target: BallOffset
+    speed_cm_per_second: float
+
+
+@dataclass(frozen=True)
 class BallKey:
     at_phase: float
     name: str
@@ -136,6 +184,9 @@ class BallTrack:
     release_phase: float
     arrival_phase: float
     keys: tuple[BallKey, ...]
+    # None means "derive the outgoing pass from the incoming flight", which is
+    # what every drill did before this field existed and what they all still do.
+    launch: Launch | None = None
 
     def offset_at(self, phase: float) -> BallOffset:
         """Return the ball offset at this phase, smoothly between the keys.
@@ -248,6 +299,31 @@ def load_ball(path: Path) -> BallTrack:
     if radius_cm is not None and radius_cm <= 0.0:
         raise BallTrackError(f"radiusCm is {radius_cm}, which is not a ball")
 
+    launch = None
+    if "launch" in data:
+        entry = data["launch"]
+        try:
+            speed = float(entry["speedCmPerSecond"])
+        except (KeyError, TypeError, ValueError):
+            raise BallTrackError(
+                "a launch needs speedCmPerSecond, in centimetres per second. "
+                "It is not in arm lengths: how fast a ball leaves a hand is "
+                "not a body-scaled quantity."
+            ) from None
+        if speed <= 0.0:
+            raise BallTrackError(
+                f"the launch speed is {speed}, which is not a throw"
+            )
+        if "target" not in entry:
+            raise BallTrackError(
+                "a launch needs a target, in arm lengths, in the stance frame: "
+                "where her own pass is going"
+            )
+        launch = Launch(
+            target=read_offset(entry["target"], "launch target"),
+            speed_cm_per_second=speed,
+        )
+
     return BallTrack(
         movement_id=str(data["movementId"]),
         radius_fraction=radius_fraction,
@@ -255,6 +331,7 @@ def load_ball(path: Path) -> BallTrack:
         release_phase=release,
         arrival_phase=arrival,
         keys=keys,
+        launch=launch,
     )
 
 

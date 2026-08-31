@@ -144,6 +144,7 @@ inPlace                  whether the root stays where it is
 rootTravelM              how far the root goes, whether or not it stays
 travelsUnderItsOwnPower  whether that travel is locomotion or noise
 contactFrame             the frame the possession model says the ball is taken
+releaseFrame             the frame it says the ball leaves, or null if it never does
 
 phases[]                 name, at (0 to 1), frame, cues[]
 frames[]                 fifteen numbers each. Refer to section 8
@@ -236,6 +237,25 @@ agree to within 0.03 s. On the landing they differ by 0.32 s, and **that
 difference is correct**: she takes the ball in flight and lands a third of a
 second later. A landing lined up on the catch would put her feet down before she
 had come back to earth.
+
+**A RELEASE MOMENT IS CHECKED AGAINST `releaseFrame`, NOT `contactFrame`.** The
+vocabulary lists `pass`, `chest-pass`, `shoulder-pass`, `lob` and `bounce-pass`,
+and a clip about one of those declares a phase where the ball LEAVES. Comparing
+that declaration against when she caught the ball compares two different
+questions, and the two would agree only by accident. So the clip carries both,
+each named for what it is and neither standing in for the other: compare a
+`contact` moment against `contactFrame`, and a `release` moment against
+`releaseFrame`.
+
+`releaseFrame` is null wherever the drill never lets go, which is every catch
+that ends holding the ball. Every clip in the library today is a catch, a block
+or a landing, so the first non-null value will arrive with the pass family.
+
+**One gap, stated rather than left to be found.** The exporter's
+`momentGapSeconds` report line still reads `contactFrame` unconditionally, so on
+a release-moment clip it prints the gap to the wrong moment. It is a report
+line and gates nothing, and no clip declares a release yet. It must be extended
+before anybody judges a pass clip by it.
 
 ## 7. Root travel, and why a clip is in place
 

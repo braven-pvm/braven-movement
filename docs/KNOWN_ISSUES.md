@@ -260,7 +260,75 @@ cd spikes && pixi run test
 ```
 
 
-## Four coaching checkpoints now fail, and no number was changed to stop them
+## FIVE coaching checkpoints now fail, and no number was changed to stop them
+
+**It was four until PR #19 and the table below said four for two days.** The
+content lane found the fifth as an undocumented failure, with two instruments,
+before anyone recognised it as a deliberate flip. It is:
+
+| drill | phase | measure | measured | band |
+|---|---|---|---|---|
+| 1 Hand Snatches to Other Hand | contact | `leftElbowFlexionDegrees` | 146.13 | 30 to 120 |
+
+That checkpoint read 89.64 and passed. The free-hand fix moved the waiting hand
+to the chest, where the library holds a ball, and the elbow folds to 146.13.
+**Erin Burger marked that same checkpoint NOT met**, so the engine moved from
+disagreeing with her to agreeing with her, and the band is untouched. Refer to
+`docs/COACH_REVIEW_2026-08-30.md`. A verdict that flips toward a coach is still
+a verdict that flips, and it belonged in this table on the day.
+
+## AND THE DIAGNOSIS BELOW IS SUPERSEDED: the bands were never wrong
+
+The four release failures were read here as bands authored against a solve
+whose arm never extended. **They are not.** All four are WITHIN their own bands
+at the moment the ball actually leaves her hands, and outside them only at the
+frame they are graded on, which is phase 1.000 — the end of the follow-through.
+
+Measured independently by this lane, with two instruments for "when does the
+ball leave" that agree to eight thousandths of a phase: the technique file's
+declared `release.atPhase`, and the SOLVED possession state's first `released`
+frame.
+
+| drill | graded at | ball leaves | band | at the graded frame | at the release |
+|---|---|---|---|---|---|
+| `deflect_high` send_on | 1.000 | 0.800 / 0.805 | 45 to 115 | 35.83 out | **98.71 in** |
+| `hooks_jump_pull_in` release | 1.000 | 0.950 / 0.953 | 50 to 120 | 49.85 out | **99.25 in** |
+| `two_hand_catch_chest` release | 1.000 | 0.920 / 0.928 | 55 to 115 | 41.04 out | **98.06 in** |
+| `two_hand_snatch_straight_back` return | 1.000 | 0.900 / 0.907 | 45 to 105 | 41.00 out | **86.76 in** |
+
+**Erin marked all three of her release cues MET**, which is consistent with a
+coach judging the release and an engine grading the follow-through.
+
+**Retiming would not create a blind phase, but the margin is thinner than
+first printed.** Moved to the declared release, each of the four still differs
+from the phase before it by **7.28 to 45.36 degrees**, against a 5.0 threshold.
+
+| drill | as graded today | retimed to the release |
+|---|---|---|
+| `deflect_high` send_on | 70.16 | **7.28** |
+| `two_hand_snatch_straight_back` return | 83.78 | 37.34 |
+| `hooks_jump_pull_in` release | 91.48 | 42.08 |
+| `two_hand_catch_chest` release | 103.34 | 45.36 |
+
+**An earlier version of this said "21.46 to 45.49", and it was the wrong
+measurement rather than a wrong tip.** It compared the two frames on EVERY
+measured angle. `MovementDefinition.separation` — the rule this project already
+has — compares them only on the measures THAT PHASE GRADES, which is the right
+question: an angle no checkpoint reads cannot tell a coach two phases apart. On
+the deflect the widest graded difference is 7.28 degrees where the widest
+difference on any angle is 21.46.
+
+The conclusion is unchanged and the comfort is not. Every drill clears the
+threshold; the deflect clears it by 2.28 degrees, and the morning should hear
+that rather than a figure three times too generous.
+
+**Nothing is retimed here.** The question for the coach morning changes from
+"should these bands be widened?" to "which frame is the release?", and that is
+a better question with both lanes' instruments behind it. The content lane's
+new pass anchors its release AT the release by the orchestrator's ruling, so
+the library will hold both patterns until the morning decides.
+
+## The record of the four, as it was diagnosed
 
 The engine sends a released ball back to the passer at the speed it came in,
 so the athlete now extends through the pass. She did not before: the ball
