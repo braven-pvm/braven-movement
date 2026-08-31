@@ -12,15 +12,22 @@ origin. The stamp exists so the next archive rests on the file instead.
 
 This file does not need a solver. The stamp is metadata, and testing it by
 solving eight drills would make a slow test out of a fast question.
+
+IT MUST ALSO IMPORT WITHOUT ONE. The stamp began inside `build_library.py`,
+which imports `pymomentum` at module level. The hosted runner has none, so this
+file could not LOAD there and eleven working guards became a single import
+error. `build_stamp.py` exists so that cannot happen again, and the last test
+below is what holds it that way.
 """
 
 from __future__ import annotations
 
 import subprocess
+import sys
 import unittest
 from pathlib import Path
 
-from build_library import generated_from, git_output, uncommitted_paths
+from build_stamp import generated_from, git_output, uncommitted_paths
 
 SPIKE_DIR = Path(__file__).resolve().parent
 
@@ -136,6 +143,39 @@ class GitOutputKeepsLeadingWhitespace(unittest.TestCase):
 
     def test_the_trailing_newline_is_still_removed(self) -> None:
         self.assertFalse(git_output("rev-parse", "HEAD").endswith("\n"))
+
+
+class TheStampModuleNeedsNoSolver(unittest.TestCase):
+    """The guard on the reason `build_stamp.py` is a separate module.
+
+    Continuous integration has no `pymomentum`. When the stamp lived in
+    `build_library.py`, importing it here raised and every check in this file
+    was reported as one error rather than run. Skipping instead would have been
+    worse: a green run saying nothing was checked.
+    """
+
+    def test_importing_the_stamp_does_not_pull_in_the_solver(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import sys; import build_stamp; "
+                "print(any('pymomentum' in m for m in sys.modules))",
+            ],
+            capture_output=True,
+            text=True,
+            cwd=SPIKE_DIR,
+        )
+        self.assertEqual(
+            result.returncode, 0, f"build_stamp did not import: {result.stderr}"
+        )
+        self.assertEqual(
+            result.stdout.strip(),
+            "False",
+            "importing build_stamp pulled in pymomentum, so this file will "
+            "fail to load on any runner without a solver, exactly as it did on "
+            "2026-08-31",
+        )
 
 
 if __name__ == "__main__":  # pragma: no cover

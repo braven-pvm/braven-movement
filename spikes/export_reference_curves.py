@@ -20,9 +20,7 @@ video curve means matching its shape and its phase landmarks, not its duration.
 from __future__ import annotations
 
 import json
-import subprocess
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -31,6 +29,7 @@ SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
 
 from ball_track import has_ball  # noqa: E402
+from build_stamp import generated_from  # noqa: E402
 from movement_definition import load as load_definition  # noqa: E402
 from movement_engine import definition_path, library, load_character  # noqa: E402
 from possession_solve import solve_movement  # noqa: E402
@@ -110,20 +109,13 @@ def main(argv: list[str]) -> int:
 
     OUTPUT.mkdir(parents=True, exist_ok=True)
     where = OUTPUT / "reference-curves.json"
-    commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,
-                            text=True, cwd=SPIKE_DIR).stdout.strip()
-    dirty = subprocess.run(["git", "status", "--porcelain"], capture_output=True,
-                           text=True, cwd=SPIKE_DIR).stdout.strip()
     where.write_text(
         json.dumps(
             {
-                "generatedFrom": {
-                    "commit": commit,
-                    "treeWasClean": not dirty,
-                    "utcTimestamp": datetime.now(timezone.utc).isoformat(
-                        timespec="seconds"
-                    ),
-                },
+                # The shared stamp, not a second copy of it. This file had
+                # its own inline version, which is how one shape becomes two
+                # that drift.
+                "generatedFrom": generated_from(),
                 "note": (
                     "Engine curves for comparison against video. Phase runs 0 to 1 "
                     "across each movement, so a clip of a different duration can be "
