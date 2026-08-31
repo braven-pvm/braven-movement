@@ -261,6 +261,69 @@ def foot_constraints(
     return error
 
 
+def pole_target(shoulder, hand, rotation, sign: float, upper: float,
+                fore: float, turn: float):
+    """Where the elbow should sit, as a point on the circle it can occupy.
+
+    The elbow lies on a circle of radius `off`, centred `along` down the
+    shoulder-to-hand axis. `turn` names a point on that circle: zero is the
+    elbow hanging straight below the axis, and a right angle is straight out
+    to her side.
+
+    Returns None where there is no circle to name a point on — a straight arm,
+    or a hand beyond her reach.
+
+    THE BASIS IS ORTHONORMALISED, and until 2026-08-31 it was not. `out` and
+    `down` were each projected off the axis and normalised, but never against
+    EACH OTHER, so on a reach oblique to both they were not perpendicular and
+    `down * cos + out * sin` was not a unit vector. Swept over 576 reach
+    directions the target landed up to 12.30 cm off the circle, median 4.02,
+    worst where the hand sits nearly below the shoulder and `out . down`
+    reaches -0.991. On that family the term argued with the reach — the one
+    thing the angle form was chosen to make impossible.
+
+    `down` is kept and `out` is orthogonalised against it, not the other way
+    round, because `down` is where the angle is measured FROM. Orthogonalising
+    `down` instead would silently redefine what zero means.
+
+    IT LIVES HERE, OUT OF `elbow_poles`, so the guard can call the same code
+    the solver calls. The measurement that found the 12.30 cm reimplemented
+    this basis in a script, which is a second copy of the thing under test and
+    would have drifted from it.
+    """
+    axis = np.asarray(hand, dtype=np.float64) - np.asarray(shoulder, dtype=np.float64)
+    span = float(np.linalg.norm(axis))
+    # A straight arm has no elbow circle, and a target beyond her reach has no
+    # triangle at all. Both are silence rather than a guess.
+    if span < 1e-6 or span >= upper + fore:
+        return None
+    axis = axis / span
+    along = (upper * upper - fore * fore + span * span) / (2.0 * span)
+    off_squared = upper * upper - along * along
+    if off_squared <= 1e-9:
+        return None
+    off = float(off_squared ** 0.5)
+    # Out and down relative to the athlete, not to the world. On the only drill
+    # in the library with a large authored turn, a world aligned pole pushes
+    # the elbow across her body instead of away from it.
+    down = np.asarray(rotation, dtype=np.float64) @ np.array([0.0, -1.0, 0.0])
+    down = down - np.dot(down, axis) * axis
+    if np.linalg.norm(down) < 1e-6:
+        return None
+    down = down / np.linalg.norm(down)
+    out = np.asarray(rotation, dtype=np.float64) @ np.array([sign, 0.0, 0.0])
+    out = out - np.dot(out, axis) * axis
+    out = out - np.dot(out, down) * down
+    if np.linalg.norm(out) < 1e-6:
+        return None
+    out = out / np.linalg.norm(out)
+    return (
+        np.asarray(shoulder, dtype=np.float64)
+        + axis * along
+        + off * (down * np.cos(turn) + out * np.sin(turn))
+    )
+
+
 def elbow_poles(
     character,
     index: dict[str, int],
@@ -315,32 +378,13 @@ def elbow_poles(
         sign = 1.0 if side == "l" else -1.0
         shoulder = np.asarray(placed.shoulders[side], dtype=np.float64)
         hand = np.asarray(targets[f"{side}_wrist"], dtype=np.float64)
-        axis = hand - shoulder
-        span = float(np.linalg.norm(axis))
-        # A straight arm has no elbow circle, and a target beyond her reach has
-        # no triangle at all. Both are silence rather than a guess.
-        if span < 1e-6 or span >= upper + fore:
+        # Every reason to place no pole at all — a straight arm, a hand past
+        # her reach, a degenerate basis — is `pole_target` returning None. It
+        # used to be three guards here and one there, which is two places to
+        # keep a rule.
+        pole = pole_target(shoulder, hand, placed.rotation, sign, upper, fore, turn)
+        if pole is None:
             continue
-        axis = axis / span
-        along = (upper * upper - fore * fore + span * span) / (2.0 * span)
-        off_squared = upper * upper - along * along
-        if off_squared <= 1e-9:
-            continue
-        off = float(off_squared ** 0.5)
-        # Out and down relative to the athlete, not to the world. On the only
-        # drill in the library with a large authored turn, a world aligned pole
-        # pushes the elbow across her body instead of away from it.
-        out = placed.rotation @ np.array([sign, 0.0, 0.0])
-        out = out - np.dot(out, axis) * axis
-        down = placed.rotation @ np.array([0.0, -1.0, 0.0])
-        down = down - np.dot(down, axis) * axis
-        if np.linalg.norm(out) < 1e-6 or np.linalg.norm(down) < 1e-6:
-            continue
-        out = out / np.linalg.norm(out)
-        down = down / np.linalg.norm(down)
-        pole = shoulder + axis * along + off * (
-            down * np.cos(turn) + out * np.sin(turn)
-        )
         error.add_constraint(
             index[f"{side}_lowarm"],
             target=np.asarray(pole, dtype=np.float32),
