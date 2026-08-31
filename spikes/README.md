@@ -94,6 +94,34 @@ The pieces:
 
 
 
+## Before a grading pack goes out: archive the receipts
+
+Principle P1, ruled 2026-08-30: comparability is per-build. A coach's marks are
+scored against the receipts of the build that coach actually graded, and the
+live engine improves freely without invalidating them.
+
+**That needs the graded build to still exist.** Run this before the pack goes
+out, not after somebody wants the answer:
+
+```bash
+pixi run python archive_receipts.py --label erin-2026-08-28
+```
+
+It copies `poc-output/library/` to `poc-output/library-<label>/`, writes a
+`PROVENANCE.md` holding the build's stamp and a digest of the set, and prints
+the digest so it can be quoted.
+
+It REFUSES three things, and each is a thing that has gone wrong: a directory
+holding more than one build, which every receipt's `generatedFrom` now makes
+detectable; overwriting an existing archive, because an archive a later run can
+replace is not one; and an absent or empty source. A build from a dirty tree is
+allowed and warned about loudly.
+
+**Why a script rather than a note.** The set Erin Burger graded survived only
+because somebody had copied it aside for an unrelated reason. The live
+directory was overwritten four times in one session before anybody asked for
+it. A stamp makes an archive self-describing; it does not make one exist.
+
 ## The proof of concept
 
 [poc_engine.py](poc_engine.py) runs the whole engine on the netball catch, using

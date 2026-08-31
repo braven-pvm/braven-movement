@@ -951,3 +951,28 @@ and back is what the coach means by "don't want other hand to go away from
 centre of body towards ball". If it is not, the change is the `join` and
 `gather` keys at ahead 0.81364 and 0.79330, and that is a key-retune: it goes
 to Marius with this evidence before anybody touches it.
+
+
+## RESOLVED: an archive of a graded build now has to be made on purpose
+
+Raised on 2026-08-31 when the receipts Erin Burger graded turned out to have
+survived by luck: the live `poc-output/library/` was overwritten four times in
+one session, and the set existed only because somebody had copied it aside for
+an unrelated reason.
+
+`build_stamp.py` closed half of it — a receipt can now name its build.
+`archive_receipts.py` closes the other half, which is that a stamp makes an
+archive self-describing and does not make one exist.
+
+Run it BEFORE a grading pack goes out. It refuses a directory holding more than
+one build, refuses to overwrite an existing archive, and refuses an empty
+source; it allows a dirty-tree build and says so loudly. Refer to "Before a
+grading pack goes out" in `spikes/README.md`.
+
+**One defect worth keeping, because fixtures did not find it.** The first
+version took every `netball_*.json` as a receipt. `proof.py` writes
+`{movement}.proof.json` beside them, it carries no stamp, and the one-set check
+therefore refused every real archive on the first attempt. Twelve tests against
+hand-built fixtures all passed; running the script once on the real library
+found it immediately. The fixtures were built from what the code expected to
+see rather than from what the directory holds.
