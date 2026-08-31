@@ -144,9 +144,26 @@ pass. Two of the three drills give the identical number.
 The first is a band edge and not a disagreement about technique. It misses by
 three hundredths of a degree.
 
-**A band that would agree with her needs a lower bound at or below 40.85 on all
-three.** She has passed 40.85 and 49.97. She has not told us an upper bound, so
-this document does not invent one.
+**THIS SECTION'S REMEDY IS SUPERSEDED, and the finding is better than the one
+it replaces.** It said a band that agrees with her needs a lower bound at or
+below 40.85. That is the wrong repair, because the bands were never wrong.
+
+All four release checkpoints are WITHIN their own bands at the moment the ball
+actually leaves her hands. They are outside only at the frame they are graded
+on, phase 1.000, which is the end of the follow-through. At the release the
+same elbows read 98.71, 99.25, 98.06 and 86.76 degrees.
+
+The content lane found it and this lane verified it independently, with two
+instruments for "when does the ball leave" that agree to eight thousandths of a
+phase: the technique file's declared `release.atPhase`, and the solved
+possession state's first `released` frame.
+
+So Erin was judging the release and the engine was grading the follow-through,
+which is exactly why she marked all three of her release cues MET. **The
+question for the morning is not "should these bands move?" but "which frame is
+the release?"** Nothing is retimed without her word and Marius's. Refer to
+`docs/KNOWN_ISSUES.md` for the table and for the check that retiming would not
+leave a blind phase.
 
 The receipts say the bands are provisional and that no coach set them. This is
 the first coach reading of them. The bands are unchanged here, and setting them

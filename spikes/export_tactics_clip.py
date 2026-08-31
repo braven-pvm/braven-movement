@@ -187,6 +187,23 @@ def build(character, movement_id: str) -> dict:
     # than one quietly standing in for the other. They agree on a catch. On a
     # landing they must not: she takes the ball in flight and lands later.
     contact_frame = int(result["possession"].contact_frame)
+    # THE MODEL'S ANSWER FOR THE OTHER KIND OF MOMENT. A clip whose declared
+    # moment is a RELEASE — which the pass family needs, and which the clip
+    # contract's vocabulary already lists — must be checked against when the
+    # ball actually leaves, not against when she caught it. Comparing a
+    # release clip's `hit` against `contactFrame` compares two different
+    # questions and would agree only by accident.
+    #
+    # Both are emitted, each named for what it is, and neither stands in for
+    # the other. A consumer compares like with like: `contact` moments against
+    # `contactFrame`, `release` moments against `releaseFrame`. None where the
+    # drill never lets go, which is every catch that ends holding the ball.
+    released = next(
+        (frame.number for frame in result["possession"].frames
+         if frame.state == "released"),
+        None,
+    )
+    release_frame = None if released is None else int(released)
 
     return {
         "schemaVersion": SCHEMA_VERSION,
@@ -217,6 +234,7 @@ def build(character, movement_id: str) -> dict:
         "travelsUnderItsOwnPower": bool(travels),
         "framesPerSecond": fps,
         "contactFrame": contact_frame,
+        "releaseFrame": release_frame,
         "phases": phases,
         # The ball's own size is absolute. A netball is a netball on every body.
         "ballRadiusM": round(float(result["radiusCm"]) / 100.0, 4),

@@ -13,19 +13,28 @@ pixi run python build_library.py
 ```
 
 ```text
-ok Deflects, High                     8/8 checks    7.1 ms/frame   the ball
-ok Double Foot Landing                8/8 checks    6.6 ms/frame   the ball
-ok Hooks, Jump and Pull In Ball       9/9 checks    6.4 ms/frame   the ball
-ok Hooks, Outside Hand                9/9 checks    6.4 ms/frame   the ball
-ok 1 Hand Snatches to Other Hand      9/9 checks    8.6 ms/frame   the ball
-ok 2 Hands Catch                      7/7 checks    9.0 ms/frame   the ball
-ok 2 Hand Snatches and Pull In        11/11 checks   8.1 ms/frame   the ball
-ok 2 Hand Snatches and Straight Back  8/8 checks    8.4 ms/frame   the ball
+library: 8 movements
+-> Deflects, High                     7/8 checks   25.2 ms/frame   lean  1.99 deg
+-> Double Foot Landing                8/8 checks   24.8 ms/frame   lean  2.25 deg
+-> Hooks, Jump and Pull In Ball       8/9 checks   23.9 ms/frame   lean  2.32 deg
+ok Hooks, Outside Hand                9/9 checks   24.6 ms/frame   lean 12.05 deg
+-> 1 Hand Snatches to Other Hand      8/9 checks   23.0 ms/frame   lean  2.16 deg
+-> 2 Hands Catch                      6/7 checks   23.9 ms/frame   lean  2.36 deg
+-> 2 Hand Snatches and Pull In        11/11 checks  23.4 ms/frame   lean  2.14 deg
+-> 2 Hand Snatches and Straight Back  7/8 checks   22.9 ms/frame   lean  2.37 deg
 ```
 
-All eight drills are driven by the ball. 69 of 69 coaching checks are met, no
-measured angle leaves its clinical range, and `check_joint_limits.py` reports no
-joint more than a quarter of a degree past its own limit.
+All eight drills are driven by the ball. **64 of 69 coaching checks are met**,
+no measured angle leaves its clinical range, and `check_joint_limits.py` reports
+no joint more than a quarter of a degree past its own limit.
+
+**This block used to read "8/8" on every row and "69 of 69".** It went stale
+without anyone noticing, which is what a hand-copied sample of a program's
+output does. The five that now fail are deliberate and are in
+`docs/KNOWN_ISSUES.md`: four release checkpoints that are within their bands at
+the moment the ball leaves and outside them at the frame they are graded on,
+and one contact checkpoint that moved to agree with a coach's mark. None was
+made to fail by a number being changed, and none is being hidden by one.
 
 The same technique against four different passes:
 

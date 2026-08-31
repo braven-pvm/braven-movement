@@ -278,15 +278,51 @@ def return_velocity(
     A zero vector where the return cannot be solved, which is a ball that stops
     in mid air. That is visibly wrong rather than quietly wrong, and it is what
     the old one-frame difference produced anyway when the carry did not move.
+
+    A BALL FILE MAY AUTHOR ITS LAUNCH INSTEAD, and then neither the target nor
+    the speed is derived. Deriving is right for a catch-and-return, where the
+    ball goes back the way it came at the pace it came, and it is what every
+    drill in the library does. It is wrong wherever there is no meaningful
+    incoming flight: a drill she holds from phase 0 derives its target from the
+    ball in her own hands and threw BACKWARDS over her shoulder, and a short
+    fictional flight authored only to satisfy `arrival` sets the throwing speed,
+    so the earlier she holds it the harder she throws. Refer to `Launch` in
+    ball_track.py for both measurements.
     """
+    if ball.launch is not None:
+        # Authored: the drill says where its pass goes and how fast.
+        return _launch_toward(
+            released_at,
+            stance.place(ball.launch.target),
+            ball.launch.speed_cm_per_second,
+        )
     speed = incoming_speed_cm(ball, stance, seconds_per_phase)
     if speed <= 0.0:
         return np.zeros(3)
     passer = stance.place(ball.offset_at(ball.release_phase))
+    return _launch_toward(released_at, passer, speed)
+
+
+def _launch_toward(
+    released_at: np.ndarray, target: np.ndarray, speed_cm_per_second: float
+) -> np.ndarray:
+    """The launch that carries the ball from here to there at that speed.
+
+    One place, so an authored launch and a derived one are solved by the same
+    arithmetic and cannot drift apart. Only where the two get their target and
+    their speed differs.
+    """
+    if speed_cm_per_second <= 0.0:
+        return np.zeros(3)
     try:
-        _, velocity = solve_launch(np.asarray(released_at, dtype=np.float64), passer, speed)
+        _, velocity = solve_launch(
+            np.asarray(released_at, dtype=np.float64),
+            np.asarray(target, dtype=np.float64),
+            speed_cm_per_second,
+        )
     except ValueError:
-        # She is standing where the passer is, so there is no pass to solve.
+        # The ball is asked to travel to where it already is, so there is no
+        # pass to solve.
         return np.zeros(3)
     return velocity
 
