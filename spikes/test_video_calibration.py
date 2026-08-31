@@ -12,12 +12,17 @@ mutation below is applied to the STORED block a consumer actually reads, and
 each is paired with the unmutated case, so a guard that can never fire and a
 guard that always fires both show up.
 
-THREE CLAIMS IN THIS FILE WERE WRONG IN A FIRST DRAFT AND ARE NOW MEASURED. The
-held-out reprojection error was called the reading to judge a lens by, and a
-5 percent focal error moves it by a fifth. The triangulated square was called
-the direction guard, and a reversed pair pose slips past it. The board views
-were varied too little to fit a lens, and the focal came back 1.9 percent wrong.
-Each is now a test that states what was measured.
+FOUR CLAIMS IN THIS FILE WERE WRONG AND ARE NOW MEASURED. The held-out
+reprojection error was called the reading to judge a lens by, and a 5 percent
+focal error moves it by a fifth. The triangulated square was called the
+direction guard, and a reversed pair pose slips past it. The board views were
+varied too little to fit a lens — on 16 views at 0.15 pixels, one seed, the
+focal came back 1.93 percent wrong against a varied sequence's 0.85. And the
+split-half gap was quoted as "about 1.4 times the true error", which held only
+for seeds 0 to 9 and swings from 1.11 to 2.49 between seed sets.
+
+The last of those is why VarietyTest now sweeps seeds instead of trusting one.
+Each claim is a test that states what was measured.
 
 No solver and no footage. It runs on a hosted runner with OpenCV installed.
 """
@@ -242,20 +247,43 @@ class VarietyTest(unittest.TestCase):
     This is a MEASUREMENT, not a preference. It is a test because the number is
     the whole argument for an instruction a person has to follow while holding
     a board, and a sentence in a document would not have survived a rewrite.
+
+    IT SWEEPS SEEDS, AND A FIRST VERSION DID NOT. That version ran one seed and
+    asserted a factor of two, which is the same fault as the split-half factor
+    this pack had to withdraw: a single seed's ratio read as a property of
+    boards. What is robust here is the DIRECTION and what is not is the RATIO,
+    and both are now asserted.
     """
 
-    def test_a_narrow_board_sequence_fits_a_worse_lens(self):
-        board, narrow = synthetic_views(narrow=True)
-        _, wide = synthetic_views(narrow=False)
+    SEEDS = range(6)
 
-        narrow_error = abs(
-            fit_intrinsics(board, narrow["front"], *SIZE["front"])["cameraMatrix"][0, 0]
-            - TRUE_FOCAL["front"])
-        wide_error = abs(
-            fit_intrinsics(board, wide["front"], *SIZE["front"])["cameraMatrix"][0, 0]
-            - TRUE_FOCAL["front"])
+    def errors(self, narrow: bool) -> list[float]:
+        found = []
+        for seed in self.SEEDS:
+            board, seen = synthetic_views(narrow=narrow, seed=seed)
+            found.append(abs(
+                fit_intrinsics(board, seen["front"], *SIZE["front"])["cameraMatrix"][0, 0]
+                - TRUE_FOCAL["front"]))
+        return found
 
-        self.assertGreater(narrow_error, wide_error * 2.0)
+    def test_a_narrow_board_sequence_fits_a_worse_lens_on_every_seed(self):
+        narrow = self.errors(narrow=True)
+        wide = self.errors(narrow=False)
+
+        for seed, (one, other) in enumerate(zip(narrow, wide)):
+            self.assertGreater(one, other, f"seed {seed}")
+        self.assertGreater(np.median(narrow), np.median(wide) * 1.5)
+
+    def test_the_penalty_is_a_direction_and_not_a_factor(self):
+        """The claim the documents now make, held here so it cannot drift back
+        into a single quotable multiplier."""
+        ratios = [
+            one / other
+            for one, other in zip(self.errors(narrow=True), self.errors(narrow=False))
+        ]
+
+        self.assertGreater(max(ratios) / min(ratios), 2.0,
+                           "the per-seed ratio must be seen to be unstable")
 
     def test_the_fit_has_no_bias_of_its_own(self):
         """At zero detector noise every parameter comes back exactly. Whatever a

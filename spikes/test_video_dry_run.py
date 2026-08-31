@@ -127,11 +127,24 @@ class TheGateCanOpen(unittest.TestCase):
 
 
 class OneFaultAtATime(unittest.TestCase):
-    """Eight mutations, each breaking exactly one condition.
+    """Eight mutations, each of which must shut the gate and NAME ITS OWN
+    condition among the blockers.
 
-    Each asserts BOTH that the gate shuts and that the shut names the mutated
-    condition. A gate that shut for the wrong reason would pass a test that
-    only checked it shut.
+    MEMBERSHIP, NOT EQUALITY, and an earlier version of this docstring said
+    "each breaking exactly one condition", which overstated it. Counted: six of
+    the eight block exactly one, and two block two, because the evidence they
+    remove feeds two conditions.
+
+        one camera      blocks two views AND sync — the sync block lives in
+                        the side view's own keypoint file
+        no calibration  blocks calibration AND camera separation — the
+                        separation is read from the calibration
+
+    Both second blocks are correct consequences rather than leakage, and a
+    test asserting equality would have had to pretend otherwise. What each
+    test does assert is the part that matters: the gate shuts, and the
+    mutated condition is among the reasons. A gate that shut for the wrong
+    reason would pass a test that only checked it shut.
     """
 
     def shut(self, bundle: dict, name: str):

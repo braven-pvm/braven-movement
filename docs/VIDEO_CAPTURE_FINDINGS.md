@@ -230,10 +230,19 @@ board at many angles and distances. One person waves the board in front of ONE
 camera for about twenty seconds. The other camera is not involved and no clock
 is shared, so this pass needs no clap.
 
-**A board kept at one distance and one small tilt fit the focal length 1.9
+**On a synthetic rig of 16 board views at 0.15 pixels of detector noise, one
+seed, a board kept at one distance and one small tilt fit the focal length 1.93
 percent wrong where a varied sequence fit it 0.85 percent wrong on the same
-number of frames.** The measurement is held by `VarietyTest` in
-`spikes/test_video_calibration.py`, so it cannot quietly stop being true.
+number of frames.** An earlier version of this line gave those two figures
+without naming the rig they came from, which made a single seed read like a
+property of boards.
+
+The measurement `VarietyTest` in `spikes/test_video_calibration.py` actually
+holds runs on a different rig — 36 views at 0.05 pixels — and it is the more
+useful statement: **the narrow sequence was worse on 12 of 12 seeds**, median
+0.145 percent against 0.066 percent, a ratio of medians of 2.19. The direction
+is robust across every seed tried. The ratio is not, running from 1.29 to 193
+per seed, so do not quote a single factor.
 
 **Instruction: per camera, record twenty seconds of the board moving through
 the frame — near and far, tilted left and right, in the corners as well as the

@@ -74,7 +74,7 @@ refusal path is exercised only by the tests, and a reader should treat it as
 guarded rather than proven. What varies is not whether a repetition is found
 but how well it aligns: the two instruments' phase disagreement runs from 0.034
 to 0.265 across the twelve, and the level gap between video and engine runs
-from -47.0 to +11.5 degrees. A single repetition's numbers are therefore not
+from -50.3 to +11.5 degrees. A single repetition's numbers are therefore not
 the clip's numbers.
 
 An earlier draft of this section claimed segmentation failed for the late
@@ -544,10 +544,13 @@ def rank_against_library(
                 None if informative is None else round(informative, 5)),
             "featurelessSharePhase": round(featureless_share(curve), 4),
         })
-    # SORTED ON THE INFORMATIVE DISTANCE, because the whole-curve distance is
-    # measurably biased toward drills that do nothing. The whole-curve number
-    # travels beside it so the bias stays visible rather than being corrected
-    # away silently.
+    # SORTED ON THE INFORMATIVE DISTANCE. The reason is a SUSPICION, not a
+    # finding: the whole-curve distance may favour drills that do nothing, and
+    # `informative_distance` records why that is suggested (Spearman -0.643 on
+    # eight drills) and why it is not established (p = 0.086). Scoring only
+    # where the reference has left rest is the reasoned choice; it is not a
+    # correction for a bias anybody has demonstrated. The whole-curve number
+    # travels beside it so a reader can disagree with the choice.
     return sorted(
         found,
         key=lambda row: (
@@ -695,10 +698,14 @@ def align_repetition(
             "purpose, so nothing in the alignment is evidence about degrees."
         ),
         "catchProxyNote": (
-            "The video's catch is the elbow flexion MINIMUM before the pull-in "
-            "— the arm at its most extended. The engine's contactPhase is the "
-            "frame its possession model holds the ball. Two definitions of one "
-            "word, and the anchored alignment inherits the difference."
+            "The video's anchor is the ONSET of the pull-in rise, not a minimum "
+            "and not a catch. An elbow MINIMUM was tried first and abandoned: "
+            "on the findings report's own catch cycle the smoothed curve has no "
+            "turning point at all in the half second before the pull-in. The "
+            "engine's contactPhase is the frame its possession model holds the "
+            "ball, and the report's 9.13 s is an eye on a contact sheet against "
+            "this anchor's 8.767 s — 363 ms, eleven frames. Three definitions "
+            "of one word, and the anchored alignment inherits the difference."
         ),
         "phasePerSample": [
             {"ptsSeconds": round(float(when), 4),

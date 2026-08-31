@@ -328,18 +328,36 @@ def split_half_agreement(
     """Fit the same lens twice, on disjoint halves, and report the disagreement.
 
     THIS IS THE INSTRUMENT FOR THE LENS, and the held-out reprojection error is
-    not. Measured on a synthetic rig of 36 board views, ten seeds a row:
+    not.
 
-        detector noise   true focal error   split-half gap   ratio
-        0.50 px          0.864 %            1.187 %          1.37
-        0.30 px          0.523 %            0.712 %          1.36
-        0.15 px          0.263 %            0.359 %          1.36
-        0.05 px          0.088 %            0.120 %          1.37
+    **THE "ABOUT 1.4 TIMES" THIS DOCSTRING USED TO GIVE WAS A SEED ARTEFACT.**
+    It was measured on seeds 0 to 9 of a 36-view rig, where it held at 1.36 to
+    1.37 across a tenfold range of detector noise — and that stability is real
+    and is a property of THOSE BOARD POSES, not of the method. Re-measured on
+    three independent seed sets at the same three noise levels:
 
-    The gap runs about 1.4 times the true error and holds that ratio across a
-    tenfold range of noise, so it ESTIMATES the error. It does not bound it: the
-    gap exceeded the true error in only seven runs of ten, so a reader who
-    treats it as a ceiling will sometimes be optimistic.
+        seeds  0-9    ratio of means 1.37 / 1.36 / 1.37
+        seeds 10-19   ratio of means 1.16 / 1.12 / 1.11
+        seeds 20-29   ratio of means 2.43 / 2.45 / 2.49
+
+    Stable to two decimals WITHIN a seed set and swinging by more than double
+    ACROSS them. Over fifty seeds at 0.15 px the ratio of means is 1.70, and the
+    PER-SEED ratio has a median of 1.43 with an interquartile range of 0.48 to
+    3.91 and extremes of 0.03 and 56.6. An independent review measured the same
+    shape on its own rig and got different figures — 1.67, 2.25 and 3.16 across
+    its three seed sets, 2.24 over fifty — which is the point rather than a
+    discrepancy: the factor is not a property anybody can quote.
+
+    **So do not divide by it.** What survives, and is worth having:
+
+    - The gap SCALES with the detector noise, so it tracks the thing that
+      drives the error.
+    - Within one set of board poses the ratio does not depend on the noise at
+      all, over a tenfold range.
+    - It is the right ORDER of the true error and never a multiplier.
+    - **It is not a ceiling.** The gap exceeded the true error in 29 of 50
+      runs here and in 36 of 50 in the review, so a reader who treats it as a
+      bound will be optimistic about two times in five.
 
     Why it works where the held-out error does not: `solvePnP` re-solves six
     degrees of freedom per held-out frame and absorbs most of a focal error into
@@ -361,11 +379,14 @@ def split_half_agreement(
         "principalDisagreementPixels": round(float(np.linalg.norm(
             first["cameraMatrix"][:2, 2] - second["cameraMatrix"][:2, 2])), 3),
         "note": (
-            "Two fits of one lens on disjoint halves of the board views. The "
-            "disagreement runs about 1.4 times the true focal error on a "
-            "synthetic rig and holds that ratio across a tenfold range of "
-            "detector noise, so read it as an estimate of the error and NOT as "
-            "a ceiling: it exceeded the true error in seven runs of ten."
+            "Two fits of one lens on disjoint halves of the board views. It is "
+            "the right ORDER of the true focal error and NOT a multiplier: on a "
+            "synthetic rig the ratio of gap to true error is stable to two "
+            "decimals within one set of board poses across a tenfold range of "
+            "detector noise, and swings from 1.11 to 2.49 between seed sets, "
+            "with a per-seed interquartile range of 0.48 to 3.91. Do not divide "
+            "by it. It is also NOT a ceiling: it exceeded the true error in 29 "
+            "of 50 runs. What it does reliably is scale with the noise."
         ),
     }
 
@@ -754,7 +775,9 @@ def camera_block(
             "which is inside the noise of real footage. It is a strong reading "
             "of gross faults, which no pose can absorb. "
             "splitHalfAgreement is the reading to judge the LENS by: two fits "
-            "on disjoint halves, running about 1.4 times the true focal error."
+            "on disjoint halves. It is the right ORDER of the true focal error "
+            "and NOT a multiplier — the ratio swings from 1.11 to 2.49 between "
+            "seed sets — and it is not a ceiling."
         ),
     }
 

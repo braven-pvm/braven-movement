@@ -87,7 +87,7 @@ its own range.
         "focalXPixelsSecondHalf": 898.1,
         "focalDisagreementPercent": 0.367,
         "principalDisagreementPixels": 2.9,
-        "note": "…read it as an estimate of the error and NOT as a ceiling…"
+        "note": "…the right ORDER of the true error and NOT a multiplier…"
       },
       "errorNote": "THREE READINGS, AND THEY ARE NOT INTERCHANGEABLE…"
     }
@@ -184,20 +184,34 @@ strong reading of a gross fault — a bent line, a board size entered wrong, a
 view mixed up between cameras — because no rigid pose can absorb those.
 
 **Why the split-half reading is the one for the lens.** Two independent fits of
-one fixed quantity have nothing to absorb a disagreement into. Measured on a
-synthetic 36-view rig, ten seeds a row:
+one fixed quantity have nothing to absorb a disagreement into.
 
-| detector noise | true focal error | split-half gap | ratio |
+**An earlier version of this section gave a factor of "about 1.4", and that
+factor was a seed artefact.** It came from seeds 0 to 9 of a 36-view rig, where
+it holds at 1.36 to 1.37 across a tenfold range of detector noise. That
+stability is real, and it is a property of those board poses rather than of the
+method. Re-measured on three independent seed sets, ratio of gap to true error:
+
+| seed set | 0.50 px | 0.15 px | 0.05 px |
 |---|---|---|---|
-| 0.50 px | 0.864 % | 1.187 % | 1.37 |
-| 0.30 px | 0.523 % | 0.712 % | 1.36 |
-| 0.15 px | 0.263 % | 0.359 % | 1.36 |
-| 0.05 px | 0.088 % | 0.120 % | 1.37 |
+| 0 to 9 | 1.37 | 1.36 | 1.37 |
+| 10 to 19 | 1.16 | 1.12 | 1.11 |
+| 20 to 29 | 2.43 | 2.45 | 2.49 |
 
-The gap runs about 1.4 times the true error and holds that ratio across a
-tenfold range of noise. **It is not a ceiling**: it exceeded the true error in
-only seven runs of ten, so a reader who treats it as a bound will sometimes be
-optimistic.
+Stable to two decimals within a seed set, and more than double across them.
+Over fifty seeds at 0.15 px the ratio of means is 1.70, and the per-seed ratio
+has a median of 1.43, an interquartile range of 0.48 to 3.91, and extremes of
+0.03 and 56.6. An independent review measured the same shape on its own rig and
+got 1.67, 2.25 and 3.16 across its seed sets and 2.24 over fifty. **The two
+measurements disagree on the figure and agree on the verdict**, which is what
+settles it: the factor is not a property anybody can quote.
+
+**So do not divide by it.** What survives is worth having: the gap scales with
+the detector noise; within one set of board poses the ratio does not depend on
+the noise at all; and it is the right ORDER of the true error. **It is not a
+ceiling** — it exceeded the true error in 29 of 50 runs here and 36 of 50 in the
+review, so a reader who treats it as a bound will be optimistic about two times
+in five.
 
 **What the triangulated square does NOT do.** It is not the direction guard,
 and a first draft of the code said it was. Reversing the pair pose moved the
@@ -260,9 +274,17 @@ that instruction claimed for itself.
 Two instructions this work adds, both from measurement rather than preference:
 
 1. **Shoot a separate board clip per camera, and vary the board's distance and
-   tilt through it.** A board kept at one distance and one small tilt fit the
-   focal length 1.9 percent wrong where a varied sequence fit it 0.85 percent
-   wrong on the same number of frames. `VarietyTest` holds the measurement.
+   tilt through it.** On 16 board views at 0.15 pixels of detector noise, one
+   seed, a board kept at one distance and one small tilt fit the focal length
+   1.93 percent wrong where a varied sequence fit it 0.85 percent wrong on the
+   same number of frames. **Those two figures are one seed of one rig**, and the
+   rig went unnamed in an earlier version of this line.
+
+   What `VarietyTest` actually holds is the rig it runs on — 36 views at 0.05
+   pixels — where the narrow sequence was worse on **12 of 12 seeds**, median
+   0.145 percent against 0.066 percent, a ratio of medians of 2.19. The
+   DIRECTION is robust across every seed tried; the ratio is not, running from
+   1.29 to 193 per seed, so no single factor should be quoted.
 2. **For the pair clip, put the board on a stand and leave it.** Then the pair
    pose needs no sync at all, and `pairing.boardMovement` proves the board held
    still rather than assuming it.
