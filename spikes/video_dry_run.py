@@ -15,9 +15,26 @@ only possible answer were "yes" would be a decoration.
 THE GATE, AND WHY IT IS NOT A CHECKLIST
 ---------------------------------------
 
-Eight conditions. Each carries a READING, a THRESHOLD, and where the threshold
-came from, because a bar somebody invented and a bar something measured are not
-the same kind of claim and a reader must be able to tell them apart:
+Eleven conditions, and they split in two.
+
+**Five belong to the CAPTURE** and are asked once — two views, a calibration,
+enough camera separation, a sync, and whether the filmed drill is one the
+engine models. A second camera and a clap are not properties of an elbow.
+
+**Six belong to a MEASURE** and are asked of EVERY measure a checkpoint reads:
+does the modality carry it, were its landmarks seen, does an engine curve
+exist, do the units agree, do two readings of it agree, do two alignments of it
+agree. The right elbow being invisible says nothing about the left knee.
+
+WHICH measures those are comes from `MovementDefinition.graded_measures()` and
+never from a list written here. Four consumers had each picked their own set
+and none was reconciled with what the coaching layer grades, which is how
+`leftKneeFlexionDegrees` — graded by every drill in the library — came to have
+no reference curve at all.
+
+Each condition carries a READING, a THRESHOLD, and where the threshold came
+from, because a bar somebody invented and a bar something measured are not the
+same kind of claim and a reader must be able to tell them apart:
 
 - **measured** — the number came off this material or an earlier one.
 - **derived** — the number follows from another number by arithmetic written
@@ -26,7 +43,10 @@ the same kind of claim and a reader must be able to tell them apart:
   reader may disagree with it without disagreeing with any measurement.
 
 A condition that CANNOT BE ANSWERED from the material is not a pass. It blocks,
-and it blocks LOUDLY, marked `unmeasured`. Where a change touches something
+and it blocks LOUDLY, marked `unmeasured`. That matters more per measure than
+per capture: today two instruments exist and both read one measure, so most
+measures reach most of their conditions unread, and every one of those says so
+and names the instrument that does not exist. Where a change touches something
 nothing reads, the absence of the measure IS the risk, and a gate that treated
 silence as consent would be the politest possible way of shipping a wrong
 number to a coach.
@@ -61,7 +81,11 @@ import numpy as np
 SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
 
+from ball_track import MOVEMENT_DIR  # noqa: E402
 from build_stamp import generated_from  # noqa: E402
+from movement_definition import load as load_definition  # noqa: E402
+from video_measures import DEGREES, scarcest_landmark  # noqa: E402
+from video_measures import measure as video_measure  # noqa: E402
 from video_phase_align import featureless_share  # noqa: E402
 
 OUTPUT = SPIKE_DIR / "poc-output" / "video"
@@ -176,8 +200,55 @@ def gather(set_id: str) -> dict:
     }
 
 
-def judge(evidence: dict, movement: str) -> list[dict]:
-    """The eight conditions, each with its reading and where its bar came from."""
+def graded_measures(movement: str) -> list[str]:
+    """The measures this movement's checkpoints read, from the definition itself.
+
+    `MovementDefinition.graded_measures()`, never a list written here. Four
+    downstream consumers had each picked their own set and none was reconciled
+    with what the coaching layer grades, which is how `leftKneeFlexionDegrees` —
+    graded by every drill in the library — came to have no reference curve.
+
+    `MOVEMENT_DIR` comes from `ball_track`, NOT from `movement_engine`, whose
+    `library` is a directory glob living in a module that imports the solver.
+    That import turned eleven checks into one error twice.
+    """
+    path = MOVEMENT_DIR / f"{movement}.json"
+    if not path.exists():
+        raise SystemExit(
+            f"{path} does not exist, so nothing can be said about what "
+            f"{movement} grades. A gate that guessed the measures would cover "
+            "whatever it guessed.")
+    return sorted(load_definition(path).graded_measures())
+
+
+def reference_curve(evidence: dict, movement: str, name: str) -> tuple[list | None, str | None]:
+    """A measure's engine curve and its declared unit, across both file shapes.
+
+    TWO SHAPES ARE READ ON PURPOSE. Today `curves[measure]` is the list itself
+    and no unit is declared anywhere. The widening designed in
+    `docs/REFERENCE_CURVE_WIDENING.md` makes it `{"unit": ..., "values": [...]}`
+    because `footHeightGapCm` is centimetres and the file announces itself as
+    angles. Reading both means this gate works before and after that export,
+    and reports the unit as UNDECLARED rather than assuming degrees in the
+    meantime — which is the assumption the widening exists to remove.
+    """
+    drill = (evidence.get("reference") or {}).get("movements", {}).get(movement)
+    if not drill:
+        return None, None
+    curve = drill.get("curves", {}).get(name)
+    if curve is None:
+        return None, None
+    if isinstance(curve, dict):
+        return curve.get("values"), curve.get("unit")
+    return curve, None
+
+
+def judge_capture(evidence: dict, movement: str) -> list[dict]:
+    """The conditions that belong to the CAPTURE, not to any one measure.
+
+    Five of them. They are asked once, because a second camera and a clap are
+    not properties of an elbow.
+    """
     found = []
 
     views = [name for name in ("front", "side") if evidence.get(name)]
@@ -238,45 +309,7 @@ def judge(evidence: dict, movement: str) -> list[dict]:
         "the sync block in the keypoint file",
     ))
 
-    elbow = evidence.get("elbow") or {}
-    disagreement = (elbow.get("agreementDegrees") or {}).get("median")
-    found.append(condition(
-        "two instruments agree", "Do two readings of the same joint agree?",
-        disagreement, "degrees", MEANINGFUL_DEGREES, "measured",
-        "the clinical threshold the product already uses for a difference "
-        "worth showing a coach",
-        None if disagreement is None else disagreement <= MEANINGFUL_DEGREES,
-        "Two independent readings of one elbow that differ by more than the "
-        "threshold mean neither is a measurement of that joint. Four candidate "
-        "causes were raised and all four refuted; the case is bounded, not "
-        "closed.",
-        "elbow-curve-<set>.json, the lift against the side view",
-    ))
-
     alignment = evidence.get("alignment") or {}
-    reference = evidence.get("reference") or {}
-    drill = (reference.get("movements") or {}).get(movement)
-    bound, slope = (None, None)
-    if drill:
-        bound, slope = phase_bound_degrees(drill["curves"]["leftElbowFlexionDegrees"])
-    worst_phase = max(
-        (row["agreementPhase"]["median"] for row in alignment.get("alignments", [])),
-        default=None)
-    found.append(condition(
-        "alignment agrees", "Do the two alignments place the repetition alike?",
-        worst_phase, "phase", None if bound is None else round(bound, 4),
-        "derived" if slope else "unavailable",
-        (f"the clinical threshold divided by the 90th percentile slope of the "
-         f"reference's informative part, {slope:.1f} degrees per unit phase. "
-         "Nothing is chosen here but the clinical threshold."
-         if slope else "the reference curve is absent, so nothing can be derived"),
-        None if (worst_phase is None or bound is None) else worst_phase <= bound,
-        "A phase error costs degrees at the rate the reference is climbing, so "
-        "an alignment loose enough to move the reading past the clinical "
-        "threshold cannot carry a number however well it looks.",
-        "phase-alignment-<set>.json, anchored against warped",
-    ))
-
     ranks = alignment.get("askedDrillRanks") or []
     found.append(condition(
         "the drill is in the library",
@@ -293,48 +326,203 @@ def judge(evidence: dict, movement: str) -> list[dict]:
         "nothing, and no calibration fixes that.",
         "the null test in phase-alignment-<set>.json",
     ))
+    return found
 
-    # THE JOINT THE GRADE IS ABOUT MUST HAVE BEEN SEEN BY BOTH CAMERAS, and on
-    # a 90-degree pair one whole side of the body has not been. Counted off the
-    # lift's own rows rather than assumed: of 735 frame pairs, the left elbow
-    # appears 734 times and THE RIGHT ELBOW DOES NOT APPEAR AT ALL. The findings
-    # report quotes 28 usable right-WRIST readings; the right elbow is zero, and
-    # a gate that only asked about the arm somebody happened to measure would
-    # never have found that.
+
+def instrument_readings(evidence: dict) -> dict[str, dict]:
+    """What each measure has actually been read by, KEYED BY MEASURE NAME.
+
+    A FIRST VERSION ASKED "IS THIS THE ELBOW", and that was wrong in a way
+    worth writing down. It hard-coded today's single instrument into the gate's
+    logic, so the day a knee reader exists the gate would still have reported
+    the knee as unread — and, worse, no synthetic evidence could ever open the
+    gate for any measure but one, which would have quietly retired the property
+    that this gate CAN open.
+
+    So the question is "does evidence exist FOR THIS MEASURE", answered by a
+    lookup. Today two instruments exist and both read one measure, so this
+    returns one entry on real footage. When a second reader lands it populates
+    another entry and the gate opens for it without a line changing here.
+
+    The elbow curve names its arm rather than its measure, so the arm is
+    translated once, here, rather than at each use.
+    """
+    found: dict[str, dict] = {}
+    elbow = evidence.get("elbow") or {}
+    named = elbow.get("measure") or {
+        "left": "leftElbowFlexionDegrees",
+        "right": "rightElbowFlexionDegrees",
+    }.get(elbow.get("arm"))
+    agreement = (elbow.get("agreementDegrees") or {}).get("median")
+    if named and agreement is not None:
+        found.setdefault(named, {})["agreementDegrees"] = agreement
+    for row in (evidence.get("alignment") or {}).get("alignments", []) or []:
+        name = row.get("measure")
+        phase = (row.get("agreementPhase") or {}).get("median")
+        if not name or phase is None:
+            continue
+        entry = found.setdefault(name, {})
+        entry["alignmentPhase"] = max(entry.get("alignmentPhase", phase), phase)
+    return found
+
+
+def judge_measure(evidence: dict, movement: str, name: str) -> list[dict]:
+    """The conditions that belong to ONE graded measure.
+
+    A CONDITION THAT IS MEANINGLESS FOR A MEASURE IS NOT SILENTLY PASSED. It
+    is marked unmeasured and its `instrument` names what does not exist, so a
+    reader can tell "this measure was checked and is fine" from "nothing has
+    ever read this measure".
+    """
+    entry = video_measure(name)
+    found = []
+
+    found.append(condition(
+        "the modality carries it",
+        "Is this quantity in video at all, whatever the cameras did?",
+        entry.carriable, "", True, "measured",
+        "read from the video measure registry, which records for each measure "
+        "whether a reader exists at all",
+        entry.carriable,
+        entry.unreadable_because or
+        "The quantity is joint geometry, which two views of the athlete "
+        "contain.",
+        "video_measures.MEASURES",
+    ))
+
     lift = evidence.get("lift") or {}
-    seen: dict[str, int] = {}
+    counts: dict[str, int] = {}
     for row in lift.get("rows", []):
-        seen[row["name"]] = seen.get(row["name"], 0) + 1
+        counts[row["name"]] = counts.get(row["name"], 0) + 1
     pairs = (lift.get("residualMetres") or {}).get("framePairs")
-    joints = ("left_shoulder", "left_elbow", "left_wrist")
-    fewest = min((seen.get(name, 0) for name in joints), default=0)
-    mirror = min((seen.get(name.replace("left", "right"), 0) for name in joints),
-                 default=0)
+    joint, seen = scarcest_landmark(entry, counts) if entry.carriable else ("", 0)
     found.append(condition(
         "the graded joint was seen",
-        "Did both cameras see the joint this grade is about?",
-        fewest, f"readings of the scarcest of {', '.join(joints)}",
+        "Did both cameras see the landmarks this measure needs?",
+        seen if entry.carriable else None,
+        f"readings of {joint}" if joint else "readings",
         100, "chosen",
         "a hundred readings, because the findings report's own rule is that a "
         "curve drawn on 28 would be a drawing rather than a measurement, and a "
         "round number well above it is the honest place to put the bar",
-        None if not seen else fewest >= 100,
-        f"The mirror joints have {mirror} readings against this arm's {fewest}, "
-        f"out of {pairs} frame pairs. A 90-degree camera pair sees one side of "
-        "the body in profile and the far limb is occluded almost entirely, so "
-        "no analysis recovers a joint the cameras never saw.",
+        None if not (entry.carriable and counts) else seen >= 100,
+        f"The scarcest landmark this measure needs is {joint or 'none'}, seen "
+        f"{seen} times in {pairs} frame pairs. A measure is only as available "
+        "as its rarest joint: averaging would call a measure well seen on the "
+        "strength of a shoulder while the elbow it needs appears zero times."
+        if entry.carriable else
+        "Not asked. The modality does not carry this measure, so no landmark "
+        "count would make it readable.",
         "counted per landmark from lift-3d-<set>.json's own rows",
     ))
+
+    curve, declared_unit = reference_curve(evidence, movement, name)
+    found.append(condition(
+        "the engine half exists",
+        "Is there an engine reference curve for this measure?",
+        curve is not None, "", True, "measured",
+        "the measure is either a key in reference-curves.json or it is not",
+        curve is not None,
+        "The engine curve is the thing a video reading is compared against. "
+        "Without it there is nothing to compare to, and the comparison is not "
+        "wrong — it does not exist. `export_reference_curves` writes five "
+        "measures chosen for what a lift can recover; the library grades nine.",
+        "reference-curves.json, per docs/REFERENCE_CURVE_WIDENING.md",
+    ))
+
+    found.append(condition(
+        "the units agree",
+        "Does the engine curve declare the same unit this measure is in?",
+        declared_unit, "", entry.unit,
+        "measured" if declared_unit else "unavailable",
+        f"the registry holds this measure as {entry.unit}; the reference curve "
+        + (f"declares {declared_unit}" if declared_unit else
+           "declares no unit at all, which is what the widening exists to fix"),
+        None if declared_unit is None else declared_unit == entry.unit,
+        "One graded measure is CENTIMETRES and every threshold here is degrees. "
+        "Two lanes spelling a unit independently is where this fault class "
+        "lives, so the two spellings are compared rather than assumed equal.",
+        "video_measures.MEASURES against reference-curves.json",
+    ))
+
+    readings = instrument_readings(evidence).get(name, {})
+    disagreement = readings.get("agreementDegrees")
+    found.append(condition(
+        "two instruments agree",
+        "Do two independent readings of this measure agree?",
+        disagreement, entry.unit, MEANINGFUL_DEGREES, "measured",
+        "the clinical threshold the product already uses for a difference "
+        "worth showing a coach",
+        None if disagreement is None else disagreement <= MEANINGFUL_DEGREES,
+        "Two independent readings that differ by more than the threshold mean "
+        "neither is a measurement of that quantity."
+        if disagreement is not None else
+        "NO SECOND INSTRUMENT EXISTS FOR THIS MEASURE. video_elbow_curve.py "
+        "reads one joint on one arm and produces the only paired reading in "
+        "the pipeline. Until a second reader exists for this measure, nothing "
+        "can say whether one reading of it would be confirmed.",
+        "elbow-curve-<set>.json, the lift against the side view"
+        if disagreement is not None else
+        "the instrument that does not exist: a second reader for this measure",
+    ))
+
+    worst_phase = readings.get("alignmentPhase")
+    is_aligned = worst_phase is not None
+    aligned_measure = ", ".join(sorted(instrument_readings(evidence))) or "nothing"
+    bound, slope = (None, None)
+    if curve and entry.unit == DEGREES:
+        bound, slope = phase_bound_degrees(curve)
+    found.append(condition(
+        "alignment agrees",
+        "Do the two alignments place this measure's repetition alike?",
+        worst_phase, "phase", None if bound is None else round(bound, 4),
+        "derived" if slope else "unavailable",
+        (f"the clinical threshold divided by the 90th percentile slope of the "
+         f"reference's informative part, {slope:.1f} degrees per unit phase. "
+         "Nothing is chosen here but the clinical threshold."
+         if slope else
+         "no engine curve in degrees for this measure, so no bound can be "
+         "derived from its steepness"),
+        None if (worst_phase is None or bound is None) else worst_phase <= bound,
+        "A phase error costs degrees at the rate the reference is climbing."
+        if is_aligned else
+        "NO ALIGNMENT HAS BEEN COMPUTED FOR THIS MEASURE. video_phase_align.py "
+        "aligns one measure per run, and the runs on record read "
+        f"{aligned_measure}.",
+        "phase-alignment-<set>.json, anchored against warped"
+        if is_aligned else
+        "the instrument that does not exist: an alignment of this measure",
+    ))
     return found
+def tally(conditions: list[dict], state) -> list[str]:
+    """The blocking condition names, each once, with how many measures it hit.
+
+    DEDUPLICATED AND COUNTED, because the same condition is now asked of every
+    graded measure. A first version listed each occurrence, so a four-measure
+    drill produced "the units agree, the units agree, the units agree, the
+    units agree" in the one sentence a reader is most likely to read. A list
+    that repeats itself is harder to read than the table it summarises, which
+    defeats the summary.
+    """
+    order: list[str] = []
+    counts: dict[str, int] = {}
+    for row in conditions:
+        if row["passes"] is not state:
+            continue
+        if row["name"] not in counts:
+            order.append(row["name"])
+        counts[row["name"]] = counts.get(row["name"], 0) + 1
+    return [name + (f" (x{counts[name]})" if counts[name] > 1 else "")
+            for name in order]
 
 
 def verdict(conditions: list[dict]) -> dict:
     blocked = [row for row in conditions if row["passes"] is not True]
-    unmeasured = [row["name"] for row in conditions if row["passes"] is None]
-    failed = [row["name"] for row in conditions if row["passes"] is False]
+    unmeasured = tally(conditions, None)
+    failed = tally(conditions, False)
     return {
         "mayShowNumbers": not blocked,
-        "blockedBy": [row["name"] for row in blocked],
+        "blockedBy": tally(conditions, None) + tally(conditions, False),
         "unmeasured": unmeasured,
         "failed": failed,
         "reason": (
@@ -441,22 +629,48 @@ def render(document: dict) -> str:
     ]
     if found["unmeasured"]:
         lines += [f"> {found['unmeasuredNote']}", ""]
-    lines += [
-        "## The gate",
-        "",
-        "| condition | reading | bar | source of the bar | verdict |",
-        "|---|---|---|---|---|",
-    ]
-    for row in document["conditions"]:
-        mark = {True: "pass", False: "FAIL", None: "UNMEASURED"}[row["passes"]]
-        value = "not read" if row["reading"] is None else f"{row['reading']} {row['units']}"
-        bar = "—" if row["threshold"] is None else f"{row['threshold']} {row['units']}"
-        lines.append(
-            f"| {row['name']} | {value} | {bar} | {row['thresholdKind']} | **{mark}** |")
-    lines += ["", "### Why each bar is where it is", ""]
-    for row in document["conditions"]:
+    def table(rows: list[dict]) -> list[str]:
+        out = ["| condition | reading | bar | source of the bar | verdict |",
+               "|---|---|---|---|---|"]
+        for row in rows:
+            mark = {True: "pass", False: "FAIL", None: "UNMEASURED"}[row["passes"]]
+            value = ("not read" if row["reading"] is None
+                     else f"{row['reading']} {row['units']}".strip())
+            bar = ("—" if row["threshold"] is None
+                   else f"{row['threshold']} {row['units']}".strip())
+            out.append(f"| {row['name']} | {value} | {bar} | "
+                       f"{row['thresholdKind']} | **{mark}** |")
+        return out
+
+    lines += ["## The capture", "",
+              "Asked once. A second camera and a clap are not properties of "
+              "an elbow.", ""]
+    lines += table(document["capture"]) + [""]
+
+    measures = document.get("measures") or {}
+    lines += [f"## The {len(measures)} measures this drill grades", "",
+              document.get("measuresNote", ""), "",
+              "| measure | unit | verdict | blocked by |", "|---|---|---|---|"]
+    for name, block in measures.items():
+        blocked = [row["name"] for row in block["conditions"]
+                   if row["passes"] is not True]
+        state = "may be shown" if block["verdict"]["mayShowNumbers"] else "withheld"
+        lines.append(f"| `{name}` | {block['unit']} | **{state}** | "
+                     f"{', '.join(blocked) if blocked else 'nothing'} |")
+    lines.append("")
+    for name, block in measures.items():
+        lines += [f"### {name}", ""] + table(block["conditions"]) + [""]
+
+    lines += ["### Why each bar is where it is", ""]
+    seen: set[str] = set()
+    for row in document["capture"] + [
+        row for block in measures.values() for row in block["conditions"]
+    ]:
+        if row["name"] in seen:
+            continue
+        seen.add(row["name"])
         lines += [f"**{row['name']}** — {row['question']}", "",
-                  f"- Bar: {row['threshold']} {row['units']}, "
+                  f"- Bar: {row['threshold']} {row['units']}".rstrip() + ", "
                   f"**{row['thresholdKind']}** — {row['thresholdWhy']}",
                   f"- Instrument: {row['instrument']}",
                   f"- {row['why']}", ""]
@@ -539,13 +753,39 @@ def main(argv: list[str]) -> int:
             f"{', '.join(missing)}. Run video_keypoints.py, video_lift_3d.py, "
             "video_elbow_curve.py and video_phase_align.py first.")
 
-    conditions = judge(evidence, arguments.movement)
+    capture = judge_capture(evidence, arguments.movement)
+    measures = {
+        name: judge_measure(evidence, arguments.movement, name)
+        for name in graded_measures(arguments.movement)
+    }
+    # THE MOVEMENT'S VERDICT IS EVERY CONDITION AT ONCE, capture-wide and
+    # per-measure together, because a coach grading a drill needs all of its
+    # checkpoints and a drill is not gradeable on three of four. A per-measure
+    # verdict travels beside it so a reader can see WHICH measure blocks rather
+    # than only that something did.
+    everything = capture + [row for rows in measures.values() for row in rows]
     document = {
         "schemaVersion": SCHEMA_VERSION,
         "set": arguments.set_id,
         "movement": arguments.movement,
-        "verdict": verdict(conditions),
-        "conditions": conditions,
+        "verdict": verdict(everything),
+        "capture": capture,
+        "measures": {
+            name: {
+                "unit": video_measure(name).unit,
+                "carriable": video_measure(name).carriable,
+                "verdict": verdict(capture + rows),
+                "conditions": rows,
+            }
+            for name, rows in measures.items()
+        },
+        "measuresNote": (
+            "The measures this movement's checkpoints read, taken from "
+            "MovementDefinition.graded_measures() rather than from a list "
+            "written here. A measure's own verdict includes the capture-wide "
+            "conditions, because no measure can be shown on a capture that "
+            "cannot carry a number at all."
+        ),
         "shape": shape_section(evidence, arguments.movement),
         "provenance": provenance(evidence),
         "provenanceNote": (
@@ -568,11 +808,16 @@ def main(argv: list[str]) -> int:
     print(f"session {arguments.set_id}, {arguments.movement[8:]}\n")
     print("  " + ("NUMBERS MAY BE SHOWN" if found["mayShowNumbers"]
                   else "NO NUMBER MAY BE SHOWN"))
-    print()
-    for row in conditions:
+    print("\n  THE CAPTURE")
+    for row in capture:
         mark = {True: "pass      ", False: "FAIL      ", None: "UNMEASURED"}[row["passes"]]
         value = "not read" if row["reading"] is None else f"{row['reading']}"
         print(f"    {mark}  {row['name']:28s} {value}")
+    print(f"\n  THE {len(measures)} MEASURES THIS DRILL GRADES")
+    for name, rows in measures.items():
+        blocked = [row["name"] for row in rows if row["passes"] is not True]
+        print(f"    {name:32s} {video_measure(name).unit:12s} "
+              f"{'clear' if not blocked else ', '.join(blocked)}")
     print(f"\n  {found['reason']}")
     print(f"\nwritten -> {where}\nwritten -> {report}")
     return 0
