@@ -870,3 +870,84 @@ drifting opening on that drill has found this, not something new.
 Closing it needs a discriminator the current one does not have: a way to say
 how much of an opening's drift the target actually accounts for, rather than
 whether the target moved at all. Nobody has built that.
+
+## RESOLVED: the receiving hand no longer grips before it arrives
+
+The queued finding read: "the job carries `grip.l` at the `contact` phase while
+that hand is still 101 to 134 mm from the ball, so all five of its digits read
+short." Measured on `a38c43d`, that state is gone.
+
+`export_blender_job.py` emits a grip only for the hands `sides_at` reports, and
+only once she is holding the ball. On both one-handed drills the `contact`
+phase now emits `grip.r` alone:
+
+| drill | phase | sides_at | left wrist to ball | right wrist to ball |
+|---|---|---|---|---|
+| one_hand_snatch | contact | `('r',)` | 49.0 cm | 15.2 cm |
+| one_hand_snatch | join | `('l', 'r')` | 15.4 cm | 15.4 cm |
+| hooks_outside_hand | contact | `('r',)` | 46.7 cm | 15.0 cm |
+| hooks_outside_hand | gather | `('l', 'r')` | 15.4 cm | 15.5 cm |
+
+**A hand is described as gripping only when it sits at the same standoff as
+the hand that took the ball**, 15.2 to 15.7 cm from the centre. Two fixes closed
+it between them: the `sides_at`-only export change, and the free-hand fix in
+`c3aa388`, which turned the left hand's 49 cm at contact into a place it is
+meant to be rather than a hand caught mid-flight.
+
+## A retired lead: the 29.6-degree grip angle was three errors
+
+Recorded so that nobody raises it again as an anomaly.
+
+A measurement taken while chasing the above reported that at contact every
+two-handed drill sits at 46 to 49 degrees between the ball-centre-to-wrist
+direction and the ball's path, while the one-hand snatch's catching hand read
+29.6. It looked like an outlier. It is not, and it was wrong three ways:
+
+- **The wrong point.** It used the WRIST, which is about 15 cm from the ball
+  centre and behind the palm. The contact point is on the surface.
+- **The wrong axis.** It measured against the ball's VELOCITY. The grip is not
+  built about the velocity. `grip.contacts` says so in its own docstring: "The
+  catcher is used rather than the ball's own velocity because a grip is
+  symmetric about the body that is taking the ball, not about the path it
+  arrived on."
+- **An inverted legend.** It was written up as "180 degrees means the hand
+  meets the ball head on". The opposite is true: `contacts` places a hand at
+  `centre + radius * outward` with `outward` built from `shoulders - centre`,
+  and the ball flies toward the shoulders, so a hand on the arriving face reads
+  NEAR ZERO.
+
+Measured correctly, on the contact points, there is nothing to explain. The
+half-spread is 45 degrees and the ball's velocity sits 22.5 degrees off `near`
+on that drill, so the two contacts land at 66.5 and 24.9 — which is 45 plus and
+minus 22.5. The two-handed drill, whose velocity is 8.9 degrees off `near`,
+reads 45.7 on both hands against a half-spread of 45.
+
+**The docstring predicted the error before it was made.** The lesson is not
+about grips: an instrument aimed at a different axis from the one the design
+uses will find an anomaly every time, and the anomaly will be the instrument.
+
+## The second hand travels 14 cm out to meet the ball, and a coach must rule
+
+Not a defect, and NOT changed here, because it lives in `spikes/movements/`.
+
+Erin Burger's note on the one-hand snatch reads: "Other hand stays ready. Pull
+the ball in from the hand that catch ball into other hand at chest. Don't want
+other hand to go away from centre of body towards ball."
+
+The free hand now waits at the chest, 11.9 cm ahead of her shoulders. The
+carry's `join` key puts the ball at ahead 0.81364 torso lengths when the second
+hand arrives, which is 35.6 cm ahead of her shoulders, so that hand goes out to
+26.0 cm and then comes back to 12.0 as the ball reaches the chest. The hooks
+drill is the same shape, 11.8 out to 25.1 and back to 12.0.
+
+**It is smooth, and an earlier reading of it was wrong.** A first pass compared
+the median over the whole pre-join window against the peak and reported a jump
+at the join frame. The hand in fact starts moving at about frame 45 and ramps:
+1.5 to 2.5 cm per frame on the way out over thirteen frames, 0.5 to 0.7 on the
+way back over thirty-nine. The step at the join frame itself is 0.18 cm.
+
+So the question is not whether the movement is broken. It is whether 14 cm out
+and back is what the coach means by "don't want other hand to go away from
+centre of body towards ball". If it is not, the change is the `join` and
+`gather` keys at ahead 0.81364 and 0.79330, and that is a key-retune: it goes
+to Marius with this evidence before anybody touches it.
