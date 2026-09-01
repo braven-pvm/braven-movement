@@ -31,6 +31,7 @@ sys.path.insert(0, str(SPIKE_DIR))
 from ball_track import has_ball  # noqa: E402
 from build_stamp import generated_from  # noqa: E402
 from movement_definition import load as load_definition  # noqa: E402
+from reference_measures import RECOVERABLE, wanted  # noqa: E402
 from movement_engine import definition_path, library, load_character  # noqa: E402
 from possession_solve import solve_movement  # noqa: E402
 from segment_measures import unit_of  # noqa: E402
@@ -42,18 +43,6 @@ OUTPUT = SPIKE_DIR / "poc-output" / "video"
 # a unit and a values list. The number is written into the file so a consumer
 # can branch on it rather than sniffing the type of a value.
 SCHEMA_VERSION = 2
-
-# The measures a two-camera lift can plausibly recover. Elbow flexion is the
-# one deliverable (d) asks for; the others are here because they cost nothing
-# extra and a shoot finding may turn on which of them survive the video.
-WANTED = (
-    "leftElbowFlexionDegrees",
-    "rightElbowFlexionDegrees",
-    "leftShoulderElevationDegrees",
-    "rightShoulderElevationDegrees",
-    "trunkLeanDegrees",
-)
-
 
 def drills() -> list[str]:
     return [
@@ -74,10 +63,17 @@ def curve(result, measure: str) -> list[float | None]:
 
 def main(argv: list[str]) -> int:
     character = load_character()
+    # The definitions come first, because what gets a curve is derived from
+    # them. Reading them inside the loop would mean deciding the measure list
+    # from the first drill and applying it to the rest.
+    wall = {name: load_definition(definition_path(name)) for name in drills()}
+    measures = wanted(list(wall.values()))
+    print(f"  {len(measures)} measures: "
+          f"{len(set(measures) - set(RECOVERABLE))} graded and newly curved, "
+          f"{len(RECOVERABLE)} recoverable")
     found = {}
-    for movement_id in drills():
+    for movement_id, definition in wall.items():
         result = solve_movement(character, movement_id)
-        definition = load_definition(definition_path(movement_id))
         frames = len(result["measurements"])
         possession = result["possession"]
         contact = possession.contact_frame
@@ -114,7 +110,7 @@ def main(argv: list[str]) -> int:
                     "unit": unit_of(measure),
                     "values": curve(result, measure),
                 }
-                for measure in WANTED
+                for measure in measures
             },
         }
         elbow = [
@@ -152,7 +148,7 @@ def main(argv: list[str]) -> int:
                     "an angle. Read curves[measure][\"values\"] and honour "
                     "curves[measure][\"unit\"]."
                 ),
-                "measures": list(WANTED),
+                "measures": list(measures),
                 "movements": found,
             },
             indent=1,
