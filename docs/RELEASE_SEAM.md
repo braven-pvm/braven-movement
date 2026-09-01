@@ -36,10 +36,17 @@ step into the carry offset's own change and the frame's motion:
 | `deflect_high` | 0.0000 cm |
 | `hooks_jump_pull_in` | 0.33 cm, about 20 per cent |
 
-The athlete is still during the carry on three of the four. Only the hooks
-drill contributes anything, and it is the drill that turns. **The chest is not
-the mechanism.** This was the leading hypothesis and the measurement refutes
-it.
+The athlete is still during the carry on three of the four. Only
+`hooks_jump_pull_in` contributes anything, **because it is the drill that
+JUMPS**: its chest rises 20.02 cm over the movement while it turns 0.00
+degrees. **The chest is not the mechanism.** This was the leading hypothesis
+and the measurement refutes it.
+
+An earlier version of this document said that drill contributes a chest term
+because it is the one that turns. That was wrong. The drill that turns is
+`hooks_outside_hand`, at 4 to 48 degrees, and it never releases the ball, so
+it is not in the table above at all. Corrected on 2026-09-01 from
+`trunkTurnDegrees`, which reads a flat 0.00 for `hooks_jump_pull_in`.
 
 ## What it is
 
@@ -110,9 +117,10 @@ less than 0.04 cm, so the flight itself is undisturbed.
   release-phase checkpoints will move. That is a solve, and it must be
   measured before the change is proposed rather than after.
 - **`hooks_jump_pull_in` carries a second, smaller term**, the 0.33 cm of
-  chest motion above. It is 20 per cent of that drill's step and it is NOT
-  explained here. It does not affect the mechanism, which reproduces exactly
-  on all four.
+  chest motion above. It is 20 per cent of that drill's step. It is now
+  explained — the chest rises 20.02 cm across the jump, so the frame the ball
+  is carried in is itself moving upward — and it does not affect the
+  mechanism, which reproduces exactly on all four.
 - **Whether any other seam has the same shape.** The contact seam was not
   examined. The release key is authored on a round phase, and so are other
   keys, so the same fraction-of-a-frame loss can occur anywhere a regime ends

@@ -1202,8 +1202,15 @@ measurements to 0.000000 cm.
 
 **The leading hypothesis was refuted by the same measurement.** The chest
 contributes exactly 0.0000 cm on three of the four drills. Only
-`hooks_jump_pull_in` has a chest term, 0.33 cm, and it is the drill that
-turns. That 0.33 cm is unexplained and does not affect the mechanism.
+`hooks_jump_pull_in` has a chest term, 0.33 cm, because it is the drill that
+JUMPS: its chest rises 20.02 cm while it turns 0.00 degrees. It does not
+affect the mechanism.
+
+**This corrects what was first published here.** The claim was that the drill
+turns, and it does not. The drill that turns is `hooks_outside_hand`, 4 to 48
+degrees, and it never releases the ball, so it was never in that table. The
+error was found on 2026-09-01 by reading `trunkTurnDegrees` while widening the
+reference curves — a measure that had no curve when the seam was written.
 
 The change this implies is to time the flight from the release key rather than
 the release frame. It turns the stall into a ramp on all four drills and moves
