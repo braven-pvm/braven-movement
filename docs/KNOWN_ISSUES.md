@@ -1185,3 +1185,27 @@ second is already marked PROVISIONAL in `return_velocity`.
 
 The failure mode that docstring warns about — an early hold making her throw
 harder — does NOT fire today. Every drill has a real parabola.
+
+## The four contact hitches are one sub-frame timing defect
+
+Raised on 2026-09-01. Proven in `docs/RELEASE_SEAM.md`, no solve required.
+
+The declared release phase is authored as a round number and never lands on a
+frame. The last carry key sits at that phase, and the release frame is the
+first frame past it, 24 to 65 per cent of a frame late. On that one frame the
+carry has already stopped at its key AND the flight measures its elapsed time
+from the frame, so it has not started. The ball moves the fraction of a carry
+step that fits before the key, and nothing else.
+
+Predicting the step as the carry truncated at the key reproduces all four
+measurements to 0.000000 cm.
+
+**The leading hypothesis was refuted by the same measurement.** The chest
+contributes exactly 0.0000 cm on three of the four drills. Only
+`hooks_jump_pull_in` has a chest term, 0.33 cm, and it is the drill that
+turns. That 0.33 cm is unexplained and does not affect the mechanism.
+
+The change this implies is to time the flight from the release key rather than
+the release frame. It turns the stall into a ramp on all four drills and moves
+the following frame by less than 0.04 cm. **Not made.** The graded values must
+be measured first, and that needs a solve.
