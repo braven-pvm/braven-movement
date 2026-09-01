@@ -89,5 +89,6 @@ wrong place does.
 
 Measured on `7a3ae92` with a clean tree, before and after. The control, the
 one-line substitution and its single-occurrence assertion are what make the
-figures comparable; refer to [[p1-comparability-is-per-build]] in kind, since
-both sides of every comparison here come from one process and one build.
+figures comparable. Both sides of every comparison come from one process and
+one build, which is the only condition under which they can be compared at
+all.
