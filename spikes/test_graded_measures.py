@@ -21,7 +21,9 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from movement_definition import Checkpoint, MovementDefinition, Phase, load
+from movement_definition import (
+    Checkpoint, MovementDefinition, Phase, load, union_of_graded,
+)
 
 SPIKE_DIR = Path(__file__).resolve().parent
 MOVEMENTS = SPIKE_DIR / "movements"
@@ -169,6 +171,53 @@ class AgainstTheRealLibrary(unittest.TestCase):
             f"the left knee is graded by {len(grading)} of {len(self.found)} "
             "drills, not all of them",
         )
+
+
+class WhatTheWHOLELibraryGrades(unittest.TestCase):
+    """`union_of_graded`, which is what the reference-curve export derives its
+    measure list from. A free function over definitions, so this can check it
+    on hand-built ones and on the real library both."""
+
+    def test_it_is_the_union_across_the_movements(self) -> None:
+        found = union_of_graded([
+            movement(Phase("ready", 0.0, (checkpoint("a"),))),
+            movement(Phase("ready", 0.0, (checkpoint("b"), checkpoint("c")))),
+        ])
+        self.assertEqual(found, {"a", "b", "c"})
+
+    def test_a_measure_graded_by_two_movements_appears_once(self) -> None:
+        found = union_of_graded([
+            movement(Phase("ready", 0.0, (checkpoint("a"),))),
+            movement(Phase("ready", 0.0, (checkpoint("a"),))),
+        ])
+        self.assertEqual(found, {"a"})
+
+    def test_it_reads_every_movement_and_not_only_the_first(self) -> None:
+        """The mistake the shape invites, and the one that matters here: a
+        union that stopped early would derive the curve list from whichever
+        drill sorted first."""
+        found = union_of_graded([
+            movement(Phase("ready", 0.0, (checkpoint("a"),))),
+            movement(Phase("ready", 0.0, (checkpoint("b"),))),
+            movement(Phase("ready", 0.0, (checkpoint("c"),))),
+        ])
+        self.assertEqual(found, {"a", "b", "c"})
+
+    def test_no_movements_gives_no_measures(self) -> None:
+        """Stated because a caller widening a curve file on an empty union
+        would write no curves at all, which is why the exporter keeps a floor
+        rather than trusting this alone."""
+        self.assertEqual(union_of_graded([]), set())
+
+    def test_against_the_real_library_it_is_wider_than_the_old_five(self) -> None:
+        """The finding that prompted the widening, kept as a case."""
+        found = union_of_graded(definitions())
+        self.assertGreaterEqual(
+            len(found), 9,
+            f"the library grades {len(found)} measures, not the 9 this was "
+            "written against; the widening design needs re-reading",
+        )
+        self.assertIn("leftKneeFlexionDegrees", found)
 
 
 if __name__ == "__main__":  # pragma: no cover

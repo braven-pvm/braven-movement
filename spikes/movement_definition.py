@@ -22,7 +22,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
-from typing import Mapping, Sequence
+from typing import Iterable, Mapping, Sequence
 
 
 MINIMUM_MEANINGFUL_BAND_DEGREES = 5.0
@@ -363,3 +363,21 @@ def load(path: Path) -> MovementDefinition:
             for phase in data["phases"]
         ),
     )
+
+
+def union_of_graded(definitions: Iterable[MovementDefinition]) -> set[str]:
+    """Every measure ANY of these movements grades.
+
+    The library-wide answer to the question `graded_measures` answers for one
+    movement. It is a free function taking definitions rather than a method
+    reading a directory, so a caller with a solver and a test without one can
+    both use it on the same definitions.
+
+    An empty input gives an empty set. A caller widening a curve file on that
+    would write no curves, so callers combine it with their own floor rather
+    than trusting it alone.
+    """
+    found: set[str] = set()
+    for definition in definitions:
+        found |= definition.graded_measures()
+    return found

@@ -13,19 +13,20 @@ the registry's; merging the two would make that question pass by construction,
 which is the tautology this project keeps finding.
 
 No solver. `segment_measures` imports `math`, `video_measures` imports
-`segment_measures`, and the definitions are read off disk. `WANTED` is parsed
-out of the exporter's source rather than imported, because importing that
-module pulls in the solver and would turn every case here into one load error
-on a runner without one.
+`segment_measures`, and the definitions are read off disk. The rule for which
+measures get a curve lives in `reference_measures`, which imports nothing
+heavier, so it is called here rather than read out of the exporter's source.
 """
 
 from __future__ import annotations
 
-import ast
 import unittest
 from pathlib import Path
 
-from movement_definition import load
+from movement_definition import (
+    Checkpoint, MovementDefinition, Phase, load, union_of_graded,
+)
+from reference_measures import RECOVERABLE, wanted
 from segment_measures import CENTIMETRES, DEGREES, MEASURE_UNITS, unit_of
 
 SPIKE_DIR = Path(__file__).resolve().parent
@@ -39,18 +40,6 @@ def definitions():
         for path in sorted(MOVEMENTS.glob("*.json"))
         if not any(path.name.endswith(one) for one in NOT_DEFINITIONS)
     ]
-
-
-def wanted_from_source() -> tuple[str, ...]:
-    """`export_reference_curves.WANTED`, read without importing the module."""
-    tree = ast.parse((SPIKE_DIR / "export_reference_curves.py").read_text(
-        encoding="utf-8"))
-    for node in tree.body:
-        if isinstance(node, ast.Assign) and any(
-            isinstance(t, ast.Name) and t.id == "WANTED" for t in node.targets
-        ):
-            return tuple(ast.literal_eval(node.value))
-    raise AssertionError("export_reference_curves.WANTED was not found")
 
 
 class TheTableItself(unittest.TestCase):
@@ -151,15 +140,50 @@ class AgainstTheVideoLanesOwnSpelling(unittest.TestCase):
 
 
 class TheExporterCanDeclareEverythingItWrites(unittest.TestCase):
-    def test_every_wanted_measure_has_a_unit(self) -> None:
-        wanted = wanted_from_source()
-        self.assertTrue(wanted, "WANTED is empty")
-        for measure in wanted:
+    """The export raises on an undeclared unit, so this is what stops that.
+
+    It reconstructs the exporter's rule — graded OR recoverable — from the
+    definitions and the literal floor, rather than importing the module.
+    """
+
+    def test_the_floor_holds_even_when_nothing_grades_it(self) -> None:
+        """The floor's whole purpose, and it needs a hand-built library.
+
+        Against the REAL library this cannot be tested: every recoverable
+        measure happens to be graded by some drill today, so `graded` and
+        `graded | recoverable` are the same set and dropping the floor changes
+        nothing. That is a coincidence of the current definitions, not the
+        rule. A drill that stopped grading a shoulder would silently take its
+        reference curve away from the video lane, which is the opposite of
+        what this list is for.
+        """
+        one = MovementDefinition(
+            movement_id="probe", sport="netball", skill="a skill",
+            source="a source",
+            phases=(Phase("ready", 0.0, (Checkpoint(
+                measure="somethingNobodyRecovers", minimum_degrees=10.0,
+                maximum_degrees=100.0, cue="a cue", why="a reason"),)),),
+        )
+        found = set(wanted([one]))
+        self.assertEqual(
+            found, set(RECOVERABLE) | {"somethingNobodyRecovers"},
+            "the recoverable floor is not held when nothing grades it",
+        )
+
+    def test_every_measure_the_exporter_would_write_has_a_unit(self) -> None:
+        self.assertTrue(RECOVERABLE, "RECOVERABLE is empty")
+        would_write = set(wanted(definitions()))
+        self.assertGreaterEqual(
+            len(would_write), len(RECOVERABLE) + 1,
+            "the derived set is no wider than its floor, so either the "
+            "definitions were not read or nothing is graded beyond it",
+        )
+        for measure in sorted(would_write):
             with self.subTest(measure=measure):
                 self.assertIn(
                     measure, MEASURE_UNITS,
-                    f"the exporter writes {measure} and no unit is declared "
-                    "for it, so the export would raise rather than write",
+                    f"the exporter would write {measure} and no unit is "
+                    "declared for it, so the export raises rather than writes",
                 )
 
 
