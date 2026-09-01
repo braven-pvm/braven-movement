@@ -1209,3 +1209,26 @@ The change this implies is to time the flight from the release key rather than
 the release frame. It turns the stall into a ramp on all four drills and moves
 the following frame by less than 0.04 cm. **Not made.** The graded values must
 be measured first, and that needs a solve.
+
+## The sub-frame defect is at the athlete's release only
+
+Raised on 2026-09-01. Swept in `docs/SEAM_SWEEP.md`, no solve required.
+
+Three regime boundaries exist. Contact is clean on all eight drills, and the
+incoming pass is clean on all eight. Only the athlete's release is affected,
+on the four drills that release the ball.
+
+**Contact is clean structurally, not by luck.** It is chosen by a distance
+test on frames, so no authored phase falls between two frames, and the carry's
+first key is the flight's own position at that frame. **The arm constants are
+calibrated at contact, and contact is unaffected.**
+
+**The incoming pass is clean because it is sampled by phase.** Its release key
+misses a frame boundary by 11 to 85 per cent and loses nothing, because the
+flight answers where the ball is at a phase.
+
+THE PRINCIPLE: a regime sampled as a function of phase is immune; a regime
+integrated forward from a frame index is not. The outgoing flight measures its
+elapsed time from the release frame rather than the key. The same physical
+event is handled both ways in one file, and the correct pattern sits a few
+lines from the defective one.
