@@ -99,3 +99,60 @@ def hip_flexion_degrees(
 ) -> float:
     """Return hip flexion in degrees. Standing upright is zero."""
     return 180.0 - included_angle_degrees(neck, pelvis, knee, "hip")
+
+
+DEGREES = "degrees"
+CENTIMETRES = "centimetres"
+
+# THE UNIT OF EVERY MEASURE THE ENGINE WRITES, BY ITS OWN NAME.
+#
+# `measure_frame` produces these names and their values. Until now nothing
+# recorded what they are IN, and every consumer read every column as degrees.
+# One of them is not an angle: `footHeightGapCm` is a length. A reference file
+# that announces itself as angles and carries a centimetre column is the
+# units-across-a-boundary fault this project has recorded six times, and adding
+# it deliberately would be worse than finding it.
+#
+# This lives here, in a module that imports `math` and nothing else, so a test
+# and a stdlib-only consumer can both read it without a solver.
+#
+# The video lane keeps its OWN spelling of these units in `video_measures`, and
+# that duplication is deliberate. Its gate asks whether the engine's declared
+# unit matches the registry's, and that question is only worth asking while the
+# two are spelled independently. Reading one from the other would make the
+# check pass by construction, which is the tautology this project keeps
+# finding. `test_measure_units.py` compares the two rather than merging them.
+MEASURE_UNITS: dict[str, str] = {
+    "trunkLeanDegrees": DEGREES,
+    "trunkTurnDegrees": DEGREES,
+    "leftElbowFlexionDegrees": DEGREES,
+    "rightElbowFlexionDegrees": DEGREES,
+    "leftShoulderElevationDegrees": DEGREES,
+    "rightShoulderElevationDegrees": DEGREES,
+    "leftKneeFlexionDegrees": DEGREES,
+    "rightKneeFlexionDegrees": DEGREES,
+    "footHeightGapCm": CENTIMETRES,
+}
+
+
+def unit_of(measure: str) -> str:
+    """Return the unit a measure is in.
+
+    RAISES for a measure that is not declared. It does not fall back to
+    degrees, and it does not read the name's suffix.
+
+    Both of those were considered and both are how this breaks quietly. A
+    default makes the next length silently an angle. A suffix rule is a
+    convention two lanes must hold in their heads, and this whole table exists
+    because a five-item list drifted from a nine-item one while everyone
+    believed they agreed.
+    """
+    try:
+        return MEASURE_UNITS[measure]
+    except KeyError:
+        raise KeyError(
+            f"{measure!r} has no declared unit. Add it to "
+            "segment_measures.MEASURE_UNITS. It is NOT assumed to be degrees: "
+            "one graded measure is centimetres, and a consumer that reads a "
+            "length as an angle is the fault this table exists to prevent."
+        ) from None
