@@ -90,8 +90,17 @@ def spread_fingers(character, parameters: np.ndarray, sides: tuple[str, ...]):
         for suffix, value in SPREAD.items():
             name = f"{side}_{suffix}"
             if name in names:
-                # The left and right hands fan in opposite directions.
-                opened[names.index(name)] = value if side == "l" else -value
+                # THE SAME VALUE ON BOTH HANDS. This negated the right until
+                # 2026-09-01, on the stated belief that "the left and right
+                # hands fan in opposite directions". The rig disagrees, and it
+                # was measured rather than argued: the rest pose is symmetric
+                # about x=0 to within 0.00005 cm, and setting the same value on
+                # both hands mirrors to within 0.02 degrees, while negating it
+                # breaks the mirror by up to 80.21. The negation collapsed the
+                # right hand's fan from 14.37 cm to 1.75 and put its fingertips
+                # out of anatomical order. Refer to docs/HAND_MIRROR_EVIDENCE.md
+                # for all six pieces. The rig mirrors; the code does not need to.
+                opened[names.index(name)] = value
     return opened
 
 
