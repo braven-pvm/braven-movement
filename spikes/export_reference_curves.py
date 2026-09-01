@@ -33,9 +33,15 @@ from build_stamp import generated_from  # noqa: E402
 from movement_definition import load as load_definition  # noqa: E402
 from movement_engine import definition_path, library, load_character  # noqa: E402
 from possession_solve import solve_movement  # noqa: E402
+from segment_measures import unit_of  # noqa: E402
 from technique import has_technique, load_technique, technique_path  # noqa: E402
 
 OUTPUT = SPIKE_DIR / "poc-output" / "video"
+
+# 1 was the shape with the bare list and no unit anywhere. 2 gives every curve
+# a unit and a values list. The number is written into the file so a consumer
+# can branch on it rather than sniffing the type of a value.
+SCHEMA_VERSION = 2
 
 # The measures a two-camera lift can plausibly recover. Elbow flexion is the
 # one deliverable (d) asks for; the others are here because they cost nothing
@@ -97,9 +103,25 @@ def main(argv: list[str]) -> int:
                     {"name": p.name, "atPhase": p.at_phase} for p in definition.phases
                 ],
             },
-            "curves": {measure: curve(result, measure) for measure in WANTED},
+            # EVERY CURVE CARRIES ITS UNIT. `curves[measure]` used to be the
+            # list itself, and the file's note called all of it angles. One
+            # graded measure is a length, so a file that cannot say which is
+            # one bad column away from a video lane reading centimetres as
+            # degrees. The unit is read from the engine's own table, never
+            # from the measure's name.
+            "curves": {
+                measure: {
+                    "unit": unit_of(measure),
+                    "values": curve(result, measure),
+                }
+                for measure in WANTED
+            },
         }
-        elbow = [v for v in found[movement_id]["curves"]["leftElbowFlexionDegrees"] if v is not None]
+        elbow = [
+            v
+            for v in found[movement_id]["curves"]["leftElbowFlexionDegrees"]["values"]
+            if v is not None
+        ]
         print(
             f"  {movement_id[8:44]:36s} {frames:4d} frames   "
             f"left elbow {min(elbow):6.1f} to {max(elbow):6.1f} deg   "
@@ -115,12 +137,20 @@ def main(argv: list[str]) -> int:
                 # The shared stamp, not a second copy of it. This file had
                 # its own inline version, which is how one shape becomes two
                 # that drift.
+                # 2 is the shape where every curve is
+                # {"unit": ..., "values": [...]}. The unversioned shape that
+                # wrote the list directly is 1, named here retrospectively
+                # because a reader of an old file has to be able to tell.
+                "schemaVersion": SCHEMA_VERSION,
                 "generatedFrom": generated_from(),
                 "note": (
                     "Engine curves for comparison against video. Phase runs 0 to 1 "
                     "across each movement, so a clip of a different duration can be "
-                    "laid over these. Angles are the engine's own definitions, taken "
-                    "from the same measurements build_library grades."
+                    "laid over these. Each curve declares its own unit: most are "
+                    "the engine's own angle definitions, taken from the same "
+                    "measurements build_library grades, and NOT every measure is "
+                    "an angle. Read curves[measure][\"values\"] and honour "
+                    "curves[measure][\"unit\"]."
                 ),
                 "measures": list(WANTED),
                 "movements": found,
