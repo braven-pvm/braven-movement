@@ -41,55 +41,6 @@ if str(SPIKE_DIR) not in sys.path:
 SHIPPED = SPIKE_DIR / "poc-output" / "coach" / "animations.json"
 
 
-def _mirror():
-    """Open the right hand the way the rig mirrors, not the way the code does.
-
-    `finger_wrap.spread_fingers` negates every value on the right. The rig
-    mirrors on the SAME sign — measured on the rest pose, which is symmetric
-    about x=0 to 0.00005 cm, where the same value on both hands mirrors to
-    within 0.02 degrees and the negation breaks it by up to 80.21. As shipped
-    the right hand's fan collapses from 14.37 cm to 1.75 with its fingertips
-    out of order. Refer to docs/HAND_MIRROR_EVIDENCE.md.
-    """
-    import finger_wrap
-    import possession_solve
-
-    # BOTH BINDINGS. `possession_solve` does `from finger_wrap import
-    # spread_fingers`, which copies the function object into its own module
-    # namespace, so patching `finger_wrap.spread_fingers` alone leaves the
-    # solve calling the original.
-    #
-    # A first version patched only the module. The preview it produced was
-    # BYTE-IDENTICAL to the shipped build, carrying a stamp saying it was the
-    # fixed version — a file that would have gone in front of a coach as the
-    # option she was being asked to choose. It was caught by the test that
-    # solves rather than the one that inspects the binding, which is why the
-    # guard is written on the solve.
-    patched = [finger_wrap, possession_solve]
-    originals = [getattr(where, "spread_fingers") for where in patched]
-
-    def same_sign(character, parameters, sides):
-        import numpy as np
-
-        names = list(character.parameter_transform.names)
-        opened = np.asarray(parameters, dtype=np.float32).copy()
-        for side in sides:
-            for suffix, value in finger_wrap.SPREAD.items():
-                name = f"{side}_{suffix}"
-                if name in names:
-                    opened[names.index(name)] = value
-        return opened
-
-    for where in patched:
-        where.spread_fingers = same_sign
-
-    def undo():
-        for where, original in zip(patched, originals):
-            where.spread_fingers = original
-
-    return undo
-
-
 def _pole(angle: float):
     """Read the pole angle against the population the manual's figure describes.
 
@@ -108,15 +59,23 @@ def _pole(angle: float):
     )
 
 
+# THE "mirror" VARIANT WAS RETIRED ON 2026-09-01, when Marius ruled the fix
+# ships. It previewed opening the right hand the way the left one opens; that
+# is now what the engine does, so the variant would have produced a file
+# identical to the shipped build.
+#
+# It was retired rather than kept as a no-op regression guard, and the reason
+# is what this module is FOR. These variants are coach-facing: each one exists
+# so a person can look at two renders and answer a question. A variant that
+# renders the shipped build while a page labels it the alternative is exactly
+# the failure this module was already caught committing once, when a preview
+# went out byte-identical to the build it claimed to differ from.
+#
+# The regression it would have guarded is guarded better and closer to the
+# rig, in `test_hand_mirror.py`: the right hand's fan must equal the left's
+# and the fingertips must run in anatomical order. That fires on the negation
+# returning, and it needs no preview machinery to do it.
 VARIANTS = {
-    "mirror": {
-        "constant": "finger_wrap.spread_fingers, the sign on the right hand",
-        "shipped": "negated",
-        "previewed": "the same sign as the left",
-        "question": "Should the right hand open the way the left one does?",
-        "evidence": "docs/HAND_MIRROR_EVIDENCE.md",
-        "apply": _mirror,
-    },
     "pole-37.3": {
         "constant": "contact_solve.ELBOW_POLE_ANGLE_DEGREES",
         "shipped": "31.3",

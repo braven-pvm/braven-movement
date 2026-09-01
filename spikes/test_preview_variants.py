@@ -16,17 +16,22 @@ the coach pack reads, and every preview payload says at its top what it is.
 
 Most of this needs no solver, and it says so where it does.
 
-TWO OF THESE TESTS DO, AND THE REASON IS AN IRONY WORTH KEEPING. The mirror
-variant has to patch BOTH bindings of `spread_fingers`, because
-`possession_solve` copied the function into its own namespace — and patching
-both means importing `possession_solve`, which imports the solver. So the fix
-that made the preview real is what made these two tests need a solver, and the
-broken module-only version they replaced would have run happily on the runner
-while previewing nothing.
+AN IRONY WORTH KEEPING, NOW HISTORY. The retired `mirror` variant had to patch
+BOTH bindings of `spread_fingers`, because `possession_solve` copied the
+function into its own namespace. A first version patched only the module and
+produced a preview BYTE-IDENTICAL to the build it claimed to differ from,
+carrying a stamp that said otherwise — a file that would have gone in front of
+a coach as the option she was choosing between. It was caught by the test that
+solves, never by the one that inspects a binding, which is why the guards below
+are written on the solve.
 
-They are skipped rather than reworked: without `possession_solve` importable
-there is genuinely no second binding to guard, so there is nothing for them to
-check.
+That variant was retired on 2026-09-01 when the fix shipped. The lesson is kept
+here because the mechanism it exposed did not go anywhere: `pole-37.3` patches
+a module constant, and the next variant somebody writes may well patch a
+function that a caller has already copied.
+
+They are skipped rather than reworked: without `contact_solve` importable there
+is genuinely no patched constant to guard, so there is nothing to check.
 """
 
 from __future__ import annotations
@@ -42,50 +47,61 @@ try:
 except ImportError:  # pragma: no cover - exercised only without the solver
     SOLVER = False
 
-import finger_wrap
 from preview_variants import SHIPPED, VARIANTS, applied, preview_output, stamp
+
+# The variant in play patches a constant in `contact_solve`, which imports the
+# solver, so the leak guards below observe that constant and skip without one.
+ONLY_VARIANT = "pole-37.3"
 
 
 class TheDefaultPathIsUntouched(unittest.TestCase):
     """The claim that this machinery is confined to the preview path."""
 
+    @unittest.skipUnless(SOLVER, "the patched constant lives in contact_solve")
     def test_no_variant_is_a_no_op(self) -> None:
-        before = finger_wrap.spread_fingers
+        import contact_solve
+
+        before = contact_solve.ELBOW_POLE_ANGLE_DEGREES
         with applied(None) as found:
             self.assertIsNone(found)
-            self.assertIs(finger_wrap.spread_fingers, before)
-        self.assertIs(finger_wrap.spread_fingers, before)
+            self.assertEqual(contact_solve.ELBOW_POLE_ANGLE_DEGREES, before)
+        self.assertEqual(contact_solve.ELBOW_POLE_ANGLE_DEGREES, before)
 
-    @unittest.skipUnless(SOLVER, "the second binding lives in possession_solve")
+    @unittest.skipUnless(SOLVER, "the patched constant lives in contact_solve")
     def test_a_variant_is_undone_when_its_block_ends(self) -> None:
-        before = finger_wrap.spread_fingers
-        with applied("mirror"):
-            self.assertIsNot(
-                finger_wrap.spread_fingers, before,
-                "the mirror variant did not take effect, so this file is "
-                "guarding a patch that never happens",
+        import contact_solve
+
+        before = contact_solve.ELBOW_POLE_ANGLE_DEGREES
+        with applied(ONLY_VARIANT):
+            self.assertNotEqual(
+                contact_solve.ELBOW_POLE_ANGLE_DEGREES, before,
+                f"the {ONLY_VARIANT} variant did not take effect, so this file "
+                "is guarding a patch that never happens",
             )
-        self.assertIs(
-            finger_wrap.spread_fingers, before,
-            "the mirror variant leaked out of its block. Every solve after it "
-            "in this process would carry it, including a default export.",
+        self.assertEqual(
+            contact_solve.ELBOW_POLE_ANGLE_DEGREES, before,
+            f"the {ONLY_VARIANT} variant leaked out of its block. Every solve "
+            "after it in this process would carry it, including a default "
+            "export.",
         )
 
-    @unittest.skipUnless(SOLVER, "the second binding lives in possession_solve")
+    @unittest.skipUnless(SOLVER, "the patched constant lives in contact_solve")
     def test_it_is_undone_even_when_the_block_raises(self) -> None:
         """A patch that survives an exception is the worst form of leak: the
         run that failed is the one nobody looks at afterwards."""
-        before = finger_wrap.spread_fingers
+        import contact_solve
+
+        before = contact_solve.ELBOW_POLE_ANGLE_DEGREES
         with self.assertRaises(RuntimeError):
-            with applied("mirror"):
+            with applied(ONLY_VARIANT):
                 raise RuntimeError("something went wrong mid-export")
-        self.assertIs(finger_wrap.spread_fingers, before)
+        self.assertEqual(contact_solve.ELBOW_POLE_ANGLE_DEGREES, before)
 
     def test_an_unknown_variant_is_refused_by_name(self) -> None:
         with self.assertRaises(KeyError) as caught:
             with applied("no-such-option"):
                 pass
-        self.assertIn("mirror", str(caught.exception))
+        self.assertIn(ONLY_VARIANT, str(caught.exception))
 
 
 @unittest.skipUnless(SOLVER, "needs pymomentum, which lives in the pixi environment")
@@ -103,9 +119,7 @@ class ASolveIsTheSameAfterAPreview(unittest.TestCase):
         drill = "netball_two_hand_catch_chest"
         before = np.asarray(solve_movement(character, drill)["motion"])
 
-        with applied("mirror"):
-            solve_movement(character, drill)
-        with applied("pole-37.3"):
+        with applied(ONLY_VARIANT):
             solve_movement(character, drill)
 
         after = np.asarray(solve_movement(character, drill)["motion"])
@@ -126,12 +140,14 @@ class ASolveIsTheSameAfterAPreview(unittest.TestCase):
         character = load_character()
         drill = "netball_two_hand_catch_chest"
         shipped = np.asarray(solve_movement(character, drill)["motion"])
-        with applied("mirror"):
+        with applied(ONLY_VARIANT):
             previewed = np.asarray(solve_movement(character, drill)["motion"])
         self.assertGreater(
             float(np.abs(previewed - shipped).max()), 0.0,
-            "the mirror preview solves identically to the shipped build, so "
-            "there is nothing for a coach to compare and nothing to guard",
+            f"the {ONLY_VARIANT} preview solves identically to the shipped "
+            "build, so there is nothing for a coach to compare and nothing to "
+            "guard. This is what the retired mirror variant became once its "
+            "fix shipped, and why it was retired rather than left in the list.",
         )
 
 

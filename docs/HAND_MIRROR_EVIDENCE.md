@@ -1,5 +1,28 @@
 # The right hand is not the mirror of the left, and the evidence for changing it
 
+## SHIPPED on 2026-09-01, in `fde5d5a`
+
+Marius ruled the fix ships and called it a bug. The A-against-B step is retired
+for this defect: Erin grades the corrected build directly.
+
+`spread_fingers` no longer negates the right hand. On the shipped build both
+hands fan **14.37 cm** and every fingertip is the reflection of its opposite to
+within 0.01 cm. `test_hand_mirror.py` guards it on the rig.
+
+**The shipped fix was proved equal to the previewed one.** The preview-mirror
+solve was captured for all eight drills BEFORE the source changed, because
+afterwards the preview is a no-op and the comparison is a tautology. Shipped
+against that capture: **8 of 8 byte-identical, worst difference 0.0000000000.**
+
+**Section 5 below is SUPERSEDED.** Its cost table was measured on `378fea0`.
+On the shipped build the cost is **47 of 69 graded values moved, no verdict
+flipped**, largest `hooks_outside_hand` contact right elbow 72.82 to 49.66.
+Refer to "CLOSED: the right hand now opens the way the left one does" in
+`docs/KNOWN_ISSUES.md`, which also records the three things this opened —
+her changed ready stance, the library-content gap, and the overtaken
+pole-angle deferral.
+
+
 Sections 1 to 5 were taken on `378fea0` with a clean tree. Section 6 was added
 later and its numbers come from `044f8c7`. **Other quantities did move between
 those builds** — PR #29's pole fix shifted the hooks trunk lean by 10.15
@@ -98,6 +121,11 @@ the left. This is a candidate mechanical root for her note. It is not proof:
 she marked a pose, not a thumb angle, and no coach has read these numbers.
 
 ## 5. What the change would cost, measured then reverted
+
+**SUPERSEDED. These figures are `378fea0` and the change has shipped.** The
+shipped cost is 47 of 69 graded values moved, no verdict flipped, largest
+23.16 degrees; refer to the closure at the top. The table is kept as it was
+read, because what it predicted and what happened are both worth having.
 
 | | |
 |---|---|

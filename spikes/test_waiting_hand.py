@@ -90,18 +90,37 @@ class NoHandWaitsPastFullStretch(unittest.TestCase):
         self.assertTrue(self.reaching, "no drill reaches for the ball")
         self.assertTrue(self.waiting, "no drill has a hand that waits")
 
-    def test_a_turned_drill_is_among_them(self) -> None:
-        """The anti-hollow clause, and the one that matters here.
+    def test_the_library_no_longer_turns_far_enough_to_show_the_fault(
+        self,
+    ) -> None:
+        """WAS the anti-hollow clause. It is now a RECORD of why that clause
+        moved to a synthetic fixture, and it fails if the library regains a
+        turned drill, which is a good thing to be told.
 
         The fault only appears on a turned athlete: with square shoulders the
         midpoint is the same distance from both, so the old code was correct by
-        accident. A library of square drills passes this file while proving
-        nothing.
+        accident. Until 2026-09-01 `netball_hooks_outside_hand` supplied that
+        case, starting 48.23 degrees turned.
+
+        THE HAND FIX TOOK IT AWAY, and the reason is the finding rather than a
+        side effect: the athlete had been turning her shoulders 48 degrees in
+        the ready pose to compensate for a right hand whose fingers were
+        anti-mirrored. With the hand correct she stands at 15.44, and no frame
+        of any drill now turns past 20 degrees while a hand waits.
+
+        So the library can no longer exercise this rule, and the contract is
+        pinned on a hand-built athlete in `ATurnedAthleteIsStillGuarded` below,
+        the same way the reference-curve floor is pinned on a hand-built
+        definition. Authoring a genuinely turned drill is coach territory and
+        is on the agenda as a library-content gap.
         """
-        self.assertTrue(
-            any(degrees > 20.0 for degrees in self.turned.values()),
-            "no drill starts turned, so the midpoint and the shoulders agree "
-            "and this file cannot see the fault it exists for",
+        worst = max(self.turned.values(), default=0.0)
+        self.assertLessEqual(
+            worst, 20.0,
+            f"a drill now starts {worst:.2f} degrees turned. The library can "
+            "exercise this rule again, which is what the content gap on the "
+            "coach agenda asks for. Restore the real-library anti-hollow "
+            "clause and say so here.",
         )
 
     def test_no_waiting_hand_is_further_out_than_a_reaching_one(self) -> None:
@@ -137,6 +156,143 @@ class NoHandWaitsPastFullStretch(unittest.TestCase):
                         "of full extension before she has the ball, which is a "
                         "locked elbow rather than a ready one.",
                     )
+
+
+class ATurnedAthleteIsStillGuarded(unittest.TestCase):
+    """The rule pinned on a hand-built athlete, because the library lost its
+    turned drill when the hand was fixed.
+
+    Same pattern as the reference-curve floor: where the real library happens
+    not to exercise a contract, the contract is pinned on a fixture rather than
+    left unguarded or weakened to fit. A fixture is not authored content and no
+    movement definition is touched.
+
+    NO SOLVER. `resolve` is geometry: it is handed shoulders and asked where the
+    hands wait. That is the whole rule under test.
+    """
+
+    ARM_CM = 52.675
+    REACH_LIMIT_CM = 62.0
+    HALF_SPAN_CM = 18.0
+    TURN_DEGREES = 44.0
+
+    def scene(self, with_places: bool):
+        """A steadily turned athlete, and the ball flying at her."""
+        import json
+        import tempfile
+        from pathlib import Path as _Path
+
+        from ball_track import BallOffset, load_ball, stance_frame
+        from possession import resolve
+        from technique import AfterContactKey
+
+        frames = 40
+        phases = [n / (frames - 1) for n in range(frames)]
+        chest = np.array([0.0, 130.0, 0.0])
+        middle = np.array([0.0, 137.0, 0.0])
+        radians = np.radians(self.TURN_DEGREES)
+        # Shoulders on a line turned about the vertical. A square athlete puts
+        # both the same distance from the midpoint; a turned one does not, and
+        # that difference is the entire fault.
+        offset = self.HALF_SPAN_CM * np.array(
+            [np.cos(radians), 0.0, np.sin(radians)]
+        )
+        places = [{"l": middle + offset, "r": middle - offset} for _ in phases]
+
+        data = {
+            "movementId": "turned-fixture",
+            "radiusCm": 11.0,
+            "release": {"atPhase": 0.1},
+            "arrival": {"atPhase": 0.6},
+            "keys": [
+                {"atPhase": 0.1, "across": 0.0, "up": 0.3, "ahead": 4.0},
+                {"atPhase": 0.35, "across": 0.0, "up": 0.4, "ahead": 2.2},
+                {"atPhase": 0.6, "across": 0.0, "up": 0.4, "ahead": 0.9},
+            ],
+        }
+        handle = tempfile.NamedTemporaryFile(
+            "w", suffix=".ball.json", delete=False, encoding="utf-8"
+        )
+        json.dump(data, handle)
+        handle.close()
+
+        return resolve(
+            phases=phases,
+            ball=load_ball(_Path(handle.name)),
+            stance=stance_frame(chest, self.ARM_CM, 0.0),
+            athlete_frames=[
+                stance_frame(chest, self.ARM_CM, self.TURN_DEGREES)
+                for _ in phases
+            ],
+            shoulder_mids=[middle for _ in phases],
+            shoulder_places=places if with_places else None,
+            after_contact=(
+                AfterContactKey(0.8, "absorb", BallOffset(0.0, 0.3, 0.6)),
+                AfterContactKey(1.0, "pull_in", BallOffset(0.0, 0.1, 0.4)),
+            ),
+            reach_limit_cm=self.REACH_LIMIT_CM,
+            arm_length_cm=self.ARM_CM,
+            ready_offset=BallOffset(0.0, 0.2, 0.95),
+        ), places
+
+    def worst_reach(self, held, places) -> float:
+        """The furthest any shoulder has to stretch to a waiting hand, as a
+        fraction of the waiting distance the rule allows."""
+        from possession import READY_FRACTION
+
+        allowed = READY_FRACTION * self.REACH_LIMIT_CM
+        worst = 0.0
+        # WHILE THE PASSER STILL HOLDS THE BALL, which is the only window where
+        # she is purely waiting. Once he lets go the hands travel to meet the
+        # ball, and a hand reaching for a ball is allowed further out than a
+        # hand waiting for one — that distinction is the whole subject of this
+        # file, so measuring across both would compare the rule against a case
+        # it does not govern.
+        for frame in held.frames:
+            if frame.state != "held":
+                continue
+            for place in places[frame.number].values():
+                span = float(np.linalg.norm(frame.presented - place))
+                worst = max(worst, span / allowed)
+        return worst
+
+    def test_the_fixture_is_turned_enough_to_show_the_fault(self) -> None:
+        """THE ANTI-HOLLOW CLAUSE FOR THE FIXTURE ITSELF, and without it this
+        class proves nothing.
+
+        A fixture that is not turned far enough passes the rule for the same
+        reason a square drill does: the midpoint and the shoulders agree. So
+        the same scene is run with the correction disabled, and it must FAIL
+        there. That is what makes passing with it meaningful.
+
+        It reads 1.340 with the correction off and exactly 1.000 with it on.
+        The real drill this replaces put a waiting point 66.4 cm from a
+        shoulder against a 50.8 cm waiting distance, which is 1.31, so the
+        fixture reproduces the fault at its true size rather than an
+        exaggerated one.
+        """
+        held, places = self.scene(with_places=False)
+        worst = self.worst_reach(held, places)
+        self.assertGreater(
+            worst, 1.0,
+            f"with the shoulder correction disabled the furthest shoulder "
+            f"still only reaches {worst:.3f} of the waiting distance, so this "
+            "fixture is not turned far enough to expose the fault and the "
+            "case below passes for the wrong reason",
+        )
+
+    def test_no_shoulder_is_asked_past_its_reach_on_a_turned_athlete(
+        self,
+    ) -> None:
+        """The rule. Every shoulder must be able to reach the waiting point."""
+        held, places = self.scene(with_places=True)
+        worst = self.worst_reach(held, places)
+        self.assertLessEqual(
+            worst, 1.0 + 1e-9,
+            f"a shoulder is asked to stretch {worst:.3f} of the waiting "
+            "distance on a turned athlete, so the waiting point is outside "
+            "its reach and the arm waits locked out",
+        )
 
 
 if __name__ == "__main__":  # pragma: no cover

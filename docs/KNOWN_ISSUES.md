@@ -869,6 +869,16 @@ photographs describe, the angle gave 36.57 cm before that change and 36.54
 after. A five-point sweep puts the angle that would close the gap at about
 37.3 degrees, against 31.3 today.
 
+**SUPERSEDED IN PART on 2026-09-01 by the hand mirror fix (`fde5d5a`).** Every
+figure in this entry — the 44.60 one-handed average, the 36.57 two-handed one
+and the 37.3 degree sweep — was measured on a build whose right hand was
+anti-mirrored. The one-handed drills are the ones that lean on that hand. They
+have since come DOWN to 39.49 against a two-handed 36.40, so the two
+populations now differ by 3.09 cm where they differed by about 20. **The
+deferral below was taken on two populations that no longer exist, and the
+question must be re-read on the fixed build before the coach morning.** Refer
+to "CLOSED: the right hand now opens the way the left one does".
+
 **Marius ruled on 2026-08-30: record the gap, defer the angle.** The retune
 waits for the coach-morning data, because it moves every drill and the
 library's look must not change before a second coach has seen it.
@@ -1283,3 +1293,41 @@ current instead of assuming it. Checking every figure in this file
 automatically was considered and rejected: it would need a solve per assertion
 and would break on every deliberate change, which is how a guard becomes noise
 and then gets deleted.
+
+
+## CLOSED: the right hand now opens the way the left one does
+
+Marius ruled on 2026-09-01 that the fix ships, calling it a bug. Shipped in
+`fde5d5a`. The six pieces of evidence are in `docs/HAND_MIRROR_EVIDENCE.md`,
+which carries the closure and the measured cost.
+
+Both hands now fan 14.37 cm and every fingertip is the reflection of its
+opposite. The shipped fix was proved byte-identical to the previewed one on
+all eight drills, worst difference 0.0000000000, against a capture taken
+before the source changed.
+
+**47 of 69 graded values moved and no verdict flipped.** The failing set is
+unchanged in drill and phase; its figures on this build are 35.78, 49.98,
+146.01, 40.89 and 40.86, and they name `fde5d5a`.
+
+**THREE THINGS THIS OPENED, all recorded rather than absorbed.**
+
+1. **Her ready stance changed.** `hooks_outside_hand` starts 15.44 degrees
+   turned where it started 48.23. She had been turning her shoulders 48 degrees
+   to compensate for the broken hand. This is a look change beyond the hand and
+   it goes to the coach morning.
+2. **A library-content gap.** No drill now turns past 20 degrees while a hand
+   waits, so the real library can no longer exercise the waiting-hand rule. The
+   contract is pinned on a hand-built athlete in `test_waiting_hand.py`, and
+   the old clause is kept inverted so it reports when a turned drill returns.
+   Authoring one is coach territory.
+3. **The pole-angle question must be re-read.** The one-handed and two-handed
+   contact populations converged from about 20 cm apart to 3.09 cm, because the
+   one-handed drills lean on the hand that was broken. The deferred question —
+   which population does the manual's 38.6 cm describe — was asked when they
+   were 20 cm apart. That deferral was overtaken by this fix.
+
+**The mirror preview variant is retired.** `preview_variants` is coach-facing,
+and a variant rendering the shipped build while a page labels it the
+alternative is the byte-identical failure that module was already caught
+committing once. The regression is guarded closer to the rig instead.

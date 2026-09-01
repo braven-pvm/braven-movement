@@ -63,6 +63,24 @@ OBLIQUE_DIRECTIONS = (
 # describe. Marius ruled on 2026-08-30 that this is recorded and the angle is
 # deferred: refer to the class docstring below.
 MEASURED_CM = 36.5
+# How far the one-handed drills sit ABOVE the two-handed ones at contact. This
+# is a recorded fact, not a target, and it has moved three times:
+#
+#   about  8 cm  before the free-hand fix
+#   about 20 cm  after it
+#          3.09  after the hand mirror shipped on 2026-09-01
+#
+# THE POPULATIONS CONVERGED WHEN THE HAND WAS FIXED, and the reason is that the
+# one-handed drills are the ones that lean on the outside hand: the right hand
+# whose fingers were anti-mirrored. The two-handed mean barely moved, from
+# 36.58 to 36.40.
+#
+# This matters beyond a test. The whole "which population does the manual's
+# 38.6 cm describe" question — the one Marius deferred on 2026-08-30 — was
+# asked of two populations 20 cm apart. It must be RE-READ on the fixed build
+# before the coach morning, because the answer may not survive them being 3 cm
+# apart. Recorded here rather than silently refreshed.
+ONE_HANDED_GAP_CM = 3.09
 
 
 class Frame:
@@ -361,21 +379,49 @@ class TheContactSeparationOnTheEvidencedPopulation(unittest.TestCase):
             "overtaken and this number must be re-recorded with a ruling.",
         )
 
-    def test_the_one_handed_drills_are_not_quietly_close(self) -> None:
-        """Guards the reason for the split rather than only its result.
+    def test_the_gap_between_the_populations_is_what_was_recorded(self) -> None:
+        """WAS an assertion that the two populations stay far apart. They no
+        longer are, and the fact is recorded rather than the guard relaxed.
 
-        If the excluded drills ever came back to the same figure, the split
-        would be costing complexity for nothing and should be reconsidered.
-        This asserts that they do not, so the split stays justified.
+        This asked for more than 5 cm of separation, on the reasoning that
+        populations which converge no longer need splitting. The hand mirror
+        fix brought them from about 20 cm to 3.09, because the one-handed
+        drills are the ones that lean on the hand that was broken.
+
+        So the question the guard was protecting is now LIVE rather than
+        settled, and it is on the coach agenda in those words. What this pins
+        is the measured gap, so a further move cannot happen in silence — the
+        same shape as the separation figure above.
+        """
+        two = sum(self.two_handed.values()) / len(self.two_handed)
+        one = sum(self.one_handed.values()) / len(self.one_handed)
+        self.assertAlmostEqual(
+            one - two, ONE_HANDED_GAP_CM, delta=0.5,
+            msg=f"the one-handed drills average {one:.2f} cm against the "
+            f"two-handed {two:.2f}, a gap of {one - two:.2f} against the "
+            f"{ONE_HANDED_GAP_CM} recorded when the hand mirror shipped. The "
+            "populations have moved again. Re-record this with a ruling, and "
+            "re-read the pole-angle question with it: the deferral was taken "
+            "when they were 20 cm apart.",
+        )
+
+    def test_the_two_populations_are_still_distinguishable(self) -> None:
+        """The anti-hollow clause for the split itself.
+
+        A gap pinned at 3.09 cm says nothing about whether the split is worth
+        keeping. What would kill it is the populations becoming the SAME, and
+        that is worth being told separately from a drift in the figure. The
+        floor is the clinical five-degree threshold's length analogue: below a
+        centimetre these are one population wearing two names.
         """
         two = sum(self.two_handed.values()) / len(self.two_handed)
         one = sum(self.one_handed.values()) / len(self.one_handed)
         self.assertGreater(
-            one - two, 5.0,
-            f"the one-handed drills now average {one:.2f} cm against the "
-            f"two-handed {two:.2f}. They used to differ by 8 cm before the "
-            "free-hand fix and 20 after. If they have converged, the two "
-            "populations may no longer need separating.",
+            one - two, 1.0,
+            f"the one-handed and two-handed drills now average {one:.2f} and "
+            f"{two:.2f} cm, which is the same population under two names. The "
+            "split is costing complexity for nothing and the pole-angle "
+            "question no longer has two answers to choose between.",
         )
 
 
