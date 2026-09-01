@@ -264,6 +264,12 @@ class ATurnedAthleteIsStillGuarded(unittest.TestCase):
         reason a square drill does: the midpoint and the shoulders agree. So
         the same scene is run with the correction disabled, and it must FAIL
         there. That is what makes passing with it meaningful.
+
+        It reads 1.340 with the correction off and exactly 1.000 with it on.
+        The real drill this replaces put a waiting point 66.4 cm from a
+        shoulder against a 50.8 cm waiting distance, which is 1.31, so the
+        fixture reproduces the fault at its true size rather than an
+        exaggerated one.
         """
         held, places = self.scene(with_places=False)
         worst = self.worst_reach(held, places)

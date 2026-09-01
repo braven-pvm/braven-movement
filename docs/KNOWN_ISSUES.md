@@ -869,6 +869,16 @@ photographs describe, the angle gave 36.57 cm before that change and 36.54
 after. A five-point sweep puts the angle that would close the gap at about
 37.3 degrees, against 31.3 today.
 
+**SUPERSEDED IN PART on 2026-09-01 by the hand mirror fix (`fde5d5a`).** Every
+figure in this entry — the 44.60 one-handed average, the 36.57 two-handed one
+and the 37.3 degree sweep — was measured on a build whose right hand was
+anti-mirrored. The one-handed drills are the ones that lean on that hand. They
+have since come DOWN to 39.49 against a two-handed 36.40, so the two
+populations now differ by 3.09 cm where they differed by about 20. **The
+deferral below was taken on two populations that no longer exist, and the
+question must be re-read on the fixed build before the coach morning.** Refer
+to "CLOSED: the right hand now opens the way the left one does".
+
 **Marius ruled on 2026-08-30: record the gap, defer the angle.** The retune
 waits for the coach-morning data, because it moves every drill and the
 library's look must not change before a second coach has seen it.
