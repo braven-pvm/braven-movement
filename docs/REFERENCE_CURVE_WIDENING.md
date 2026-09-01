@@ -106,3 +106,49 @@ together give a reviewer no way to tell which caused what.
 - **`footHeightGapCm` is a magnitude with a floor of zero**, and its bands are
   two of the five cannot-fail phases recorded in `docs/KNOWN_ISSUES.md`. Its
   curve is honest; the checkpoints reading it are the open question.
+
+## Executed, and what the new columns actually contain
+
+Both passes landed on 2026-09-01: the shape in `1d0721e`, the content in
+`d757637`. Five measures became nine. The design above stands as written, with
+one addition it did not anticipate.
+
+**The rule moved out of the exporter into `reference_measures.py`, and that is
+not tidiness.** The exporter imports the solver, so a rule living there cannot
+be called by a test on a machine without one. A mutation replacing the derived
+set with the old five survived every test while the rule sat in the exporter.
+
+### Two of the four new columns are constant on most drills
+
+Read on `24cc9bc`, over the eight drills that carry a ball and a technique.
+
+| measure | varies on |
+|---|---|
+| `leftElbowFlexionDegrees` | 8 of 8 |
+| `rightElbowFlexionDegrees` | 8 of 8 |
+| `leftShoulderElevationDegrees` | 8 of 8 |
+| `rightShoulderElevationDegrees` | 8 of 8 |
+| `trunkLeanDegrees` | 8 of 8 |
+| `leftKneeFlexionDegrees` | 8 of 8 |
+| `rightKneeFlexionDegrees` | 8 of 8 |
+| `footHeightGapCm` | **3 of 8** |
+| `trunkTurnDegrees` | **1 of 8** |
+
+`trunkTurnDegrees` is the athlete's facing along the drill's track, and only
+`hooks_outside_hand` turns, from 4 to 48 degrees. `footHeightGapCm` is flat at
+0.00 wherever both feet are level, which is five of the eight.
+
+**A flat curve is an honest reference for a drill where the quantity does not
+move.** It is not an export defect. A consumer should test the minimum against
+the maximum before treating agreement with a flat curve as evidence, and the
+exported file's own note now says so.
+
+The note says it WITHOUT the counts above, on purpose. A count in prose is a
+figure with no instrument on it, and five of those went stale in
+`docs/KNOWN_ISSUES.md` this same morning. The note states the shape of the
+thing, which cannot go stale. The counts are here, and they name the build
+they were read on.
+
+`trunkTurnDegrees` is also the one measure `video_measures` marks NOT
+CARRIABLE: the lift describes a pose, not a position in the gym. Its curve is
+the engine's half of a comparison whose other half video cannot supply.

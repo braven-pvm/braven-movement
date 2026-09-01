@@ -146,7 +146,13 @@ def main(argv: list[str]) -> int:
                     "the engine's own angle definitions, taken from the same "
                     "measurements build_library grades, and NOT every measure is "
                     "an angle. Read curves[measure][\"values\"] and honour "
-                    "curves[measure][\"unit\"]."
+                    "curves[measure][\"unit\"]. SOME CURVES ARE CONSTANT for "
+                    "some drills, because the quantity does not move in that "
+                    "drill: trunk turn is flat wherever the athlete does not "
+                    "turn. That is the drill's nature and not an export "
+                    "defect, and a curve is written whether it moves or not. "
+                    "Test min against max before treating agreement with a "
+                    "flat curve as evidence of anything."
                 ),
                 "measures": list(measures),
                 "movements": found,
