@@ -1836,6 +1836,31 @@ nothing grades there and which moves first.
 **THE PULL-BACK KEY REACHES THE LEGS BEFORE IT REACHES THE ARMS.** The input is
 a ball position for her hands. The first thing it moves is her stance.
 
+### The drill grades that knee, and the grade never notices
+
+`netball_overhead_pass` has a checkpoint on `leftKneeFlexionDegrees` at phase
+0.58 — the same phase — with a band of 35 to 85. Across the whole pull-back
+sweep:
+
+| ball back, cm | 0.0 | 3.1 | **6.2** | 9.3 | 18.6 | 24.8 | 31.1 |
+|---|---|---|---|---|---|---|---|
+| left knee | 57.67 | 57.91 | **66.07** | 62.22 | 54.26 | 64.17 | 63.55 |
+| right knee | 63.77 | 63.39 | **53.14** | 56.78 | 59.47 | 59.34 | 59.16 |
+| verdict against 35–85 | within | within | **within** | within | within | within | within |
+
+**NO VERDICT EVER CHANGES.** The left knee wanders from 54.26 to 66.07 — the
+knees exchange which is the more bent at 6.2 cm — and the band is wide enough
+that every one of those is "Good". A coach shown 66.07 at the step could
+equally have been shown 54.26, chosen by a 1.5 cm difference in an authored
+ball position, with the same verdict beside it either way.
+
+**THE LEFT-RIGHT KNEE GUARD DOES NOTICE.** The gap between the knees reaches
+**12.93 degrees** at that step, against this drill's recorded ceiling of 7.27,
+so `test_no_even_drill_solves_more_crookedly_than_it_did` goes red there. That
+is the guard doing what it was built for: it reads the DIFFERENCE, which no
+graded checkpoint does, and it reports a pose change that the drill's own grade
+calls good.
+
 ### What this adds to the sweep method
 
 `1fed5a1` established that method and already warns that **a coarse sweep can
