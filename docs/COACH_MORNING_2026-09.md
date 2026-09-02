@@ -9,7 +9,7 @@ coach watching the athlete, not by reading a number. Where the engine has an
 opinion it is stated as a measurement and never as a recommendation.
 
 Seven items carry evidence. One is STRUCK, because it was raised on a
-measurement that turned out to be a pose the athlete cannot hold. Three carry
+measurement the solver read from a second solution for that drill. Three carry
 no engine evidence, and say so.
 
 **One section of item 2 is withdrawn, and the withdrawal is written out rather

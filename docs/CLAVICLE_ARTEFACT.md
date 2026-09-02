@@ -126,14 +126,20 @@ elbow reads 72.82 before the mirror fix and 72.16 under the pin.
 **The 3.09 is a bistable knee and should not be quoted as the hand fix's cost
 either.** `two_hand_snatch_straight_back` ready left knee reads 52.60 in states
 A and C and 55.69 in B, D and E; it flips under any perturbation, including one
-with no hand change in it. Six of the largest eight moves are knees.
+with no hand change in it. **Seven of the largest eight moves are knees**; the
+eighth is the 0.17 degree elbow below.
 
 **The hand fix's largest move away from the knee channel is 0.17 degrees**, on
 `two_hand_snatch_straight_back` return left elbow. That is the honest figure.
 
 The largest change to any grip figure is **0.20 cm**, on `hooks_outside_hand`'s
-worst palm-skin gap, 0.013 to 0.214 cm — which moves it from unusually tight
-into the library's ordinary range of 0.11 to 0.37.
+worst palm-skin gap, 0.013 to 0.214 cm. Every other drill changes by 0.009 cm
+or less.
+
+An earlier version glossed that as moving the drill "from unusually tight into
+the library's ordinary range". **That gloss is dropped**, because 0.013 was not
+unusual: `one_hand_snatch_to_other_hand` reads 0.021 and `double_foot_landing`
+0.024 on the same build. The numbers are the statement.
 
 ## Excluding only what was proved
 

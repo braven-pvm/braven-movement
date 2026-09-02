@@ -420,8 +420,7 @@ class TheContactSeparationOnTheEvidencedPopulation(unittest.TestCase):
     def test_the_two_populations_are_still_distinguishable(self) -> None:
         """The anti-hollow clause for the split itself.
 
-        A gap pinned at 3.09 cm says nothing about whether the split is worth
-        keeping. What would kill it is the populations becoming the SAME, and
+        A pinned gap says nothing about whether the split is worth keeping. What would kill it is the populations becoming the SAME, and
         that is worth being told separately from a drift in the figure. The
         floor is the clinical five-degree threshold's length analogue: below a
         centimetre these are one population wearing two names.

@@ -1450,11 +1450,12 @@ degree turn. Refer to the entry below on the two basins.
 
 **IT ALSO REVERSED FOUR PUBLISHED FINDINGS**, three of which had left this
 repository. The stance change, the population convergence, the "one-handed
-drills are not a population" claim and the library-content gap were all
-measurements of a pose the athlete cannot hold. Refer to
-`docs/CLAVICLE_ARTEFACT.md` for the three-state table that settles it and for
-the corrected cost of the hand-mirror fix, whose reported largest graded move
-of 23.16 degrees was the artefact and whose real one is 3.09.
+drills are not a population" claim and the library-content gap were all read
+from the second basin. Refer to `docs/CLAVICLE_ARTEFACT.md` for the three-state
+table that settles it and for the corrected cost of the hand-mirror fix. Its
+reported largest graded move of 23.16 degrees belongs to the basin change; the
+3.09 that replaced it is a bistable knee, and the fix's largest move away from
+the knee channel is 0.17 degrees.
 
 **Two guards found it**, and both had been read as reporting something about the
 athlete: the elbow-pole tripwire and the turned-drill clause in
