@@ -56,8 +56,9 @@ STANCE_DEGREES = {
 # Ordinary drift on these is hundredths of a degree: across the hand-mirror fix
 # and the locked-parameter fix, every square drill moved by less than 0.05. The
 # flip this exists for is 33 degrees. Two is far above the one and far below the
-# other, and there is a great deal of room in between, so the number is not
-# delicate.
+# other, and there is a great deal of room in between, so THE NUMBER IS NOT
+# DELICATE — which is the property being aimed for. A guard whose threshold has
+# to be right is a guard somebody will retune.
 STANCE_TOLERANCE_DEGREES = 2.0
 
 if SOLVER:
