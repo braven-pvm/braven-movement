@@ -64,13 +64,30 @@ def build_of(directory: Path, drill: str) -> str:
         document = json.loads(receipt.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return "receipt unreadable"
-    stamp = document.get("build")
+    # `generatedFrom` FIRST, because that is the repository's one stamp and
+    # what every receipt written after 2026-09-02 carries.
+    #
+    # THE WRITER WAS CONVERGED AND THIS READER WAS NOT, for one commit, and the
+    # result was precisely backwards: a fresh receipt read "UNSTAMPED" while an
+    # archived pre-convergence one read its commit correctly. The single
+    # consumer of the stamp could not read the stamp. Converging a contract
+    # means both ends of it.
+    stamp = document.get("generatedFrom")
+    retired = False
+    if not stamp:
+        # `build` is the retired name this lane briefly wrote. It is read only
+        # so the ARCHIVED interim set stays legible, and it is labelled, so no
+        # reader mistakes a receipt from that window for a current one.
+        stamp = document.get("build")
+        retired = bool(stamp)
     if not stamp:
         # Every receipt written before 2026-09-02 is in this state, which is
         # the whole reason the stamp exists. Say it rather than leave a blank.
         return "UNSTAMPED, predates the build stamp"
     commit = str(stamp.get("commit", "unknown"))[:7]
-    return commit if stamp.get("treeWasClean") else f"{commit} DIRTY TREE"
+    if not stamp.get("treeWasClean"):
+        commit = f"{commit} DIRTY TREE"
+    return f"{commit} (retired `build` field)" if retired else commit
 
 
 def difference(before, after) -> dict:
