@@ -415,6 +415,12 @@ class Studio:
 
     def __init__(self, config):
         self.config = config
+        # ONE BUILD PER SESSION, read once here rather than at every receipt.
+        # Reading it per receipt let a commit made DURING a batch split one
+        # render across two builds, and each receipt would then name a commit
+        # that was not what drew its pictures. The athlete is built once and
+        # the build that draws her is fixed at the same moment.
+        self.build = git_build_stamp(MODULE_DIR)
         self.world_colour = config.presentation.studio.world_color
         (
             self.human,
@@ -614,10 +620,10 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
         )
 
     receipt_path = output / f"{job['movementId']}.render.json"
-    # WHICH BUILD DREW THIS. Read at write time from the tree this file lives
-    # in, never passed in by a caller, because a stamp a caller supplies is a
-    # claim about a build rather than a reading of one.
-    stamp = git_build_stamp(MODULE_DIR)
+    # WHICH BUILD DREW THIS: the session's, fixed when the athlete was built.
+    # Never passed in by a caller, because a stamp a caller supplies is a claim
+    # about a build rather than a reading of one.
+    stamp = studio.build
     receipt = {
         "movementId": job["movementId"],
         "skill": job["skill"],

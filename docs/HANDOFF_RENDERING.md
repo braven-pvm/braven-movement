@@ -615,6 +615,43 @@ Blender.
 
 Ordered by how much they cost.
 
+0. **THE RENDERER'S HAND IS NOT THE ENGINE'S HAND. Two sources, one athlete.**
+   Found 2026-09-02 while inventorying what the hand-mirror fix changed.
+
+   `spread_fingers` in `spikes/finger_wrap.py` fans the ENGINE's fingers. Until
+   PR #46 it negated the right hand, which collapsed that hand's fan from
+   14.37 cm to 1.75 and put its fingertips out of anatomical order.
+
+   **No Blender still ever showed that.** This renderer never reads the
+   engine's fan. It poses fingers from a constant in
+   `blender_mpfb_reference_catch.py`:
+
+       splay = {"index": 0.28, "middle": 0.08, "ring": -0.08, "pinky": -0.22}
+
+   one set of numbers for both hands, mirrored by the rig's own lateral axis.
+   Measured on the pre-fix `coldstart-stills` receipts, the two hands mirror
+   cleanly on every digit — thumb x +20.9 both sides, z +20.2 against −20.1.
+
+   **So for the library's whole life the coach figures showed a correctly
+   fanned hand while the engine's own hand was fused, and only the skeletal
+   players showed the engine's.** A coach grading a still and a coach grading a
+   player were looking at two different hands, and nothing said so.
+
+   The job carries `hands.{l,r}.fingerDirection` and `palmNormal`, which are
+   wrist and knuckle DIRECTIONS. It carries no finger fan at all, so there is
+   nothing here to consume even if this module wanted to.
+
+   **QUEUED, NOT BUILT, and it is a design change rather than a fix:** the
+   renderer should take the engine's finger pose so there is one source of
+   truth for a hand.
+
+   **The work starts at the boundary contract, not at the renderer.** The
+   renderer cannot consume a finger fan that the job does not carry, so the
+   first question is what the job must carry, under the rule that already
+   governs this boundary: a POSE crosses as geometry, and a RANGE OF MOTION
+   crosses as a rotation about the anatomical axis. Anyone who begins by
+   editing this module has begun in the wrong place.
+
 1. **CLOSED. She gripped nothing. The knuckle never flexed.** Kept in full
    because the reasoning is the lane's most useful record, and because
    `scripts/report_clearance.py` refers to this number.

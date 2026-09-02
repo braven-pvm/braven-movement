@@ -388,16 +388,24 @@ class BlenderSourceContractTest(unittest.TestCase):
             encoding="utf-8"
         )
 
-        places = _code_positions(
-            renderer, "render_job",
-            ("git_build_stamp", "receipt_path.write_text"),
-        )
-        self.assertIn("git_build_stamp", places, "no build is read")
-        self.assertLess(
-            places["git_build_stamp"], places["receipt_path.write_text"],
-            "read the build BEFORE writing the receipt",
-        )
         self.assertIn('"build": stamp', renderer)
+        self.assertIn("stamp = studio.build", renderer)
+
+        # ONE BUILD PER SESSION. Reading it inside render_job, at every
+        # receipt, let a commit made DURING a batch split one render across two
+        # builds, each receipt naming a commit that was not what drew its
+        # pictures. It is read where the athlete is built and fixed there.
+        session = _code_positions(
+            renderer, "__init__", ("git_build_stamp",)
+        )
+        self.assertIn("git_build_stamp", session,
+                      "the session must read the build once, at startup")
+        self.assertNotIn(
+            "git_build_stamp", _code_positions(
+                renderer, "render_job", ("git_build_stamp",)
+            ),
+            "render_job must NOT re-read the build per receipt",
+        )
 
     def test_a_run_that_rendered_nothing_does_not_report_a_pass(self):
         """PASS must mean something was produced, not that the code returned.
