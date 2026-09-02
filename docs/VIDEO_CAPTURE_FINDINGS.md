@@ -178,6 +178,31 @@ entirely. No analysis recovers a joint the cameras never saw.
 athlete turned around between them; or choose drills where the near arm is the
 working one, and say which arm each clip is for.
 
+**THE THIRD OPTION IS ALMOST NEVER AVAILABLE, and the counts are worse than the
+table above.** Added 2026-09-02 by the video-readiness lane, counted from the
+lift's own rows and from `MovementDefinition.graded_measures()`:
+
+| landmark | left | right |
+|---|---|---|
+| elbow | 734 | **0** |
+| knee | 442 | **0** |
+| wrist | 731 | 28 |
+| ankle | 199 | 14 |
+
+**The right elbow and the right knee appear in ZERO of 735 frame pairs.** The
+wrist's 28 was the number this section already carried; the joints the library
+actually grades are worse, and they are nothing at all.
+
+**Seven of the eight drills grade at least one RIGHT-side measure** —
+`rightElbowFlexionDegrees` in six of them, `rightShoulderElevationDegrees` in
+two, `rightKneeFlexionDegrees` in one. So "choose drills where the near arm is
+the working one" leaves exactly ONE drill in the library, and the option should
+not be read as a general escape from the first two.
+
+**A 90-degree pair costs three of the nine graded measures outright.** The
+dry-run gate reports those three as having no evidence at all, per measure,
+which is where this shows up if it is not fixed at the shoot.
+
 ### 6. Cameras within about four metres
 
 The pose model's own card puts people further than about 4 metres out of scope.
@@ -331,6 +356,20 @@ for 35 percent of its window, more than double the next highest.
 **Instruction: the ball must be visibly in frame for every repetition that is
 to be graded.** Frame for it. If a repetition's ball leaves the picture, that
 repetition is not gradeable, whatever its numbers look like.
+
+**Instruction: frame high enough that the ball stays in shot through its
+flight.** Added 2026-09-02 after watching all twelve repetitions frame by
+frame. **This is a second and separate cause of a missing ball, and it is not
+the athlete's doing.** Repetition 2 is a real catch — the ball is plainly in
+her hands at 11.200 to 11.400 — and the ball then leaves the TOP of the frame
+at 11.633, before the anchored moment at 11.733. Repetition 7 is the same
+shape with a tighter margin: the ball is in frame at the anchor of 17.200 and
+half out of it by 17.233, one frame later.
+
+So a repetition can be a genuine catch, correctly found, and still carry no
+ball at the moment the gate asks about — because the camera does not frame the
+ball's flight. Of the three repetitions in session 1.0 with no ball at the
+anchor, two are gesture stretches and ONE IS THIS.
 
 **Instruction: put a slate between repetitions** — a clap of the hands, a
 raised marker, anything that appears in both views and cannot be confused with

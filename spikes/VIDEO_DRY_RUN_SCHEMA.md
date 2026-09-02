@@ -353,6 +353,38 @@ ball:
 **What a person looking at a frame strip found, no number in the pipeline
 could.** That is worth stating plainly in a document full of numbers.
 
+### What the rest of the looking then found
+
+The four repetitions left null were watched on 2026-09-02, and the result was
+not the expected one. **Three of the twelve have no ball at the anchored
+moment, and for TWO different causes:**
+
+- **Repetitions 0 and 8 are gesture stretches** — no ball anywhere in the
+  window, the athlete standing and talking.
+- **Repetition 2 is a REAL CATCH.** The ball is plainly in her hands at 11.200
+  to 11.400 and leaves the TOP of the frame at 11.633, before the anchor at
+  11.733. The camera does not frame the ball's flight.
+
+Those need different instructions and the annotation records which is which.
+Two more passed by margins worth knowing: repetition 5 by 25 ms, repetition 7
+by a single frame.
+
+**Two method notes came out of the looking, and both cost time to learn.**
+
+*Magnify before calling a frame ambiguous.* At 230 pixels wide, repetition 7's
+ball read as an indeterminate dark blur and was nearly recorded null. A
+top-crop at full resolution showed it unambiguously in three consecutive
+frames. The close look is part of the method, not an extra.
+
+*Do not fast-seek a variable-rate file and then label with a fixed offset.*
+`-ss` BEFORE `-i` with a drawtext offset — the method the clip manifests record
+— was accurate to a frame on the CONSTANT-rate front camera and badly wrong on
+the VARIABLE-rate side camera. Frames labelled 16.930 to 17.230 showed a catch
+where an accurate seek at those true timestamps shows the athlete standing and
+talking. Taken at face value, **the two views appeared to disagree about
+whether she was catching a ball at all.** Select by timestamp, or seek
+accurately, and label with the TRUE container PTS.
+
 ## Open, and deliberately so
 
 - **The gate has never opened on real footage.** It opens on a synthetic

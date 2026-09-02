@@ -236,6 +236,17 @@ class TheCommittedAnnotationForSessionOne(unittest.TestCase):
         self.assertEqual(self.document["schemaVersion"], SCHEMA_VERSION)
         self.assertEqual(len(self.document["repetitions"]), 12)
 
+    def test_the_two_no_ball_causes_are_distinguished_in_the_evidence(self):
+        """THREE repetitions have no ball at the anchor and for TWO reasons.
+        A gate that recorded only the count would lose the distinction, and
+        the two need different shoot instructions."""
+        rows = {r["index"]: r["evidence"] for r in self.document["repetitions"]}
+
+        self.assertIn("gesturing", rows[0])
+        self.assertIn("NO BALL ANYWHERE", rows[8])
+        self.assertIn("leaves the TOP of the frame", rows[2])
+        self.assertIn("not a gesture", rows[2])
+
     def test_it_records_the_repetition_this_whole_condition_exists_for(self):
         first = self.document["repetitions"][0]
 
@@ -243,18 +254,32 @@ class TheCommittedAnnotationForSessionOne(unittest.TestCase):
         self.assertIs(first["ballVisible"], False)
         self.assertIn("NO BALL IS PRESENT", first["evidence"])
 
-    def test_it_says_null_where_nothing_was_recorded_about_the_picture(self):
-        """Four repetitions were rejected on RANKING alone. Inferring a ball
-        from a rejection that never mentioned one would be the fabrication this
-        file exists to prevent."""
+    def test_nothing_is_left_unlooked_at(self):
+        """The four rejected on RANKING alone have now been watched. While
+        they were null they were correctly null — inferring a ball from a
+        rejection that never mentioned one would have been fabrication."""
         unlooked = [r["index"] for r in self.document["repetitions"]
                     if r["ballVisible"] is None]
 
-        self.assertEqual(unlooked, [2, 5, 7, 8])
+        self.assertEqual(unlooked, [])
 
-    def test_it_names_its_source_rather_than_claiming_a_fresh_look(self):
-        self.assertIn("NOT A FRESH LOOK", self.document["method"])
-        self.assertIn("manifest", self.document["method"])
+    def test_it_says_which_rows_are_transcribed_and_which_are_a_fresh_look(self):
+        """Two kinds of row with different authority, and a reader must be able
+        to tell them apart without knowing the history."""
+        self.assertIn("TWO KINDS OF ROW", self.document["method"])
+        self.assertIn("TRANSCRIBED", self.document["method"])
+        self.assertIn("FRESH LOOK", self.document["method"])
+
+        fresh = [r["index"] for r in self.document["repetitions"]
+                 if "A FRESH LOOK" in r["evidence"]]
+        self.assertEqual(fresh, [2, 5, 7, 8])
+
+    def test_it_carries_the_seek_warning_that_the_fresh_look_produced(self):
+        """Fast seek on the variable-rate side camera shifted timestamps far
+        enough that the two views appeared to disagree about whether she was
+        catching a ball. The clip manifests record that same method."""
+        self.assertIn("FAST SEEK", self.document["seekWarning"])
+        self.assertIn("VARIABLE-rate", self.document["seekWarning"])
 
     def test_it_carries_the_build_its_windows_came_from(self):
         source = self.document["windowSource"]
@@ -278,8 +303,9 @@ class TheCommittedAnnotationForSessionOne(unittest.TestCase):
         found = judge(self.document, windows)
 
         self.assertIs(found["passes"], False)
-        self.assertEqual(found["withoutBall"], [0])
-        self.assertEqual(found["withBall"], [1, 3, 4, 6, 9, 10, 11])
+        self.assertEqual(found["withoutBall"], [0, 2, 8])
+        self.assertEqual(found["withBall"], [1, 3, 4, 5, 6, 7, 9, 10, 11])
+        self.assertEqual(found["notLookedAt"], [])
 
 
 if __name__ == "__main__":

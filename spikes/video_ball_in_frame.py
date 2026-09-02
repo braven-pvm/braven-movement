@@ -237,8 +237,11 @@ def judge(annotation: Mapping | None, alignments: Sequence[Mapping]) -> dict:
         detail = (
             f"{len(without)} of {total} repetitions have NO BALL IN FRAME: "
             f"{', '.join(str(n) for n in without)}. Every reading in this "
-            "report is computed across the repetitions, so one gesture among "
-            "them contaminates the set.")
+            "report is computed across the repetitions, so any one of them "
+            "without a ball contaminates the set. A repetition can reach this "
+            "list two ways — the athlete was gesturing, or the ball left the "
+            "frame before the anchored moment — and the annotation's evidence "
+            "says which.")
     elif unlooked:
         passes = None
         detail = (
