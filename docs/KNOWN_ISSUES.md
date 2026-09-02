@@ -1942,6 +1942,83 @@ the shoulder is the pose the manual warns against, and reaching it for a large
 pull-back is correct. **The fault is that it is reached for SOME pull-backs and
 not for larger ones.** Why is the same open question as the lower body's, and
 constraining the solve is NOT proposed here.
+## The release seam and the frame-81 stall are one defect
+
+Two hitches were reported separately by the PR #60 reviewer: shoulder elevation
+jumping about seven degrees at the release frame, and an elbow stall five
+frames later. **They are the same thing, and both are products of one line of
+easing.** Measured on `2169157`.
+
+### The hands are not already moving
+
+`possession.py` eases the follow-through aim point out of the release with
+`out = 1 − (1 − t)²`. **An ease-out has its greatest slope at t = 0, so it
+begins at full speed.** The comment beside it justified that by saying the
+hands "are already moving when she lets go, because they drove the ball".
+
+**They are not.** The right wrist, in centimetres per frame:
+
+| | five frames BEFORE the release | five frames AFTER |
+|---|---|---|
+| `overhead_pass` | 0.86, 0.84, 0.81, 0.77, 0.72 | **7.37**, 6.29, 5.28, 4.32, 2.91 |
+| `chest_pass` | 0.59, 0.58, 0.57, 0.55, 0.55 | **4.09**, 3.54, 3.02, 2.70, 0.85 |
+
+**The hand speed multiplies by 8.6 and by 7.0 at that one frame**, then decays.
+So the easing fixes the FAR end of the follow-through, where the arm arrives at
+extension instead of stopping dead, and makes the NEAR end a step change in
+hand velocity. That step is the seam.
+
+The first frame of the follow-through is t = 0.1389 of it. The three easings
+place the aim point at:
+
+| easing | first frame |
+|---|---|
+| linear, `t` | 0.1389 of the distance |
+| **ease-out, `1 − (1 − t)²`, shipped** | **0.2585** |
+| smoothstep, `3t² − 2t³` | 0.0525 |
+
+### The stall goes with it
+
+The left elbow's signed step, frames 78 to 85. A positive value is the elbow
+OPENING in the middle of a close.
+
+| | 78 | 79 | 80 | **81** | 82 | 83 |
+|---|---|---|---|---|---|---|
+| `overhead_pass`, shipped | −6.66 | −9.29 | −12.06 | **+0.53** | −5.83 | −2.81 |
+| `chest_pass`, shipped | −12.05 | −12.17 | −15.28 | **+1.77** | −5.62 | −2.63 |
+| either drill, smoothstep | | | | **no reversal** | | |
+| either drill, linear | | | | **no reversal** | | |
+
+**The reversal appears on both drills under the shipped easing and on neither
+drill under either alternative.** It is not a separate hitch.
+
+### The choice is a trade, so it is NOT made here
+
+| | seam at 76→77, elevation | worst elevation step | worst elbow step |
+|---|---|---|---|
+| **ease-out, shipped** | **7.02** / **5.32** | 7.02 at the seam / 6.01 | 12.06 / 15.28 |
+| smoothstep | **1.65** / **1.00** | 4.44 at frame 15 / 6.80 | 13.78 / 16.97 |
+| linear | 4.17 / 2.76 | 4.44 at frame 15 / 5.99 | 13.90 / 11.24 |
+
+Overhead pass first, chest pass second, in degrees.
+
+**Smoothstep cuts the seam by a factor of four and five and raises the worst
+elbow step.** Under it the overhead's worst elevation step stops being at the
+release at all and moves to frame 15, which is a feature linear shares and
+which has nothing to do with this. **No easing wins on every measure**, so
+replacing the line is a judgement about which hitch matters, not a repair.
+
+**WHAT IS FIXED HERE: the comment**, whose stated reason was false and is
+withdrawn in place. **WHAT IS NOT: the easing.** It needs a ruling, and the
+table above is what a ruling needs.
+
+### What is not settled
+
+Whether the arm should leave the release from rest at all. A real
+follow-through starts while the hands are still driving the ball, so the honest
+fix may be that the CARRY should already be accelerating before the release
+rather than that the follow-through should start slower. Nothing here measures
+that, and no change to the carry is proposed.
 
 ## The lower body has no stable solution
 
