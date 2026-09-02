@@ -611,6 +611,58 @@ Blender.
   `LICENCE-RISK.md`.
 - **three.js:** not committed. Fetched on demand.
 
+## The hand-mirror re-render, 2026-09-02
+
+### The evidence is archived outside git
+
+    F:\Repositories\braven-movement\.assets\archives\rerender-hand-mirror-2026-09-02
+    226 files, combined sha256
+    6b0365b0bdea05f64ff9c11c2db797e5d6d00ccb989eaae7b95f2e70d541b064
+
+Three states of the same eight drills: the last batch before the fix (31 Aug,
+unstamped), the interim batch on `05e58cd`, and the jobs that produced each.
+`out/` is gitignored and lives in one worktree, so this set was one worktree
+event from not existing. `PROVENANCE.md` and `SHA256SUMS.txt` are beside it.
+
+**The interim batch is NOT the corrected figures.** `ac240b2` carries a solver
+defect, and that batch is kept only as the middle state of the record.
+
+### Hand symmetry on the interim batch, stated as a funnel
+
+A single number here misleads, because most phases are not eligible.
+
+    33 phases rendered
+    18 hold the ball
+    16 have BOTH hands measured above the flexion floor   <- the population
+       13 pose the arms symmetrically, mirror within 10 degrees
+        3 are asymmetric BY DESIGN
+    mirror breaks among the 13: ZERO
+
+The three asymmetric phases are `deflect_high contact` at 31.6 degrees apart,
+`hooks_outside_hand gather` at 126.2 and `pull_in` at 122.0. **An earlier
+summary of this pack said "122 to 126", which silently dropped the 31.6 one.**
+Quote the population and the range, or a reader takes the extremes for the set.
+
+### Two build stamps exist, and this lane wrote the second one
+
+`spikes/build_stamp.py` writes `generatedFrom`. `render_receipt.py` writes
+`build`. **Same concept, two names, two implementations, and the older one is
+richer** — it carries `uncommittedPaths` and `uncommittedDiffSha256`, so two
+dirty builds can be told apart rather than merely flagged.
+
+The consequence is not theoretical. `spikes/archive_receipts.py` reads
+`generatedFrom`, so it REFUSED this pack's archive outright:
+
+    REFUSED: 8 of 8 receipts carry no generatedFrom stamp
+
+The archive above was written by hand for that reason. **This lane filed defect
+0 about two sources of truth for a hand, and then created a second source of
+truth for a build stamp on the same day, without finding the first.**
+
+**QUEUED: converge on `generatedFrom` and one implementation.** The post-pin
+re-render is the moment to do it, because that batch's receipts should be
+archivable by the tool rather than by hand.
+
 ## Known defects and open work
 
 Ordered by how much they cost.

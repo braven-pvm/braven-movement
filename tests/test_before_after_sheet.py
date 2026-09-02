@@ -22,7 +22,7 @@ class BuildOfTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             here = Path(folder)
             (here / "d.render.json").write_text(json.dumps(
-                {"build": {"commit": "ac240b27db9c", "treeWasClean": True}}
+                {"generatedFrom": {"commit": "ac240b27db9c", "treeWasClean": True}}
             ), encoding="utf-8")
 
             self.assertEqual("ac240b2", build_of(here, "d"))
@@ -36,7 +36,7 @@ class BuildOfTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             here = Path(folder)
             (here / "d.render.json").write_text(json.dumps(
-                {"build": {"commit": "ac240b27db9c", "treeWasClean": False}}
+                {"generatedFrom": {"commit": "ac240b27db9c", "treeWasClean": False}}
             ), encoding="utf-8")
 
             self.assertIn("DIRTY", build_of(here, "d"))
@@ -54,6 +54,37 @@ class BuildOfTest(unittest.TestCase):
             ), encoding="utf-8")
 
             self.assertIn("UNSTAMPED", build_of(here, "d"))
+
+    def test_a_receipt_carrying_the_RETIRED_field_is_read_and_labelled(self):
+        """The archived interim set carries `build`, and must stay legible.
+
+        It is read so that archive remains readable, and LABELLED so nobody
+        mistakes a receipt from that one-commit window for a current one.
+        """
+        with tempfile.TemporaryDirectory() as folder:
+            here = Path(folder)
+            (here / "d.render.json").write_text(json.dumps(
+                {"build": {"commit": "05e58cd1234", "treeWasClean": True}}
+            ), encoding="utf-8")
+
+            said = build_of(here, "d")
+
+            self.assertIn("05e58cd", said)
+            self.assertIn("retired", said)
+
+    def test_the_converged_stamp_beats_the_retired_one_when_both_are_present(self):
+        """Data from the current contract wins. The fallback is a fallback."""
+        with tempfile.TemporaryDirectory() as folder:
+            here = Path(folder)
+            (here / "d.render.json").write_text(json.dumps({
+                "generatedFrom": {"commit": "9999999aaa", "treeWasClean": True},
+                "build": {"commit": "05e58cd1234", "treeWasClean": True},
+            }), encoding="utf-8")
+
+            said = build_of(here, "d")
+
+            self.assertEqual("9999999", said)
+            self.assertNotIn("retired", said)
 
     def test_a_missing_receipt_is_named_and_not_guessed(self):
         with tempfile.TemporaryDirectory() as folder:

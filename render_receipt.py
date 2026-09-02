@@ -15,57 +15,27 @@ can call it, because the renderer imports `bpy` and its tests skip.
 
 from __future__ import annotations
 
-import subprocess
-from pathlib import Path
-
 PASS = "PASS"
 NOTHING_RENDERED = "NOTHING RENDERED"
 
-UNKNOWN_COMMIT = "unknown"
 
-
-def build_stamp(revision: str, status: str, *, available: bool = True) -> dict:
-    """Which build produced this, and whether the tree was clean.
-
-    THIS DID NOT EXIST UNTIL 2026-09-02, and its absence was the whole problem.
-    All 63 receipts on disk carry `jobSha256` and nothing else that identifies
-    a build: the hash of the JOB, never of the code that rendered it. So when a
-    fix landed on 1 Sep and someone asked which pictures predated it, the only
-    available answer was the file's modification time — which says when a file
-    was written, not what wrote it.
-
-    `treeWasClean` is the half that is easy to leave out and worth more. A
-    receipt naming a commit, produced from a working tree with edits in it,
-    names a build that never existed. It must say so rather than name the
-    commit alone.
-
-    A tree whose state could not be read is `unknown` and NEVER clean. Absence
-    of a check is not a passing check, which is the rule this pipeline has now
-    applied to a render outcome, a video provenance and a flexion axis.
-    """
-    if not available or not revision:
-        return {"commit": UNKNOWN_COMMIT, "treeWasClean": None,
-                "note": "git could not be read, so neither field is a claim"}
-    return {"commit": revision.strip(), "treeWasClean": status.strip() == ""}
-
-
-def git_build_stamp(root: Path) -> dict:
-    """Read the build stamp from a working tree, or say it could not be read."""
-    def run(*arguments: str) -> str | None:
-        try:
-            finished = subprocess.run(
-                ["git", "-C", str(root), *arguments],
-                capture_output=True, text=True, timeout=30,
-            )
-        except (OSError, subprocess.SubprocessError):
-            return None
-        return finished.stdout if finished.returncode == 0 else None
-
-    revision = run("rev-parse", "HEAD")
-    status = run("status", "--porcelain")
-    if revision is None or status is None:
-        return build_stamp("", "", available=False)
-    return build_stamp(revision, status)
+# THE BUILD STAMP IS NOT HERE, AND IT WAS, FOR A DAY.
+#
+# `spikes/build_stamp.py` already wrote one, in a shape the whole repository
+# shares, before this module wrote a second. Two names for one concept —
+# `generatedFrom` there, `build` here — and the older one is RICHER: it carries
+# `uncommittedPaths` and `uncommittedDiffSha256`, so two dirty builds can be
+# told apart rather than merely flagged. It is also cached for the life of the
+# process, so every receipt of one run carries the same stamp and a directory
+# can be recognised as one set.
+#
+# The consequence was not theoretical. `spikes/archive_receipts.py` reads
+# `generatedFrom` and REFUSED this lane's archive outright, so an irreplaceable
+# set had to be hashed and described by hand.
+#
+# This lane filed a defect about two sources of truth for a HAND and then
+# created a second source of truth for a BUILD on the same day, without looking
+# for the first. Look for the existing one first.
 
 
 def render_outcome(phase_count: int, animation: object | None) -> str:
