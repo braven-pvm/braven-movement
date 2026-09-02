@@ -340,6 +340,7 @@ class TheContactSeparationOnTheEvidencedPopulation(unittest.TestCase):
         }
         cls.two_handed: dict[str, float] = {}
         cls.one_handed: dict[str, float] = {}
+        cls.not_a_catch: dict[str, float] = {}
         for movement_id in library():
             if not (has_ball(movement_id) and has_technique(movement_id)):
                 continue
@@ -353,6 +354,33 @@ class TheContactSeparationOnTheEvidencedPopulation(unittest.TestCase):
                     points[index["l_lowarm"]] - points[index["r_lowarm"]]
                 )
             )
+            # A CATCH ONLY. This measures the elbows at the moment she TAKES
+            # the ball, so a drill that begins holding it has no such moment:
+            # its contact frame is frame 0 by definition, and frame 0 of a pass
+            # is the ball against her chest with the elbows wide.
+            #
+            # Measured on the pinned build 02b25cd: netball_chest_pass reads
+            # 53.41 cm there, against 28.90 to 40.37 over every two-handed
+            # drill that actually catches. Including it moves the two-handed
+            # mean from 36.43 to 38.86, which is 2.36 outside MEASURED_CM's
+            # half-centimetre delta, and moves the gap below from 20.96 to
+            # 18.53. The two figures move by the same 2.43, because a pass
+            # enters only the two-handed group and leaves the one-handed one
+            # untouched.
+            #
+            # This is this class's own stated failure — a mean over the wrong
+            # population — arriving from a new direction.
+            #
+            # RE-MEASURED, AND THE FIRST READING IS SUPERSEDED. On ac240b2 this
+            # comment said the pass closed the gap from 3.09 to 0.66. That
+            # collapse was mostly the clavicle artefact and not the pass: 3.09
+            # was never true of the athlete. Refer to docs/CLAVICLE_ARTEFACT.md
+            # and to ONE_HANDED_GAP_CM above. The MECHANISM was right on both
+            # builds and only the numbers moved.
+            states = [frame["ballState"] for frame in result["measurements"]]
+            if "flight" not in states[:contact]:
+                cls.not_a_catch[movement_id] = separation
+                continue
             sides = set(result["possession"].frames[contact].sides)
             where = cls.two_handed if sides == {"l", "r"} else cls.one_handed
             where[movement_id] = separation
@@ -367,6 +395,27 @@ class TheContactSeparationOnTheEvidencedPopulation(unittest.TestCase):
             "no drill was excluded, so the population restriction below does "
             "nothing and this class is back to averaging the whole library",
         )
+
+    def test_a_drill_that_never_caught_the_ball_is_excluded(self) -> None:
+        """The anti-hollow clause for the catch restriction itself.
+
+        Added when the first pass arrived. It is a separate assertion rather
+        than a comment because the restriction above is invisible while the
+        library is all catches: it would silently become a no-op the day the
+        pass family were renamed or removed, and the mean would drift back
+        without anything going red.
+        """
+        self.assertTrue(
+            self.not_a_catch,
+            "no drill was excluded as a non-catch, so the restriction in "
+            "setUpClass does nothing. Either the pass family is gone, in which "
+            "case delete the restriction, or a pass is being averaged into a "
+            "catching population again.",
+        )
+        for movement_id, separation in self.not_a_catch.items():
+            with self.subTest(movement=movement_id):
+                self.assertNotIn(movement_id, self.two_handed)
+                self.assertNotIn(movement_id, self.one_handed)
 
     def test_the_separation_on_the_evidenced_population(self) -> None:
         """The measurement, pinned so the deferred gap cannot grow in silence.

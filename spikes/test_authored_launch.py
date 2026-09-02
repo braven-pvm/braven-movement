@@ -99,21 +99,36 @@ def minimal(**extra) -> dict:
     return body
 
 
+# Which ball files author a launch, by design. Everything else must derive.
+#
+# This list replaces a blanket "nothing authors one", which was true until the
+# pass family arrived and which fired, correctly, on the first pass. The check
+# is kept rather than dropped, and it is now stronger: it catches a launch
+# APPEARING in a catch drill, where it would silently replace the derived
+# return, AND a launch DISAPPEARING from a pass, where the derivation sends the
+# ball backwards over her shoulder. Both are the same silent class of fault.
+AUTHORS_A_LAUNCH = {"netball_chest_pass.ball.json"}
+
+
 class ItIsAdditive(unittest.TestCase):
     """The claim that nothing existing changes, measured rather than asserted."""
 
-    def test_every_ball_file_in_the_library_still_derives(self) -> None:
+    def test_only_the_pass_family_authors_a_launch(self) -> None:
         found = 0
+        authored = set()
         for path in sorted(MOVEMENT_DIR.glob("*" + BALL_SUFFIX)):
-            ball = load_ball(path)
+            if load_ball(path).launch is not None:
+                authored.add(path.name)
             found += 1
-            with self.subTest(ball=path.name):
-                self.assertIsNone(
-                    ball.launch,
-                    f"{path.name} authors a launch, so this file's claim that "
-                    "the change is additive no longer holds for it",
-                )
         self.assertGreater(found, 5, "no ball file was read")
+        self.assertEqual(
+            authored,
+            AUTHORS_A_LAUNCH,
+            "the set of ball files authoring a launch changed. A launch that "
+            "appears in a catch drill silently replaces its derived return; a "
+            "launch that disappears from a pass sends the ball backwards over "
+            "her shoulder. If the change is intended, update AUTHORS_A_LAUNCH.",
+        )
 
     def test_a_file_without_a_launch_loads_without_one(self) -> None:
         self.assertIsNone(load_ball(written(minimal())).launch)

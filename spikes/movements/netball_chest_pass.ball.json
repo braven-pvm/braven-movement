@@ -1,0 +1,41 @@
+{
+  "movementId": "netball_chest_pass",
+  "variant": null,
+  "source": "Authored by hand, NOT by author_flight.py. That tool authors an incoming flight from a passer position, and this drill has no incoming flight: the athlete starts with the ball.",
+  "startsWithTheBallNote": "THE AUTHORING RULE FOR ANY DRILL THAT STARTS WITH THE BALL, measured before this file was written. Put BOTH keys where the ball actually is, in her hands, and name the smallest tidy arrival. DO NOT INVENT AN INCOMING FLIGHT TO SATISFY THE arrival FIELD. The field is required and it is satisfiable honestly: the two keys below say the ball is in her hands at 0.0 and still in her hands at 0.02, and both statements are true. Contact then resolves to FRAME 0 and the ball is never in a flight state, so nothing fictional is computed and nothing fictional is drawn. AN INVENTED FLIGHT IS VISIBLE: authoring a first key out of reach with arrival at 0.20 put the athlete in a flight state for 16 frames of a 96 frame drill, silently and with no error. Measured across four cases; the guard in test_starts_with_the_ball.py now catches it mechanically, because a note is not a test.",
+  "radiusCm": 11.0,
+  "radiusFraction": 0.2088,
+  "arrival": {
+    "atPhase": 0.02
+  },
+  "arrivalNote": "A formality, not a catch. arrival names the frame possession transfers, and for a pass that already happened before the drill began. 0.0 is refused by load_ball, which requires release < arrival, so 0.02 is the smallest tidy value. Nothing measurable depends on which value is chosen while both keys sit in her hands: 0.02 and 0.50 both give contact at frame 0 and no flight state.",
+  "keys": [
+    {
+      "atPhase": 0.0,
+      "name": "in_her_hands",
+      "across": 0.0,
+      "up": 0.12,
+      "ahead": 0.55,
+      "note": "Where the ball is when the drill starts. These are netball_two_hand_catch_chest's own secured-ball numbers converted from torso lengths back to arm lengths, 0.12205 and 0.55938 divided by 1.017053, because a chest pass starts where a chest catch finishes."
+    },
+    {
+      "atPhase": 0.02,
+      "name": "still_in_her_hands",
+      "across": 0.0,
+      "up": 0.12,
+      "ahead": 0.55,
+      "note": "The same place. The flight this pair describes has zero length, which is the honest description of a ball that never flew."
+    }
+  ],
+  "launch": {
+    "target": {
+      "across": 0.0,
+      "up": 0.0,
+      "ahead": 4.0
+    },
+    "speedCmPerSecond": 600.0
+  },
+  "launchTargetNote": "PROVISIONAL. 4.0 arm lengths ahead is author_flight.DEFAULT_PASSER_AHEAD, the distance every feed in this library is thrown from, so this pass sends the ball back exactly where the chest catch's feed came from and the two drills stay geometrically consistent. THE MANUAL DISAGREES and a coach must settle it: the manual's own chest pass drill says the players stand 5 to 7 m apart, which is 9.5 to 13.3 arm lengths on the reference athlete, not 4.0 which is 2.11 m. The distance changes the arc, not the direction. up is 0.0 because a receiver of similar height has her hands at the same height as this athlete's chest, which is where the stance frame is anchored.",
+  "launchSpeedNote": "PROVISIONAL, AND IT INHERITS AN OPEN QUESTION RATHER THAN SETTLING ONE. 600 cm/s is author_flight.DEFAULT_SPEED_CM, the one speed the whole library uses. docs/KNOWN_ISSUES.md, 'The ball speed for the whole library is one undocumented constant', records that it has no coach, no measurement and no source, and that its own comment says a game pass is faster. Authoring a different number here would invent a second unsourced constant, so this file uses the library's and says plainly that the question is on the coach agenda. IT IS THE HORIZONTAL COMPONENT, not the speed the ball leaves the hand at; refer to the Launch docstring in ball_track.py.",
+  "supersedesNote": "This file makes one sentence in docs/KNOWN_ISSUES.md stale, and it is named here rather than left to rot: 'The failure mode that docstring warns about, an early hold making her throw harder, does NOT fire today. Every drill has a real parabola.' THIS DRILL HAS NO INCOMING PARABOLA. The failure mode still does not fire, because the authored launch bypasses the derivation entirely, but the reason has changed and the sentence's evidence no longer holds for the whole library."
+}

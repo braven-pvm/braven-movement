@@ -44,6 +44,12 @@ CLASSES = {
     "netball_hooks_outside_hand": ("catch", "hooks-outside-hand", "contact"),
     "netball_deflect_high": ("block", "deflect-high", "contact"),
     "netball_double_foot_landing": ("land", "double-foot", "land"),
+    # The first `pass`, and the first moment that is not a contact or a
+    # landing. `chest-pass` is in Tactics' own RELEASE_KINDS; `release` is the
+    # frame the hands come off the ball, which the technique file declares and
+    # the possession model derives independently. The exporter prints the
+    # difference between the two, as it does for every other clip.
+    "netball_chest_pass": ("pass", "chest-pass", "release"),
 }
 
 # Above this much root travel, a clip is not in place and the consumer must
