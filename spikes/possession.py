@@ -124,10 +124,51 @@ class Frame:
 class Possession:
     frames: tuple[Frame, ...]
     contact_frame: int | None
+    # Where the ball left her hands and how fast, for a drill that passes.
+    # None wherever she never lets go, which is every catch.
+    #
+    # THE ENGINE COMPUTED THIS AND THREW IT AWAY until 2026-09-02. It was a
+    # local in `possess`, used to walk the ball forward frame by frame and
+    # then discarded, so nothing downstream could ask where the ball ENDS UP.
+    # Every question about the library's one ball speed has been answered by
+    # hand arithmetic outside the engine for that reason, and the answers have
+    # disagreed with each other. Refer to "The ball speed for the whole library
+    # is one undocumented constant" in docs/KNOWN_ISSUES.md.
+    launch_from: np.ndarray | None = None
+    launch_velocity: np.ndarray | None = None
 
     @property
     def caught(self) -> bool:
         return self.contact_frame is not None
+
+    def apex(self) -> dict | None:
+        """The highest the outgoing ball gets, and where.
+
+        COMPUTED FROM THE LAUNCH, NOT SAMPLED FROM THE FRAMES. Every clip in
+        this library ends while its ball is still in the air — both passes
+        release at 0.80 of the clip and are still descending at the last
+        frame — so a peak read off the frames would be the peak of the part
+        that happens to be drawn.
+
+        Plain ballistics without drag, which is what the engine flies. `None`
+        where she never lets go.
+        """
+        if self.launch_velocity is None or self.launch_from is None:
+            return None
+        rise = float(self.launch_velocity[1])
+        start = float(self.launch_from[1])
+        # A ball thrown downward peaks where it leaves.
+        seconds = max(0.0, rise / GRAVITY_CM)
+        across = float(
+            np.linalg.norm([self.launch_velocity[0], self.launch_velocity[2]])
+        )
+        return {
+            "releaseHeightCm": round(start, 2),
+            "verticalSpeedCmPerSecond": round(rise, 2),
+            "apexHeightCm": round(start + max(0.0, rise) ** 2 / (2.0 * GRAVITY_CM), 2),
+            "apexSeconds": round(seconds, 4),
+            "apexAheadCm": round(across * seconds, 2),
+        }
 
     def centres(self) -> np.ndarray:
         return np.array([frame.centre for frame in self.frames])
@@ -663,4 +704,9 @@ def resolve(
                 holding=holding,
             )
         )
-    return Possession(frames=tuple(frames), contact_frame=contact)
+    return Possession(
+        frames=tuple(frames),
+        contact_frame=contact,
+        launch_from=None if thrown_from is None else thrown_from[1],
+        launch_velocity=None if thrown_from is None else thrown_from[2],
+    )
