@@ -376,14 +376,25 @@ ball read as an indeterminate dark blur and was nearly recorded null. A
 top-crop at full resolution showed it unambiguously in three consecutive
 frames. The close look is part of the method, not an extra.
 
-*Do not fast-seek a variable-rate file and then label with a fixed offset.*
-`-ss` BEFORE `-i` with a drawtext offset — the method the clip manifests record
-— was accurate to a frame on the CONSTANT-rate front camera and badly wrong on
-the VARIABLE-rate side camera. Frames labelled 16.930 to 17.230 showed a catch
-where an accurate seek at those true timestamps shows the athlete standing and
-talking. Taken at face value, **the two views appeared to disagree about
-whether she was catching a ball at all.** Select by timestamp, or seek
-accurately, and label with the TRUE container PTS.
+*Label with the true timestamp, and match the frame back before you rely on
+it.* A first version of this note blamed FAST SEEK on the variable-rate side
+camera, and **that blame was wrong.** Asked for a single frame at 17.030, fast
+seek, an accurate `-copyts` seek and `select` by timestamp all return the
+IDENTICAL source frame — matched at a difference of 0.663 against a next rival
+of 3.324. Seeking is not the fault, and the clip lane's cutting method is
+sound.
+
+What is established is narrower and still worth having: a label computed as a
+FIXED OFFSET plus the output timestamp, inside a filter chain that RESAMPLES
+and TILES, can diverge from the frames it is printed on. One such chain asked
+for 9.733 s produced frames whose true timestamps ran 12.000 to 14.200 —
+**real footage under fictional labels**, which is the worst shape a
+mislabelling can take, because nothing looks wrong.
+
+So: label with the true container PTS and no offset, select by timestamp rather
+than seeking when a window matters, and **match a consequential frame back
+against the source rather than trusting any label.** Every reading in the
+annotation was taken that way.
 
 ## Open, and deliberately so
 

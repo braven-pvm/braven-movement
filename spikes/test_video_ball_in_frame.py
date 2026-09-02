@@ -274,12 +274,18 @@ class TheCommittedAnnotationForSessionOne(unittest.TestCase):
                  if "A FRESH LOOK" in r["evidence"]]
         self.assertEqual(fresh, [2, 5, 7, 8])
 
-    def test_it_carries_the_seek_warning_that_the_fresh_look_produced(self):
-        """Fast seek on the variable-rate side camera shifted timestamps far
-        enough that the two views appeared to disagree about whether she was
-        catching a ball. The clip manifests record that same method."""
-        self.assertIn("FAST SEEK", self.document["seekWarning"])
-        self.assertIn("VARIABLE-rate", self.document["seekWarning"])
+    def test_the_seek_warning_withdraws_the_blame_it_first_carried(self):
+        """A first version blamed fast seek and that blame was not supported:
+        three seek methods return the identical frame. The field now names what
+        IS established — a fixed-offset label inside a resampling chain — and
+        says the earlier claim was withdrawn, because a warning that impugns a
+        sound method is worse than none."""
+        warning = self.document["seekWarning"]
+
+        self.assertIn("WITHDRAWN AND REPLACED", warning)
+        self.assertIn("NOT SUPPORTED", warning)
+        self.assertIn("FIXED OFFSET", warning)
+        self.assertIn("MATCH THE FRAME BACK", warning)
 
     def test_it_carries_the_build_its_windows_came_from(self):
         source = self.document["windowSource"]
