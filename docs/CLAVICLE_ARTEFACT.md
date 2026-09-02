@@ -153,8 +153,9 @@ sufficient reason and it is the only one claimed here.
 - **The ball speed.** One constant, 600 cm/s, with no provenance.
 - **The finger ramp.** 89.95 degrees in one frame at the contact frame.
 - **The two-handed elbow width**, 36.40 to 36.43 through every state.
-- **The dial re-read.** 36.43 at 31.3, a gap of 2.17 to the manual's 38.6;
-  38.42 at 37.3, a gap of 0.18.
+- **The dial re-read**, whole row on the pinned build. At 31.3 the two-handed
+  mean is 36.43, narrowest 28.90, widest 40.37, a gap of 2.17 to the manual's
+  38.6. At 37.3 it is 38.42, narrowest 30.57, widest 42.37, a gap of 0.18.
 
 **The pole question returns to its original form**, with the one-handed drills
 described by the measurement above rather than by the word "population".

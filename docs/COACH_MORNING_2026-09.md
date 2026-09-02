@@ -70,12 +70,15 @@ On the six drills that put BOTH hands on the ball:
 | | mean | narrowest | widest |
 |---|---|---|---|
 | at 31.3, today | **36.43 cm** | 28.90 | 40.37 |
-| at 37.3, previewed | **38.42 cm** | 30.63 | 42.41 |
+| at 37.3, previewed | **38.42 cm** | 30.57 | 42.37 |
 
 The manual says 38.6. At 31.3 the gap is 2.17 cm. At 37.3 it is **0.18 cm**.
 
-Every figure in this table is read on one build, with the locked parameters
-pinned. An earlier version mixed a build into it and read 36.40 and 38.45.
+Every cell in this table is read on one build, with the locked parameters
+pinned, and the whole row was re-measured rather than the mean alone. An
+earlier version mixed two builds: it read 36.40 and 38.45 for the means, and
+then kept 30.63 and 42.41 from the older build after the means were
+corrected.
 
 **WITHDRAWN, 2026-09-02.** This section said:
 
