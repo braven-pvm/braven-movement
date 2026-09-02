@@ -23,6 +23,8 @@ from finger_curl import (  # noqa: E402
 from movement_contract import normalization_transform  # noqa: E402
 from render_receipt import (  # noqa: E402
     NOTHING_RENDERED,
+    UNKNOWN_COMMIT,
+    build_stamp,
     PASS,
     render_outcome,
 )
@@ -339,6 +341,71 @@ class BlenderSourceContractTest(unittest.TestCase):
         # this correct pose, so a mis-named thumb reads a BETTER share than a
         # correctly named one. That pair of numbers is the whole ruling.
         self.assertAlmostEqual(1.0, axis_share(worst_correct, 0), places=6)
+
+    def test_a_receipt_written_on_a_dirty_tree_says_so(self):
+        """A commit named from a dirty tree names a build that never existed.
+
+        This is the half that is easy to leave out, and it is worth more than
+        the commit. Someone reading the receipt to find which pictures predate
+        a fix gets a sha, believes they can reproduce them from it, and cannot,
+        because the tree carried edits nobody recorded.
+        """
+        dirty = build_stamp("ac240b27db9c4ab43061d01eb151c4800aa90cdc",
+                            " M blender_movement_render.py\n")
+
+        self.assertFalse(dirty["treeWasClean"])
+        self.assertEqual("ac240b27db9c4ab43061d01eb151c4800aa90cdc",
+                         dirty["commit"], "a dirty tree still names its commit")
+
+    def test_a_clean_tree_is_reported_clean(self):
+        clean = build_stamp("ac240b27db9c4ab43061d01eb151c4800aa90cdc", "")
+
+        self.assertTrue(clean["treeWasClean"])
+
+    def test_a_tree_that_could_not_be_read_is_never_reported_clean(self):
+        """Absence of a check is not a passing check.
+
+        The renderer may run where git is missing or the directory is not a
+        checkout. That must read as `unknown`, and `treeWasClean` must not be
+        True, because nothing was verified. This pipeline has now applied the
+        same rule to a render outcome, a video provenance and a flexion axis.
+        """
+        unreadable = build_stamp("", "", available=False)
+
+        self.assertEqual(UNKNOWN_COMMIT, unreadable["commit"])
+        self.assertIsNot(unreadable["treeWasClean"], True)
+        self.assertIsNone(unreadable["treeWasClean"])
+
+    def test_the_renderer_stamps_the_build_it_read_and_checks_it_before_writing(self):
+        """The stamp is read from the tree, never handed in by a caller.
+
+        A stamp a caller supplies is a claim about a build rather than a
+        reading of one. And it is asserted before the file is written, so a
+        receipt without it fails at the render rather than being discovered
+        empty by whoever reads it months later.
+        """
+        renderer = (MODULE_DIR / "blender_movement_render.py").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn('"build": stamp', renderer)
+        self.assertIn("stamp = studio.build", renderer)
+
+        # ONE BUILD PER SESSION. Reading it inside render_job, at every
+        # receipt, let a commit made DURING a batch split one render across two
+        # builds, each receipt naming a commit that was not what drew its
+        # pictures. It is read where the athlete is built and fixed there.
+        session = _code_positions(
+            renderer, "__init__", ("git_build_stamp",)
+        )
+        self.assertIn("git_build_stamp", session,
+                      "the session must read the build once, at startup")
+        self.assertNotIn(
+            "git_build_stamp", _code_positions(
+                renderer, "render_job", ("git_build_stamp",)
+            ),
+            "render_job must NOT re-read the build per receipt",
+        )
 
     def test_a_run_that_rendered_nothing_does_not_report_a_pass(self):
         """PASS must mean something was produced, not that the code returned.
