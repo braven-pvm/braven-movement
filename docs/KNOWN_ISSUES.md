@@ -1503,3 +1503,48 @@ findings had to be withdrawn.
 parameter, removing one, or a model update that changes a range — can move that
 drill's look without touching a weight, a key or a band. Nothing would report
 it, because the two-handed mean does not move and no verdict flips.
+
+
+## The wrist moves after the ball has gone, and could not drive it anyway
+
+Raised 2026-09-02 from Marius watching the chest-catch player beside the real
+footage. Measured in `docs/WRIST_AND_PACE.md` on `02b25cd`.
+
+The hand bends against the forearm by 22 to 35 degrees through every release,
+so the wrist is NOT still. **Every one of those movements reaches its greatest
+speed AFTER the ball has left**, by two to four frames. A flick drives the ball
+and must peak at or before the release; this is a follow-through.
+
+**And no wrist motion could drive it.** `return_velocity`'s inputs are the ball
+track, the stance frame at phase 0, the ball's carried position and the frame
+timing. No property of the hand enters, and the carried position follows her
+chest rather than her wrist. **A flick cannot be expressed in the possession
+model as it stands** — it is not an authoring gap.
+
+The instrument was proved before the reading was believed: a planted 40 degree
+flick reads at 1736 deg/s against the shipped 193, nine times over. A zero
+would have meant something. It did not read zero, and the first expectation —
+that the wrist would not move at all — was wrong.
+
+The manual's cue for this drill is "with wrist and hands pass the ball", and
+this file already records that cue as having no instrument. This is that gap,
+measured.
+
+## The pace has no author either
+
+Same document, same day. The engine takes **2.24 times the athlete's time** on
+the stretch from ball contact to the deepest point of the hold: 0.7275 s
+against her median 0.325, from three strip-proved repetitions. It plays that
+stretch at about 45 per cent of her speed.
+
+`frames` and `framesPerSecond` are typed in each motion file and nothing
+derives or measures them. The RATE is documented — a `rateNote` explains 60
+rather than 24 and says "nothing about the movement changes with the rate" — so
+the rate was a resolution decision that explicitly disclaims pace. **The frame
+count, which IS the pace, carries no note anywhere**, and five of the eight
+drills share 98 frames exactly.
+
+That is the third property of the movement that nothing authors and nothing
+grades. The other two are the wrist above and the ball speed, whose 600 cm/s
+constant at the manual's own 7 m produces a ball peaking at 302 cm against a
+305 cm goalpost.
