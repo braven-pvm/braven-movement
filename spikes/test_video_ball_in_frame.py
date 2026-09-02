@@ -22,6 +22,7 @@ import unittest
 from pathlib import Path
 
 from video_ball_in_frame import (
+    NARROW_MARGIN_FRAMES,
     SCHEMA_VERSION,
     WINDOW_TOLERANCE_SECONDS,
     BallAnnotationError,
@@ -119,6 +120,69 @@ class UnmeasuredIsNotAPass(unittest.TestCase):
         found = judge(annotation(row(0, False), row(1, None)), alignments())
 
         self.assertIs(found["passes"], False)
+
+
+class CauseAndMarginTest(unittest.TestCase):
+    """What the gate SAYS, not only what it decides.
+
+    A count of three is not actionable. Two of those three need a slate and one
+    needs different framing, and two of the nine passes rest on a single frame.
+    A verdict that hid either would send a reader to the annotation to find out
+    what to do.
+    """
+
+    def test_the_cause_is_named_per_repetition_in_the_detail(self):
+        found = judge(annotation(
+            row(0, False, cause="gesture"), row(1, False, cause="framing"),
+            row(2, True), row(3, True)), alignments())
+
+        self.assertIn("0 (gesture)", found["detail"])
+        self.assertIn("1 (framing)", found["detail"])
+        self.assertEqual(found["causes"], {0: "gesture", 1: "framing"})
+
+    def test_a_cause_that_is_not_one_of_the_two_is_refused(self):
+        path = write(annotation(row(0, False, cause="dunno")))
+        self.addCleanup(lambda: path.unlink(missing_ok=True))
+
+        with self.assertRaises(BallAnnotationError) as raised:
+            load_annotation(path)
+        self.assertIn("different shoot instructions", str(raised.exception))
+
+    def test_a_thin_pass_is_reported_with_ITS_OWN_margin(self):
+        """The reading, never the threshold it fell under."""
+        found = judge(annotation(
+            row(0, True, marginFrames=1), row(1, True, marginFrames=2),
+            row(2, True, marginFrames=9), row(3, True)), alignments())
+
+        self.assertIs(found["passes"], True)
+        self.assertEqual(found["narrowPasses"], [0, 1])
+        self.assertIn("0 (1 frame), 1 (2 frames)", found["detail"])
+        self.assertNotIn("2 (9 frames)", found["detail"])
+
+    def test_a_wide_pass_is_not_called_narrow(self):
+        found = judge(annotation(*(row(n, True, marginFrames=9)
+                                   for n in range(4))), alignments())
+
+        self.assertEqual(found["narrowPasses"], [])
+        self.assertNotIn("NARROW", found["detail"])
+
+    def test_an_uncounted_margin_is_not_treated_as_wide(self):
+        """Null means nobody counted it, which is not the same as clear."""
+        found = judge(annotation(*(row(n, True) for n in range(4))), alignments())
+
+        self.assertEqual(found["narrowPasses"], [])
+        for row_ in found["withBall"]:
+            self.assertIn(row_, [0, 1, 2, 3])
+
+    def test_a_negative_margin_is_refused(self):
+        path = write(annotation(row(0, True, marginFrames=-1)))
+        self.addCleanup(lambda: path.unlink(missing_ok=True))
+
+        with self.assertRaises(BallAnnotationError):
+            load_annotation(path)
+
+    def test_the_narrow_bar_is_the_anchors_own_localisation(self):
+        self.assertEqual(NARROW_MARGIN_FRAMES, 2)
 
 
 class StaleAnnotationsAreRefused(unittest.TestCase):
@@ -236,6 +300,63 @@ class TheCommittedAnnotationForSessionOne(unittest.TestCase):
         self.assertEqual(self.document["schemaVersion"], SCHEMA_VERSION)
         self.assertEqual(len(self.document["repetitions"]), 12)
 
+    def test_the_two_no_ball_causes_are_distinguished_in_the_evidence(self):
+        """THREE repetitions have no ball at the anchor and for TWO reasons.
+        A gate that recorded only the count would lose the distinction, and
+        the two need different shoot instructions."""
+        rows = {r["index"]: r["evidence"] for r in self.document["repetitions"]}
+
+        self.assertIn("gesturing", rows[0])
+        self.assertIn("NO BALL ANYWHERE", rows[8])
+        self.assertIn("leaves the TOP of the frame", rows[2])
+        self.assertIn("not a gesture", rows[2])
+
+    def test_the_causes_are_recorded_for_every_blocking_row(self):
+        rows = {r["index"]: r for r in self.document["repetitions"]}
+
+        self.assertEqual(rows[0]["cause"], "gesture")
+        self.assertEqual(rows[2]["cause"], "framing")
+        self.assertEqual(rows[8]["cause"], "gesture")
+
+    def test_the_two_one_frame_passes_carry_their_margin(self):
+        """Repetitions 5 and 7 each carry a ball in exactly one frame of their
+        anchored span. Presented as plain passes they would read as clear."""
+        rows = {r["index"]: r for r in self.document["repetitions"]}
+
+        self.assertEqual(rows[5]["marginFrames"], 1)
+        self.assertEqual(rows[7]["marginFrames"], 1)
+
+    def test_the_resampled_timestamp_is_withdrawn_rather_than_deleted(self):
+        """14.875 was an fps-resampled OUTPUT value, not a front-camera PTS —
+        the front runs at exactly 30.000 fps, so its frames here are 14.833,
+        14.867 and 14.900.
+
+        THE ROW QUOTES THE WITHDRAWN CLAIM RATHER THAN ERASING IT, which is why
+        this test does not assert the old string's absence: a first version did,
+        and failed on the quotation that does the withdrawing. Someone who read
+        the earlier figure elsewhere needs to find out here that it was wrong,
+        and a silent deletion tells them nothing.
+        """
+        evidence = {r["index"]: r["evidence"] for r in self.document["repetitions"]}
+
+        self.assertIn("14.900", evidence[5])
+        self.assertIn("RESAMPLED", evidence[5])
+        self.assertIn("An earlier version of this row said", evidence[5])
+        self.assertIn("ONE FRAME", evidence[5])
+        # the withdrawn figure appears only inside the sentence that withdraws it
+        self.assertLess(evidence[5].index("An earlier version"),
+                        evidence[5].index("25 ms to spare"))
+
+    def test_the_keyframe_caution_is_recorded(self):
+        """Three keyframes in the side file against one a second in the front.
+        A snapping reader asked for 16.93 lands at 9.996, which is where
+        repetition 2's catch lives — the original symptom, explained."""
+        warning = self.document["seekWarning"]
+
+        self.assertIn("THREE", warning)
+        self.assertIn("9.996", warning)
+        self.assertIn("KEYFRAME-SNAPPING", warning)
+
     def test_it_records_the_repetition_this_whole_condition_exists_for(self):
         first = self.document["repetitions"][0]
 
@@ -243,18 +364,38 @@ class TheCommittedAnnotationForSessionOne(unittest.TestCase):
         self.assertIs(first["ballVisible"], False)
         self.assertIn("NO BALL IS PRESENT", first["evidence"])
 
-    def test_it_says_null_where_nothing_was_recorded_about_the_picture(self):
-        """Four repetitions were rejected on RANKING alone. Inferring a ball
-        from a rejection that never mentioned one would be the fabrication this
-        file exists to prevent."""
+    def test_nothing_is_left_unlooked_at(self):
+        """The four rejected on RANKING alone have now been watched. While
+        they were null they were correctly null — inferring a ball from a
+        rejection that never mentioned one would have been fabrication."""
         unlooked = [r["index"] for r in self.document["repetitions"]
                     if r["ballVisible"] is None]
 
-        self.assertEqual(unlooked, [2, 5, 7, 8])
+        self.assertEqual(unlooked, [])
 
-    def test_it_names_its_source_rather_than_claiming_a_fresh_look(self):
-        self.assertIn("NOT A FRESH LOOK", self.document["method"])
-        self.assertIn("manifest", self.document["method"])
+    def test_it_says_which_rows_are_transcribed_and_which_are_a_fresh_look(self):
+        """Two kinds of row with different authority, and a reader must be able
+        to tell them apart without knowing the history."""
+        self.assertIn("TWO KINDS OF ROW", self.document["method"])
+        self.assertIn("TRANSCRIBED", self.document["method"])
+        self.assertIn("FRESH LOOK", self.document["method"])
+
+        fresh = [r["index"] for r in self.document["repetitions"]
+                 if "A FRESH LOOK" in r["evidence"]]
+        self.assertEqual(fresh, [2, 5, 7, 8])
+
+    def test_the_seek_warning_withdraws_the_blame_it_first_carried(self):
+        """A first version blamed fast seek and that blame was not supported:
+        three seek methods return the identical frame. The field now names what
+        IS established — a fixed-offset label inside a resampling chain — and
+        says the earlier claim was withdrawn, because a warning that impugns a
+        sound method is worse than none."""
+        warning = self.document["seekWarning"]
+
+        self.assertIn("WITHDRAWN AND REPLACED", warning)
+        self.assertIn("NOT SUPPORTED", warning)
+        self.assertIn("FIXED OFFSET", warning)
+        self.assertIn("MATCH THE FRAME BACK", warning)
 
     def test_it_carries_the_build_its_windows_came_from(self):
         source = self.document["windowSource"]
@@ -278,8 +419,9 @@ class TheCommittedAnnotationForSessionOne(unittest.TestCase):
         found = judge(self.document, windows)
 
         self.assertIs(found["passes"], False)
-        self.assertEqual(found["withoutBall"], [0])
-        self.assertEqual(found["withBall"], [1, 3, 4, 6, 9, 10, 11])
+        self.assertEqual(found["withoutBall"], [0, 2, 8])
+        self.assertEqual(found["withBall"], [1, 3, 4, 5, 6, 7, 9, 10, 11])
+        self.assertEqual(found["notLookedAt"], [])
 
 
 if __name__ == "__main__":

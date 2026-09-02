@@ -353,6 +353,77 @@ ball:
 **What a person looking at a frame strip found, no number in the pipeline
 could.** That is worth stating plainly in a document full of numbers.
 
+### What the rest of the looking then found
+
+The four repetitions left null were watched on 2026-09-02, and the result was
+not the expected one. **Three of the twelve have no ball at the anchored
+moment, and for TWO different causes:**
+
+- **Repetitions 0 and 8 are gesture stretches** — no ball anywhere in the
+  window, the athlete standing and talking.
+- **Repetition 2 is a REAL CATCH.** The ball is plainly in her hands at 11.200
+  to 11.400 and leaves the TOP of the frame at 11.633, before the anchor at
+  11.733. The camera does not frame the ball's flight.
+
+Those need different instructions and the annotation records which is which.
+Two more passed by margins worth knowing: repetition 5 by 25 ms, repetition 7
+by a single frame.
+
+**Two method notes came out of the looking, and both cost time to learn.**
+
+*Magnify before calling a frame ambiguous.* At 230 pixels wide, repetition 7's
+ball read as an indeterminate dark blur and was nearly recorded null. A
+top-crop at full resolution showed it unambiguously in three consecutive
+frames. The close look is part of the method, not an extra.
+
+*Label with the true timestamp, and match the frame back before you rely on
+it.* A first version of this note blamed FAST SEEK on the variable-rate side
+camera, and **that blame was wrong.** Asked for a single frame at 17.030, fast
+seek, an accurate `-copyts` seek and `select` by timestamp all return the
+IDENTICAL source frame — matched at a difference of 0.663 against a next rival
+of 3.324. Seeking is not the fault, and the clip lane's cutting method is
+sound.
+
+What is established is narrower and still worth having: a label computed as a
+FIXED OFFSET plus the output timestamp, inside a filter chain that RESAMPLES
+and TILES, can diverge from the frames it is printed on. One such chain asked
+for 9.733 s produced frames whose true timestamps ran 12.000 to 14.200 —
+**real footage under fictional labels**, which is the worst shape a
+mislabelling can take, because nothing looks wrong.
+
+So: label with the true container PTS and no offset, select by timestamp rather
+than seeking when a window matters, and **match a consequential frame back
+against the source rather than trusting any label.** Every reading in the
+annotation was taken that way.
+
+**And the caution that explains the original symptom.** The side file carries
+only **THREE keyframes** — 0.000, 9.996 and 19.992, a ten-second GOP — where
+the front has one every second. Any KEYFRAME-SNAPPING reader
+(`-noaccurate_seek`, a stream copy, most players) asked for 16.93 on the side
+lands at **9.996**, a +6.93 s error — and 9.996 is where repetition 2's catch
+lives. That is precisely the symptom that started this: repetition 2's catch
+appearing under a repetition-7 label. ffmpeg's default seek is accurate and
+does not do it; a reader that snaps does, and a ten-second GOP is what makes
+the error that large.
+
+### Two fields the gate reads back out
+
+**`cause`** on a blocking row — `gesture` or `framing`. The gate names it per
+repetition: *"0 (gesture), 2 (framing), 8 (gesture)"*. The two need different
+shoot instructions — a slate between repetitions, or framing for the ball's
+flight — so collapsing them to a count would lose the only thing that decides
+which fix applies.
+
+**`marginFrames`** on a passing row — how many frames of the anchored span
+actually carry the ball. Repetitions 5 and 7 each carry it in exactly ONE:
+14.900 for rep 5, which is the peak itself, and 17.200 for rep 7, which is the
+anchor itself. The anchor is located "to about one frame and no better" and the
+two views are synchronised to no better than 0.25 s, **so a one-frame margin is
+inside the uncertainty of the question being asked.** The gate reports those as
+NARROW rather than as plain passes, and it quotes each row's own margin rather
+than the threshold it fell under. `null` means nobody counted, which is not the
+same as wide.
+
 ## Open, and deliberately so
 
 - **The gate has never opened on real footage.** It opens on a synthetic
