@@ -30,8 +30,15 @@ from mathutils import Vector
 MODULE_DIR = Path(__file__).resolve().parent
 if str(MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(MODULE_DIR))
+SPIKE_DIR = MODULE_DIR / "spikes"
+if str(SPIKE_DIR) not in sys.path:
+    sys.path.insert(0, str(SPIKE_DIR))
 
-from render_receipt import git_build_stamp, render_outcome  # noqa: E402
+from render_receipt import render_outcome  # noqa: E402
+# The repository's ONE build stamp, shared with every other receipt this
+# project writes, and the shape `archive_receipts.py` reads. It is cached
+# for the life of the process, so every receipt of one run names one build.
+from build_stamp import generated_from  # noqa: E402
 from reference_pose_config import (  # noqa: E402
     DEFAULT_CONFIG_PATH,
     load_reference_catch_config,
@@ -415,12 +422,11 @@ class Studio:
 
     def __init__(self, config):
         self.config = config
-        # ONE BUILD PER SESSION, read once here rather than at every receipt.
-        # Reading it per receipt let a commit made DURING a batch split one
-        # render across two builds, and each receipt would then name a commit
-        # that was not what drew its pictures. The athlete is built once and
-        # the build that draws her is fixed at the same moment.
-        self.build = git_build_stamp(MODULE_DIR)
+        # ONE BUILD PER SESSION. `generated_from` is cached for the life of
+        # the process for exactly this reason, so this call fixes the value and
+        # every later one returns it. Reading a stamp per receipt would let a
+        # commit made DURING a batch split one render across two builds.
+        self.build = generated_from()
         self.world_colour = config.presentation.studio.world_color
         (
             self.human,
@@ -627,7 +633,10 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
     receipt = {
         "movementId": job["movementId"],
         "skill": job["skill"],
-        "build": stamp,
+        # `generatedFrom`, not `build`: one name for one concept, and the name
+        # `archive_receipts.py` reads. A render receipt is archivable by the
+        # project's own tool because of this line.
+        "generatedFrom": stamp,
         "jobSha256": sha256(job_path),
         "sourceAssets": [str(path) for path in studio.source_assets],
         "animation": animation,
@@ -636,16 +645,17 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
     # The stamp is the point of the receipt for anyone asking which pictures
     # predate a fix, so it is checked before the file is written rather than
     # discovered missing by whoever reads it months later.
-    assert "commit" in receipt["build"], "the receipt must name a build"
-    assert "treeWasClean" in receipt["build"], (
+    assert "commit" in receipt["generatedFrom"], "the receipt must name a build"
+    assert "treeWasClean" in receipt["generatedFrom"], (
         "the receipt must say whether the tree was clean: a commit named from "
         "a dirty tree names a build that never existed"
     )
     receipt_path.write_text(json.dumps(receipt, indent=2), encoding="utf-8")
-    if receipt["build"]["treeWasClean"] is not True:
+    if receipt["generatedFrom"]["treeWasClean"] is not True:
         print(
             "[movement-render] NOTE: "
-            f"tree not verified clean ({receipt['build']['commit']}), so these "
+            f"tree not verified clean ({receipt['generatedFrom']['commit']}), "
+            "so these "
             "pictures cannot be reproduced from that commit alone"
         )
     # Never the bare word PASS. A run that posed no phase measured nothing,
