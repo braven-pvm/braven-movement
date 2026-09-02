@@ -2271,6 +2271,98 @@ question nobody has asked properly:
 That is the clip contract's question and Marius's, not this lane's, and writing
 the code would settle it by accident. **No variant clips are exported until it
 is answered.**
+## CLOSED: a drill that starts with the ball must declare arrival at 0.02
+
+`load_ball` requires `release < arrival`, so a drill that already holds the
+ball cannot say `arrival: 0` and says 0.02 instead — "a formality, not a
+catch", as those files put it. The question was whether the schema should
+allow `release == arrival`.
+
+**Checked on 2026-09-02: it costs nothing.** Every one of the first six frames
+of both ball-in-hand drills reads `carried`. **The 0.02 convention invents no
+flight state**, which is the failure mode the authoring rule exists to prevent
+and the one that would have justified the change. The change is cosmetic and
+is NOT made.
+
+Recorded so the next reader does not reopen it on the strength of the wording
+alone.
+
+## The engine solved where the ball goes and threw the answer away
+
+`possess` solved the outgoing velocity, used it to walk the ball forward frame
+by frame, and discarded it. **Nothing downstream could ask where a pass ENDS
+UP**, so every question about the library's one ball speed has been answered by
+hand arithmetic outside the engine — and those answers have disagreed with each
+other. This entry replaces them with the engine's own.
+
+Measured on `763cabd`. `Possession` now carries `launch_from` and
+`launch_velocity`, and `apex()` reads them.
+
+### It must be computed, not sampled
+
+**Every clip in this library ends while its ball is still in the air.** Both
+passes release at 0.80 of the clip and are still descending at the last frame.
+Worse, the chest pass's ball peaks **0.07 s** after it leaves — four frames at
+60 fps — so a peak scanned off the drawn frames would report the release height
+and call it the peak.
+
+So `apex()` is the closed form from the launch, and a test asserts that rather
+than describing it.
+
+### What the shipped library actually throws
+
+| drill | release, cm | vertical, cm/s | apex, cm | at, s | ahead, cm |
+|---|---|---|---|---|---|
+| `overhead_pass` | 180.4 | **−39.4** | 180.4 | 0.00 | 0.0 |
+| `hooks_jump_pull_in` | 144.9 | 132.0 | 153.8 | 0.13 | 80.8 |
+| `deflect_high` | 166.4 | 107.3 | 172.3 | 0.11 | 65.6 |
+| `two_hand_catch_chest` | 141.2 | 108.3 | 147.1 | 0.11 | 66.3 |
+| `two_hand_snatch_straight_back` | 141.2 | 104.8 | 146.8 | 0.11 | 64.1 |
+| `chest_pass` | 142.4 | 71.5 | 145.0 | 0.07 | 43.7 |
+
+**SIX OF THE TEN DRILLS RETURN THE BALL**, including four that read as catches.
+Only `double_foot_landing`, `hooks_outside_hand`,
+`one_hand_snatch_to_other_hand` and `two_hand_snatch_pull_in` keep it.
+
+**`netball_overhead_pass` THROWS ITS BALL DOWNWARD**, at 39.4 cm/s. It releases
+at 180.4 cm and its target is at 106.5, so the pass is 74 cm downhill and the
+solver launches it below the horizontal. That is arithmetic rather than a
+defect, and it is the first time anything has said so.
+
+### The goalpost question, answered with the engine's own solver
+
+The ledger has carried "600 cm/s at the manual's 7 m produces a ball peaking at
+302 cm against a 305 cm goalpost", computed by hand from an assumed release
+height. **Recomputed from the engine's own release positions and its own
+`solve_launch`, to a receiver at 106.5 cm:**
+
+| distance | `chest_pass` apex | `overhead_pass` apex |
+|---|---|---|
+| **2.11 m**, the authored 4 arm lengths | 144.9 | 180.4 |
+| 5.00 m | 210.6 | 232.6 |
+| **7.00 m**, the manual's own | 291.9 | **312.4 — over a 305 cm goalpost** |
+
+**The concern is real and it belongs to the overhead pass, not the chest pass.**
+At the manual's longest stated distance the overhead's ball goes over a
+goalpost; the chest pass's passes 13 cm under one. The 302 that has been quoted
+sits between the two and matches neither.
+
+**NOTHING IS CHANGED BY THIS ENTRY.** The authored distance is 2.11 m, where
+both are far clear. The 5 to 7 m figures describe what the ball speed would do
+at the manual's distances, which is the open question this measures rather than
+settles.
+
+### A discrepancy this turned up, not settled here
+
+**The launch target for `up: 0.0` lands at 106.5 cm.** The ball files say that
+value is chosen because "a receiver of similar height has her hands at the
+height of this athlete's chest, where the stance frame is anchored". Her
+shoulder midpoint at frame 0 is **132.86 cm** and her crown is 163.45.
+
+So the frame's anchor sits 26 cm below her shoulders, and every `up: 0.0`
+target inherits it. Whether that is the wrong anchor or the right anchor with a
+misleading note is a question for whoever owns the stance frame, and no ball
+file is changed here.
 
 ## The lower body has no stable solution
 
