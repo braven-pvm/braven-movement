@@ -1331,3 +1331,78 @@ unchanged in drill and phase; its figures on this build are 35.78, 49.98,
 and a variant rendering the shipped build while a page labels it the
 alternative is the byte-identical failure that module was already caught
 committing once. The regression is guarded closer to the rig instead.
+
+
+## The docs-wide stale-figure sweep, and what it could not reach
+
+Run on 2026-09-02 against `ac240b2`. The item was logged as "unclaimed, not
+clean" after five stale figures were found in this file by following one
+question. This is the wider pass.
+
+**The corpus.** 16 documents, 5113 lines, 1130 decimal figures.
+
+Re-measuring 1130 figures is not possible and would not be useful: most sit
+inside an entry describing a past event, and are correct as the record of what
+was read then. So the sweep checked every class that HAS a current source of
+truth, and says plainly what it left alone.
+
+### What was checked, and what it found
+
+| class | checked | wrong |
+|---|---|---|
+| code constants cited by name in prose | 10 citations of 4 constants | **0** |
+| bands quoted beside a measure name | 13 | **0** |
+| the five failing checkpoints against `clip-baseline.json` | 5 | **0** |
+| the open-defect figures in `REQUIREMENTS.md` | 2 | **2** |
+| documents carrying figures with NO build named | 16 documents | **2** |
+| a sample re-measured from the unstamped coach review | 7 | **7 moved** |
+
+### The two that were wrong, and they were the ones presented as CURRENT
+
+`docs/REQUIREMENTS.md` lists two open anatomy defects. Both figures were stale,
+and both understated the defect:
+
+- **The elbows.** Recorded as 27.3 cm against the reference photographs' 38.6,
+  a gap of 11.3 cm. On `ac240b2` the six drills that put both hands on the ball
+  average **36.40 cm**, a gap of **2.20**. The defect is four times smaller than
+  the document claimed. The 27.3 figure predates the elbow pole becoming an
+  angle.
+- **The joint limit.** Recorded as one frame at 0.715 degrees. On `ac240b2`
+  `netball_hooks_outside_hand` breaches on **98 of its 98 frames, worst 2.3355
+  degrees on `l_clavicle_rx`**.
+
+**The mirror fix did not cause the joint-limit breach**, and that was measured
+rather than assumed: across that change the same drill breached 98 of 98 frames
+before it too, worst 0.4990 degrees on `l_clavicle_rz`. The breach is older
+than the fix. The fix made the worst overshoot 4.7 times larger and moved it to
+a different axis. No other drill in the library breaches at all.
+
+**Nothing in the test suite reads it.** `check_joint_limits.py` is a separate
+task and it exits 1 today while the suite passes 564 tests. A defect recorded
+as rare and small, which is neither, and which no gate reports.
+
+### The class that matters more than any single figure
+
+Two documents carry figures and name no build: `REQUIREMENTS.md`, corrected
+above, and `COACH_REVIEW_2026-08-30.md`, which holds **113 figures** and is the
+document the coach morning most depends on.
+
+That review is NOT rewritten. Erin's marks and her words are the record of a
+real event. What it lacked was the build its engine figures were read against,
+and it now carries that as a header. Seven of its rows name a drill, a phase, a
+measure and a value, which is enough to re-measure. **All seven moved**, by 0.02
+to 0.47 degrees. No verdict or argument in it changes. The point is that not
+one was unchanged: three fixes have landed since it was written, and small
+universal drift is what that looks like.
+
+### What this sweep did NOT do
+
+- **It did not re-measure the other 1100 figures.** Most name no drill, phase
+  and measure together, so there is nothing to re-measure them against without
+  guessing what they meant.
+- **It did not check `HANDOFF_RENDERING.md`'s 197 figures** beyond the stamp
+  test. They belong to another lane's instruments.
+- **It did not verify Erin's marks**, which are not engine readings.
+- **It found no wrong band and no wrong constant**, which is a real result and
+  not an absence of effort: those two classes are mechanically checkable and
+  they are clean.
