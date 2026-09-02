@@ -39,22 +39,68 @@ except ImportError:  # pragma: no cover - exercised only without the solver
     SOLVER = False
 
 # THE READY STANCE OF EVERY DRILL, in degrees of shoulder-line turn at frame 0,
-# measured on fc29bb2. These are RECORDED FACTS and not targets: nothing was
+# measured on c4a7a37. These are RECORDED FACTS and not targets: nothing was
 # tuned to reach them and no threshold was chosen to make them pass.
+#
+# The build matters and an earlier draft named the wrong one. It said fc29bb2,
+# where `netball_chest_pass` DID NOT EXIST — the drill arrived two merges
+# later. A figure whose named build could not have produced it is not sourced.
 STANCE_DEGREES = {
-    "netball_deflect_high": 0.000,
+    "netball_chest_pass": -0.004,
+    "netball_deflect_high": -0.000,
     "netball_double_foot_landing": 0.034,
-    "netball_hooks_jump_pull_in": 0.020,
-    "netball_hooks_outside_hand": 48.217,
-    "netball_one_hand_snatch_to_other_hand": 0.496,
-    "netball_two_hand_catch_chest": 0.018,
+    "netball_hooks_jump_pull_in": -0.020,
+    "netball_hooks_outside_hand": -48.217,
+    "netball_one_hand_snatch_to_other_hand": -0.496,
+    "netball_two_hand_catch_chest": -0.018,
     "netball_two_hand_snatch_pull_in": 0.019,
     "netball_two_hand_snatch_straight_back": 0.020,
 }
+# THE PELVIS LINE IS DELIBERATELY NOT PINNED, and that is a finding rather than
+# an omission. It was built as a pin and the pin was withdrawn before it shipped.
+#
+# The lower body MIRRORS under ordinary code changes, not only under changes to
+# the enabled parameter set. Between the two configurations that shipped as
+# 716b3eb and ac240b2, whose difference is the sign on one hand's finger spread,
+# SIX of the nine drills flipped their pelvis line, worst move 61.45 degrees.
+# Both states are RECONSTRUCTED on one engine rather than checked out:
+#
+#   double_foot_landing           -15.65 ->  15.69
+#   hooks_jump_pull_in            -15.70 ->  15.65
+#   hooks_outside_hand              6.05 -> -55.40
+#   two_hand_catch_chest           15.66 -> -15.66
+#   two_hand_snatch_pull_in        15.67 -> -15.66
+#   two_hand_snatch_straight_back  15.67 -> -15.67
+#
+# A pin on that value would have gone RED on six drills for a correct, ruled,
+# shipped change. That is the failure this file already rejects by name for the
+# stance pin: a guard that fires on every legitimate change is noise within a
+# week and deleted within two.
+#
+# Nor is the magnitude pinnable: |pelvis| is stable on eight drills across that
+# transition and moves 6.05 to 55.40 on the ninth.
+#
+# THE SHOULDER LINE IS STABLE ACROSS THE SAME TRANSITION ON THE EIGHT SQUARE
+# DRILLS — worst move 0.056 degrees — which is why it can be pinned there and
+# the pelvis cannot.
+#
+# IT IS NOT STABLE ON THE NINTH. `hooks_outside_hand`'s shoulder line moves
+# -48.234 to -15.442 across the same transition, 32.79 degrees, and an earlier
+# draft of this comment said the upper body was unaffected at 0.041. That was
+# read from the square drills alone and stated of all nine.
+#
+# So the same code change flipped ONE drill above the hips and SIX below it.
+# The one above was ruled on and REVERSED by PR #53, which is what
+# docs/CLAVICLE_ARTEFACT.md records. The six below were never ruled on at all,
+# and that is what withdraws the pin: a pelvis pin would go red on six drills
+# nobody has decided anything about. The square drills carry that argument by
+# themselves and do not need the ninth.
+#
+# Refer to "The lower body has no stable solution" in docs/KNOWN_ISSUES.md.
 # Wide enough to ignore ordinary drift, narrow enough to catch a basin flip.
 #
 # Ordinary drift on these is hundredths of a degree: across the hand-mirror fix
-# and the locked-parameter fix, every square drill moved by less than 0.05. The
+# and the locked-parameter fix, every square drill moved by 0.056 or less. The
 # flip this exists for is 33 degrees. Two is far above the one and far below the
 # other, and there is a great deal of room in between, so THE NUMBER IS NOT
 # DELICATE — which is the property being aimed for. A guard whose threshold has
@@ -81,6 +127,8 @@ class NoHandWaitsPastFullStretch(unittest.TestCase):
         cls.reaching: dict[tuple[str, str], float] = {}
         cls.waiting: dict[tuple[str, str], float] = {}
         cls.turned: dict[str, float] = {}
+        cls.stance: dict[str, float] = {}
+        cls.pelvis: dict[str, float] = {}
         for movement_id in library():
             if not (has_ball(movement_id) and has_technique(movement_id)):
                 continue
@@ -91,14 +139,29 @@ class NoHandWaitsPastFullStretch(unittest.TestCase):
             points = result["points"]
             contact = result["possession"].contact_frame
             arm = float(result["armLengthCm"])
+
+            # THE BASIN LINES ARE RECORDED BEFORE THE CONTACT CHECK BELOW.
+            #
+            # That check skips a drill whose contact frame is 0, which is every
+            # drill that STARTS with the ball — the chest pass today. Recording
+            # the stance after it meant the basin pin could not see the one
+            # drill whose pelvis flip is easiest to demonstrate. Frame zero
+            # exists whatever the contact frame is.
+            first = points[0]
+
+            def ground_angle(left: str, right: str) -> float:
+                line = first[index[left]] - first[index[right]]
+                line = line / np.linalg.norm(line)
+                return float(np.degrees(np.arctan2(line[2], line[0])))
+
+            # SIGNED. The sign IS the basin: a mirrored pose reads the same
+            # magnitude and the opposite sign, so abs() would pass it.
+            cls.stance[movement_id] = ground_angle("l_uparm", "r_uparm")
+            cls.pelvis[movement_id] = ground_angle("l_upleg", "r_upleg")
+
             if contact is None or contact < 1:
                 continue
-            first = points[0]
-            sideways = first[index["l_uparm"]] - first[index["r_uparm"]]
-            sideways = sideways / np.linalg.norm(sideways)
-            cls.turned[movement_id] = abs(
-                float(np.degrees(np.arctan2(sideways[2], sideways[0])))
-            )
+            cls.turned[movement_id] = abs(cls.stance[movement_id])
             for side in ("l", "r"):
                 shoulder, wrist = index[f"{side}_uparm"], index[f"{side}_wrist"]
                 worst = max(
@@ -135,20 +198,46 @@ class NoHandWaitsPastFullStretch(unittest.TestCase):
         33, so a tolerance anywhere between them catches one and ignores the
         other.
 
-        ITS BLIND SPOT, recorded because it is real. Seven of the eight drills
-        stand square, at 0.5 degrees or less. They would read near zero in
-        EITHER basin, so this catches a flip on the drill we have seen and may
-        miss one elsewhere. A general bound on root winding is the companion
-        idea and is deliberately not folded in here.
+        ITS BLIND SPOT IS MEASURED, NOT SUSPECTED, and it is worse than the
+        first version of this docstring guessed. That version said the square
+        drills "would read near zero in either basin, so this catches a flip on
+        the drill we have seen and may miss one elsewhere". It does miss them,
+        demonstrably: excluding `head_twist` flips four of the nine drills at
+        the PELVIS by about 31 degrees each, and this line moves by at most
+        0.039 across the same change.
+
+        So the shoulder line alone watches one drill and is blind on four.
+        THE OTHER HALF WAS NOT BUILT. A pelvis pin was written to be that half
+        and withdrawn by its own measurement; the comment beside
+        STANCE_DEGREES records why, and this drill's blindness is the cost of
+        the withdrawal rather than an oversight. The shoulder line does
+        register the mirror, at 0.02 degrees, and even flips sign with it, but
+        the tolerance that makes it robust also hides that.
+
+        THE VALUES ARE SIGNED. They were unsigned until 2026-09-02, which meant
+        a mirrored pose — same magnitude, opposite sign — would have passed.
+
+        THAT FIX BITES ON ONE DRILL ONLY, and the arithmetic says so. A mirror
+        moves this line by twice its recorded value. On `hooks_outside_hand`
+        that is 96.4 degrees and the pin catches it. On the other eight it is
+        between 0.000 and 0.99 degrees, all BELOW the two-degree tolerance, so
+        this pin cannot detect their mirrors however the sign is handled. The
+        smallest is `deflect_high`, recorded at -0.000, whose mirror moves this
+        line by nothing at all.
+
+        So the sign correction is worth having and it is NOT what makes the
+        library covered. Nothing does: the quantity that would cover it, the
+        pelvis line, is not pinnable. Refer to the note above PELVIS and to
+        "The lower body has no stable solution" in docs/KNOWN_ISSUES.md.
         """
         for movement_id, expected in sorted(STANCE_DEGREES.items()):
             with self.subTest(movement=movement_id):
-                self.assertIn(movement_id, self.turned, f"{movement_id} was not solved")
+                self.assertIn(movement_id, self.stance, f"{movement_id} was not solved")
                 self.assertAlmostEqual(
-                    self.turned[movement_id], expected,
+                    self.stance[movement_id], expected,
                     delta=STANCE_TOLERANCE_DEGREES,
                     msg=f"{movement_id} now stands "
-                        f"{self.turned[movement_id]:.2f} degrees turned against "
+                        f"{self.stance[movement_id]:.2f} degrees turned against "
                         f"the recorded {expected}. A move of this size is not "
                         "drift. Check whether the solver has changed BASIN on "
                         "that drill before believing anything measured from it, "
@@ -158,7 +247,7 @@ class NoHandWaitsPastFullStretch(unittest.TestCase):
     def test_the_pin_covers_every_drill_that_was_solved(self) -> None:
         """Guards the guard. A pin that names fewer drills than the library
         solves would pass while leaving the rest unwatched."""
-        missing = sorted(set(self.turned) - set(STANCE_DEGREES))
+        missing = sorted(set(self.stance) - set(STANCE_DEGREES))
         self.assertEqual(
             missing, [],
             f"{missing} are solved and not pinned, so a basin flip on them "
