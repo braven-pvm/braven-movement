@@ -117,88 +117,118 @@ def load_font(size: int):
     return ImageFont.load_default()
 
 
-def build_sheet(before: Path, after: Path, drill: str, view: str, out: Path,
-                height: int = 420) -> dict:
+def build_sheet(columns: list[Path], drill: str, view: str, out: Path,
+                height: int = 420, caption: str = "") -> dict:
+    """Any number of builds of one drill, measured against the FIRST.
+
+    Two columns was not enough. A three-state record — what a coach graded,
+    what an intermediate build drew, and what the corrected build draws — needs
+    the middle column to be unmistakably the middle. So every column is
+    labelled by the BUILD read from its own receipt, never by its position, and
+    "middle" can never be read as "after".
+    """
     require_imaging()
     label, head = load_font(14), load_font(19)
-    shared = [p for p in phases_in(before, drill, view)
-              if p in phases_in(after, drill, view)]
+    if len(columns) < 2:
+        raise SystemExit("give at least two builds to compare")
+
+    shared = [p for p in phases_in(columns[0], drill, view)
+              if all(p in phases_in(c, drill, view) for c in columns[1:])]
     if not shared:
         raise SystemExit(
-            f"no phase of {drill} view {view} exists in BOTH directories. "
-            f"before has {phases_in(before, drill, view)}, "
-            f"after has {phases_in(after, drill, view)}"
+            f"no phase of {drill} view {view} exists in EVERY build given: "
+            + "; ".join(f"{c.name} has {phases_in(c, drill, view)}"
+                        for c in columns)
         )
 
+    builds = [build_of(c, drill) for c in columns]
     rows, report = [], []
     for phase in shared:
-        first = Image.open(before / f"{drill}.{phase}.{view}.png")
-        second = Image.open(after / f"{drill}.{phase}.{view}.png")
-        reading = difference(first, second)
-        width = max(1, round(first.width * height / first.height))
-        rows.append((phase, first.resize((width, height), Image.LANCZOS),
-                     second.resize((width, height), Image.LANCZOS), reading))
-        report.append({"phase": phase, **reading, "verdict": verdict(reading)})
+        pictures = [Image.open(c / f"{drill}.{phase}.{view}.png") for c in columns]
+        # Against the FIRST build, which is what a coach actually graded, so
+        # the number answers "has this figure changed since she saw it".
+        readings = [difference(pictures[0], later) for later in pictures[1:]]
+        width = max(1, round(pictures[0].width * height / pictures[0].height))
+        rows.append((phase,
+                     [i.resize((width, height), Image.LANCZOS) for i in pictures],
+                     readings))
+        report.append({
+            "phase": phase,
+            "againstBuild": builds[0],
+            "columns": [{"build": builds[index + 1], **reading,
+                         "verdict": verdict(reading)}
+                        for index, reading in enumerate(readings)],
+        })
 
-    gap, strip, pad, header = 8, 40, 14, 82
-    cell = rows[0][1].width
+    gap, strip, pad, header = 8, 56, 14, 100
+    cell = rows[0][1][0].width
+    group = cell * len(columns) + gap * (len(columns) - 1)
     sheet = Image.new(
         "RGB",
-        (pad * 2 + len(rows) * (cell * 2 + gap) + (len(rows) - 1) * pad,
+        (pad * 2 + len(rows) * group + (len(rows) - 1) * pad,
          header + pad + height + strip),
         (24, 24, 27),
     )
     canvas = ImageDraw.Draw(sheet)
-    canvas.text((pad, 10), f"{drill.replace('netball_', '')}, {view} view: "
-                "before and after the hand mirror fix", font=head,
-                fill=(240, 240, 245))
-    canvas.text((pad, 36), f"LEFT of each pair {build_of(before, drill)}    "
-                f"RIGHT of each pair {build_of(after, drill)}",
-                font=label, fill=(170, 200, 240))
-    canvas.text((pad, 56), "the share of pixels that moved is measured, not "
-                "judged: an eye is bad at 'did this change'.",
+    canvas.text((pad, 10), f"{drill.replace('netball_', '')}, {view} view",
+                font=head, fill=(240, 240, 245))
+    canvas.text((pad, 36), "columns, left to right:  "
+                + "   |   ".join(builds), font=label, fill=(170, 200, 240))
+    canvas.text((pad, 56), "the share of pixels that moved is measured against "
+                f"the FIRST column ({builds[0]}), not judged by eye.",
                 font=label, fill=(170, 170, 180))
+    if caption:
+        canvas.text((pad, 76), caption, font=label, fill=(255, 170, 120))
 
     x = pad
-    for phase, first, second, reading in rows:
-        sheet.paste(first, (x, header + pad))
-        sheet.paste(second, (x + cell + gap, header + pad))
-        changed = reading["comparable"] and reading["changedShare"] >= BAND
+    for phase, pictures, readings in rows:
+        for index, picture in enumerate(pictures):
+            sheet.paste(picture, (x + index * (cell + gap), header + pad))
         canvas.text((x, header + pad + height + 6), phase, font=label,
                     fill=(235, 235, 240))
-        canvas.text((x, header + pad + height + 22), verdict(reading),
-                    font=label,
-                    fill=(240, 170, 120) if changed else (150, 190, 150))
-        x += cell * 2 + gap + pad
+        line = header + pad + height + 22
+        for index, reading in enumerate(readings):
+            changed = reading["comparable"] and reading["changedShare"] >= BAND
+            canvas.text((x, line), f"{builds[index + 1]}: {verdict(reading)}",
+                        font=label,
+                        fill=(240, 170, 120) if changed else (150, 190, 150))
+            line += 16
+        x += group + pad
 
     out.parent.mkdir(parents=True, exist_ok=True)
     sheet.save(out)
     return {"sheet": str(out), "drill": drill, "view": view,
-            "beforeBuild": build_of(before, drill),
-            "afterBuild": build_of(after, drill), "phases": report}
+            "builds": builds, "measuredAgainst": builds[0],
+            "caption": caption, "phases": report}
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--before", required=True, type=Path)
-    parser.add_argument("--after", required=True, type=Path)
+    parser.add_argument("--build", action="append", required=True, type=Path,
+                        metavar="DIR",
+                        help="a directory of renders, repeatable. The FIRST is "
+                             "the reference every later one is measured against")
     parser.add_argument("--drill", required=True)
     parser.add_argument("--view", default="front")
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--height", type=int, default=420)
+    parser.add_argument("--caption", default="",
+                        help="a line printed on the sheet, for saying what a "
+                             "column IS when its build alone does not say")
     arguments = parser.parse_args(argv)
 
-    receipt = build_sheet(arguments.before, arguments.after, arguments.drill,
-                          arguments.view, arguments.out, arguments.height)
+    receipt = build_sheet(arguments.build, arguments.drill, arguments.view,
+                          arguments.out, arguments.height, arguments.caption)
     arguments.out.with_suffix(".json").write_text(
         json.dumps(receipt, indent=2), encoding="utf-8"
     )
-    moved = [p for p in receipt["phases"]
-             if p["comparable"] and p["changedShare"] >= BAND]
     print(f"{arguments.out}  {len(receipt['phases'])} phases, "
-          f"{len(moved)} changed")
+          f"{len(receipt['builds'])} builds, measured against "
+          f"{receipt['measuredAgainst']}")
     for phase in receipt["phases"]:
-        print(f"   {phase['phase']:<12} {phase['verdict']}")
+        for column in phase["columns"]:
+            print(f"   {phase['phase']:<12} {column['build']:<32} "
+                  f"{column['verdict']}")
     return 0
 
 
