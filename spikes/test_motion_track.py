@@ -208,7 +208,7 @@ class LibraryTest(unittest.TestCase):
             "netball_hooks_outside_hand",
         ):
             track = load_motion(MOVEMENTS / f"{name}.motion.json")
-            self.assertFalse(track.is_symmetric(), name)
+            self.assertFalse(track.keys_carry_no_side(), name)
 
     def test_a_split_stance_drill_is_not_symmetric(self):
         """The fault that made this flag read the feet.
@@ -229,7 +229,7 @@ class LibraryTest(unittest.TestCase):
             if key.foot_left is not None and key.foot_right is not None
         ]
         self.assertGreater(max(gaps), 0.3, "the split stance is the input")
-        self.assertFalse(track.is_symmetric())
+        self.assertFalse(track.keys_carry_no_side())
 
     def test_a_planted_turn_or_step_makes_a_square_drill_asymmetric(self):
         """Guards the two clauses no drill in the library exercises.
@@ -242,13 +242,13 @@ class LibraryTest(unittest.TestCase):
 
         for field, value in (("turn_degrees", 12.0), ("root_across", 0.25)):
             track = load_motion(source)
-            self.assertTrue(track.is_symmetric(), "the drill must start square")
+            self.assertTrue(track.keys_carry_no_side(), "the drill must start square")
 
             keys = list(track.keys)
             keys[1] = replace(keys[1], **{field: value})
             track = replace(track, keys=tuple(keys))
 
-            self.assertFalse(track.is_symmetric(), field)
+            self.assertFalse(track.keys_carry_no_side(), field)
 
     def test_a_turned_drill_declares_its_turn(self):
         track = load_motion(MOVEMENTS / "netball_hooks_outside_hand.motion.json")

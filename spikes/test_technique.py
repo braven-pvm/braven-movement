@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -16,7 +17,10 @@ from finger_wrap import (
     wrap_joints,
     wrap_report,
 )
+from ball_track import MOVEMENT_DIR, ball_path, load_ball
+from motion_track import load_motion
 from technique import (
+    movement_carries_no_side,
     MAXIMUM_SPREAD_DEGREES,
     MINIMUM_SPREAD_DEGREES,
     TechniqueError,
@@ -51,6 +55,81 @@ def variant(**changes) -> dict:
     data = json.loads(json.dumps(VALID))
     data.update(changes)
     return data
+
+
+class CarriesNoSideTest(unittest.TestCase):
+    """The population of the left-right knee guard is read from three files.
+
+    Each clause below is planted, because a clause nothing exercises is a
+    clause that can be deleted while the suite stays green.
+    """
+
+    EVEN = "netball_two_hand_catch_chest"
+
+    def parts(self, movement_id):
+        # MOVEMENT_DIR rather than movement_engine.motion_path: this file
+        # must stay runnable without the solver installed.
+        return (
+            load_motion(MOVEMENT_DIR / f"{movement_id}.motion.json"),
+            load_ball(ball_path(movement_id)),
+            load_technique(technique_path(movement_id)),
+        )
+
+    def test_an_even_drill_reads_even_in_all_three_files(self):
+        track, ball, method = self.parts(self.EVEN)
+
+        self.assertTrue(track.keys_carry_no_side())
+        self.assertTrue(ball.carries_no_side())
+        self.assertTrue(method.carries_no_side())
+        self.assertTrue(movement_carries_no_side(track, ball, method))
+
+    def test_a_ball_arriving_to_one_side_leaves_the_population(self):
+        """THE FAULT THIS FIXED. The motion file stays even and says nothing.
+
+        A possession solve reads no hand keys, so a ball off the midline is
+        an asymmetric demand that the motion file cannot show.
+        """
+        track, ball, method = self.parts(self.EVEN)
+        keys = list(ball.keys)
+        keys[-1] = replace(
+            keys[-1], offset=replace(keys[-1].offset, across=0.05)
+        )
+        moved = replace(ball, keys=tuple(keys))
+
+        self.assertTrue(track.keys_carry_no_side(), "the motion file is blind to this")
+        self.assertFalse(moved.carries_no_side())
+        self.assertFalse(movement_carries_no_side(track, moved, method))
+
+    def test_a_technique_carrying_the_ball_across_leaves_the_population(self):
+        track, ball, method = self.parts(self.EVEN)
+        keys = list(method.after_contact)
+        keys[-1] = replace(
+            keys[-1], offset=replace(keys[-1].offset, across=0.2)
+        )
+        carried = replace(method, after_contact=tuple(keys))
+
+        self.assertFalse(carried.carries_no_side())
+        self.assertFalse(movement_carries_no_side(track, ball, carried))
+
+    def test_a_one_handed_technique_leaves_the_population(self):
+        track, ball, method = self.parts(self.EVEN)
+
+        self.assertFalse(replace(method, hands="right").carries_no_side())
+
+    def test_the_deflecting_drill_is_out_on_two_counts(self):
+        """Named because it is the drill the old one-file test admitted."""
+        track, ball, method = self.parts("netball_deflect_high")
+
+        self.assertTrue(track.keys_carry_no_side(), "its motion file IS even")
+        self.assertFalse(ball.carries_no_side(), "its ball arrives to her left")
+        self.assertFalse(method.carries_no_side(), "its technique carries across")
+        self.assertFalse(movement_carries_no_side(track, ball, method))
+
+    def test_a_missing_file_is_not_evidence_of_evenness(self):
+        track, ball, method = self.parts(self.EVEN)
+
+        self.assertFalse(movement_carries_no_side(track, None, method))
+        self.assertFalse(movement_carries_no_side(track, ball, None))
 
 
 class LoadTest(unittest.TestCase):

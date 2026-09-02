@@ -123,6 +123,21 @@ class Technique:
     release_phase: float | None
     after_contact: tuple[AfterContactKey, ...]
 
+    def carries_no_side(self) -> bool:
+        """True when this technique asks nothing of one side only.
+
+        Three fields carry a side. `hands` names which hand leads, so
+        anything but "both" is one-sided. `ready` is where she waits. Each
+        `afterContact` key is where the ball goes once she has it, and
+        `netball_deflect_high` carries it from +0.224 to -0.203 — right
+        across her body — while its motion file is perfectly even.
+        """
+        if self.hands != "both":
+            return False
+        if self.ready is not None and self.ready.across != 0.0:
+            return False
+        return all(key.offset.across == 0.0 for key in self.after_contact)
+
     @property
     def sides(self) -> tuple[str, ...]:
         return SIDES[self.hands]
@@ -224,4 +239,25 @@ def load_technique(path: Path) -> Technique:
         second_hand_phase=second_hand,
         release_phase=release,
         after_contact=tuple(keys),
+    )
+
+
+def movement_carries_no_side(track, ball, method) -> bool:
+    """True when NOTHING THE SOLVE READS distinguishes left from right.
+
+    Three files describe a movement and the solve reads all three. An earlier
+    version of this test read only the motion file, which for a possession
+    drill is the one file whose hand keys the solve IGNORES. That admitted
+    `netball_deflect_high` — even in every motion field, taking a ball 0.28
+    arm lengths to her left — into a population defined by evenness.
+
+    A missing ball or technique cannot make a movement even, so absence is
+    not treated as evidence: a drill with neither is out.
+    """
+    if ball is None or method is None:
+        return False
+    return (
+        track.keys_carry_no_side()
+        and ball.carries_no_side()
+        and method.carries_no_side()
     )

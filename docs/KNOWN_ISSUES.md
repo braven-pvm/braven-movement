@@ -1890,27 +1890,45 @@ reconstructed configurations above. The relayed five is not used.
 
 ## Every square drill solves with one knee more bent than the other
 
-**Six drills author nothing that distinguishes left from right, and not one of
-them solves as a mirror.** The gap between the knees runs **3.78 to 6.48
-degrees**, on every drill, in every solution measured. Nothing asks for it.
+**Six drills demand nothing of one side, and not one of them solves as a
+mirror.** The gap between the knees runs **3.93 to 6.48 degrees** across the
+three configurations below, and **4.02 to 6.48 on the shipped build**. Nothing
+asks for any of it.
 
-Measured on `c4a7a37`.
+Measured on `32663a9`. An earlier version of this entry said `c4a7a37`, where
+`netball_overhead_pass` did not exist and the population was one drill
+smaller.
 
 ### The population comes from the files, not from a judgement
 
-A drill is in when NOTHING in its authoring carries a side. Four fields do:
-the hand offsets, the foot placements, `turn_degrees` (positive to the
-athlete's left) and `root_across` (positive the same way).
+A drill is in when NOTHING THE SOLVE READS carries a side, and the solve reads
+THREE files. The motion file contributes the hand offsets, the foot placements,
+`turn_degrees` (positive to the athlete's left) and `root_across` (the same
+way). The ball file contributes every key's `across` and the launch target's.
+The technique contributes `hands`, `ready.across` and every `afterContact`
+key's `across`.
 
-| out of the population | what carries a side |
-|---|---|
-| `double_foot_landing` | feet: approach key asks left 0.150 ahead, right −0.163 |
-| `hooks_outside_hand` | a right-hand override, and a 48 degree turn |
-| `one_hand_snatch_to_other_hand` | a right-hand override on three keys |
+**READING THE MOTION FILE ALONE IS WRONG, AND A FIRST VERSION DID IT.** A
+possession solve reads NO HAND KEYS — `solve_movement` says so in its own
+docstring — so for these drills the motion file is the one file whose hands the
+solve ignores, and the hands chase the ball and the technique.
 
-The other six are in: `chest_pass`, `deflect_high`, `hooks_jump_pull_in`,
+| out of the population | what carries a side | which file |
+|---|---|---|
+| `deflect_high` | the ball ARRIVES 0.28 arm lengths to her left, and the technique carries it from +0.224 to −0.203 | ball and technique |
+| `double_foot_landing` | feet: the approach key asks left 0.150 ahead, right −0.163 | motion |
+| `hooks_outside_hand` | a right-hand override, a 48 degree turn, a ball starting 2.6 out | all three |
+| `one_hand_snatch_to_other_hand` | a right-hand override on three keys, a ball crossing to −0.3 | all three |
+
+The other six are in: `chest_pass`, `hooks_jump_pull_in`, `overhead_pass`,
 `two_hand_catch_chest`, `two_hand_snatch_pull_in`,
 `two_hand_snatch_straight_back`.
+
+**`deflect_high` WAS IN THIS POPULATION AND SHOULD NOT HAVE BEEN.** Its motion
+file is perfectly even. `docs/HANDOFF_RENDERING.md` already called that contact
+asymmetric by design, and its configuration spread of 2.04 degrees against 0.70
+or less for every genuinely even drill was in the table before the cause was.
+It read as a wide drill rather than as the wrong drill.
 
 **FIELD PRESENCE IS THE WRONG TEST, AND A FIRST VERSION OF THIS USED IT.**
 `hooks_jump_pull_in` writes `footLeft` and `footRight` on all five keys with
@@ -1921,10 +1939,12 @@ the presence of the fields dropped the worst member.
 
 ### The gap, across three solutions
 
-| drill | negation | shipped mirror | mirror, locked pinned | spread |
+The columns name CONFIGURATIONS of one engine, not checkouts.
+
+| drill | negation, locked free | mirror, locked free | mirror, locked pinned | spread |
 |---|---|---|---|---|
 | `hooks_jump_pull_in` | 5.78 | 5.81 | **6.48** | 0.70 |
-| `deflect_high` | 3.79 | 5.82 | 3.78 | 2.04 |
+| `overhead_pass` | 6.26 | 6.25 | 6.27 | **0.02** |
 | `chest_pass` | 4.45 | 4.56 | 4.31 | 0.25 |
 | `two_hand_catch_chest` | 4.39 | 4.15 | 4.44 | 0.29 |
 | `two_hand_snatch_straight_back` | 3.93 | 4.24 | 4.02 | 0.31 |
@@ -1981,21 +2001,33 @@ an asymmetry was PLANTED and swept, in equal increments, to see the measure
 rise with it. **It does not rise.** A lateral hip step added to
 `two_hand_catch_chest` in increments of 0.01:
 
+**THE INPUT.** `root_across` was raised by the same amount on every key of
+`netball_two_hand_catch_chest`, in six equal increments of 0.01 arm lengths.
+The joint row is the largest move of ANY joint, at frame 0, over all of them,
+from the increment before.
+
 | planted hip step | 0.00 | 0.01 | 0.02 | 0.03 | 0.04 | 0.05 |
 |---|---|---|---|---|---|---|
 | \|L−R\| knee | 4.44 | 3.49 | 5.85 | 2.24 | 7.05 | 1.80 |
-| worst joint move from the step before | — | 4.52 | 6.33 | 6.63 | 7.95 | 6.51 cm |
+| largest joint move from the step before | — | 4.52 | 6.33 | 6.63 | 7.95 | 6.51 cm |
 
-**THE MEASURE IS NOT A CONTINUOUS FUNCTION OF ITS INPUT.** It oscillates over
-nearly its whole range while the planted asymmetry only grows, and every
-increment moves some joint by 4.5 to 8.0 cm. The same sweep on
-`hooks_jump_pull_in`'s right foot does the same thing: 6.48, 6.30, 6.47, 3.89,
-6.69, 3.48.
+**ON THIS DRILL THE MEASURE IS NOT A CONTINUOUS FUNCTION OF ITS INPUT.** It
+oscillates over nearly its whole range while the planted asymmetry only grows,
+and every increment moves some joint by 4.5 to 8.0 cm. An independent run at a
+step of 0.0005 arm lengths — about 0.03 cm — flips the basin and moves a leg
+joint 6 to 10 cm, so no increment is small enough to be safe.
 
-**EVERY POINT IS A BASIN, NOT ONE CROSSING.** The entry above records two
-configurations reaching two solutions. This is stronger: a hair's change to the
-authoring reaches a different solution EVERY TIME, at every size tried, with no
-threshold to find.
+**THE CLAIM IS LIMITED TO THE DRILLS MEASURED, AND THEY DISAGREE.** Under this
+same lateral sweep `netball_overhead_pass` is piecewise continuous with ONE
+crossing and joint moves of 1.2 to 2.0 cm inside the basin, and
+`netball_bounce_pass` gives knee gaps spanning 0.52 degrees where
+`two_hand_catch_chest` spans 1.80 to 7.05. **So the instability is not uniform
+across the library**, and where it lives belongs to the open question rather
+than being settled here.
+
+A DIFFERENT SWEEP OF THE SAME DRILL BEHAVES DIFFERENTLY AGAIN, which is why a
+sweep must name its key. Refer to "The overhead pull-back has no boundary": the
+pull-back key on that drill makes its graded verdict alternate.
 
 **WHAT THAT DOES AND DOES NOT COST THE GUARD.** The ceilings are calibrated
 across three ENGINE configurations, and every drill stays inside them in all
@@ -2009,8 +2041,9 @@ The instability is entirely in the inputs, not in the arithmetic, so none of
 these figures is a sampled average.
 
 **THE CALIBRATION POPULATION IS THREE, NAMED, AND ALL ENGINE-SIDE:** the finger
-negation with the locked parameters free, the shipped mirror with them free,
-and the mirror with them pinned. An engine change alters the solver's freedom.
+negation with the locked parameters free, the mirror with them free, and the
+mirror with them pinned. The third is what ships; the other two are
+configurations of one engine and not checkouts. An engine change alters the solver's freedom.
 A key change moves the target it chases. Steadiness under the first is evidence
 and not proof for the second.
 
@@ -2021,8 +2054,9 @@ SWEEP — inside, at the edge, past it — with the measure moving steadily and 
 joints moving continuously across the crossing. **Below the hips there is no
 continuity to sweep.**
 
-**So none of the sixteen below-the-hips checkpoints can be proven by that
-method.** That is not a claim that any of them is wrong. It is a limit on what
+**So none of the EIGHTEEN below-the-hips checkpoints can be proven by that
+method** — eighteen of the library's 83 at `32663a9`, where an earlier version
+of this said sixteen of 75. That is not a claim that any of them is wrong. It is a limit on what
 their evidence can say.
 
 A below-the-hips checkpoint may claim **a reading on the build that produced
