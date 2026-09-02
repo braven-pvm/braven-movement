@@ -357,12 +357,26 @@ class TheContactSeparationOnTheEvidencedPopulation(unittest.TestCase):
             # A CATCH ONLY. This measures the elbows at the moment she TAKES
             # the ball, so a drill that begins holding it has no such moment:
             # its contact frame is frame 0 by definition, and frame 0 of a pass
-            # is the ball against her chest with the elbows wide. Measured,
-            # netball_chest_pass reads 53.41 cm there, against 19.01 to 40.29
-            # over every drill that actually catches. Including it moved this
-            # mean from 36.40 to 38.83 and closed the gap below from 3.09 to
-            # 0.66 — which is this class's own stated failure, a mean over the
-            # wrong population, arriving from a new direction.
+            # is the ball against her chest with the elbows wide.
+            #
+            # Measured on the pinned build 02b25cd: netball_chest_pass reads
+            # 53.41 cm there, against 28.90 to 40.37 over every two-handed
+            # drill that actually catches. Including it moves the two-handed
+            # mean from 36.43 to 38.86, which is 2.36 outside MEASURED_CM's
+            # half-centimetre delta, and moves the gap below from 20.96 to
+            # 18.53. The two figures move by the same 2.43, because a pass
+            # enters only the two-handed group and leaves the one-handed one
+            # untouched.
+            #
+            # This is this class's own stated failure — a mean over the wrong
+            # population — arriving from a new direction.
+            #
+            # RE-MEASURED, AND THE FIRST READING IS SUPERSEDED. On ac240b2 this
+            # comment said the pass closed the gap from 3.09 to 0.66. That
+            # collapse was mostly the clavicle artefact and not the pass: 3.09
+            # was never true of the athlete. Refer to docs/CLAVICLE_ARTEFACT.md
+            # and to ONE_HANDED_GAP_CM above. The MECHANISM was right on both
+            # builds and only the numbers moved.
             states = [frame["ballState"] for frame in result["measurements"]]
             if "flight" not in states[:contact]:
                 cls.not_a_catch[movement_id] = separation
