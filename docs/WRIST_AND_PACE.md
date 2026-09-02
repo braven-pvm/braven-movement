@@ -24,29 +24,54 @@ input. So a flick was PLANTED into the solved motion — 40 degrees of wrist
 rotation over the six frames ending at the release — and the same measure was
 asked to see it.
 
-| | bend range over the release window | peak rate |
-|---|---|---|
-| the shipped solve | 42.91 to 61.74 degrees | 193.3 deg/s |
-| with a flick planted | 15.37 to 61.74 degrees | **1736.5 deg/s** |
+On `two_hand_catch_chest`'s right hand, over the window from eight frames
+before the release to two after:
 
-The instrument reads the planted flick at nine times the shipped rate. A zero
-from it would have meant something. **It did not read zero.**
+| | peak rate |
+|---|---|
+| the shipped solve | 278.6 deg/s |
+| with 40 degrees planted on `wrist_rz` | **2503.6 deg/s**, nine times over |
+
+**BUT THE CONTROL IS AXIS-DEPENDENT, AND THAT IS A REAL LIMIT.** The same 40
+degrees planted on `wrist_ry` reads 278.6 deg/s on that hand — NO CHANGE AT
+ALL. An independent run across more drills reads `rz` at 4.8 to 6.6 times, `ry`
+at 2.4 to 2.9, and forward twist at 0.7 to 1.5.
+
+So this measure sees FLEXION strongly and is nearly blind to FORWARD TWIST. **A
+pronation-led flick — the thumbs-down finish a chest pass ends in — would read
+as almost nothing here.**
+
+"A zero would have meant something" therefore holds for FLEXION, which is the
+primary component of a wrist flick, and is WEAK for pronation. The finding
+below does not rest on the control: the wrist visibly moves, and the timing is
+the finding.
 
 ### What the shipped solve actually does
 
 The hand bends against the forearm through every release, on every drill and
 both hands:
 
+**The rate is a plain one-frame difference divided by the track's own frame
+period**, 1/60 second for every drill in the library. No smoothing and no wider
+window, so any figure below regenerates from two consecutive frames.
+
 | drill | side | range | peak rate | peaks at |
 |---|---|---|---|---|
-| `deflect_high` | l | 24.46 deg | 225.0 deg/s | **2 frames after release** |
-| `deflect_high` | r | 22.19 | 342.8 | **4 after** |
-| `hooks_jump_pull_in` | l | 32.79 | 299.1 | **3 after** |
-| `hooks_jump_pull_in` | r | 32.81 | 299.0 | **3 after** |
-| `two_hand_catch_chest` | l | 34.66 | 310.4 | **3 after** |
-| `two_hand_catch_chest` | r | 34.67 | 310.4 | **3 after** |
-| `two_hand_snatch_straight_back` | l | 24.97 | 224.7 | **2 after** |
-| `two_hand_snatch_straight_back` | r | 25.01 | 224.7 | **2 after** |
+| `deflect_high` | l | 24.46 deg | 301.5 deg/s | **2 frames after release** |
+| `deflect_high` | r | 22.19 | 459.2 | **4 after** |
+| `hooks_jump_pull_in` | l | 32.79 | 454.5 | **3 after** |
+| `hooks_jump_pull_in` | r | 32.81 | 454.3 | **3 after** |
+| `two_hand_catch_chest` | l | 34.66 | 483.4 | **3 after** |
+| `two_hand_catch_chest` | r | 34.67 | 483.5 | **3 after** |
+| `two_hand_snatch_straight_back` | l | 24.97 | 342.4 | **2 after** |
+| `two_hand_snatch_straight_back` | r | 25.01 | 342.3 | **2 after** |
+
+**A FIRST VERSION OF THIS TABLE GAVE RATES 1.2 TO 1.6 TIMES LOWER, AND THEY DID
+NOT REPRODUCE.** They divided by `solve_movement`'s `secondsPerFrame`, which is
+NOT the duration of a frame: it is `time.perf_counter()` over the frame count,
+the SOLVER'S WALL-CLOCK COST. Those figures were degrees per second of computer
+time, and they moved between runs because the machine was busier. The ranges
+and the timings never depended on it and are unchanged.
 
 **Twenty-two to thirty-five degrees of wrist movement. It is not a still hand.**
 
@@ -149,6 +174,7 @@ nobody recorded, and a coach is reading the choice.
 Measured on `02b25cd` with a clean tree. The wrist figures come from the solved
 joint positions rather than from parameters, so they do not assume which
 parameter a flick would live in. The planted-flick control is in the record
-because a zero from an unchecked instrument would have been worthless. The
+because a zero from an unchecked instrument would have been worthless — and its
+axis limit is in the record for the same reason. The
 video figures are the video lane's, on matched stretches, and the engine side
 of the ratio is read from the engine's own authored landmarks.

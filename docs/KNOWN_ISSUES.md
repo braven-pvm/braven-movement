@@ -1521,10 +1521,25 @@ timing. No property of the hand enters, and the carried position follows her
 chest rather than her wrist. **A flick cannot be expressed in the possession
 model as it stands** — it is not an authoring gap.
 
-The instrument was proved before the reading was believed: a planted 40 degree
-flick reads at 1736 deg/s against the shipped 193, nine times over. A zero
-would have meant something. It did not read zero, and the first expectation —
-that the wrist would not move at all — was wrong.
+The instrument was proved before the reading was believed: 40 degrees planted
+on `wrist_rz` reads 2503.6 deg/s against the shipped 278.6, nine times over. It
+did not read zero, and the first expectation — that the wrist would not move at
+all — was wrong.
+
+**THE CONTROL IS AXIS-DEPENDENT and this sentence must say so.** The same 40
+degrees on `wrist_ry` reads no change at all on that hand, and an independent
+run puts forward twist at 0.7 to 1.5 times. The measure sees FLEXION and is
+nearly blind to PRONATION, so a thumbs-down chest-pass finish would read as
+almost nothing. "A zero would have meant something" holds for flexion, the
+primary component, and is WEAK for pronation.
+
+**A RATE HERE IS A PLAIN ONE-FRAME DIFFERENCE OVER THE TRACK'S 1/60 SECOND
+FRAME PERIOD.** An earlier version divided by `solve_movement`'s
+`secondsPerFrame`, which holds `time.perf_counter()` over the frame count — the
+SOLVER'S WALL-CLOCK COST, not a frame duration. Those rates were degrees per
+second of computer time and moved between runs. The field's name invites that
+reading and it caught me; anything else dividing by it is measuring the
+machine.
 
 The manual's cue for this drill is "with wrist and hands pass the ball", and
 this file already records that cue as having no instrument. This is that gap,
