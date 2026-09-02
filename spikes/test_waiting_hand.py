@@ -38,6 +38,28 @@ try:
 except ImportError:  # pragma: no cover - exercised only without the solver
     SOLVER = False
 
+# THE READY STANCE OF EVERY DRILL, in degrees of shoulder-line turn at frame 0,
+# measured on fc29bb2. These are RECORDED FACTS and not targets: nothing was
+# tuned to reach them and no threshold was chosen to make them pass.
+STANCE_DEGREES = {
+    "netball_deflect_high": 0.000,
+    "netball_double_foot_landing": 0.034,
+    "netball_hooks_jump_pull_in": 0.020,
+    "netball_hooks_outside_hand": 48.217,
+    "netball_one_hand_snatch_to_other_hand": 0.496,
+    "netball_two_hand_catch_chest": 0.018,
+    "netball_two_hand_snatch_pull_in": 0.019,
+    "netball_two_hand_snatch_straight_back": 0.020,
+}
+# Wide enough to ignore ordinary drift, narrow enough to catch a basin flip.
+#
+# Ordinary drift on these is hundredths of a degree: across the hand-mirror fix
+# and the locked-parameter fix, every square drill moved by less than 0.05. The
+# flip this exists for is 33 degrees. Two is far above the one and far below the
+# other, and there is a great deal of room in between, so the number is not
+# delicate.
+STANCE_TOLERANCE_DEGREES = 2.0
+
 if SOLVER:
     # Deliberately unguarded: a failure here is a real break and must be loud.
     from ball_track import has_ball
@@ -89,6 +111,58 @@ class NoHandWaitsPastFullStretch(unittest.TestCase):
         """Guards the guard. The comparison below is empty without both."""
         self.assertTrue(self.reaching, "no drill reaches for the ball")
         self.assertTrue(self.waiting, "no drill has a hand that waits")
+
+    def test_each_drill_still_stands_the_way_it_stood(self) -> None:
+        """THE BASIN PIN. Each drill's ready stance, recorded per drill.
+
+        `netball_hooks_outside_hand` has TWO solved poses about 33 degrees apart
+        in ready-stance turn, and which one the solver reaches depends on the
+        COMPOSITION of the enabled parameter set rather than on any parameter in
+        it. Excluding an unrelated axis with a real range moves it, and so does
+        excluding either foot. Refer to docs/CLAVICLE_ARTEFACT.md.
+
+        Nothing reported that flip for a day. It moved no verdict, it moved no
+        aggregate — the two-handed contact mean read 36.40 to 36.43 through all
+        of it — and four published findings were written from the wrong pose
+        before two other guards caught it by accident.
+
+        WHY A PIN AND NOT A FINGERPRINT. A pose fingerprint would go red on
+        every legitimate change: the hand fix moved 46 graded values and the
+        locked-parameter fix moved 42. A guard that fires on all of those is
+        noise within a week and deleted within two. What discriminates is the
+        GAP: ordinary drift here is hundredths of a degree and a basin flip is
+        33, so a tolerance anywhere between them catches one and ignores the
+        other.
+
+        ITS BLIND SPOT, recorded because it is real. Seven of the eight drills
+        stand square, at 0.5 degrees or less. They would read near zero in
+        EITHER basin, so this catches a flip on the drill we have seen and may
+        miss one elsewhere. A general bound on root winding is the companion
+        idea and is deliberately not folded in here.
+        """
+        for movement_id, expected in sorted(STANCE_DEGREES.items()):
+            with self.subTest(movement=movement_id):
+                self.assertIn(movement_id, self.turned, f"{movement_id} was not solved")
+                self.assertAlmostEqual(
+                    self.turned[movement_id], expected,
+                    delta=STANCE_TOLERANCE_DEGREES,
+                    msg=f"{movement_id} now stands "
+                        f"{self.turned[movement_id]:.2f} degrees turned against "
+                        f"the recorded {expected}. A move of this size is not "
+                        "drift. Check whether the solver has changed BASIN on "
+                        "that drill before believing anything measured from it, "
+                        "and refer to docs/CLAVICLE_ARTEFACT.md.",
+                )
+
+    def test_the_pin_covers_every_drill_that_was_solved(self) -> None:
+        """Guards the guard. A pin that names fewer drills than the library
+        solves would pass while leaving the rest unwatched."""
+        missing = sorted(set(self.turned) - set(STANCE_DEGREES))
+        self.assertEqual(
+            missing, [],
+            f"{missing} are solved and not pinned, so a basin flip on them "
+            "would go unreported. Add them with their measured stance.",
+        )
 
     def test_a_turned_drill_is_among_them(self) -> None:
         """The anti-hollow clause, RESTORED to the real library.

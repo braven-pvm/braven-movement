@@ -1563,3 +1563,33 @@ That is the third property of the movement that nothing authors and nothing
 grades. The other two are the wrist above and the ball speed, whose 600 cm/s
 constant at the manual's own 7 m produces a ball peaking at 302 cm against a
 305 cm goalpost.
+
+
+## A basin flip now reports itself, on one drill
+
+Added 2026-09-02 after the two-basin finding. `test_waiting_hand.py` records
+every drill's ready-stance shoulder turn and pins it, so a change of basin
+names the drill instead of arriving as four wrong findings.
+
+Nothing reported the last flip for a day. It moved no verdict, and it moved no
+aggregate — the two-handed contact mean read 36.40 to 36.43 through all of it —
+so every gate watched a quantity the flip did not touch. Two guards eventually
+caught it by accident, and both had first been re-pointed as though the library
+had changed.
+
+**It is a pin and not a fingerprint, deliberately.** A pose fingerprint would go
+red on every legitimate change: the hand fix moved 46 graded values and the
+locked-parameter fix 42. A guard that fires on all of those is noise within a
+week and deleted within two. What discriminates is the GAP — drift here is
+hundredths of a degree and a flip is 33 — so the tolerance is 2 degrees, far
+above one and far below the other.
+
+**ITS BLIND SPOT, recorded with it.** Seven of the eight drills stand square, at
+0.5 degrees or less, and would read near zero in EITHER basin. This catches a
+flip on the drill we have seen and may miss one elsewhere. The companion idea
+is a general bound on root winding, which is deliberately NOT folded in: that
+is a separate investigation, and a guard and a finding must not share a pack.
+
+Mutation-proven: handing the locked parameters back flips that drill to 15.44
+and the pin reports it by name, with the 32.78 degree gap and a pointer to
+`docs/CLAVICLE_ARTEFACT.md`.
