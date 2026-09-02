@@ -73,6 +73,20 @@ makes the talking harmless, so this is insurance rather than a second rule: if
 the clap is missed in one view, the fallback is correlation, and correlation is
 what speech defeats. It costs a sentence of silence.
 
+**A fourth reading of this offset landed at the EDGE of the documented band.**
+Added 2026-09-02. Cutting the coach clips, the side view was placed against the
+front using the documented 1.22 s offset with an uncertainty near 0.25 s, and
+the effective offset that actually lined the two views up read **0.95 to
+1.00 s** — the very bottom of that band. That is a fourth instrument on the
+same quantity, and the four now spread wider than any one of them claims: four
+audio methods with no peak at all, motion energy whose halves disagreed by
+three seconds, an eye on contact sheets at 1.0 to 1.27 s, and this.
+
+Nothing here narrows the offset and nothing should be read as narrowing it.
+What it says is that **the ±0.25 s band is not conservative**, and that a
+number sitting at the edge of its own uncertainty is the shape of a bias rather
+than of noise. The clap is what settles it, which is why it is instruction 1.
+
 ### 2. A calibration reference in frame
 
 Two independent readings of the same elbow disagree by a median of 21 degrees
@@ -120,6 +134,19 @@ tossed straight up arrives slowly, vertically, and at a moment she chose.
 
 **Instruction: film the drills by name, with a passer feeding the ball as the
 manual describes.**
+
+**"No passer" is not "no other person present."** Added 2026-09-02 from the
+frame strips read while cutting the coach-page clips. The strips show the ball
+entering and leaving frame between repetitions: she hands or lobs it to someone
+off camera while she talks, and it is fed back in from above to start a cycle.
+Repetition 1 of set 0.1 is exactly that — she stands empty-handed for over two
+seconds, then the ball drops in from off frame, and she catches it.
+
+The drill structure is still self-toss, because the toss-away, the flight and
+the catch inside each repetition are all her own. But an off-camera helper was
+present and handling the ball throughout, which matters twice: a second person
+is a tracking hazard under instruction 7, and a repetition whose ball arrives
+from off frame is not the self-toss the rest of this section describes.
 
 ### 4. One drill per clip
 
@@ -277,6 +304,50 @@ not replacements for it: 2 says a rigid object of known size must be in shot,
 and these two say what to do with it. A printed checkerboard is what the code
 reads. A metre rule gives two points and fits no lens, and no known-object
 route is built.
+
+### 14. The ball visibly in frame through every graded repetition, and a slate between them
+
+Added 2026-09-02 by the video-readiness lane. **This one was found by looking,
+after every number said the opposite.**
+
+Cutting clips for the coach page, the repetition the alignment scored BEST in
+the whole sample was rejected on sight: **it contains no ball.** A frame strip
+across its whole window shows the athlete standing and gesturing. Measured, on
+build `bb7dc4c`, repetition 0 of set 0.1 over 5.267 to 5.833 s:
+
+| reading | value | where it placed |
+|---|---|---|
+| whole-curve warp distance | 0.02369 | **best of twelve**, against 0.06093 next |
+| informative warp distance | 0.02213 | fourth of twelve |
+| rank against all eight drills | 1 | **first, on both scorings** |
+
+**An elbow curve fits a gesture as happily as a catch.** Every reading the dry
+run had — warp distance, library rank, phase agreement, level gap — is computed
+from that curve, so not one of them could see it. The null test could not see
+it either: a gesture ranks first of eight drills because a monotone warp always
+exists. One reading was odd and nothing acted on it: that repetition is still
+for 35 percent of its window, more than double the next highest.
+
+**Instruction: the ball must be visibly in frame for every repetition that is
+to be graded.** Frame for it. If a repetition's ball leaves the picture, that
+repetition is not gradeable, whatever its numbers look like.
+
+**Instruction: put a slate between repetitions** — a clap of the hands, a
+raised marker, anything that appears in both views and cannot be confused with
+the drill. Two things follow from it. Repetitions stop having to be inferred
+from the shape of a joint curve, which is what let a gesture become a
+repetition in the first place. And a stretch of talking or gesturing between
+takes is separated from the drill by something a person can point at rather
+than by a threshold somebody chose.
+
+**What answers this today, and what does not.** No ball detector is built, and
+one could not gate anything until it had been validated — a detector that fires
+on a bright patch of floor answers the question wrongly and confidently, which
+is the failure the whole gate exists to prevent. The only instrument that has
+ever answered it is **a person reading frame strips, one repetition at a
+time**, and that is what caught this. The dry-run gate now carries the
+condition, reads UNMEASURED until an annotation exists, and accepts one in
+`spikes/video-annotations/ball-in-frame-<set>.json`.
 
 ## What was measured, and how well
 

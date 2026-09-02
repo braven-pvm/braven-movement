@@ -1,0 +1,112 @@
+{
+ "schemaVersion": "ball-in-frame-1",
+ "set": "0.1",
+ "annotatedBy": "transcribed by the video-readiness lane from the clip lane's own manifests",
+ "annotatedUtc": "2026-09-02",
+ "method": "NOT A FRESH LOOK. Every judgement below is transcribed from the frame-strip readings recorded in gracious-blackburn spikes/poc-output/coach/video-clips/manifest.json (repetitionsRejectedAndWhy, howChosen) and video-clips-v2/manifest.json (offCameraHelperNote), where a person extracted timestamped contact-sheet strips at 7 to 16 frames per candidate window and read them frame by frame before any clip was cut. Where those manifests record a reason that is about RANKING rather than about what is in the picture, this file says null. It does not infer a ball from a rejection that never mentioned one.",
+ "windowSource": {
+  "file": "phase-alignment-0.1.json",
+  "commit": "bb7dc4c67363d6d2ec964b0a85679dbc2d382607",
+  "treeWasClean": true,
+  "note": "The windows below are that file's own. If the alignment tooling moves them, loading refuses this whole annotation rather than reattaching a person's judgement to different footage."
+ },
+ "repetitions": [
+  {
+   "index": 0,
+   "startSeconds": 5.267,
+   "endSeconds": 5.833,
+   "ballVisible": false,
+   "ballVisibleThroughout": false,
+   "evidence": "THE REPETITION THIS CONDITION EXISTS FOR. The clip lane's manifest records it verbatim: 'best warp distance in the set (0.02369) and NO BALL IS PRESENT. A frame strip across the whole window shows the athlete standing and gesturing.' Rejected on sight after scoring best of twelve on the whole-curve scoring and rank 1 of 8 drills on both scorings."
+  },
+  {
+   "index": 1,
+   "startSeconds": 6.767,
+   "endSeconds": 9.367,
+   "ballVisible": true,
+   "ballVisibleThroughout": false,
+   "evidence": "Cut as the 'catch' clip for section 1 of the coach page, so its catch was watched frame by frame in both views. The v2 manifest records the lead explicitly: 'rep01's catch is of such an inbound feed - she stands empty-handed for 2+ seconds before it, then the ball drops in from off-frame.' A ball at the anchored moment, and not for the whole 2.6 s window."
+  },
+  {
+   "index": 2,
+   "startSeconds": 9.733,
+   "endSeconds": 12.1,
+   "ballVisible": null,
+   "ballVisibleThroughout": null,
+   "evidence": "Rejected for RANK only — 'rank 4 - the asked drill is not first'. The manifest says nothing about what is in the picture, so neither does this."
+  },
+  {
+   "index": 3,
+   "startSeconds": 12.1,
+   "endSeconds": 12.867,
+   "ballVisible": true,
+   "ballVisibleThroughout": null,
+   "evidence": "The manifest calls it a 'genuine catch', rejected only because 'its two rankings disagree (margin -0.006) and three clips is enough for a page'. A catch was seen; the whole window was not commented on."
+  },
+  {
+   "index": 4,
+   "startSeconds": 12.867,
+   "endSeconds": 13.867,
+   "ballVisible": true,
+   "ballVisibleThroughout": null,
+   "evidence": "Cut as the rep04 clip for the coach page, so its moment was watched frame by frame in both views before the cut."
+  },
+  {
+   "index": 5,
+   "startSeconds": 13.867,
+   "endSeconds": 14.9,
+   "ballVisible": null,
+   "ballVisibleThroughout": null,
+   "evidence": "Rejected for RANK only — 'rank 3, same reason'. Nothing recorded about the picture."
+  },
+  {
+   "index": 6,
+   "startSeconds": 14.9,
+   "endSeconds": 15.8,
+   "ballVisible": true,
+   "ballVisibleThroughout": null,
+   "evidence": "'genuine catch, rankings disagree (margin -0.003), not needed'. A catch was seen. Note that this repetition has the BEST informative warp distance in the set at 0.00435, five times better than the no-ball repetition."
+  },
+  {
+   "index": 7,
+   "startSeconds": 15.8,
+   "endSeconds": 17.567,
+   "ballVisible": null,
+   "ballVisibleThroughout": null,
+   "evidence": "Rejected for a SCORING disagreement — 'rank 1 but margin -0.117, the widest disagreement between the two scorings in the set'. Nothing recorded about the picture."
+  },
+  {
+   "index": 8,
+   "startSeconds": 17.567,
+   "endSeconds": 18.3,
+   "ballVisible": null,
+   "ballVisibleThroughout": null,
+   "evidence": "Rejected for RANK only — 'rank 4, same reason'. Nothing recorded about the picture."
+  },
+  {
+   "index": 9,
+   "startSeconds": 19.533,
+   "endSeconds": 21.733,
+   "ballVisible": true,
+   "ballVisibleThroughout": null,
+   "evidence": "Cut as the rep09 clip and reused for the release section of the coach page, so its moment was watched frame by frame in both views."
+  },
+  {
+   "index": 10,
+   "startSeconds": 21.733,
+   "endSeconds": 23.833,
+   "ballVisible": true,
+   "ballVisibleThroughout": false,
+   "evidence": "'genuine catch, but half the window is the athlete standing still'. A catch was seen and half the window is not one."
+  },
+  {
+   "index": 11,
+   "startSeconds": 23.833,
+   "endSeconds": 24.9,
+   "ballVisible": true,
+   "ballVisibleThroughout": null,
+   "evidence": "'genuine catch, but it runs to 25.0 s, close to the point where the front camera goes dark at 25.7 s, and the framing changes at its end'. A catch was seen; the rejection is about the camera rather than the ball."
+  }
+ ],
+ "note": "Four of the twelve are null because the clip lane rejected them on ranking alone and recorded nothing about what was in frame. Null is not 'no ball' and it is not 'ball'. Filling those four needs somebody to watch four frame strips, which is the whole instrument this file has."
+}

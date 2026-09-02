@@ -7,10 +7,10 @@ Every condition therefore has a passing bundle and a single-fault mutation of
 it, and the mutation must shut the gate and NAME ITS OWN CONDITION.
 
 THE GATE NOW LOOPS EVERY MEASURE A CHECKPOINT READS, so the conditions split in
-two. Five belong to the CAPTURE and are asked once — a second camera and a clap
-are not properties of an elbow. Six belong to a MEASURE and are asked per
-measure, because the right elbow being invisible says nothing about the left
-knee.
+two. Six belong to the CAPTURE and are asked once — a second camera, a clap and
+a ball in the picture are not properties of an elbow. Six belong to a MEASURE
+and are asked per measure, because the right elbow being invisible says nothing
+about the left knee.
 
 WHY THE PASSING BUNDLE NAMES ITS MEASURE. `judge_measure` asks whether evidence
 exists FOR THIS MEASURE rather than whether this measure is the elbow. That is
@@ -123,6 +123,19 @@ def good(**overrides) -> dict:
             "separationDegrees": 70.0,
             "worked": {"residualMetres": 0.002},
         }},
+        # A ball in frame for every repetition, with the windows the bundle's
+        # own alignments carry. Loading happens in `gather`, so the gate takes
+        # a dict and there is one way in.
+        "ballAnnotation": {
+            "schemaVersion": "ball-in-frame-1",
+            "set": "test",
+            "repetitions": [
+                {"index": n, "startSeconds": 1.0, "endSeconds": 2.0,
+                 "ballVisible": True, "evidence": "a frame strip was read"}
+                for n in range(3)
+            ],
+        },
+        "ballAnnotationRefusal": None,
     }
     bundle.update(overrides)
     return bundle
@@ -147,13 +160,13 @@ class TheGateCanOpen(unittest.TestCase):
         self.assertEqual(found["blockedBy"], [])
         self.assertIn("each with its uncertainty", found["reason"])
 
-    def test_five_capture_conditions_and_six_per_measure(self):
+    def test_six_capture_conditions_and_six_per_measure(self):
         capture = judge_capture(good(), MOVEMENT)
         per_measure = judge_measure(good(), MOVEMENT, MEASURE)
 
-        self.assertEqual(len(capture), 5)
+        self.assertEqual(len(capture), 6)
         self.assertEqual(len(per_measure), 6)
-        self.assertEqual(len({row["name"] for row in capture + per_measure}), 11)
+        self.assertEqual(len({row["name"] for row in capture + per_measure}), 12)
 
 
 class TheLoopCoversWhatIsGraded(unittest.TestCase):
@@ -272,6 +285,49 @@ class OneFaultAtATime(unittest.TestCase):
         bundle["side"]["sync"]["offsetUncertaintySeconds"] = 0.15
 
         self.shut(bundle, "sync")
+
+    def test_no_ball_annotation_at_all_is_unmeasured(self):
+        """The normal case today. Nobody has looked, and an absence is not a
+        ball."""
+        found = self.shut(good(ballAnnotation=None), "a ball is in the picture")
+
+        self.assertIn("a ball is in the picture", found["unmeasured"])
+
+    def test_a_repetition_with_no_ball_FAILS_and_is_named(self):
+        """The fault this condition exists for. An elbow curve fits a gesture
+        as happily as a catch."""
+        bundle = good()
+        bundle["ballAnnotation"]["repetitions"][1]["ballVisible"] = False
+
+        found = self.shut(bundle, "a ball is in the picture")
+
+        self.assertIn("a ball is in the picture", found["failed"])
+        row = named(both(bundle), "a ball is in the picture")
+        self.assertIn("NO BALL IN FRAME", row["why"])
+        self.assertIn("1", row["why"])
+
+    def test_a_stale_annotation_shuts_the_gate_and_keeps_the_report(self):
+        """A window that moved refuses the whole file. The run must not crash:
+        a stale annotation costs the reader nothing but that one condition."""
+        bundle = good()
+        bundle["ballAnnotation"]["repetitions"][0]["startSeconds"] = 40.0
+        bundle["ballAnnotation"]["repetitions"][0]["endSeconds"] = 41.0
+
+        found = self.shut(bundle, "a ball is in the picture")
+
+        self.assertIn("a ball is in the picture", found["unmeasured"])
+        self.assertIn("REFUSED",
+                      named(both(bundle), "a ball is in the picture")["why"])
+
+    def test_a_refusal_carried_from_the_loader_shuts_it_too(self):
+        """`gather` catches a malformed file and carries the text rather than
+        raising, so the rest of the report survives."""
+        found = self.shut(
+            good(ballAnnotation=None,
+                 ballAnnotationRefusal="schemaVersion is 'ball-in-frame-0'"),
+            "a ball is in the picture")
+
+        self.assertIn("a ball is in the picture", found["unmeasured"])
 
     def test_the_drill_wins_its_null_test_on_only_some_repetitions(self):
         bundle = good()
