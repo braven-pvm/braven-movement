@@ -70,6 +70,34 @@ the world. **No test asserts this round trip**, which was checked rather than
 assumed. `test_authored_launch.py` builds synthetic tracks and each of its
 probes carries an anti-hollow twin.
 
+## What the constant does to a drill, as each one is authored
+
+The rows above show the constant agreeing with itself. These are the places
+where it produces something a person would question. Each was measured while
+authoring the drill named, and each carries its inputs, because a figure without
+them is not reproducible.
+
+**On a straight pass it is distance-dependent across the manual's own range.**
+From a 135 cm release the apex is about 220 cm level over 5 m and 302 cm level
+over 7 m; a netball goalpost is 305. The manual's passing drills say "Area:
+Court (5-7m)", so **the same number is a flat pass at the near end of the stated
+range and a lob at the far end**, with nothing in any file saying so. Measured
+with `ball_track.solve_launch`. Refer to `docs/LOB_AUTHORING_BRIEF.md`.
+
+**On a bounce pass it throws the ball UPWARD at the floor.** Measured on
+`32663a9` while authoring `netball_bounce_pass`: release height 142.4 cm at the
+ball centre, floor point 4.00 m ahead, which is 1 m short of a receiver at the
+manual's 5 m lower bound. At 600 cm/s the solved vertical is **+159.5 cm/s** —
+the ball rises before it falls. A free fall from that release takes 0.477 s, so
+the throw is only downward above **838 cm/s**, and 600 is 0.72 of that.
+
+**A bounce pass is driven at the floor, not lobbed at it.** This is the most
+concrete of the constant's faces so far: the other two are arguable readings of
+an arc, and this one makes the ball travel the wrong way at the start of its
+flight. The constant was LEFT AT 600 in that drill rather than corrected,
+because authoring a second unsourced number is the fault the whole family of
+these entries is about.
+
 ## What is not settled
 
 - **Whether 6.00 m/s is a netball drill feed.** This is a coaching question
