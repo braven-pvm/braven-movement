@@ -2143,6 +2143,135 @@ fix may be that the CARRY should already be accelerating before the release
 rather than that the follow-through should start slower. Nothing here measures
 that, and no change to the carry is proposed.
 
+## Three solvable balls are invisible to the library, and they support the claim
+
+`netball_two_hand_snatch_pull_in` has **four** balls: the plain one and `high`,
+`low` and `wide`. **All four solve.** `build_library.py` does not contain the
+word `variant`, and `CLASSES` in `clip_geometry.py` is keyed by movement alone,
+so three of them reach neither the library nor a clip.
+
+Measured on `2215713`, and the library side is built on it below. The
+measurement came first and the proposal's questions are answered where the
+evidence answers them and left open where it does not.
+
+### What the variants are
+
+| ball | arrival, arm lengths | contact frame |
+|---|---|---|
+| plain | across 0.000, up 0.420, ahead 0.820 | 52 |
+| `high` | across 0.000, **up 0.800**, ahead 0.450 | 51 |
+| `low` | across 0.000, **up 0.020**, ahead 0.660 | 51 |
+| `wide` | **across 0.600**, up 0.320, ahead 0.580 | 51 |
+
+### The technique does not change, which is what it claimed
+
+`solve_movement`'s docstring says the variant selects the ball and "the
+technique never changes with it, which is the whole claim being tested: one
+technique, any arrival point". **Graded against this drill's own eleven
+checkpoints, all four balls:**
+
+| phase / measure | band | plain | high | low | wide | spread |
+|---|---|---|---|---|---|---|
+| ready / left elbow | 50–105 | 88.87 | 88.87 | 88.85 | 88.87 | 0.02 |
+| ready / left shoulder | 20–70 | 45.98 | 45.98 | 45.99 | 45.98 | 0.01 |
+| ready / left knee | 25–75 | 52.60 | 52.60 | 52.60 | 52.60 | **0.00** |
+| react / left shoulder | 45–105 | 45.99 | 45.99 | 46.01 | 45.99 | 0.02 |
+| **contact / left elbow** | 40–110 | 76.05 | 83.66 | 79.70 | 58.21 | **25.45** |
+| **contact / right elbow** | 40–110 | 76.03 | 83.66 | 79.67 | 76.01 | **7.65** |
+| **contact / left shoulder** | 50–140 | 66.05 | 81.63 | **49.95** | 70.03 | **31.68** |
+| pull_in / left elbow | 105–150 | 145.51 | 145.51 | 145.51 | 145.51 | **0.00** |
+| pull_in / right elbow | 105–150 | 145.50 | 145.51 | 145.50 | 145.51 | 0.01 |
+| pull_in / left shoulder | 0–50 | 20.03 | 20.03 | 20.03 | 20.03 | **0.00** |
+| pull_in / left knee | 25–75 | 53.21 | 52.71 | 53.12 | 54.34 | 1.63 |
+
+**FORTY-THREE OF THE FORTY-FOUR READINGS ARE WITHIN BAND.** **SEVEN** of the
+eleven checkpoints move by 0.02 degrees or less and an eighth, `pull_in`'s left
+knee, moves 1.63 — across a ball that moves 0.78 arm lengths in height and 0.60
+across. **The three that move meaningfully are all at CONTACT**, which is the
+one phase where the ball's position IS the pose.
+
+A first version of this said eight move by 0.02 or less, which its own table
+above refutes.
+
+So the variants do not test the GRADED technique. They test the contact, and
+what the checkpoints read behind it holds still.
+
+**THE WHOLE POSE DOES NOT.** The `wide` ball turns the athlete **45.97
+degrees** where the other three turn 0.0, and **nothing grades a turn**. So
+"the technique holds still" is a statement about the eleven checkpoints and not
+about her body, and the difference is exactly the kind this file exists to
+name.
+
+### The single miss is 0.05 degrees
+
+`contact/leftShoulderElevationDegrees` on the `low` ball reads **49.95** against
+a floor of **50.0**.
+
+**That does not support a verdict either way.** This project calls five degrees
+the threshold at which a difference means something, and this is a hundredth of
+that. Two readings fit it equally — that the floor is slightly high for a
+genuinely low ball, or that the low ball asks for something the technique
+cannot give — and 0.05 degrees cannot separate them. **It is a band question
+for a coach, and it is exactly the kind of number that must not be reported as
+a failure on its own.**
+
+### What was built on that measurement
+
+**A variant is the SAME checkpoints to the grader**, because seven of eleven do
+not move at all and an eighth moves 1.63 degrees. Per-variant bands would be numbers invented for a difference
+that is not there, and at contact the existing bands already hold all four
+balls.
+
+So `build_library.py` now solves, grades and receipts **every** ball. Each
+receipt names the ball it was solved against, the index lists a movement and a
+variant rather than a movement alone, and the summary prints only the readings
+that MOVE across the balls:
+
+```
+what the ball changes on netball_two_hand_snatch_pull_in, in degrees:
+  checkpoint                                       None     high      low     wide
+  contact/leftElbowFlexionDegrees                 76.05    83.66    79.70    58.21
+  contact/leftShoulderElevationDegrees            66.05    81.63    49.95    70.03
+  contact/rightElbowFlexionDegrees                76.03    83.66    79.67    76.01
+  the other 8 checkpoints move less than 5 degrees across every ball.
+```
+
+**THE LOW BALL IS GRADED AS IT READS: 10 of 11.** A miss by 0.05 degrees is a
+miss, and the receipt says so. This entry is why it carries no verdict about
+the athlete.
+
+**THE INDEX PUBLISHES `symmetric: false` FOR THE WIDE BALL** beside three
+`true` rows on the same drill, and that is right rather than odd: the wide
+ball arrives 0.60 arm lengths to her left, which is a one-sided demand however
+even the keys are. It is the same reading the left-right knee guard's
+population uses, applied to a variant. **That guard measures the PLAIN ball
+only** — `test_waiting_hand.py` passes no variant to either the population or
+the solve — so a variant's evenness is published and not measured.
+
+### For the coach agenda
+
+**`netball_two_hand_snatch_pull_in`, the `low` ball, contact shoulder
+elevation: 49.95 against a floor of 50.0.** The four balls read 66.05 (plain),
+81.63 (high), **49.95** (low) and 70.03 (wide) at that checkpoint.
+
+The question for Erin is whether the floor is slightly high for a genuinely low
+ball, or the low ball asks for something the technique cannot give. **0.05
+degrees cannot separate those**, and the band is hers rather than this lane's.
+
+### The exporter is untouched, and that is deliberate
+
+**Three balls are now graded and receipted. NONE of them is exported as a
+clip.** `CLASSES` in `clip_geometry.py` is keyed by movement, so a variant clip
+would need `(movement, variant)` — and inventing that key would answer a
+question nobody has asked properly:
+
+> Is a high-ball snatch the SAME technique to Tactics, selected once, or a
+> different one a board can ask for by name?
+
+That is the clip contract's question and Marius's, not this lane's, and writing
+the code would settle it by accident. **No variant clips are exported until it
+is answered.**
+
 ## The lower body has no stable solution
 
 Added 2026-09-02. A pelvis pin was built for this and WITHDRAWN before it

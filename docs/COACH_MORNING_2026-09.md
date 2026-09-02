@@ -353,6 +353,37 @@ HIGH pass's step, not the overhead's. So the lob rides a one-handed pass the
 library does not have, or the overhead pass the board cannot select. Refer to
 `docs/LOB_AUTHORING_BRIEF.md`.
 
+## 11. One band floor, missed by five hundredths of a degree
+
+`netball_two_hand_snatch_pull_in` has four balls. All four are now solved and
+graded against the same eleven checkpoints, and one reading needs your ruling.
+
+**At contact, left shoulder elevation, against a band of 50 to 140:**
+
+| ball | reading | |
+|---|---|---|
+| the plain one | 66.05 | within |
+| high | 81.63 | within |
+| **low** | **49.95** | **misses the floor by 0.05** |
+| wide | 70.03 | within |
+
+The engine grades that as a miss, because it is one, and the receipt says 10 of
+11 rather than 11 of 11.
+
+**THE ENGINE CANNOT TELL YOU WHICH OF TWO THINGS IT MEANS**, and neither
+reading is more likely than the other from here:
+
+- the floor is slightly high for a genuinely low ball, or
+- the low ball asks for something the technique cannot give.
+
+**0.05 degrees cannot separate them.** This project treats five degrees as the
+point where a difference means something, and this is a hundredth of that. The
+band is yours; the measurement is all we have.
+
+**What is NOT being asked.** Nothing about the other three balls, whose
+readings sit 16 to 32 degrees inside the same band, and nothing about the
+technique, which the other ten checkpoints show does not change with the ball.
+
 ## Three items with no engine evidence
 
 These are on the agenda and this document has nothing to add to them.
