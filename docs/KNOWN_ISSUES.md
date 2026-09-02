@@ -1976,7 +1976,10 @@ hands "are already moving when she lets go, because they drove the ball".
 | `overhead_pass` | 0.86, 0.84, 0.81, 0.77, 0.72 | **7.37**, 6.29, 5.28, 4.32, 2.91 |
 | `chest_pass` | 0.59, 0.58, 0.57, 0.55, 0.55 | **4.09**, 3.54, 3.02, 2.70, 0.85 |
 
-**The hand speed multiplies by 8.6 and by 7.0 at that one frame**, then decays.
+**The hand speed multiplies by 10.2 and by 7.4 between the frame BEFORE the
+release and the frame after it**, then decays. A first version of this entry
+said 8.6 and 7.0, which divided by the speed FIVE frames before rather than by
+the adjacent one. **The correction makes the step larger, not smaller.**
 So the easing fixes the FAR end of the follow-through, where the arm arrives at
 extension instead of stopping dead, and makes the NEAR end a step change in
 hand velocity. That step is the seam.
@@ -2041,11 +2044,14 @@ against a `SNAP_RATIO` threshold of 3.0. Run over every drill:
 | **worst in the library** | **11.78** | **26.35** | **20.41** |
 | **drills over the 3.0 threshold** | 6 | 5 | 4 |
 
-**Linear is better on seven drills and far worse on one. Smoothstep is better
-on five and worse on two. The shipped ease-out has the LOWEST WORST and the
-MOST drills over the threshold.** The whole decision hinges on
-`two_hand_snatch_straight_back`, which more than doubles under either
-alternative and is not a pass at all.
+**Counted properly, against the shipped easing: linear is LOWER on five
+drills, EQUAL on four and HIGHER on one. Smoothstep is LOWER on four, EQUAL on
+four and HIGHER on two.** A first version of this said "better on seven" and
+"better on five", which counted the equal rows as improvements.
+
+The shipped ease-out has the LOWEST WORST and the MOST drills over the
+threshold. **And no easing clears the threshold on the overhead**, which is the
+drill this began with: 11.78 becomes 3.39 and 4.09, both still over 3.0.
 
 **So the two-drill table was too small a sample to choose from, and it is left
 above rather than deleted because that is the mistake this file names most
@@ -2058,11 +2064,35 @@ matters, not a repair.
 withdrawn in place. **WHAT IS NOT: the easing.** It needs a ruling, and the
 table above is what a ruling needs.
 
-### What is not settled
+### `two_hand_snatch_straight_back` is a WINDOW-END artefact, not a seam
 
-Why `two_hand_snatch_straight_back` more than doubles its snap ratio under both
-alternatives. It is the drill that decides the choice and nothing here explains
-it. **Whichever easing is ruled for, that drill should be measured first.**
+The drill that decides the table is not measuring the same defect as the rest
+of it.
+
+It releases at **frame 87 of 98**. The follow-through window is 0.12 s, which
+is 7.2 frames, so the aim point reaches `out = 1` at frame **94.2** — and the
+clip runs to frame **97**. **The aim point stops dead 2.8 frames before the
+clip ends**, under all three easings. Its last frames read:
+
+| | last eight frames |
+|---|---|
+| wrist, cm per frame | 2.74, 2.39, 1.18, 1.24, 0.76, 0.32, **0.00**, **0.00** |
+| right elbow, degrees per frame | 10.44, 11.16, 1.65, 6.13, 4.24, 1.91, **0.00**, **0.00** |
+
+The snap ratio divides a live neighbour median by that near-zero step, so what
+it reports is the STOP and not the start. **The shipped ease-out is
+front-loaded and has spent its motion by then** — 0.32 cm and 1.91 degrees —
+so its ratio stays moderate. Smoothstep is back-loaded and arrives with the
+elbow still closing, so the same stop reads 26.35. Linear stops at full speed
+and reads 20.41.
+
+**SO THE LIBRARY TABLE CONFLATES TWO DEFECTS.** The release seam is one, and
+the follow-through window closing before the clip ends is another. The easing
+choice moves both, in opposite directions, and the drill that decides the table
+is only measuring the second. **The window-end question is separate and is not
+answered here.**
+
+### What is not settled
 
 Whether the arm should leave the release from rest at all. A real
 follow-through starts while the hands are still driving the ball, so the honest

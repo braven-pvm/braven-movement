@@ -594,10 +594,10 @@ def resolve(
                 # ITS STATED REASON WAS FALSE AND IS WITHDRAWN. This said the
                 # hands are "already moving when she lets go, because they
                 # drove the ball". They are not. Measured on 2169157, the
-                # wrist moves 0.86 cm in the frame before the release and
+                # wrist moves 0.72 cm in the frame before the release and
                 # 7.37 in the frame after, on `netball_overhead_pass`; 0.55
                 # and 4.09 on `netball_chest_pass`. The hands multiply their
-                # speed by 8.6 and 7.0 at that frame.
+                # speed by 10.2 and 7.4 at that frame.
                 #
                 # An ease-out has its GREATEST slope at t=0, so it begins at
                 # full speed. That is right only when the incoming speed
