@@ -1,0 +1,87 @@
+{
+  "movementId": "netball_bounce_pass",
+  "sport": "netball",
+  "skill": "Bounce Pass",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger, Passing section, page 82. The manual heads this drill 1/2 HAND BOUNCE PASS and gives it five numbered steps. THE BOUNCE IS NEITHER REPRESENTED NOR GRADED, AND THE CLIP ENDS BEFORE FLOOR CONTACT. The engine has no floor: a released ball is one unbroken parabola and it falls through the court. This drill is the THROW of a bounce pass and it is silent about the bounce. Two of the manual's five steps, the bounce point and 'keep ball low', have no instrument and no physics behind them; they are recorded as gaps rather than graded by a proxy. The numeric bands are NOT the manual's. They are PROVISIONAL and a coach must set them. Refer to docs/BOUNCE_PASS_INSTRUMENT_AUDIT.md.",
+  "cueSourceNote": "The manual's block, lines 2704 to 2708, is five numbered steps: 'Pull the ball to the side, bend slightly (can step into bounce)'; 'Give a small step, and with wrist and hands pass the ball to another player/wall'; 'Keep hand behind the ball'; 'Bounce ball approximately 1m in front of receiver'; 'Keep ball low'. Every cue below is one of those five, quoted, with the line named, and every elision is marked. TWO OF THE FIVE CARRY NO CHECKPOINT AT ALL: refer to noInstrumentNote.",
+  "handsNote": "The manual heads this '1/2 HAND BOUNCE PASS', which is one hand OR two. THIS DRILL AUTHORS THE TWO-HANDED FORM, because the library's other two passes are two-handed and no one-handed pass technique exists yet. A one-handed bounce is a second drill and not a variant of this one: it would change the grip and the carry, not the flight. Flagged for the coach.",
+  "noInstrumentNote": "TWO OF THE MANUAL'S FIVE STEPS HAVE NO CHECKPOINT AND WILL NOT BE GIVEN A PROXY. Step 4, 'Bounce ball approximately 1m in front of receiver', fails twice over: there is no floor for the ball to strike, so the event does not exist in the solve, and there is no measure of a position on the court, so it could not be read if it did. Step 5, 'Keep ball low', has no measure of the ball's height at any point in its flight; only the RELEASE height is authored, and nothing reads it. Refer to the ledger row 'No units-correct distance measures, and three cues already want them'. A THIRD DELETION WOULD BE A PATTERN: this library has already authored a checkpoint for a manual cue and removed it twice, on netball_chest_pass for being insensitive and on netball_overhead_pass for firing on a solver basin. The record of two is enough, so these two cues are never authored rather than authored and withdrawn.",
+  "sideMeasureNote": "'Pull the ball to the side' IS NOT GRADED EITHER, and it is a third gap rather than part of the two above, because it is a lateral POSITION and not a height. No measure reads one. The nearest proxy is the divergence between the two shoulder elevations, and it is coarse and impure: measured on netball_overhead_pass, a carry 0.42 torso lengths off the midline separates them by 7.35 degrees with both still inside their band, and it takes about 62 cm to push one out. The motion keys DO carry the ball to the side, so the movement obeys the cue; nothing checks whether an athlete did.",
+  "floorNote": "THE LAUNCH IS AIMED AT THE FLOOR POINT, so that this file needs no change on the day the engine gains a floor. Refer to the ball file's launchTargetNote for the arithmetic and for both drill distances.",
+  "kneeProofNote": "THE TWO KNEE CHECKPOINTS ARE READINGS ON THIS BUILD AND CARRY NO PROOF, which is different from every elbow and shoulder checkpoint in this file. The movement lane found that below the hips the solve can have no continuous dependence on the keys: a lateral asymmetry planted into netball_two_hand_catch_chest in 0.01 increments gave knee gaps of 4.44, 3.49, 5.85, 2.24, 7.05 and 1.80, oscillating across its whole range with 4.5 to 8 cm of joint movement at every increment. Every point is its own basin, so a sweep there proves nothing and an oscillating sweep is the true result rather than a mistake. The orchestrator ruled on 2026-09-02 that a knee checkpoint is authored if the manual cues it, graded as a reading, and not swept. Refer to 'The lower body has no stable solution' in docs/KNOWN_ISSUES.md.\n\nI COULD NOT REPRODUCE THAT INSTABILITY ON THIS DRILL, and it is recorded rather than smoothed over. Two sweeps on netball_bounce_pass: deepening the pull_to_side hipDrop from 0.16 to 0.06 gave 66.71, 62.54, 57.77, 52.98, 47.56 and 41.62, monotone, with joint steps of 3.36, 3.39, 3.33, 3.36 and 3.36 cm. Planting a lateral asymmetry the same way, sweeping the pull_to_side carry's across from 0.24 to 0.29 in 0.01 steps, gave left-minus-right knee gaps of 3.34, 3.31, 2.90, 3.21, 3.27 and 3.42 \u2014 a range of 0.52 degrees against the reported 1.80 to 7.05, and joint steps of 0.15 to 1.70 cm against the reported 4.5 to 8.\n\nBOTH RESULTS CAN BE TRUE and neither is assumed to settle the other: they are different drills and, in the hipDrop case, different perturbations. What follows for this file is the cautious reading, which is the ruling's: THE KNEE IS GRADED AS A READING AND CLAIMS NO PROOF. A knee that happens to be stable on one drill is not evidence that knees are stable, and the two sweeps above are offered to the movement lane as data on where the instability lives rather than as a case for grading knees the way elbows are graded.",
+  "phases": [
+    {
+      "name": "ready",
+      "atPhase": 0.0,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 105.0,
+          "maximumDegrees": 150.0,
+          "cue": "Start with the ball at your chest in two hands.",
+          "why": "NOT A QUOTE. The manual's block begins at step 1 with the ball already in hand and never says where it starts, so this is the drill's own starting pose and is labelled an interpretation. BAND PROVISIONAL: the 105 to 150 both other passes use at their ready, taken from netball_two_hand_catch_chest's pull_in, because all three begin in the pose a chest catch finishes in."
+        },
+        {
+          "measure": "leftKneeFlexionDegrees",
+          "minimumDegrees": 25.0,
+          "maximumDegrees": 75.0,
+          "cue": "Balanced base before you drop into the throw.",
+          "why": "NOT A QUOTE, and A READING RATHER THAN A PROOF. Refer to kneeProofNote: no knee checkpoint in this library can be proven by a sweep. BAND PROVISIONAL: the ready knee band the other drills use."
+        }
+      ]
+    },
+    {
+      "name": "pull_to_side",
+      "atPhase": 0.32,
+      "checkpoints": [
+        {
+          "measure": "leftKneeFlexionDegrees",
+          "minimumDegrees": 40.0,
+          "maximumDegrees": 95.0,
+          "cue": "Pull the ball to the side and bend slightly.",
+          "why": "QUOTED, manual 2704, step 1: 'Pull the ball to the side, bend slightly (can step into bounce)'. ELIDED: the parenthesis, because a step into the bounce is a step LENGTH and no measure reads one; refer to noInstrumentNote and to the same gap recorded on the chest and overhead passes. WHAT THIS GRADES IS THE BEND AND NOT THE SIDEWAYS PULL: refer to sideMeasureNote. A READING RATHER THAN A PROOF: refer to kneeProofNote. BAND PROVISIONAL, deeper than the ready band because 'bend slightly' asks for more than the ready pose and the phase must be distinguishable from it."
+        }
+      ]
+    },
+    {
+      "name": "drive",
+      "atPhase": 0.62,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 70.0,
+          "maximumDegrees": 130.0,
+          "cue": "Send it with your wrists and hands.",
+          "why": "QUOTED, manual 2705, step 2: 'Give a small step, and with wrist and hands pass the ball to another player/wall'. ELIDED: 'Give a small step', which is a step LENGTH with no measure, and 'to another player/wall', which names a target this drill authors in its ball file rather than grades. The elbow is what 'with wrist and hands' leaves for a checkpoint: a pass made with the hands is not a pass made by straightening the arm. BAND PROVISIONAL."
+        }
+      ]
+    },
+    {
+      "name": "release",
+      "atPhase": 0.8,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 55.0,
+          "maximumDegrees": 115.0,
+          "cue": "Let it go low, with the arm still bent.",
+          "why": "PART QUOTED, part interpretation, and the split is marked. 'Keep ball low' is manual 2708, step 5, and the RELEASE height is the only part of it this drill can honour: nothing measures the ball's height after it leaves. The arm staying bent is read from step 2's 'with wrist and hands'. BAND PROVISIONAL, borrowed from netball_chest_pass's release, which drew it from the three releasing catch drills, so it inherits their open release-anchor question and is borrowed across a different arm shape."
+        }
+      ]
+    },
+    {
+      "name": "follow_through",
+      "atPhase": 1.0,
+      "checkpoints": [
+        {
+          "measure": "leftShoulderElevationDegrees",
+          "minimumDegrees": 45.0,
+          "maximumDegrees": 95.0,
+          "cue": "Finish with your hands after the ball.",
+          "why": "NOT A QUOTE. The block describes no follow-through. This phase exists because the release above must grade the release and not the frames after it, the pattern netball_chest_pass established. GRADED ON THE SHOULDER AFTER A FIRST DRAFT GRADED THE ELBOW, and the correction is the REVERSE of the one netball_overhead_pass made, which moved from shoulder to elbow. WHICH JOINT CARRIES A FOLLOW-THROUGH DIFFERS PER DRILL AND MUST BE MEASURED RATHER THAN CARRIED OVER. Here the elbow is FROZEN: swept over five release-carry positions from ahead 0.96 to 1.22 it moved 0.06 degrees in total, and the only lever that moved it at all, the release phase, topped out at 72.08 inside a 25 to 75 band, so an elbow checkpoint here COULD NOT FAIL. The shoulder runs 67.75 to 36.41 over the same release-phase sweep and can. BAND PROVISIONAL: below 45 the arm has not come through after the ball, which is what a late release produces. A coach may decide she does not grade a follow-through at all, in which case this phase goes."
+        }
+      ]
+    }
+  ],
+  "sweepNote": "THE FOUR UPPER-BODY CHECKPOINTS ARE PROVEN BY PROGRESSIVE SWEEPS with their spacing stated, which is the method netball_overhead_pass established. At least three displacements, the measure must move progressively toward the edge, and the joint positions must move continuously at the crossing. Measured on 32663a9.\n\nREADY ELBOW, both ball keys swept ahead 0.55 / 0.68 / 0.80 / 0.92 in arm lengths: 145.87 down to 98.02, failing below 105.\nDRIVE ELBOW, drive carry ahead 0.84 / 0.95 / 1.05 / 1.14 / 1.20 torso lengths: 108.27, 94.46, 79.36, 61.05, 40.04, failing below 70. Joint steps 10.73, 10.03, 9.91, 10.67 \u2014 even, and no discontinuity.\nRELEASE ELBOW, release carry ahead 0.96 / 1.04 / 1.10 / 1.16: 78.56, 64.80, 50.73, 43.67, failing below 55. Joint steps 8.17, 7.03, 6.59.\nFOLLOW-THROUGH SHOULDER, release phase 0.80 / 0.88 / 0.93 / 0.96 / 0.98: 67.75, 67.83, 66.24, 50.23, 36.41, failing below 45.\n\nONE REFINEMENT TO THE METHOD, from that last sweep. STRICT MONOTONICITY IS THE WRONG TEST; PROGRESSIVE WITHIN THE NOISE FLOOR IS THE RIGHT ONE. The follow-through sweep rises 0.08 degrees between its first two points before falling 31 degrees, and a strict check calls that non-monotone. The joint step there is 0.12 cm: nothing moved, because releasing at 0.80 or at 0.88 leaves ample follow-through either way. A 0.08 degree reversal is 1.6 per cent of the 5 degree threshold and is not a basin. A sweep is progressive when its reversals sit under the measurement threshold, not when it is strictly ordered.\n\nAN EARLIER DRAFT OF THE FOLLOW-THROUGH CHECKPOINT could not be swept at all, and the reason is recorded in that checkpoint's why: the motion track's hand keys do not drive the hands in a possession solve, so four attempts at moving them changed the measure by 0.00 degrees. The lever that works is WHEN she releases."
+}

@@ -45,7 +45,16 @@ except ImportError:  # pragma: no cover - exercised only without the solver
 # The build matters and an earlier draft named the wrong one. It said fc29bb2,
 # where `netball_chest_pass` DID NOT EXIST — the drill arrived two merges
 # later. A figure whose named build could not have produced it is not sourced.
+#
+# `netball_bounce_pass` was measured on 32663a9 plus its own pack, by its author,
+# with the same `ground_angle("l_uparm", "r_uparm")` expression this file uses on
+# frame 0. THE AUTHOR OF A DRILL ADDS ITS PIN, ruled 2026-09-02 after a merge race
+# left `netball_overhead_pass` unpinned: #61 added this guard and #60 added that
+# drill, each green alone and red together, and no hosted run could see it because
+# the runner has no solver. On the same run the overhead pass read -0.0110 against
+# the -0.011 the movement lane measured independently, so the two instruments agree.
 STANCE_DEGREES = {
+    "netball_bounce_pass": 0.035,
     "netball_chest_pass": -0.004,
     "netball_deflect_high": -0.000,
     "netball_double_foot_landing": 0.034,

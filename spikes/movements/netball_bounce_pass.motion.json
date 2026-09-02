@@ -1,0 +1,60 @@
+{
+  "movementId": "netball_bounce_pass",
+  "frames": 96,
+  "framesPerSecond": 60,
+  "rateNote": "60 frames per second, matching the rest of the library.",
+  "notes": "Hand positions are fractions of arm length, measured from the chest. across is out to the side, up is above the chest, ahead is in front. The third drill in the library that STARTS with the ball, and the first thrown DOWNWARD.",
+  "boundsNote": "THE BOUNCE ITSELF IS NOT IN THIS DRILL AND CANNOT BE. The engine has no floor: a released ball is one unbroken parabola and it falls through the court. This movement is the THROW of a bounce pass, honestly, and it is silent about the bounce. Refer to docs/BOUNCE_PASS_INSTRUMENT_AUDIT.md and to the definition's source.",
+  "stance": {
+    "hipDropFraction": 0.1003,
+    "note": "The same hip drop the other two passes start from. The manual's cue 1 deepens it: 'bend slightly'.",
+    "unitNote": "Stance is measured in leg lengths, not arm lengths. hipDrop, the foot placements and the root travel were all written in arm lengths, which made them depend on the wrong limb: two athletes of the same height with the same legs, differing only in reach, came out with knees 5 degrees apart. Every stance number here was multiplied by 0.626885, the reference athlete's arm over her leg, so her poses are exactly what they were and only other bodies change."
+  },
+  "keys": [
+    {
+      "atPhase": 0.0,
+      "name": "ready",
+      "across": 0.22,
+      "up": 0.04,
+      "ahead": 0.36,
+      "hipDrop": 0.1003,
+      "note": "Ball held at the chest in two hands, the same numbers the other two passes start from."
+    },
+    {
+      "atPhase": 0.32,
+      "name": "pull_to_side",
+      "across": 0.38,
+      "up": -0.02,
+      "ahead": 0.4,
+      "hipDrop": 0.16,
+      "note": "The manual's cue 1, 'Pull the ball to the side, bend slightly'. The hands go out and slightly down and the hips drop further. THE SIDEWAYS PART IS NOT GRADED: no measure reads a lateral ball position. Refer to the definition's sideMeasureNote."
+    },
+    {
+      "atPhase": 0.62,
+      "name": "drive",
+      "across": 0.32,
+      "up": -0.14,
+      "ahead": 0.7,
+      "hipDrop": 0.13,
+      "note": "The manual's cue 2, 'with wrist and hands pass the ball'. The hands travel forward and DOWN, which is what sends a ball at the floor rather than at a receiver's chest."
+    },
+    {
+      "atPhase": 0.8,
+      "name": "release",
+      "across": 0.3,
+      "up": -0.18,
+      "ahead": 0.86,
+      "hipDrop": 0.115,
+      "note": "The ball leaves, low. The manual's cue 5 is 'Keep ball low', and the release height is the only part of that cue this drill can honour; nothing measures the ball's height afterwards."
+    },
+    {
+      "atPhase": 1.0,
+      "name": "follow_through",
+      "across": 0.28,
+      "up": -0.2,
+      "ahead": 0.95,
+      "hipDrop": 0.11,
+      "note": "Extended after the ball, low and forward. A separate phase from the release, the pattern the chest pass established."
+    }
+  ]
+}

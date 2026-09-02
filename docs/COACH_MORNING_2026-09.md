@@ -384,6 +384,36 @@ band is yours; the measurement is all we have.
 readings sit 16 to 32 degrees inside the same band, and nothing about the
 technique, which the other ten checkpoints show does not change with the ball.
 
+## 12. The bounce pass exists, and its bounce does not
+
+Added 2026-09-02 with `netball_bounce_pass`, the library's eleventh drill.
+
+**What she can see.** The throw: the ball taken to the side, the knees bent, the
+arm driving down and forward, the release low, the follow-through. Graded on six
+checkpoints.
+
+**What is missing from it, and why she should be told before she watches.** The
+engine has no floor. The ball leaves her hands on a path aimed at the right spot
+on the court and then keeps going in a straight parabola; the clip ends 0.35 s
+before it would land. So **the drill shows a bounce pass with no bounce.**
+
+**What was deliberately NOT graded.** Two of the manual's five steps — the
+bounce point "approximately 1m in front of receiver" and "keep ball low" — have
+no instrument, and no angle was substituted for them. This library has twice
+authored a checkpoint for a manual cue and withdrawn it, so the two are recorded
+as gaps instead.
+
+**The question for her.** Is a drill that teaches the THROW of a bounce pass
+useful to a coach while the bounce is absent, or does it wait for the floor? The
+content is honest either way; the choice is whether an incomplete drill helps
+more than it misleads.
+
+**One number for the same conversation.** The library throws every pass at
+600 cm/s, which has no source. On this drill that constant makes the ball travel
+UPWARD to reach the floor: it needs +159.5 cm/s of vertical, and the throw is
+only downward above 838 cm/s. **A bounce pass is driven at the floor, not lobbed
+at it.** The speed was left at 600 rather than invented afresh.
+
 ## Three items with no engine evidence
 
 These are on the agenda and this document has nothing to add to them.

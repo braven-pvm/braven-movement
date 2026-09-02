@@ -177,7 +177,7 @@ all three dead phases are dead in either unit. It is recorded because a name
 that does not say what it holds is how `fingerBaseDeviation` came to bound a
 flexion axis, and that cost a day.
 
-## No units-correct distance measures, and three cues already want them
+## No units-correct distance measures, and five cues already want them
 
 Raised 2026-09-02 by the content lane while authoring `netball_overhead_pass`.
 An open row, not a defect in anything shipped: nothing today reads a height,
@@ -270,6 +270,26 @@ cannot stand in for it. The cue is a DISTANCE and the engine grades ANGLES. Both
 rows here are the same shape: the manual cues lengths, and a length needs a
 measure whose unit says so.
 
+**THE BOUNCE PASS WANTS BOTH OF THEM IN ONE BLOCK**, added 2026-09-02 with
+`netball_bounce_pass`. Its manual block has five numbered steps and two of them
+are lengths this engine cannot read:
+
+- Step 4, "Bounce ball approximately 1m in front of receiver", is a POSITION on
+  the court. It fails twice over: **there is no floor for the ball to strike**,
+  so the event does not exist in the solve, and there is no measure of a court
+  position, so it could not be read if it did.
+- Step 5, "Keep ball low", is a HEIGHT through the flight. Only the release
+  height is authored, and nothing reads it.
+
+Both were left UNAUTHORED rather than given a proxy. That drill's
+`noInstrumentNote` records why: a checkpoint has already been authored for a
+manual cue and withdrawn twice in this library, and a third would be a pattern
+rather than an accident.
+
+A third gap in the same block, "Pull the ball to the side", is a LATERAL
+position and has no measure either; it is recorded in that drill's
+`sideMeasureNote` rather than here, because it wants a different quantity again.
+
 **A caution for whoever builds them.** `netball_overhead_pass` was nearly
 shipped with a checkpoint that passed a single mutation and measured nothing it
 claimed. The proof method changed with it: a failing mutation is now a SWEEP of
@@ -277,6 +297,37 @@ at least three displacements, the measure must move progressively, and the joint
 positions must move continuously at the crossing. A single-point failure beside a
 joint discontinuity is a basin. That drill's `mutationNote` carries the eight
 sweeps.
+
+## A release clip ends before its ball lands
+
+Raised 2026-09-02 by the content lane while auditing the bounce pass. A fact
+about all three passes, recorded so it is not rediscovered per drill. **No drill
+is retimed for it**: whether a release clip must contain the full flight is a
+contract question, not a movement one.
+
+**The numbers.** All three passes release at phase 0.80 of a 1.60 s clip, which
+leaves **0.32 s of flight** in the last 19 frames.
+
+| drill | what the ball is doing at the last frame |
+|---|---|
+| `netball_chest_pass` | still rising or level, mid-flight |
+| `netball_overhead_pass` | mid-flight |
+| `netball_bounce_pass` | **still descending, 0.35 s short of the court** |
+
+The bounce pass makes it concrete. Aimed at a floor point 4.00 m ahead of a
+111.7 cm release, the ball reaches the court at about **0.67 s**, which is
+**2.1 times** the flight the clip contains. A consumer playing the clip sees the
+throw and a ball that never lands.
+
+**Two questions, and neither is a movement change.** Should a `pass` clip carry
+the flight to the catch, or only the release and its follow-through? And if the
+first, does the clip lengthen or does the release move earlier? Both belong with
+`docs/TACTICS_CLIP_CONTRACT.md` and the coach agenda.
+
+**This is separate from the missing floor** (refer to the row above and to
+`docs/BOUNCE_PASS_INSTRUMENT_AUDIT.md`). Even with a floor the bounce would fall
+outside the clip, so lengthening the clip and adding a floor are two fixes and
+either alone is not enough for a bounce a person can watch.
 
 ## A per-hand ready offset is a design candidate, not a gap
 

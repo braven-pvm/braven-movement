@@ -1,0 +1,41 @@
+{
+  "movementId": "netball_bounce_pass",
+  "variant": null,
+  "source": "Authored by hand, NOT by author_flight.py. That tool authors an incoming flight from a passer position, and this drill has no incoming flight: the athlete starts with the ball.",
+  "startsWithTheBallNote": "THE AUTHORING RULE FOR ANY DRILL THAT STARTS WITH THE BALL, followed here for the third time. Put BOTH keys where the ball actually is, in her hands, and name the smallest tidy arrival. DO NOT INVENT AN INCOMING FLIGHT TO SATISFY THE arrival FIELD. Both failure modes are guarded mechanically in test_starts_with_the_ball.py.",
+  "radiusCm": 11.0,
+  "radiusFraction": 0.2088,
+  "arrival": {
+    "atPhase": 0.02
+  },
+  "arrivalNote": "A formality, not a catch. arrival names the frame possession transfers, and for a pass that already happened before the drill began. 0.0 is refused by load_ball, which requires release < arrival, so 0.02 is the smallest tidy value.",
+  "keys": [
+    {
+      "atPhase": 0.0,
+      "name": "in_her_hands",
+      "across": 0.0,
+      "up": 0.12,
+      "ahead": 0.55,
+      "note": "Where the ball is when the drill starts, at her chest."
+    },
+    {
+      "atPhase": 0.02,
+      "name": "still_in_her_hands",
+      "across": 0.0,
+      "up": 0.12,
+      "ahead": 0.55,
+      "note": "The same place. A flight of zero length is the honest description of a ball that never flew."
+    }
+  ],
+  "launch": {
+    "target": {
+      "across": 0.0,
+      "up": -2.3979,
+      "ahead": 7.593
+    },
+    "speedCmPerSecond": 600.0
+  },
+  "launchTargetNote": "PROVISIONAL, like every other authored number in this pack. THE LAUNCH IS AIMED AT THE FLOOR POINT, not at the receiver, so that this file needs no change on the day the engine gains a floor. THE ARITHMETIC, with its inputs. The stance frame is anchored at the chest as she stands at phase 0, measured at 126.32 cm, and the court is y = 0, so the floor sits at up = -126.32 / 52.68 = -2.3979 arm lengths. The manual's step 4 asks for the bounce 'approximately 1m in front of receiver'; on the manual's own lower bound of 'Area: Court (5-7m)' that puts the bounce 4.00 m ahead, which is 400 / 52.68 = 7.593 arm lengths. AT THE UPPER BOUND OF 7 m the bounce point would be 6.00 m ahead, 11.3895 arm lengths, and a coach may prefer it; 5 m is authored because the manual states the range and this is its near end. across is 0.0 because the bounce is in front of her, not to a side; the ball travels sideways during the CARRY and is released back on the midline.",
+  "launchSpeedNote": "PROVISIONAL AND IT INHERITS AN OPEN QUESTION. 600 cm/s is author_flight.DEFAULT_SPEED_CM, the one speed the whole library uses, recorded in docs/KNOWN_ISSUES.md as having no coach, no measurement and no source. Authoring a different number here would invent a second unsourced constant. IT IS THE HORIZONTAL COMPONENT; the vertical is solved so the ball reaches the target. A target BELOW the release does not by itself make the vertical downward, which a first draft of this note assumed and the measurement below disproves: it is downward only if the throw is fast enough that the ball would otherwise overshoot the drop. AND ON THIS DRILL THE CONSTANT PRODUCES A VISIBLY WRONG THROW, which is a sharper form of that open question than the two passes before it. Measured on 32663a9: to reach a floor point 4.00 m ahead from this drill's 111.7 cm release, 600 cm/s needs a vertical of +159.5 cm/s \u2014 the ball must be lobbed UPWARD at the floor and arcs from 111.7 up to 116.2 before it falls. A free fall from 111.7 cm takes 0.477 s, so the throw is only downward above 838 cm/s; the library's 600 is 0.72 of that. A BOUNCE PASS IS DRIVEN AT THE FLOOR, NOT LOBBED AT IT. The constant is left at 600 rather than corrected here, because authoring a second unsourced number is the fault this drill is trying not to repeat, and because the right value is a coach's or a measurement's. Recorded in the ledger beside the 5 m and 7 m apex figures.",
+  "noFloorNote": "AND THE BALL DOES NOT STOP THERE. The engine has no floor: possession.py integrates a released ball as one unbroken parabola and nothing clamps it. Measured on 32663a9 with the engine's own formula, a ball on this geometry crosses the court at about 0.67 s and is 7.9 m BELOW it by 1.5 s. THE CLIP HIDES THIS RATHER THAN FIXING IT: the release is at 0.80 of a 1.60 s clip, which leaves 0.32 s of flight, so the last frame comes 2.1 times too early for the ball to reach the floor at all. A viewer sees a ball still descending. Refer to docs/BOUNCE_PASS_INSTRUMENT_AUDIT.md."
+}

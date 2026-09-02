@@ -57,6 +57,13 @@ CLASSES = {
     # manual's pass family and that vocabulary is on the coach agenda. Refer to
     # docs/TACTICS_CLIP_CONTRACT.md section 3 and docs/LOB_AUTHORING_BRIEF.md.
     "netball_overhead_pass": ("pass", "overhead-pass", "release"),
+    # The third `pass`, and the FIRST whose class name a board can already
+    # select: `bounce-pass` is in Tactics' RELEASE_KINDS, unlike `overhead-pass`.
+    # THE CLIP DOES NOT CONTAIN THE BOUNCE. The engine has no floor, and the
+    # release at 0.80 of a 1.60 s clip leaves 0.32 s of flight against the 0.67 s
+    # the ball needs to reach the court. A consumer gets the throw and a ball
+    # still descending. Refer to docs/BOUNCE_PASS_INSTRUMENT_AUDIT.md.
+    "netball_bounce_pass": ("pass", "bounce-pass", "release"),
 }
 
 # Above this much root travel, a clip is not in place and the consumer must
