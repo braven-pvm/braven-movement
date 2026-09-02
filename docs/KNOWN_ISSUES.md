@@ -1928,12 +1928,27 @@ input gave mirrored knees on two different tips while this branch was open —
 57.42 and 62.38 on one, 62.32 and 57.43 on the other. **So every reading here
 names its build, and a figure quoted without one is not reproducible.**
 
-What was probed and NOT found: an input step small enough to flip the mirror on
-its own. Signed left-minus-right at frame 55, on `1da8843`, at steps of 0.051,
-0.005, 0.0005 and 0.00005 cm, reads −6.04, −6.10, −6.05 and −6.07 against a
-baseline of −6.10, with the pelvis line at −15.6 throughout. **No flip at any
-of those sizes on this drill**, so the across-build difference is a build
-difference and is not demonstrated to be input sensitivity.
+**AN INPUT STEP OF 0.00005 cm DOES FLIP IT, AT SOME POINTS.** The review found
+that on `netball_overhead_pass`, sweeping the technique's `afterContact` `step`
+key by ±1e-6 torso lengths, read at frame 55: at 20.20 cm and 26.42 cm of
+pull-back the left and right answers EXCHANGE on all four measures — shoulders
+116.86 / 108.17 becoming 108.17 / 116.86, knees 54.47 / 59.36 becoming 59.36 /
+54.47 — and at 6.22 cm and 7.77 cm neither perturbation exchanges anything.
+**So the flip is POINT-DEPENDENT**, which is why an earlier probe here found
+none: it read frame 0 at points that do not flip.
+
+**THE CROSS-PROCESS CAVEAT IS CLOSED.** That result was measured with the two
+solves in two processes, so process noise had not been separated from input
+sensitivity. **It has now: the same input solved in three separate processes
+returns 108.1500, 116.8400, 59.3600, 54.4700 every time, identical to four
+decimal places.** The solver is deterministic across processes, so two inputs
+0.00005 cm apart returning mirrored answers is the input and not the run.
+
+**IT IS ALSO BUILD-DEPENDENT.** At 20.20 cm on THIS build, ±1e-6 does not flip
+— all three readings agree to 0.01 degrees. The review's flip was on `36de191`.
+So a point that flips on one build need not flip on another, which is the same
+across-build instability recorded above and one more reason every figure here
+names its build.
 
 ### What is NOT claimed
 
