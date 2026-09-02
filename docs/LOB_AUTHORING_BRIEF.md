@@ -143,6 +143,55 @@ lob's central cue gradeable for the first time. That is a movement-lane
 instrument request and it is not raised as a blocker: the lob can ship without
 it, ungraded on its main point and saying so.
 
+## 4b. ANSWERED: THE LOB IS NOT A CHEST PASS VARIANT
+
+Measured 2026-09-02 on the pinned build `02b25cd`, which is what section 5's
+question 4 asked for. **The variant ruling survives in FORM and its PARENT
+changes.**
+
+**A lob ball variant leaves the release pose bit-identical.** Solved
+`netball_chest_pass` with and without a `lob` ball carrying a 450 cm/s launch
+at 9.5 arm lengths:
+
+| | plain | lob variant |
+|---|---|---|
+| release frame | 76 | 76 |
+| ball height | 142.4 cm | 142.4 cm |
+| wrist height | 137.1 cm | 137.1 cm |
+| shoulder elevation | 48.8 deg | 48.8 / 48.7 deg |
+
+Nothing moved. **A ball variant cannot raise the release by one centimetre**,
+because the carry lives in the technique's `afterContact` keys and a ball file
+does not touch them. `possession_solve.solve_movement` says so in its own
+docstring — "the technique never changes with it" — and this measures it.
+
+**The manual asks for 185.5 cm.** "As high as arm can go" on the reference
+athlete is her shoulder at 132.9 plus a 52.7 cm arm. The chest pass releases at
+137.1 at the wrist. **THE GAP IS 48.4 cm**, about two netball diameters, and no
+ball file can close it.
+
+**THE MANUAL NAMES THE RIGHT PARENT, and the wording is exact.** Three lines:
+
+| line | pass | text |
+|---|---|---|
+| 2663 | OVERHEAD PASS, step 1 | "Pull the ball up into the air above your head" |
+| 2672 | 1 HAND HIGH PASS, step 1 | "Pull the ball up as high as arm can go" |
+| 2725 | **LOB PASS, step 2** | **"Pull the ball up as high as arm can go"** |
+
+**Lines 2672 and 2725 are identical.** The lob's own second step is the 1 Hand
+High pass's first step, word for word, and its first step names that pass as an
+option. The manual is not describing a new carry; it is pointing at one it has
+already given.
+
+**So the lob is a variant of the OVERHEAD or the 1 HAND HIGH pass, and neither
+is in the library.** Authoring the lob now requires authoring its parent first.
+Neither parent is in Tactics' `RELEASE_KINDS` either, so the
+overhead-versus-vocabulary reconciliation already on the coach agenda becomes
+the lob's gate.
+
+Nothing is lost by finding out first: no ball file was written, and the finding
+is one measurement plus three lines of the manual.
+
 ## 5. Open questions a coach must settle
 
 None of these is a code question and none should be guessed.
@@ -156,9 +205,7 @@ None of these is a code question and none should be guessed.
    hand". This brief assumes double hand, because the chest pass is the
    technique already in the library and it is the manual's own first pass. A
    one-handed lob would need the one-handed pass first.
-4. **Does the lob keep the chest pass's phases?** The chest pass releases at
-   0.80 from a chest-height drive. Step 2, "pull the ball up as high as arm can
-   go", is a different shape and may need its own motion keys, which would make
-   the lob more than a ball file after all. **THIS IS THE ONE THAT COULD
-   OVERTURN THE VARIANT RULING** and it should be checked first, on the pinned
-   build, before the ball file is written.
+4. **ANSWERED, NOT A COACH QUESTION AFTER ALL.** Measured on the pinned build:
+   the lob is not a chest pass variant and the manual names the right parent.
+   Refer to section 4b. What remains for a coach is which parent — the manual
+   offers "1 Hand high/wide or double hand" and the library has none of them.
