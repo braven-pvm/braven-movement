@@ -396,6 +396,34 @@ than seeking when a window matters, and **match a consequential frame back
 against the source rather than trusting any label.** Every reading in the
 annotation was taken that way.
 
+**And the caution that explains the original symptom.** The side file carries
+only **THREE keyframes** — 0.000, 9.996 and 19.992, a ten-second GOP — where
+the front has one every second. Any KEYFRAME-SNAPPING reader
+(`-noaccurate_seek`, a stream copy, most players) asked for 16.93 on the side
+lands at **9.996**, a +6.93 s error — and 9.996 is where repetition 2's catch
+lives. That is precisely the symptom that started this: repetition 2's catch
+appearing under a repetition-7 label. ffmpeg's default seek is accurate and
+does not do it; a reader that snaps does, and a ten-second GOP is what makes
+the error that large.
+
+### Two fields the gate reads back out
+
+**`cause`** on a blocking row — `gesture` or `framing`. The gate names it per
+repetition: *"0 (gesture), 2 (framing), 8 (gesture)"*. The two need different
+shoot instructions — a slate between repetitions, or framing for the ball's
+flight — so collapsing them to a count would lose the only thing that decides
+which fix applies.
+
+**`marginFrames`** on a passing row — how many frames of the anchored span
+actually carry the ball. Repetitions 5 and 7 each carry it in exactly ONE:
+14.900 for rep 5, which is the peak itself, and 17.200 for rep 7, which is the
+anchor itself. The anchor is located "to about one frame and no better" and the
+two views are synchronised to no better than 0.25 s, **so a one-frame margin is
+inside the uncertainty of the question being asked.** The gate reports those as
+NARROW rather than as plain passes, and it quotes each row's own margin rather
+than the threshold it fell under. `null` means nobody counted, which is not the
+same as wide.
+
 ## Open, and deliberately so
 
 - **The gate has never opened on real footage.** It opens on a synthetic

@@ -131,6 +131,21 @@ def annotation_path(set_id: str) -> Path:
 # annotation land on its neighbour.
 WINDOW_TOLERANCE_SECONDS = 0.1
 
+# WHY A REPETITION CAN CARRY NO BALL, and they are not the same problem.
+# `gesture` — the athlete was not catching; no ball anywhere in the window.
+# `framing` — a genuine catch whose ball had left the picture by the anchored
+#   moment, because the camera does not frame the flight.
+# The first is answered by a slate between repetitions, the second by framing
+# for the ball's flight, so the gate names which rather than sending a reader
+# to the annotation to find out.
+CAUSES = ("gesture", "framing")
+
+# A pass resting on this many frames or fewer is reported as NARROW rather than
+# as a plain pass. TWO, because the anchor itself is located "to about one
+# frame and no better" (video_phase_align), so a pass inside two frames is
+# inside the uncertainty of the question being asked.
+NARROW_MARGIN_FRAMES = 2
+
 
 class BallAnnotationError(ValueError):
     """The annotation cannot be trusted, so it is not used at all."""
@@ -164,6 +179,16 @@ def load_annotation(path: Path) -> dict | None:
                     f"{path}: {field} is {row.get(field)!r}. It is true, "
                     "false, or null for 'not looked at' — and null is not "
                     "false.")
+        if row.get("cause") not in (None, *CAUSES):
+            raise BallAnnotationError(
+                f"{path}: cause is {row['cause']!r}, and it is one of "
+                f"{', '.join(CAUSES)}. The two need different shoot "
+                "instructions, so a row that blocks says which.")
+        margin = row.get("marginFrames")
+        if margin is not None and (not isinstance(margin, int) or margin < 0):
+            raise BallAnnotationError(
+                f"{path}: marginFrames is {margin!r}. It is a count of frames "
+                "or null for 'not counted'.")
         if row["index"] in seen:
             raise BallAnnotationError(
                 f"{path}: repetition {row['index']} is annotated twice, so "
@@ -228,20 +253,40 @@ def judge(annotation: Mapping | None, alignments: Sequence[Mapping]) -> dict:
     check_windows(annotation, alignments)
     by_index = {row["index"]: row for row in annotation.get("repetitions", [])}
     without = sorted(n for n, row in by_index.items() if row["ballVisible"] is False)
+    causes = {n: by_index[n].get("cause") for n in without}
+    narrow = sorted(
+        n for n, row in by_index.items()
+        if row["ballVisible"] is True
+        and row.get("marginFrames") is not None
+        and row["marginFrames"] <= NARROW_MARGIN_FRAMES)
     unlooked = sorted(
         set(range(total)) - {n for n, row in by_index.items()
                              if row["ballVisible"] is not None})
     with_ball = sorted(n for n, row in by_index.items() if row["ballVisible"] is True)
+    named = ", ".join(
+        f"{n} ({causes[n]})" if causes.get(n) else str(n) for n in without)
+    # THE ACTUAL MARGIN, not the threshold it fell under. A first version said
+    # "pass on 2 frames or fewer" of two repetitions that each pass on ONE, and
+    # reporting the bar instead of the reading is the fault this gate spends
+    # its whole design avoiding.
+    spans = [f"{n} ({by_index[n]['marginFrames']} "
+             f"{'frame' if by_index[n]['marginFrames'] == 1 else 'frames'})"
+             for n in narrow]
+    thin = (
+        f" NARROW PASSES: {', '.join(spans)}. The anchor is itself located to "
+        "about one frame and no better, and the two views are synchronised to "
+        "no better than 0.25 s, so a margin this thin is inside the "
+        "uncertainty of the question — read them as narrow, not as clear."
+        if narrow else "")
     if without:
         passes = False
         detail = (
             f"{len(without)} of {total} repetitions have NO BALL IN FRAME: "
-            f"{', '.join(str(n) for n in without)}. Every reading in this "
-            "report is computed across the repetitions, so any one of them "
-            "without a ball contaminates the set. A repetition can reach this "
-            "list two ways — the athlete was gesturing, or the ball left the "
-            "frame before the anchored moment — and the annotation's evidence "
-            "says which.")
+            f"{named}. Every reading in this report is computed across the "
+            "repetitions, so any one of them without a ball contaminates the "
+            "set. The two causes need different shoot instructions: a "
+            "`gesture` is answered by a slate between repetitions, a `framing` "
+            "by framing for the ball's flight." + thin)
     elif unlooked:
         passes = None
         detail = (
@@ -252,9 +297,10 @@ def judge(annotation: Mapping | None, alignments: Sequence[Mapping]) -> dict:
         passes = True
         detail = (
             f"All {total} repetitions were looked at and every one shows a "
-            "ball in frame.")
+            "ball in frame." + thin)
     return {
         "annotated": len(by_index), "total": total,
         "withBall": with_ball, "withoutBall": without, "notLookedAt": unlooked,
+        "causes": causes, "narrowPasses": narrow,
         "passes": passes, "detail": detail,
     }

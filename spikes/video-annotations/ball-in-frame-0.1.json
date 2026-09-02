@@ -17,7 +17,8 @@
    "endSeconds": 5.833,
    "ballVisible": false,
    "ballVisibleThroughout": false,
-   "evidence": "THE REPETITION THIS CONDITION EXISTS FOR. The clip lane's manifest records it verbatim: 'best warp distance in the set (0.02369) and NO BALL IS PRESENT. A frame strip across the whole window shows the athlete standing and gesturing.' Rejected on sight after scoring best of twelve on the whole-curve scoring and rank 1 of 8 drills on both scorings."
+   "evidence": "THE REPETITION THIS CONDITION EXISTS FOR. The clip lane's manifest records it verbatim: 'best warp distance in the set (0.02369) and NO BALL IS PRESENT. A frame strip across the whole window shows the athlete standing and gesturing.' Rejected on sight after scoring best of twelve on the whole-curve scoring and rank 1 of 8 drills on both scorings.",
+   "cause": "gesture"
   },
   {
    "index": 1,
@@ -33,7 +34,8 @@
    "endSeconds": 12.1,
    "ballVisible": false,
    "ballVisibleThroughout": false,
-   "evidence": "A FRESH LOOK by the video-readiness lane, 2026-09-02. Front view, frames selected by timestamp and read at two magnifications. She catches at 11.200-11.400 with the ball plainly in her hands. The ball then leaves the TOP of the frame at 11.633 \u2014 a top-crop across 11.600 to 12.133 shows it at the edge in 11.600 and gone in every frame after. The anchor is 11.733 and the peak 12.100, so NO BALL IS IN FRAME across the anchored span. This is not a gesture: it is a real catch whose anchor lands after the ball has left the picture."
+   "evidence": "A FRESH LOOK by the video-readiness lane, 2026-09-02. Front view, frames selected by timestamp and read at two magnifications. She catches at 11.200-11.400 with the ball plainly in her hands. The ball then leaves the TOP of the frame at 11.633 \u2014 a top-crop across 11.600 to 12.133 shows it at the edge in 11.600 and gone in every frame after. The anchor is 11.733 and the peak 12.100, so NO BALL IS IN FRAME across the anchored span. This is not a gesture: it is a real catch whose anchor lands after the ball has left the picture.",
+   "cause": "framing"
   },
   {
    "index": 3,
@@ -57,7 +59,8 @@
    "endSeconds": 14.9,
    "ballVisible": true,
    "ballVisibleThroughout": false,
-   "evidence": "A FRESH LOOK by the video-readiness lane, 2026-09-02. Front view. She waits with hands up and empty from 14.000 to 14.750, and the ball descends into frame at 14.875 \u2014 inside the anchored span of 14.467 to 14.900, with 25 ms to spare. Confirmed in the side view. A real catch whose window ends as the ball arrives."
+   "evidence": "A FRESH LOOK by the video-readiness lane, 2026-09-02. Front view, frames selected by timestamp. Hands are up and EMPTY through the whole anchored span until its end: 14.767, 14.800 and 14.833 show no ball. At 14.867 there is at most an edge at the top right and it will not be called a ball. At 14.900 \u2014 THE LAST FRAME OF THE SPAN, the peak itself \u2014 the ball is unambiguously in frame, a large blur above her hands. SO THE PASS RESTS ON ONE FRAME. An earlier version of this row said '14.875 ... with 25 ms to spare': that timestamp was an fps-RESAMPLED output value and not a front-camera PTS at all (the front runs at exactly 30.000 fps, so its frames here are 14.833, 14.867, 14.900), and 'to spare' overstated a margin that is a single frame.",
+   "marginFrames": 1
   },
   {
    "index": 6,
@@ -73,7 +76,8 @@
    "endSeconds": 17.567,
    "ballVisible": true,
    "ballVisibleThroughout": false,
-   "evidence": "A FRESH LOOK by the video-readiness lane, 2026-09-02. Front view, top-crop across 17.133 to 17.600 at full resolution. She catches at 16.800-17.000, then tosses: the ball is motion-blurred but UNAMBIGUOUS at 17.133, 17.167 and at the anchor itself, 17.200, and is half out of frame by 17.233 and gone by 17.267. At 230 px wide this blur read as ambiguous and the magnified crop settled it, which is why the close look is part of the method rather than an extra."
+   "evidence": "A FRESH LOOK by the video-readiness lane, 2026-09-02. Front view, top-crop across 17.133 to 17.600 at full resolution. She catches at 16.800-17.000, then tosses: the ball is motion-blurred but UNAMBIGUOUS at 17.133, 17.167 and at the anchor itself, 17.200, is half out of frame by 17.233 and gone by 17.267. SO THE PASS RESTS ON ONE FRAME OF THE SPAN, 17.200 \u2014 the anchor's own frame and no more. At 230 px wide this blur read as ambiguous and the magnified crop settled it, which is why the close look is part of the method rather than an extra.",
+   "marginFrames": 1
   },
   {
    "index": 8,
@@ -81,7 +85,8 @@
    "endSeconds": 18.3,
    "ballVisible": false,
    "ballVisibleThroughout": false,
-   "evidence": "A FRESH LOOK by the video-readiness lane, 2026-09-02. Front view, every frame of the window at two magnifications plus a top-crop across 18.067 to 18.333. She stands, talks and gestures with her hands clasped at her chest. NO BALL ANYWHERE in the picture at any point in the window. The same shape as repetition 0, and the second gesture stretch the alignment accepted as a repetition."
+   "evidence": "A FRESH LOOK by the video-readiness lane, 2026-09-02. Front view, every frame of the window at two magnifications plus a top-crop across 18.067 to 18.333. She stands, talks and gestures with her hands clasped at her chest. NO BALL ANYWHERE in the picture at any point in the window. The same shape as repetition 0, and the second gesture stretch the alignment accepted as a repetition.",
+   "cause": "gesture"
   },
   {
    "index": 9,
@@ -109,5 +114,7 @@
   }
  ],
  "note": "THREE of twelve repetitions have no ball in frame at the anchored moment, and for TWO different reasons. Repetitions 0 and 8 are gesture stretches with no ball anywhere in the window. Repetition 2 is a REAL CATCH whose anchor lands 0.1 s after the ball has left the top of the frame. Repetitions 5 and 7 pass by 25 ms and by one frame respectively. Nothing here is null any longer.",
- "seekWarning": "WITHDRAWN AND REPLACED, 2026-09-02. An earlier version of this field blamed FAST SEEK (`-ss` before `-i`) on the variable-rate side camera, and said the clip manifests used that method. THAT BLAME IS NOT SUPPORTED and it impugned a method that is fine. Measured: asked for a single frame at 17.030, fast seek, `-copyts` accurate seek and `select` by timestamp ALL return the identical source frame, pts 17.0599 (the first frame at or after the request), matched against the source at a difference of 0.663 against a next rival of 3.324. Seeking is not the fault. WHAT IS ESTABLISHED is narrower: a label computed as a FIXED OFFSET plus the output timestamp, inside a filter chain that RESAMPLES (`fps=`) and TILES, can diverge from the frames it is printed on \u2014 and one such chain asked for 9.733 s produced frames whose true timestamps ran 12.000 to 14.200. The content was real footage and the labels were fiction, which is the worst shape a mislabelling can take. SO: label with the TRUE container PTS (`%{pts\\:hms}` with no offset), select by timestamp rather than seeking when a window matters, and if a reading is consequential, MATCH THE FRAME BACK against the source rather than trusting any label. Every reading in this file was taken that way."
+ "seekWarning": "WITHDRAWN AND REPLACED, 2026-09-02. An earlier version of this field blamed FAST SEEK (`-ss` before `-i`) on the variable-rate side camera, and said the clip manifests used that method. THAT BLAME IS NOT SUPPORTED and it impugned a method that is fine. Measured: asked for a single frame at 17.030, fast seek, `-copyts` accurate seek and `select` by timestamp ALL return the identical source frame, pts 17.0599 (the first frame at or after the request), matched against the source at a difference of 0.663 against a next rival of 3.324. Seeking is not the fault. WHAT IS ESTABLISHED is narrower: a label computed as a FIXED OFFSET plus the output timestamp, inside a filter chain that RESAMPLES (`fps=`) and TILES, can diverge from the frames it is printed on \u2014 and one such chain asked for 9.733 s produced frames whose true timestamps ran 12.000 to 14.200. The content was real footage and the labels were fiction, which is the worst shape a mislabelling can take. SO: label with the TRUE container PTS (`%{pts\\:hms}` with no offset), select by timestamp rather than seeking when a window matters, and if a reading is consequential, MATCH THE FRAME BACK against the source rather than trusting any label. Every reading in this file was taken that way. THE CAUTION THAT EXPLAINS THE ORIGINAL SYMPTOM: the side file carries only THREE keyframes \u2014 0.000, 9.996 and 19.992, a ten-second GOP \u2014 where the front has one every second. Any KEYFRAME-SNAPPING reader (`-noaccurate_seek`, a stream copy, most players) asked for 16.93 on the side lands at 9.996, a +6.93 s error, and 9.996 is where repetition 2's catch lives. That is exactly the symptom that started this: repetition 2's catch appearing under a repetition-7 label. ffmpeg's default seek is accurate and does not do this; a reader that snaps does.",
+ "marginNote": "TWO OF THE NINE PASSES ARE NOT CLEAR PASSES. Repetitions 5 and 7 each carry a ball in exactly ONE frame of their anchored span \u2014 14.900 for rep 5, which is the peak itself, and 17.200 for rep 7, which is the anchor itself. `video_phase_align` says the anchor is located 'to about one frame and no better', and the two views are synchronised to no better than 0.25 s, so a one-frame margin is INSIDE the uncertainty of the question being asked. The gate reports them as narrow rather than as plain passes. `marginFrames` carries the count; null means nobody counted it, which is not the same as wide.",
+ "causeNote": "A REPETITION REACHES THE NO-BALL LIST TWO WAYS AND THEY NEED DIFFERENT INSTRUCTIONS. `gesture` (repetitions 0 and 8) is the athlete not catching at all, and is answered by a slate between repetitions. `framing` (repetition 2) is a GENUINE CATCH whose ball had left the top of the picture before the anchored moment, and is answered by framing for the ball's flight. Collapsing them to a count would lose the only thing that decides which instruction fixes it."
 }
