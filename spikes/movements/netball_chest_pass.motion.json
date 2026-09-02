@@ -46,7 +46,7 @@
       "up": 0.13,
       "ahead": 0.86,
       "hipDrop": 0.085,
-      "note": "The ball leaves the hands. 0.86 ahead is where the four releasing catch drills in this library actually let go of the ball, measured from their solved ballState rather than copied from their keys."
+      "note": "The ball leaves the hands. CORRECTED, AND THE FIRST CLAIM WAS WRONG. This note said 0.86 was where the four releasing drills let go of the ball. Measured at each drill's first `released` frame, the wrist midpoint ahead of the chest joint is 0.75, 0.82 and 0.74 of an arm length on the three CATCHES, and 0.51 on the deflect, which is excluded because a deflect is not a pass. So the three passes-back sit between 0.74 and 0.82 and 0.86 is BEYOND all three, not equal to them. It is kept, because a pass she initiates drives further out than a pass-back she absorbs into, and because the pose it produces matches: the possession solve reads 98.0 degrees of elbow flexion at this release against the three analogues' 98.0, 86.8 and 99.3. The key differs and the graded pose does not. The reviewer's own reading of the same quantity was 0.80, 0.80 and 0.87, close but not identical to the figures above; the method here is the wrist midpoint against `chest_joint`, stated so the difference can be reconciled rather than averaged away."
     },
     {
       "atPhase": 1.0,

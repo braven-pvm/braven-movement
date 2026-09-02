@@ -125,6 +125,22 @@ class MovementTest(unittest.TestCase):
         self.assertTrue(any("Needs more" in note for note in notes))
 
 
+# The manual's OWN COVER, which is what every definition cites, followed by its
+# section and page. It is deliberately not the converted markdown's file name,
+# "202526 updated coaches manual": a library that cites one source under two
+# titles cannot be checked, and the second title arrives silently because the
+# file name is what an author has in front of them.
+MANUAL_TITLE = (
+    "Netball Skills and Conditioning Manual, Level 1, 3rd version, "
+    "Niel du Plessis and Erin Burger"
+)
+
+
+def cites_the_manual(source: str) -> bool:
+    """Whether a definition's source names the manual by its cover."""
+    return MANUAL_TITLE in source
+
+
 class LibraryDefinitionTest(unittest.TestCase):
     """Every definition in the library must satisfy these, including new ones."""
 
@@ -158,7 +174,41 @@ class LibraryDefinitionTest(unittest.TestCase):
 
     def test_every_definition_cites_the_manual(self):
         for path in self.definitions():
-            self.assertIn("Manual", load(path).source, path.name)
+            with self.subTest(definition=path.name):
+                self.assertTrue(
+                    cites_the_manual(load(path).source),
+                    f"{path.name} does not cite the manual by its own cover. "
+                    f"Every definition must contain {MANUAL_TITLE!r}, then its "
+                    "section and page.",
+                )
+
+    def test_the_markdown_file_name_is_not_an_acceptable_title(self):
+        """The mutation, and the reason this checks a title and not a word.
+
+        It asserted only that the word "Manual" appeared, which the converted
+        markdown's file name also contains, so a definition citing
+        "202526 Netball Coaches Manual" passed while introducing a SECOND
+        title into a library where the other eight all cite the cover. The
+        first pass drill did exactly that and the guard was silent.
+
+        The string below is the one that slipped through, kept verbatim.
+        """
+        slipped_through = (
+            "202526 Netball Coaches Manual, Passing, pages 79 to 83, "
+            "Niel du Plessis and Erin Burger."
+        )
+        self.assertIn("Manual", slipped_through, "the old check would pass this")
+        self.assertFalse(
+            cites_the_manual(slipped_through),
+            "the file name is being accepted as the manual's title again",
+        )
+        self.assertTrue(
+            cites_the_manual(
+                "Netball Skills and Conditioning Manual, Level 1, 3rd version, "
+                "Niel du Plessis and Erin Burger, Catching section, page 71."
+            ),
+            "the real citation form is being refused",
+        )
 
     def test_every_checkpoint_has_a_cue_and_a_reason(self):
         for path in self.definitions():
