@@ -1949,6 +1949,19 @@ jumping about seven degrees at the release frame, and an elbow stall five
 frames later. **They are the same thing, and both are products of one line of
 easing.** Measured on `2169157`.
 
+**THE STALL ALREADY HAD AN INSTRUMENT AND A NUMBER.** It is the receipt's
+`spike_report`, whose `worstNeighbourRatio` divides the neighbour-median step
+by the step at that frame. Both drills report it at the same place:
+
+| drill | measure | frame | step | neighbour median | ratio | kind |
+|---|---|---|---|---|---|---|
+| `overhead_pass` | `leftElbowFlexionDegrees` | 81 | 0.53 | 6.24 | **11.78** | stall |
+| `chest_pass` | `leftElbowFlexionDegrees` | 81 | 1.77 | 8.83 | **4.99** | stall |
+
+The steps in that table are the same 0.53 and 1.77 the easing comparison below
+turns on. **The receipt was already reporting this defect, as a ratio, and
+nothing had followed it back to its cause.**
+
 ### The hands are not already moving
 
 `possession.py` eases the follow-through aim point out of the release with
@@ -2005,14 +2018,51 @@ Overhead pass first, chest pass second, in degrees.
 **Smoothstep cuts the seam by a factor of four and five and raises the worst
 elbow step.** Under it the overhead's worst elevation step stops being at the
 release at all and moves to frame 15, which is a feature linear shares and
-which has nothing to do with this. **No easing wins on every measure**, so
-replacing the line is a judgement about which hitch matters, not a repair.
+which has nothing to do with this.
+
+### That table is two drills, and the library disagrees with it
+
+**THE TWO-DRILL TABLE ABOVE POINTED AT SMOOTHSTEP. THE LIBRARY DOES NOT.** The
+receipt already carries an instrument for this — `spike_report`'s
+`worstNeighbourRatio`, the neighbour-median step over the step at that frame,
+against a `SNAP_RATIO` threshold of 3.0. Run over every drill:
+
+| drill | ease-out, shipped | smoothstep | linear |
+|---|---|---|---|
+| `overhead_pass` | **11.78** | 3.39 | 4.09 |
+| `two_hand_snatch_straight_back` | 9.84 | **26.35** | **20.41** |
+| `two_hand_catch_chest` | 8.52 | 3.21 | 5.77 |
+| `deflect_high` | 7.84 | 11.58 | 3.99 |
+| `chest_pass` | 4.99 | 3.40 | 2.95 |
+| `hooks_jump_pull_in` | 3.28 | 2.18 | 2.15 |
+| `double_foot_landing` | 2.79 | 2.79 | 2.79 |
+| `hooks_outside_hand` | 2.06 | 2.06 | 2.06 |
+| the two snatches with no spike | 0.00 | 0.00 | 0.00 |
+| **worst in the library** | **11.78** | **26.35** | **20.41** |
+| **drills over the 3.0 threshold** | 6 | 5 | 4 |
+
+**Linear is better on seven drills and far worse on one. Smoothstep is better
+on five and worse on two. The shipped ease-out has the LOWEST WORST and the
+MOST drills over the threshold.** The whole decision hinges on
+`two_hand_snatch_straight_back`, which more than doubles under either
+alternative and is not a pass at all.
+
+**So the two-drill table was too small a sample to choose from, and it is left
+above rather than deleted because that is the mistake this file names most
+often.** One measurement is not a property, and two drills are not a library.
+
+**No easing wins**, so replacing the line is a judgement about which hitch
+matters, not a repair.
 
 **WHAT IS FIXED HERE: the comment**, whose stated reason was false and is
 withdrawn in place. **WHAT IS NOT: the easing.** It needs a ruling, and the
 table above is what a ruling needs.
 
 ### What is not settled
+
+Why `two_hand_snatch_straight_back` more than doubles its snap ratio under both
+alternatives. It is the drill that decides the choice and nothing here explains
+it. **Whichever easing is ruled for, that drill should be measured first.**
 
 Whether the arm should leave the release from rest at all. A real
 follow-through starts while the hands are still driving the ball, so the honest
