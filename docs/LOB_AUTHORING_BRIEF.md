@@ -74,12 +74,14 @@ of its speed and none of that field.
 **So a lob is authored by LOWERING the horizontal speed, not by aiming upward.**
 The arc follows.
 
-Apex against horizontal speed, from `solve_launch`. Release at 205 cm and the
-receiver's hands at 140 cm.
+Apex against horizontal speed, from `solve_launch`. **Release at 205 cm and
+the receiver's hands at 140 cm** — a LOB's release, overhead, because step 2
+says as high as the arm can go. Every apex below is tied to that 205 and moves
+one for one with it.
 
 | horizontal speed | 5 m: flight, apex above floor | 7 m: flight, apex above floor |
 |---|---|---|
-| 600 cm/s (the library's constant) | 0.83 s, **261 cm** | 1.17 s, **341 cm** |
+| 600 cm/s (the library's constant) | 0.83 s, 261 cm | 1.17 s, 341 cm |
 | 450 cm/s | 1.11 s, 326 cm | 1.56 s, 470 cm |
 | 350 cm/s | 1.43 s, 424 cm | 2.00 s, 664 cm |
 | 300 cm/s | 1.67 s, 514 cm | 2.33 s, 841 cm |
@@ -99,12 +101,27 @@ defender comfortably and 350 cm/s is already floating. Below 300 cm/s the ball
 goes over the goalpost. The authoring choice is roughly 400 to 500 cm/s at 5 m,
 and it is a coach's call inside that.
 
-Second, and this is not about the lob: **at 7 m the library's own 600 cm/s
-constant produces a 341 cm apex, which is a lob.** The single undocumented ball
-speed does not make a flat pass at the manual's own drill distance. That is
-another face of `docs/KNOWN_ISSUES.md`, "The ball speed for the whole library is
-one undocumented constant", and it belongs with that entry rather than with
-this one.
+Second, and this is not about the lob: **the library's own 600 cm/s constant
+turns from a flat pass into a lob inside the manual's own drill range.**
+
+CORRECTED after Bruce could not reproduce a first version of this row. The
+first version read 341 cm and used the LOB's 205 cm overhead release, which is
+the wrong geometry for a claim about a straight pass. A straight pass leaves
+from chest height, and the library's own figure for that is
+`author_flight.DEFAULT_RELEASE_HEIGHT_CM`, 135 cm. Recomputed on that:
+
+| distance | apex above floor at 600 cm/s | reading |
+|---|---|---|
+| 5 m | **225 cm** | passes under a raised defender: a flat pass |
+| 7 m | **302 cm** level, **307 cm** to the library's own 145.4 cm catch height | a netball goalpost is 305 cm: a lob |
+
+Both arithmetics were correct and the flight time is identical at 1.167 s; the
+whole difference was the release height. The finding is sharper for the
+correction: the constant is fine at the near end of the manual's stated 5 to 7 m
+and has become a lob by the far end, with no change to the number and nothing
+in the file saying so. That is another face of `docs/KNOWN_ISSUES.md`, "The ball
+speed for the whole library is one undocumented constant", and it belongs with
+that entry rather than with this one.
 
 ## 4. WHAT HAS NO INSTRUMENT
 
