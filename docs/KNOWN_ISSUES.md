@@ -1593,3 +1593,35 @@ is a separate investigation, and a guard and a finding must not share a pack.
 Mutation-proven: handing the locked parameters back flips that drill to 15.44
 and the pin reports it by name, with the 32.78 degree gap and a pointer to
 `docs/CLAVICLE_ARTEFACT.md`.
+
+
+## The root winding is not a defect, and the guard proposed for it would be wrong
+
+Investigated 2026-09-02 and CLOSED WITH NO ACTION. Recorded so it is not raised
+again.
+
+The two-basin finding noted that in the retired basin the root rotation was
+wound to 1030, 769 and 683 degrees. I proposed a general bound on root winding
+as a companion guard, on the reasoning that nearly three full turns is not a
+pose anybody wants. **Three measurements say otherwise.**
+
+1. **The root rotations are unbounded by design.** They carry no recorded limit,
+   which is correct for a free root.
+2. **The pose repeats modulo 360.** Adding a full turn to any root rotation
+   moves the skeleton by 0.00002 cm. A wound angle is the SAME POSE described
+   differently.
+3. **Nothing downstream reads the raw angle.** `export_tactics_clip` states in
+   its own docstring that every number it writes is read off the solved joint
+   POSITIONS, so a wound angle cannot reach the clip contract or any consumer.
+
+On the shipped build there is no winding to speak of: the root sits between 119
+and 182 degrees on the drill in question.
+
+**AND THE GUARD WOULD HAVE BEEN ACTIVELY HARMFUL.** Winding is what keeps an
+angle CONTINUOUS from frame to frame. Forcing it into a bounded range would
+introduce a jump wherever the value crossed the boundary, and this engine
+interpolates between frames. A bound would have penalised the representation
+that makes interpolation correct, in the name of tidiness.
+
+The winding remains a true DESCRIPTION of that basin's parameters and it is
+kept in `docs/CLAVICLE_ARTEFACT.md` as such. It is not evidence of a bad pose.
