@@ -587,12 +587,32 @@ def resolve(
                     origin + velocity / speed * reach_limit_cm,
                     contact_distance,
                 )
-                # Eased out rather than linear, for the mirror of the reason
-                # the reach is eased in above: the hands are already moving
-                # when she lets go, because they drove the ball, and they come
-                # to rest at full extension rather than stopping dead. It also
-                # measures better, worst step 11.7 degrees against 15.4, but
-                # that is corroboration and not the reason.
+                # Eased out rather than linear, to arrive at full extension
+                # rather than stopping dead. It measures better at that end,
+                # worst step 11.7 degrees against 15.4.
+                #
+                # ITS STATED REASON WAS FALSE AND IS WITHDRAWN. This said the
+                # hands are "already moving when she lets go, because they
+                # drove the ball". They are not. Measured on 2169157, the
+                # wrist moves 0.72 cm in the frame before the release and
+                # 7.37 in the frame after, on `netball_overhead_pass`; 0.55
+                # and 4.09 on `netball_chest_pass`. The hands multiply their
+                # speed by 10.2 and 7.4 at that frame.
+                #
+                # An ease-out has its GREATEST slope at t=0, so it begins at
+                # full speed. That is right only when the incoming speed
+                # matches it, and here it does not. So this easing fixes the
+                # far end of the follow-through and makes the near end a step
+                # change in hand velocity. That step is the release seam, and
+                # the elbow's sign reversal five frames later goes with it:
+                # both vanish under a smoothstep and under a linear ramp.
+                #
+                # NOT CHANGED HERE. Replacing it is a trade rather than a
+                # repair — a smoothstep cuts the seam from 7.02 degrees to
+                # 1.65 and raises the worst elbow step from 12.06 to 13.78 —
+                # so the choice is recorded for a ruling in
+                # docs/KNOWN_ISSUES.md under "The release seam and the
+                # frame-81 stall are one defect".
                 out = min(1.0, at / FOLLOW_THROUGH_SECONDS)
                 out = 1.0 - (1.0 - out) ** 2
                 along_the_pass = origin + (extended - origin) * out

@@ -1928,12 +1928,27 @@ input gave mirrored knees on two different tips while this branch was open —
 57.42 and 62.38 on one, 62.32 and 57.43 on the other. **So every reading here
 names its build, and a figure quoted without one is not reproducible.**
 
-What was probed and NOT found: an input step small enough to flip the mirror on
-its own. Signed left-minus-right at frame 55, on `1da8843`, at steps of 0.051,
-0.005, 0.0005 and 0.00005 cm, reads −6.04, −6.10, −6.05 and −6.07 against a
-baseline of −6.10, with the pelvis line at −15.6 throughout. **No flip at any
-of those sizes on this drill**, so the across-build difference is a build
-difference and is not demonstrated to be input sensitivity.
+**AN INPUT STEP OF 0.00005 cm DOES FLIP IT, AT SOME POINTS.** The review found
+that on `netball_overhead_pass`, sweeping the technique's `afterContact` `step`
+key by ±1e-6 torso lengths, read at frame 55: at 20.20 cm and 26.42 cm of
+pull-back the left and right answers EXCHANGE on all four measures — shoulders
+116.86 / 108.17 becoming 108.17 / 116.86, knees 54.47 / 59.36 becoming 59.36 /
+54.47 — and at 6.22 cm and 7.77 cm neither perturbation exchanges anything.
+**So the flip is POINT-DEPENDENT**, which is why an earlier probe here found
+none: it read frame 0 at points that do not flip.
+
+**THE CROSS-PROCESS CAVEAT IS CLOSED.** That result was measured with the two
+solves in two processes, so process noise had not been separated from input
+sensitivity. **It has now: the same input solved in three separate processes
+returns 108.1500, 116.8400, 59.3600, 54.4700 every time, identical to four
+decimal places.** The solver is deterministic across processes, so two inputs
+0.00005 cm apart returning mirrored answers is the input and not the run.
+
+**IT IS ALSO BUILD-DEPENDENT.** At 20.20 cm on THIS build, ±1e-6 does not flip
+— all three readings agree to 0.01 degrees. The review's flip was on `36de191`.
+So a point that flips on one build need not flip on another, which is the same
+across-build instability recorded above and one more reason every figure here
+names its build.
 
 ### What is NOT claimed
 
@@ -1942,6 +1957,163 @@ the shoulder is the pose the manual warns against, and reaching it for a large
 pull-back is correct. **The fault is that it is reached for SOME pull-backs and
 not for larger ones.** Why is the same open question as the lower body's, and
 constraining the solve is NOT proposed here.
+## The release seam and the frame-81 stall are one defect
+
+Two hitches were reported separately by the PR #60 reviewer: shoulder elevation
+jumping about seven degrees at the release frame, and an elbow stall five
+frames later. **They are the same thing, and both are products of one line of
+easing.** Measured on `2169157`.
+
+**THE STALL ALREADY HAD AN INSTRUMENT AND A NUMBER.** It is the receipt's
+`spike_report`, whose `worstNeighbourRatio` divides the neighbour-median step
+by the step at that frame. Both drills report it at the same place:
+
+| drill | measure | frame | step | neighbour median | ratio | kind |
+|---|---|---|---|---|---|---|
+| `overhead_pass` | `leftElbowFlexionDegrees` | 81 | 0.53 | 6.24 | **11.78** | stall |
+| `chest_pass` | `leftElbowFlexionDegrees` | 81 | 1.77 | 8.83 | **4.99** | stall |
+
+The steps in that table are the same 0.53 and 1.77 the easing comparison below
+turns on. **The receipt was already reporting this defect, as a ratio, and
+nothing had followed it back to its cause.**
+
+### The hands are not already moving
+
+`possession.py` eases the follow-through aim point out of the release with
+`out = 1 − (1 − t)²`. **An ease-out has its greatest slope at t = 0, so it
+begins at full speed.** The comment beside it justified that by saying the
+hands "are already moving when she lets go, because they drove the ball".
+
+**They are not.** The right wrist, in centimetres per frame:
+
+| | five frames BEFORE the release | five frames AFTER |
+|---|---|---|
+| `overhead_pass` | 0.86, 0.84, 0.81, 0.77, 0.72 | **7.37**, 6.29, 5.28, 4.32, 2.91 |
+| `chest_pass` | 0.59, 0.58, 0.57, 0.55, 0.55 | **4.09**, 3.54, 3.02, 2.70, 0.85 |
+
+**The hand speed multiplies by 10.2 and by 7.4 between the frame BEFORE the
+release and the frame after it**, then decays. A first version of this entry
+said 8.6 and 7.0, which divided by the speed FIVE frames before rather than by
+the adjacent one. **The correction makes the step larger, not smaller.**
+So the easing fixes the FAR end of the follow-through, where the arm arrives at
+extension instead of stopping dead, and makes the NEAR end a step change in
+hand velocity. That step is the seam.
+
+The first frame of the follow-through is t = 0.1389 of it. The three easings
+place the aim point at:
+
+| easing | first frame |
+|---|---|
+| linear, `t` | 0.1389 of the distance |
+| **ease-out, `1 − (1 − t)²`, shipped** | **0.2585** |
+| smoothstep, `3t² − 2t³` | 0.0525 |
+
+### The stall goes with it
+
+The left elbow's signed step, frames 78 to 85. A positive value is the elbow
+OPENING in the middle of a close.
+
+| | 78 | 79 | 80 | **81** | 82 | 83 |
+|---|---|---|---|---|---|---|
+| `overhead_pass`, shipped | −6.66 | −9.29 | −12.06 | **+0.53** | −5.83 | −2.81 |
+| `chest_pass`, shipped | −12.05 | −12.17 | −15.28 | **+1.77** | −5.62 | −2.63 |
+| either drill, smoothstep | | | | **no reversal** | | |
+| either drill, linear | | | | **no reversal** | | |
+
+**The reversal appears on both drills under the shipped easing and on neither
+drill under either alternative.** It is not a separate hitch.
+
+### The choice is a trade, so it is NOT made here
+
+| | seam at 76→77, elevation | worst elevation step | worst elbow step |
+|---|---|---|---|
+| **ease-out, shipped** | **7.02** / **5.32** | 7.02 at the seam / 6.01 | 12.06 / 15.28 |
+| smoothstep | **1.65** / **1.00** | 4.44 at frame 15 / 6.80 | 13.78 / 16.97 |
+| linear | 4.17 / 2.76 | 4.44 at frame 15 / 5.99 | 13.90 / 11.24 |
+
+Overhead pass first, chest pass second, in degrees.
+
+**Smoothstep cuts the seam by a factor of four and five and raises the worst
+elbow step.** Under it the overhead's worst elevation step stops being at the
+release at all and moves to frame 15, which is a feature linear shares and
+which has nothing to do with this.
+
+### That table is two drills, and the library disagrees with it
+
+**THE TWO-DRILL TABLE ABOVE POINTED AT SMOOTHSTEP. THE LIBRARY DOES NOT.** The
+receipt already carries an instrument for this — `spike_report`'s
+`worstNeighbourRatio`, the neighbour-median step over the step at that frame,
+against a `SNAP_RATIO` threshold of 3.0. Run over every drill:
+
+| drill | ease-out, shipped | smoothstep | linear |
+|---|---|---|---|
+| `overhead_pass` | **11.78** | 3.39 | 4.09 |
+| `two_hand_snatch_straight_back` | 9.84 | **26.35** | **20.41** |
+| `two_hand_catch_chest` | 8.52 | 3.21 | 5.77 |
+| `deflect_high` | 7.84 | 11.58 | 3.99 |
+| `chest_pass` | 4.99 | 3.40 | 2.95 |
+| `hooks_jump_pull_in` | 3.28 | 2.18 | 2.15 |
+| `double_foot_landing` | 2.79 | 2.79 | 2.79 |
+| `hooks_outside_hand` | 2.06 | 2.06 | 2.06 |
+| the two snatches with no spike | 0.00 | 0.00 | 0.00 |
+| **worst in the library** | **11.78** | **26.35** | **20.41** |
+| **drills over the 3.0 threshold** | 6 | 5 | 4 |
+
+**Counted properly, against the shipped easing: linear is LOWER on five
+drills, EQUAL on four and HIGHER on one. Smoothstep is LOWER on four, EQUAL on
+four and HIGHER on two.** A first version of this said "better on seven" and
+"better on five", which counted the equal rows as improvements.
+
+The shipped ease-out has the LOWEST WORST and the MOST drills over the
+threshold. **And no easing clears the threshold on the overhead**, which is the
+drill this began with: 11.78 becomes 3.39 and 4.09, both still over 3.0.
+
+**So the two-drill table was too small a sample to choose from, and it is left
+above rather than deleted because that is the mistake this file names most
+often.** One measurement is not a property, and two drills are not a library.
+
+**No easing wins**, so replacing the line is a judgement about which hitch
+matters, not a repair.
+
+**WHAT IS FIXED HERE: the comment**, whose stated reason was false and is
+withdrawn in place. **WHAT IS NOT: the easing.** It needs a ruling, and the
+table above is what a ruling needs.
+
+### `two_hand_snatch_straight_back` is a WINDOW-END artefact, not a seam
+
+The drill that decides the table is not measuring the same defect as the rest
+of it.
+
+It releases at **frame 87 of 98**. The follow-through window is 0.12 s, which
+is 7.2 frames, so the aim point reaches `out = 1` at frame **94.2** — and the
+clip runs to frame **97**. **The aim point stops dead 2.8 frames before the
+clip ends**, under all three easings. Its last frames read:
+
+| | last eight frames |
+|---|---|
+| wrist, cm per frame | 2.74, 2.39, 1.18, 1.24, 0.76, 0.32, **0.00**, **0.00** |
+| right elbow, degrees per frame | 10.44, 11.16, 1.65, 6.13, 4.24, 1.91, **0.00**, **0.00** |
+
+The snap ratio divides a live neighbour median by that near-zero step, so what
+it reports is the STOP and not the start. **The shipped ease-out is
+front-loaded and has spent its motion by then** — 0.32 cm and 1.91 degrees —
+so its ratio stays moderate. Smoothstep is back-loaded and arrives with the
+elbow still closing, so the same stop reads 26.35. Linear stops at full speed
+and reads 20.41.
+
+**SO THE LIBRARY TABLE CONFLATES TWO DEFECTS.** The release seam is one, and
+the follow-through window closing before the clip ends is another. The easing
+choice moves both, in opposite directions, and the drill that decides the table
+is only measuring the second. **The window-end question is separate and is not
+answered here.**
+
+### What is not settled
+
+Whether the arm should leave the release from rest at all. A real
+follow-through starts while the hands are still driving the ball, so the honest
+fix may be that the CARRY should already be accelerating before the release
+rather than that the follow-through should start slower. Nothing here measures
+that, and no change to the carry is proposed.
 
 ## The lower body has no stable solution
 
