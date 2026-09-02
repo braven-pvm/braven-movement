@@ -294,6 +294,24 @@ asymmetric wait, and not before.
 The trap for the next author: the motion track's `across` IS per hand, and
 this one reads the same and is not.
 
+## The moment gap is recorded every run and compared on none of them
+
+`verify_tactics_clip.py` writes `momentGapSeconds` and `momentGapAgainst` into
+`clip-baseline.json` for every clip. **The gate never reads either back.** It
+compares the per-channel degree gaps between the clip and its solve, and
+nothing else; `momentGapSeconds` is printed to the console and stored, and no
+run has ever compared one to the last.
+
+That is why both passes sat at **−1.267 s** against −0.017 to −0.034 for every
+catch, run after run, until somebody read the column by eye. **An instrument
+that records and does not read is the shape this file names most often**, and
+it is the reason the release-moment defect survived as long as it did.
+
+**NOT FIXED HERE.** Comparing it needs a decision about what a moved moment
+gap MEANS — a landing's 0.32 s is correct and must not fail, so the rule cannot
+simply be "it changed". Low priority, and named so it is not found the same way
+twice.
+
 ## The coach animation exporter has no tests
 
 `spikes/export_coach_animations.py` has no test file. Its determinism is

@@ -30,9 +30,9 @@ elbow work moves elbow separation on every drill, so every engine number is
 expected to move when that lands. What this answers then is whether the clip
 moved *with* the solve, which is the only question a re-export has to settle.
 
-    pixi run python verify_tactics_clip.py
-    pixi run python verify_tactics_clip.py --against clip-baseline.json
-    pixi run python verify_tactics_clip.py --baseline clip-baseline.json
+    pixi run --frozen python verify_tactics_clip.py
+    pixi run --frozen python verify_tactics_clip.py --against clip-baseline.json
+    pixi run --frozen python verify_tactics_clip.py --baseline clip-baseline.json
 
 IF THIS DIES WITH NO OUTPUT, TRY MKL_THREADING_LAYER=SEQUENTIAL
 --------------------------------------------------------------
@@ -41,7 +41,7 @@ A reviewer running this gate on 2026-08-31 hit a hard process crash,
 `0xC06D007F`, inside a numpy matrix multiply, on both `main` and the branch
 under review. Setting `MKL_THREADING_LAYER=SEQUENTIAL` fixed it.
 
-    MKL_THREADING_LAYER=SEQUENTIAL pixi run python verify_tactics_clip.py
+    MKL_THREADING_LAYER=SEQUENTIAL pixi run --frozen python verify_tactics_clip.py
 
 **Set it if you are unsure. It costs a little speed and nothing else.** The
 crash kills the process rather than raising, so THIS GATE CAN DIE WITHOUT
@@ -116,7 +116,7 @@ SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
 BASELINE = SPIKE_DIR / "clip-baseline.json"
 
-from clip_geometry import RELEASE_MOMENT, moment_frame  # noqa: E402
+from clip_geometry import moment_against, moment_frame  # noqa: E402
 from export_tactics_clip import CLASSES, build  # noqa: E402
 from movement_definition import load as load_definition  # noqa: E402
 from movement_engine import definition_path, load_character  # noqa: E402
@@ -239,9 +239,7 @@ def check(character, movement_id: str) -> dict:
         "hitPhase": clip["hitPhase"],
         # Named for the moment it was actually measured against, so a reader
         # of the report cannot mistake which question it answers.
-        "momentGapAgainst": (
-            "releaseFrame" if clip["hitPhase"] == RELEASE_MOMENT else "contactFrame"
-        ),
+        "momentGapAgainst": moment_against(clip),
         "momentGapSeconds": round((moment_at - clip["hit"]) * clip["seconds"], 3),
         "rootTravelM": clip["rootTravelM"],
         "ballAtPhases": {

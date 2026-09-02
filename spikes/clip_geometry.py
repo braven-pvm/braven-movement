@@ -292,6 +292,30 @@ def unwrap(frames: list[dict]) -> None:
 RELEASE_MOMENT = "release"
 
 
+# Every moment name `CLASSES` uses. A name outside this set has no rule for
+# which frame it is judged against, and guessing one is how the defect this
+# module replaces was written in the first place.
+MOMENTS = frozenset(moment for _, _, moment in CLASSES.values())
+
+
+def moment_against(clip: dict) -> str:
+    """Return the field name this clip's moment must be compared against.
+
+    ONE source for the branch. The verifier reports this name beside the gap
+    so a reader cannot mistake which question the number answers, and reading
+    it from here means the label and the arithmetic cannot drift apart.
+    """
+    moment = clip["hitPhase"]
+    if moment not in MOMENTS:
+        raise ValueError(
+            f"{clip['clipId']} declares the moment {moment!r}, which is not one "
+            f"of {sorted(MOMENTS)}. There is no rule for which frame to judge it "
+            "against, and defaulting to the contact frame is the defect this "
+            "refusal exists to prevent. Add it to CLASSES with its rule."
+        )
+    return "releaseFrame" if moment == RELEASE_MOMENT else "contactFrame"
+
+
 def moment_frame(clip: dict) -> int:
     """Return the frame the clip's declared moment must be compared against.
 
@@ -302,16 +326,17 @@ def moment_frame(clip: dict) -> int:
     A release clip with no `releaseFrame` is a contradiction rather than a
     missing field: its class says she lets go and the model never saw it
     happen. It raises instead of falling back, because falling back to the
-    contact frame is the defect this replaces.
+    contact frame is the defect this replaces. The field being ABSENT is the
+    same contradiction as its being null, so both give the same message rather
+    than one of them giving a bare KeyError.
     """
-    if clip["hitPhase"] != RELEASE_MOMENT:
-        return clip["contactFrame"]
-    released = clip["releaseFrame"]
-    if released is None:
+    field = moment_against(clip)
+    frame = clip.get(field)
+    if frame is None:
         raise ValueError(
-            f"{clip['clipId']} declares a {RELEASE_MOMENT!r} moment and carries "
-            "no releaseFrame, so there is nothing to compare it against. Either "
-            "the possession model never released the ball, or the clip was built "
-            "before releaseFrame existed."
+            f"{clip['clipId']} declares a {clip['hitPhase']!r} moment and "
+            f"carries no {field}, so there is nothing to compare it against. "
+            "Either the possession model never reached that moment, or the clip "
+            f"was built before {field} existed."
         )
-    return released
+    return frame

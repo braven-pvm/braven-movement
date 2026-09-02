@@ -20,7 +20,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from clip_geometry import RELEASE_MOMENT, moment_frame  # noqa: E402
+from clip_geometry import MOMENTS, RELEASE_MOMENT, moment_against, moment_frame  # noqa: E402
 
 
 def clip(**overrides) -> dict:
@@ -72,6 +72,39 @@ class MomentFrameTest(unittest.TestCase):
 
         self.assertIn("releaseFrame", str(raised.exception))
         self.assertIn("pass.netball.chest-pass", str(raised.exception))
+
+    def test_an_unknown_moment_is_refused(self):
+        """The same shape as the defect this replaces.
+
+        A moment nobody has written a rule for used to fall through to the
+        contact frame, silently, which is how a release clip came to be judged
+        against a catch. A new moment name must be a loud failure.
+        """
+        with self.assertRaises(ValueError) as raised:
+            moment_frame(clip(hitPhase="throw"))
+
+        self.assertIn("throw", str(raised.exception))
+        self.assertIn("CLASSES", str(raised.exception))
+
+    def test_the_known_moments_come_from_the_classes_table(self):
+        """Guards the guard: an empty set would refuse everything."""
+        self.assertEqual(MOMENTS, {"contact", "land", "release"})
+
+    def test_the_label_and_the_arithmetic_read_one_source(self):
+        """They cannot drift apart if the report reads the same branch."""
+        self.assertEqual(moment_against(clip()), "releaseFrame")
+        self.assertEqual(moment_against(clip(hitPhase="contact")), "contactFrame")
+        self.assertEqual(moment_against(clip(hitPhase="land")), "contactFrame")
+
+    def test_a_missing_release_frame_key_reads_the_same_as_a_null_one(self):
+        """An absent field is the same contradiction, not a bare KeyError."""
+        without = clip()
+        del without["releaseFrame"]
+
+        with self.assertRaises(ValueError) as raised:
+            moment_frame(without)
+
+        self.assertIn("releaseFrame", str(raised.exception))
 
     def test_a_catch_needs_no_release_frame(self):
         """Every catch in the library ends holding the ball and has none."""
