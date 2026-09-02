@@ -2169,13 +2169,30 @@ and every increment moves some joint by 4.5 to 8.0 cm. An independent run at a
 step of 0.0005 arm lengths — about 0.03 cm — flips the basin and moves a leg
 joint 6 to 10 cm, so no increment is small enough to be safe.
 
-**THE CLAIM IS LIMITED TO THE DRILLS MEASURED, AND THEY DISAGREE.** Under this
-same lateral sweep `netball_overhead_pass` is piecewise continuous with ONE
-crossing and joint moves of 1.2 to 2.0 cm inside the basin, and
-`netball_bounce_pass` gives knee gaps spanning 0.52 degrees where
-`two_hand_catch_chest` spans 1.80 to 7.05. **So the instability is not uniform
-across the library**, and where it lives belongs to the open question rather
-than being settled here.
+**THE CLAIM IS LIMITED TO THE DRILLS MEASURED, AND ONE OF THEM DISAGREES.**
+Under this same lateral sweep `netball_overhead_pass` is piecewise continuous
+with ONE crossing and joint moves of 1.2 to 2.0 cm inside the basin. **So the
+instability is not uniform across the library**, and where it lives belongs to
+the open question rather than being settled here.
+
+**A CORRECTION, AND IT IS ABOUT COMPARING TWO LEVERS AS THOUGH THEY WERE ONE.**
+A first version of this paragraph said `netball_bounce_pass` spans 0.52 degrees
+against `two_hand_catch_chest`'s 1.80 to 7.05, and offered it as a second drill
+that is stable. **The two figures came from different sweeps.**
+
+| | lever | spacing | read at |
+|---|---|---|---|
+| this entry's sweep | `root_across` on EVERY motion key | 0.01 arm lengths | frame 0 |
+| the 0.52 figure | the technique's `pull_to_side.across`, ONE key | 0.24 to 0.29 | frame 30 |
+
+Under THIS entry's sweep `netball_bounce_pass` reads 2.09, 3.72, 4.12, 0.21,
+0.61, 5.77 — a span of **5.56 degrees** with joint jumps of 7.29 and 8.31 cm.
+**It oscillates like `two_hand_catch_chest` and is not a stable case at all.**
+
+So the root-step lever oscillates on every drill it has been run on except the
+overhead, and a figure from a different lever says nothing about it. That is
+the rule this file already states, met again: **a sweep must name its key**, and
+two spans are not comparable until they do.
 
 A DIFFERENT SWEEP OF THE SAME DRILL BEHAVES DIFFERENTLY AGAIN, which is why a
 sweep must name its key. Refer to "The overhead pull-back has no boundary": the
