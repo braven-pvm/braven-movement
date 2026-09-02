@@ -294,6 +294,26 @@ asymmetric wait, and not before.
 The trap for the next author: the motion track's `across` IS per hand, and
 this one reads the same and is not.
 
+## Nothing reads `Technique.sides`, so a lost decorator passes the suite
+
+Found 2026-09-02 by accident. An edit to `technique.py` inserted a method
+between the `@property` line and `def sides`, which left `sides` an ordinary
+method and made the new method the property. **`Technique.sides` was a bool for
+that run and the full 643-test suite passed.**
+
+No test reads `sides` on a Technique object loaded from a movement file. The
+solve uses it, so the drills still solved — the wrong value simply never
+reached an assertion.
+
+**The fix is one test**, on a two-handed drill and a one-handed one, whose
+answers differ. `sides_at` and `every_side` want the same treatment if they are
+equally unread. Low priority and not done here.
+
+**The general shape is the one this file already names**: the risk is not the
+code that is wrong, it is the code nothing reads. A decorator is the smallest
+possible version of that, and it took a hand inspection of attribute types to
+notice.
+
 ## The coach animation exporter has no tests
 
 `spikes/export_coach_animations.py` has no test file. Its determinism is
@@ -1765,10 +1785,31 @@ decimal, so the two setups are the same setup.**
 | left shoulder elevation | 107.29 | 110.26 | 116.87 | 111.51 | **162.59** | **127.74** | **162.75** | **120.48** | **162.95** |
 | verdict against 91–135 | within | within | within | within | **FAILS** | **within** | **FAILS** | **within** | **FAILS** |
 
+**THE INPUT.** The technique's `afterContact` `step` key had its `ahead`
+lowered in equal increments of 0.03 torso lengths, which is the same key and
+the same direction that commit swept. Every other field was left alone.
+
 **IT FAILS AT 24.8 CM AND PASSES AGAIN AT 26.4.** A sweep that samples 24.0 and
 26.0 finds both within the band and puts the edge past them. The four samples
 that commit took are each true, and the boundary drawn between them is not
 there.
+
+### Refining does not resolve it, and that is the discriminating test
+
+`1fed5a1` found its own follow-through sweep looking like a basin at coarse
+spacing and resolving into a smooth ramp when resampled from five points to
+seven. **The same treatment here does the opposite.** Halving the increment
+across the region that looked like one boundary:
+
+| ball back, cm | 24.1 | 24.8 | 25.6 | 26.4 | 27.2 | 27.9 | 28.7 |
+|---|---|---|---|---|---|---|---|
+| left shoulder elevation | 123.00 | **162.59** | 126.00 | 127.62 | **162.71** | **162.75** | 119.17 |
+| verdict | within | **FAILS** | within | within | **FAILS** | **FAILS** | within |
+
+**It does not become a ramp. It becomes a finer alternation.** So resampling
+separates the two cases: a real edge resolves under refinement and a basin
+field does not. That is a cheap test and it is worth running on any suspected
+crossing.
 
 ### The first discontinuity is at 7.8 cm, and it is in the LEGS
 
@@ -1792,6 +1833,9 @@ So one drill carries two independent instabilities at one phase: the arm's two
 families, which the deleted checkpoint fired on, and the leg mirror, which
 nothing grades there and which moves first.
 
+**THE PULL-BACK KEY REACHES THE LEGS BEFORE IT REACHES THE ARMS.** The input is
+a ball position for her hands. The first thing it moves is her stance.
+
 ### What this adds to the sweep method
 
 `1fed5a1` established that method and already warns that **a coarse sweep can
@@ -1804,6 +1848,15 @@ that. Two things go beside it:
 - **A sweep must watch joints it is not grading.** The earliest and one of the
   largest discontinuities here is invisible to every measure the checkpoint
   reads.
+- **A suspected crossing must be RESAMPLED, and the outcome is informative
+  either way.** The follow-through resolved into a ramp. This one does not
+  resolve at all.
+
+**A DIFFERENT KEY ON THIS SAME DRILL BEHAVES DIFFERENTLY**, which is why a
+sweep must name its key as well as its spacing. Under the lateral-asymmetry
+sweep used for the left-right knee guard, `netball_overhead_pass` is piecewise
+continuous with a single crossing. Under the pull-back key it alternates. One
+drill, two inputs, two answers.
 
 **THE SOLVE IS NOT NOISY.** Two adjacent inputs 1.5 cm apart that land in
 opposite families each reproduce exactly across three runs, to every decimal
