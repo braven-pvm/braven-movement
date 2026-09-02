@@ -371,6 +371,42 @@ ball at the moment the gate asks about — because the camera does not frame the
 ball's flight. Of the three repetitions in session 1.0 with no ball at the
 anchor, two are gesture stretches and ONE IS THIS.
 
+**Instruction: put enough pixels on the hands to measure a wrist.** Added
+2026-09-02 after Marius watched the engine's catch beside the real clips and
+said the wrist action was missing. **The footage cannot answer him**, and the
+reason is arithmetic rather than opinion.
+
+The wrist angle has to be measured on the lever from the wrist to the knuckles.
+On this material that lever is **30 pixels** — against a 90 pixel forearm — so
+**one pixel of landmark jitter is 1.9 degrees, and at 30 fps that is 58 degrees
+per second.**
+
+Measured on the two stretches the frame strips prove she is standing still, the
+noise floor of that reading is a median of **40**, a 90th percentile of **104**
+and a maximum of **197 degrees per second**. At the two ball releases verified
+by eye it reads **142.6** and **78.9 degrees per second** — **both inside the
+still maximum, one below the still 90th.** A wrist flick at release cannot be
+told from landmark jitter here, so no figure from this footage may be compared
+against a solve.
+
+**The motion is detectable in principle**: peaks of **502 degrees per second**
+occur elsewhere in the same clip, nearly five times the still 90th. What is
+missing is resolution at the instant that matters, not the movement.
+
+**What would fix it, as pixel arithmetic and NOT as a promise.** The floor
+scales with the lever, and the lever scales with linear resolution. These files
+are 576p-class with a 30 pixel hand. Roughly: 1080p puts the lever near 60
+pixels and the floor near 50 degrees per second; 4K puts it near 120 pixels and
+near 25. **Both estimates assume the landmark jitter stays about one pixel, and
+nothing here measures that assumption.** A closer camera buys the same thing as
+more pixels.
+
+So: **shoot so the hands carry at least about a hundred pixels from wrist to
+knuckles** — by resolution, by lens, or by standing the camera closer — and
+say which. The other instructions here are about seeing the movement; this one
+is about being able to measure the part of it a coach can see and an engine
+cannot yet reproduce.
+
 **Instruction: put a slate between repetitions** — a clap of the hands, a
 raised marker, anything that appears in both views and cannot be confused with
 the drill. Two things follow from it. Repetitions stop having to be inferred
