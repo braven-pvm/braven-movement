@@ -253,6 +253,17 @@ def movement_carries_no_side(track, ball, method) -> bool:
 
     A missing ball or technique cannot make a movement even, so absence is
     not treated as evidence: a drill with neither is out.
+
+    IT READS THE DRILL'S PLAIN BALL. A drill may have several — refer to
+    `ball_variants` — and this asks about the one passed to it. The left-right
+    knee guard in `test_waiting_hand.py` passes the plain ball and solves the
+    plain ball, so its population and its measurements agree.
+
+    That matters on `netball_two_hand_snatch_pull_in`, whose `wide` ball
+    arrives 0.60 arm lengths to her left. On the plain ball the drill is even
+    and the guard measures it; on the wide ball it would not be. **The guard
+    does not ask that question**, and a caller who wants it must pass the
+    variant's ball rather than assume this answer covers it.
     """
     if ball is None or method is None:
         return False
