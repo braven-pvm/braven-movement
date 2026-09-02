@@ -4,6 +4,7 @@ import json
 import sys
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -207,7 +208,47 @@ class LibraryTest(unittest.TestCase):
             "netball_hooks_outside_hand",
         ):
             track = load_motion(MOVEMENTS / f"{name}.motion.json")
-            self.assertFalse(track.is_symmetric(), name)
+            self.assertFalse(track.keys_carry_no_side(), name)
+
+    def test_a_split_stance_drill_is_not_symmetric(self):
+        """The fault that made this flag read the feet.
+
+        `double_foot_landing` lands off one foot. Its hands match, so while
+        the flag read hands alone it published `symmetric: true` about a
+        drill whose feet are 0.31 apart in the ahead axis.
+        """
+        track = load_motion(MOVEMENTS / "netball_double_foot_landing.motion.json")
+
+        self.assertTrue(
+            all(key.left == key.right for key in track.keys),
+            "the hands must match, or this drill proves nothing about the feet",
+        )
+        gaps = [
+            abs(key.foot_left.ahead - key.foot_right.ahead)
+            for key in track.keys
+            if key.foot_left is not None and key.foot_right is not None
+        ]
+        self.assertGreater(max(gaps), 0.3, "the split stance is the input")
+        self.assertFalse(track.keys_carry_no_side())
+
+    def test_a_planted_turn_or_step_makes_a_square_drill_asymmetric(self):
+        """Guards the two clauses no drill in the library exercises.
+
+        `turn_degrees` and `root_across` both carry a side, and today every
+        drill that uses them is already asymmetric in its hands. Without
+        this, either clause could be deleted and the suite would stay green.
+        """
+        source = MOVEMENTS / "netball_two_hand_catch_chest.motion.json"
+
+        for field, value in (("turn_degrees", 12.0), ("root_across", 0.25)):
+            track = load_motion(source)
+            self.assertTrue(track.keys_carry_no_side(), "the drill must start square")
+
+            keys = list(track.keys)
+            keys[1] = replace(keys[1], **{field: value})
+            track = replace(track, keys=tuple(keys))
+
+            self.assertFalse(track.keys_carry_no_side(), field)
 
     def test_a_turned_drill_declares_its_turn(self):
         track = load_motion(MOVEMENTS / "netball_hooks_outside_hand.motion.json")

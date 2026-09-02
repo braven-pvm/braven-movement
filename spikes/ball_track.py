@@ -228,6 +228,22 @@ class BallTrack:
     def key_phases(self) -> list[float]:
         return [key.at_phase for key in self.keys]
 
+    def carries_no_side(self) -> bool:
+        """True when this ball arrives and leaves on the athlete's midline.
+
+        `across` is signed: positive is her left. A flight that comes in to
+        one side asks for a one-sided pose however even her keys are, and
+        `netball_deflect_high`'s ball arrives 0.28 arm lengths to her left.
+
+        The launch target counts for the same reason in the other direction:
+        a ball thrown off the midline turns her.
+        """
+        if any(key.offset.across != 0.0 for key in self.keys):
+            return False
+        launch = getattr(self, "launch", None)
+        target = getattr(launch, "target", None) if launch is not None else None
+        return target is None or target.across == 0.0
+
 
 def read_offset(data: dict, name: str, error=None) -> BallOffset:
     """Read one stance frame offset. The technique file reads them too."""

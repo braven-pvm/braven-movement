@@ -265,8 +265,44 @@ class MotionTrack:
                 return key.at_phase
         return max(self.keys, key=lambda key: key.left.ahead).at_phase
 
-    def is_symmetric(self) -> bool:
-        return all(key.left == key.right for key in self.keys)
+    def keys_carry_no_side(self) -> bool:
+        """True when nothing in THIS FILE distinguishes left from right.
+
+        NOT THE TEST FOR A SYMMETRIC MOVEMENT, and it was used as one until
+        2026-09-02. A possession solve reads NO HAND KEYS — refer to
+        `solve_movement`'s own docstring — so the hands chase the BALL file
+        and the TECHNIQUE file, and both of those carry a side too.
+        `netball_deflect_high` is even in every field below and takes a ball
+        0.28 arm lengths to her left. Use `movement_carries_no_side` in
+        technique.py, which reads all three files.
+
+        Within this file it read only the HAND keys until 2026-09-02, and the
+        name promised more than it delivered. `netball_double_foot_landing`
+        lands off one foot — its approach key asks the left foot 0.150 ahead
+        and the right foot -0.163, a split stance — and it was published as
+        `symmetric: true`, because its hands match and nothing looked lower.
+
+        Four things carry a side, and all four are read here: the hand
+        offsets, the foot placements, the trunk turn (`turn_degrees` is
+        positive to the athlete's LEFT), and the hips travelling across
+        (`root_across`, positive the same way). A drill is symmetric only
+        when every one of them is even.
+
+        The turn and the across clauses change no drill in today's library.
+        They are not decoration: `test_motion_track.py` plants each of them
+        into a square drill and requires this to answer False.
+
+        This is one of the three terms of the population of the left-right
+        knee guard in `test_waiting_hand.py`. Widening any of them ADDS drills
+        to that guard, so a change here is a change to what that guard covers.
+        """
+        return all(
+            key.left == key.right
+            and key.foot_left == key.foot_right
+            and key.turn_degrees == 0.0
+            and key.root_across == 0.0
+            for key in self.keys
+        )
 
 
 def _hand(data: dict, fallback: HandOffset | None, name: str) -> HandOffset:

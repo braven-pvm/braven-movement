@@ -1886,4 +1886,193 @@ Testing any of those is a separate piece of work and it needs a ruling first.
 **A COUNT CORRECTED.** A draft of this entry said "five of the library's square
 drills are bistable", taken from a relayed figure rather than measured. What is
 measured is four flips under one parameter exclusion and six between the two
-shipped builds above. The relayed five is not used.
+reconstructed configurations above. The relayed five is not used.
+
+## Every square drill solves with one knee more bent than the other
+
+**Six drills demand nothing of one side, and not one of them solves as a
+mirror.** The gap between the knees runs **3.93 to 6.48 degrees** across the
+three configurations below, and **4.02 to 6.48 on the shipped build**. Nothing
+asks for any of it.
+
+Measured on `32663a9`. An earlier version of this entry said `c4a7a37`, where
+`netball_overhead_pass` did not exist and the population was one drill
+smaller.
+
+### The population comes from the files, not from a judgement
+
+A drill is in when NOTHING THE SOLVE READS carries a side, and the solve reads
+THREE files. The motion file contributes the hand offsets, the foot placements,
+`turn_degrees` (positive to the athlete's left) and `root_across` (the same
+way). The ball file contributes every key's `across` and the launch target's.
+The technique contributes `hands`, `ready.across` and every `afterContact`
+key's `across`.
+
+**READING THE MOTION FILE ALONE IS WRONG, AND A FIRST VERSION DID IT.** A
+possession solve reads NO HAND KEYS — `solve_movement` says so in its own
+docstring — so for these drills the motion file is the one file whose hands the
+solve ignores, and the hands chase the ball and the technique.
+
+| out of the population | what carries a side | which file |
+|---|---|---|
+| `deflect_high` | the ball ARRIVES 0.28 arm lengths to her left, and the technique carries it from +0.224 to −0.203 | ball and technique |
+| `double_foot_landing` | feet: the approach key asks left 0.150 ahead, right −0.163 | motion |
+| `hooks_outside_hand` | a right-hand override, a 48 degree turn, a ball starting 2.6 out | all three |
+| `one_hand_snatch_to_other_hand` | a right-hand override on three keys, a ball crossing to −0.3 | all three |
+
+The other six are in: `chest_pass`, `hooks_jump_pull_in`, `overhead_pass`,
+`two_hand_catch_chest`, `two_hand_snatch_pull_in`,
+`two_hand_snatch_straight_back`.
+
+**`deflect_high` WAS IN THIS POPULATION AND SHOULD NOT HAVE BEEN.** Its motion
+file is perfectly even. `docs/HANDOFF_RENDERING.md` already called that contact
+asymmetric by design, and its configuration spread of 2.04 degrees against 0.70
+or less for every genuinely even drill was in the table before the cause was.
+It read as a wide drill rather than as the wrong drill.
+
+**FIELD PRESENCE IS THE WRONG TEST, AND A FIRST VERSION OF THIS USED IT.**
+`hooks_jump_pull_in` writes `footLeft` and `footRight` on all five keys with
+IDENTICAL values, and `across` is mirrored per side in `foot_targets` — the
+left foot takes `+across`, the right takes `−across`. So identical values mean
+a symmetric stance, and the drill belongs in the population. Excluding it on
+the presence of the fields dropped the worst member.
+
+### The gap, across three solutions
+
+The columns name CONFIGURATIONS of one engine, not checkouts.
+
+| drill | negation, locked free | mirror, locked free | mirror, locked pinned | spread |
+|---|---|---|---|---|
+| `hooks_jump_pull_in` | 5.78 | 5.81 | **6.48** | 0.70 |
+| `overhead_pass` | 6.26 | 6.25 | 6.27 | **0.02** |
+| `chest_pass` | 4.45 | 4.56 | 4.31 | 0.25 |
+| `two_hand_catch_chest` | 4.39 | 4.15 | 4.44 | 0.29 |
+| `two_hand_snatch_straight_back` | 3.93 | 4.24 | 4.02 | 0.31 |
+| `two_hand_snatch_pull_in` | 4.20 | 4.09 | 4.15 | 0.11 |
+
+**THE 6.48 IS THE CONTENT LANE'S FIGURE.** It reported a 6.48 degree left-right
+knee gap on a drill flagged `symmetric`, from the graded checkpoints. It is the
+worst member of this population on the shipped build. The two readings are one
+instrument at two thresholds, and neither lane knew that when it wrote its own.
+
+### Why this is pinnable where the pelvis line was not
+
+The entry above withdraws a pelvis pin because the pelvis line FLIPS between
+solutions — six of nine drills, worst 61.45 degrees — so any pin on it goes red
+for a correct change.
+
+**Two mirrored solutions read the same |left − right|.** The magnitude survives
+exactly the change that defeated the sign. Across the three states above each
+drill moves by 0.11 to 0.70, and 2.04 on `deflect_high`. That is the whole
+reason this quantity can carry a guard and the other cannot.
+
+### The flag was reading the hands only
+
+`MotionTrack.is_symmetric()` returned `all(key.left == key.right ...)`. Those
+are HAND keys. `double_foot_landing` lands off one foot, its hands match, and
+it was published to the library as **`symmetric: true`** — a split stance
+declared as a mirror. The flag now reads all four side-carrying fields, and one
+drill's published value changes with it. **A ONE-WORD NAME FOR TWO QUANTITIES,
+which is the fault class this file already names three times.**
+
+### What was landed
+
+- `test_an_even_drill_solves_evenly` is an **expected failure**. `unittest`
+  reports an expected failure that starts passing as a FAILURE, so the day the
+  solver answers evenly the suite goes red and someone must come back and
+  record what changed. A comment would have stayed true and told nobody.
+- `test_no_even_drill_solves_more_crookedly_than_it_did` holds each drill under
+  its worst measured state plus one degree. Nothing else reads the DIFFERENCE
+  between the knees — the graded checkpoints read each knee against its own
+  band, and both can drift together inside their bands while the gap widens.
+- **A gap that merely SHRINKS does not pass.** Halving every measured value
+  leaves the expected failure failing, which was verified as a mutation.
+
+Four mutations were run: the threshold raised to say "fixed" gives an
+unexpected success; a ceiling lowered gives a named failure; the flag reverted
+to hands-only makes the population wrong on three tests; and the halved gap
+above. The turn and step clauses of the flag change no drill in today's
+library, so `test_motion_track.py` plants each of them into a square drill.
+
+### The sweep the mutations could not replace, and what it found
+
+A guard proved by a single mutation is not proved in a solver with basins. So
+an asymmetry was PLANTED and swept, in equal increments, to see the measure
+rise with it. **It does not rise.** A lateral hip step added to
+`two_hand_catch_chest` in increments of 0.01:
+
+**THE INPUT.** `root_across` was raised by the same amount on every key of
+`netball_two_hand_catch_chest`, in six equal increments of 0.01 arm lengths.
+The joint row is the largest move of ANY joint, at frame 0, over all of them,
+from the increment before.
+
+| planted hip step | 0.00 | 0.01 | 0.02 | 0.03 | 0.04 | 0.05 |
+|---|---|---|---|---|---|---|
+| \|L−R\| knee | 4.44 | 3.49 | 5.85 | 2.24 | 7.05 | 1.80 |
+| largest joint move from the step before | — | 4.52 | 6.33 | 6.63 | 7.95 | 6.51 cm |
+
+**ON THIS DRILL THE MEASURE IS NOT A CONTINUOUS FUNCTION OF ITS INPUT.** It
+oscillates over nearly its whole range while the planted asymmetry only grows,
+and every increment moves some joint by 4.5 to 8.0 cm. An independent run at a
+step of 0.0005 arm lengths — about 0.03 cm — flips the basin and moves a leg
+joint 6 to 10 cm, so no increment is small enough to be safe.
+
+**THE CLAIM IS LIMITED TO THE DRILLS MEASURED, AND THEY DISAGREE.** Under this
+same lateral sweep `netball_overhead_pass` is piecewise continuous with ONE
+crossing and joint moves of 1.2 to 2.0 cm inside the basin, and
+`netball_bounce_pass` gives knee gaps spanning 0.52 degrees where
+`two_hand_catch_chest` spans 1.80 to 7.05. **So the instability is not uniform
+across the library**, and where it lives belongs to the open question rather
+than being settled here.
+
+A DIFFERENT SWEEP OF THE SAME DRILL BEHAVES DIFFERENTLY AGAIN, which is why a
+sweep must name its key. Refer to "The overhead pull-back has no boundary": the
+pull-back key on that drill makes its graded verdict alternate.
+
+**WHAT THAT DOES AND DOES NOT COST THE GUARD.** The ceilings are calibrated
+across three ENGINE configurations, and every drill stays inside them in all
+three, so they are not noise. They say nothing about a change to a drill's own
+keys, and a red result after one means "the lower body moved" — the moment to
+look, not a number to re-fit.
+
+**THE SOLVE IS EXACTLY REPRODUCIBLE.** Three runs of one drill on an unchanged
+tree agree to 0.0000 cm at every joint and to four decimal places in the gap.
+The instability is entirely in the inputs, not in the arithmetic, so none of
+these figures is a sampled average.
+
+**THE CALIBRATION POPULATION IS THREE, NAMED, AND ALL ENGINE-SIDE:** the finger
+negation with the locked parameters free, the mirror with them free, and the
+mirror with them pinned. The third is what ships; the other two are
+configurations of one engine and not checkouts. An engine change alters the solver's freedom.
+A key change moves the target it chases. Steadiness under the first is evidence
+and not proof for the second.
+
+### What this costs every below-the-hips checkpoint
+
+The house rule is that a checkpoint is proven able to fail by a PROGRESSIVE
+SWEEP — inside, at the edge, past it — with the measure moving steadily and the
+joints moving continuously across the crossing. **Below the hips there is no
+continuity to sweep.**
+
+**So none of the EIGHTEEN below-the-hips checkpoints can be proven by that
+method** — eighteen of the library's 83 at `32663a9`, where an earlier version
+of this said sixteen of 75. That is not a claim that any of them is wrong. It is a limit on what
+their evidence can say.
+
+A below-the-hips checkpoint may claim **a reading on the build that produced
+it**. It may NOT claim **a property of the movement**, and a mutation that
+moves it is not proof that it discriminates — the same mutation at a slightly
+different size may move it the other way. This applies to the knee-bend
+checkpoint the bounce pass is expected to author, and it applies before that
+checkpoint is written rather than after.
+
+Above the hips the method still holds: the shoulder line moves 0.056 degrees or
+less across the same configurations on every square drill.
+
+### What is not settled
+
+Why the solver returns an uneven athlete for an even question. That is the same
+open question as the entry above, and the candidates listed there are the
+candidates here. **NOT PROPOSED: constraining the solve.** This entry adds an
+instrument and changes no engine behaviour.
+

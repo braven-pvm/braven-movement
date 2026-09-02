@@ -45,10 +45,11 @@ from movement_definition import (  # noqa: E402
     MovementDefinitionError,
     load as load_definition,
 )
-from ball_track import has_ball  # noqa: E402
+from ball_track import ball_path, has_ball, load_ball  # noqa: E402
 from hand_orientation import receipt_section  # noqa: E402
 from possession_solve import solve_movement, spike_report  # noqa: E402
 from technique import (  # noqa: E402
+    movement_carries_no_side,
     has_technique,
     load_technique,
     technique_path,
@@ -86,11 +87,13 @@ def build_one(character, movement_id: str) -> dict:
             "file name, so the library cannot pair them"
         )
 
-    possession = (
-        has_ball(movement_id)
-        and has_technique(movement_id)
-        and load_technique(technique_path(movement_id)).possession_ready
+    ball = load_ball(ball_path(movement_id)) if has_ball(movement_id) else None
+    method = (
+        load_technique(technique_path(movement_id))
+        if has_technique(movement_id)
+        else None
     )
+    possession = ball is not None and method is not None and method.possession_ready
     started = time.perf_counter()
     result = (
         solve_movement(character, movement_id)
@@ -147,7 +150,10 @@ def build_one(character, movement_id: str) -> dict:
         "source": definition.source,
         "movement": {
             "keys": list(describe(track)),
-            "symmetric": track.is_symmetric(),
+            # Reads all THREE files, because the solve does. Until 2026-09-02
+            # this published the motion file alone, which for a possession
+            # drill is the one file whose hand keys the solve ignores.
+            "symmetric": movement_carries_no_side(track, ball, method),
             "frames": track.frames,
             "framesPerSecond": track.frames_per_second,
             "drivenBy": "the ball" if possession else "hand keys",
