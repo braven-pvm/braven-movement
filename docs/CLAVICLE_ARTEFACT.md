@@ -67,7 +67,33 @@ contact for each group:
 | **B** mirror, locked free — `ac240b2`, what shipped | **15.44** | 36.40 | **39.49** |
 | **C** mirror, locked pinned — this change | 48.22 | 36.43 | 57.39 |
 
-**State C reproduces state A.** B is the outlier, and B is one basin.
+**State C reproduces state A ABOVE THE HIPS.** B is the outlier there, and B
+is one basin.
+
+**BELOW THE HIPS IT DOES NOT, and the first version of this document did not
+check.** On `hooks_outside_hand` at frame zero:
+
+| | state A | state C | apart |
+|---|---|---|---|
+| shoulder line | −48.23 | −48.22 | **0.01 deg** |
+| pelvis line | +6.05 | −53.57 | **59.62 deg** |
+| left lower leg | — | — | 2.2 cm |
+| right lower leg | — | — | **36.6 cm** |
+
+So "C reproduces A" is true of the upper body and false of the lower. The
+withdrawals below rest on the shoulder line and the elbow widths, which are
+upper-body quantities, and they stand. **Nothing in this document should be
+read as a claim that the legs return to where they were.**
+
+The lower body has its own bistability, described in
+`docs/KNOWN_ISSUES.md` under "The lower body has no stable solution": SIX of the
+nine drills mirrored below the hips between two builds that both SHIPPED, with
+the pelvis line saturated near plus or minus 15.7 degrees and its sign flipping.
+The enabled set was identical on both sides, so this is not the parameter-set
+sensitivity described above — an ordinary code change did it.
+
+That is the same channel as the bistable knee this document already names, seen
+at its source rather than in its graded output.
 
 **The two-handed mean is 36.40 to 36.43 in all three states. It never moved,
 which is why nothing caught this.** Every guard, gate and review watched a

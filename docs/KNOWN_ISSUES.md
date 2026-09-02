@@ -1584,11 +1584,23 @@ week and deleted within two. What discriminates is the GAP — drift here is
 hundredths of a degree and a flip is 33 — so the tolerance is 2 degrees, far
 above one and far below the other.
 
-**ITS BLIND SPOT, recorded with it.** Seven of the eight drills stand square, at
-0.5 degrees or less, and would read near zero in EITHER basin. This catches a
-flip on the drill we have seen and may miss one elsewhere. The companion idea
-is a general bound on root winding, which is deliberately NOT folded in: that
-is a separate investigation, and a guard and a finding must not share a pack.
+**ITS BLIND SPOT, WITHDRAWN 2026-09-02.** This entry said: "Seven of the eight
+drills stand square, at 0.5 degrees or less, and would read near zero in EITHER
+basin. This catches a flip on the drill we have seen and may miss one
+elsewhere."
+
+**The "may" was wrong and the reasoning behind it was wrong.** Those drills do
+not stay near zero in either basin — their basins differ BELOW THE HIPS, where
+this pin does not look. Refer to "The lower body has no stable solution" below.
+
+**And the interval matters.** This pin shipped in PR #57 watching eight drills.
+It never watched `netball_chest_pass`, because the stance was recorded after a
+check that skips any drill whose contact frame is 0 — which is every drill that
+STARTS with the ball. So from PR #57 until 2026-09-02 the guard stood over no
+ball-in-hand drill at all, and nobody should read it as having done so.
+
+The companion idea, a general bound on root winding, was investigated
+separately and closed with no action.
 
 Mutation-proven: handing the locked parameters back flips that drill to 15.44
 and the pin reports it by name, with the 32.78 degree gap and a pointer to
@@ -1634,3 +1646,57 @@ correct, in the name of tidiness.
 
 The winding remains a true DESCRIPTION of that basin's parameters and it is
 kept in `docs/CLAVICLE_ARTEFACT.md` as such. It is not evidence of a bad pose.
+
+
+## The lower body has no stable solution
+
+Added 2026-09-02. A pelvis pin was built for this and WITHDRAWN before it
+shipped, because building it produced a larger finding than the one it was
+meant to guard.
+
+**THE MEASUREMENT.** Between two builds that both SHIPPED — `716b3eb` and
+`ac240b2`, whose difference is the sign on one hand's finger spread — SIX of the
+nine drills flipped their pelvis line, worst move 61.45 degrees:
+
+| drill | 716b3eb | ac240b2 |
+|---|---|---|
+| `double_foot_landing` | −15.65 | 15.69 |
+| `hooks_jump_pull_in` | −15.70 | 15.65 |
+| `hooks_outside_hand` | 6.05 | −55.40 |
+| `two_hand_catch_chest` | 15.66 | −15.66 |
+| `two_hand_snatch_pull_in` | 15.67 | −15.66 |
+| `two_hand_snatch_straight_back` | 15.67 | −15.67 |
+
+The pelvis line is `l_upleg` to `r_upleg` in the ground plane at frame 0.
+
+**THE ENABLED SET WAS IDENTICAL ON BOTH SIDES.** This is not the parameter-set
+sensitivity already recorded for `hooks_outside_hand`. It is an ordinary code
+change — a sign on a finger — mirroring the lower body of six drills.
+
+**THE UPPER BODY IS NOT AFFECTED.** Across the same transition the shoulder line
+moves by at most 0.041 degrees. So the upper body is determined by its inputs
+and the lower body is not, and that is why one can be pinned and the other
+cannot.
+
+**WHY THE PIN WAS WITHDRAWN.** A pin on the pelvis with any workable tolerance
+would have gone RED on six drills for a correct, ruled, shipped change. That is
+the failure this project already names: a guard that fires on every legitimate
+change is noise within a week and deleted within two. The magnitude is not
+pinnable either — |pelvis| is steady on eight drills across that transition and
+moves 6.05 to 55.40 on the ninth.
+
+**WHAT IT MEANS FOR EVERY LOWER-BODY NUMBER.** The bistable knee this file
+already records, the knees swapping between builds on a baseline refresh, and
+the 6.48 degree left-right knee gap on a drill flagged `symmetric` are all the
+same thing seen through different instruments: the lower body's solution is not
+determined, so any figure read from it is a figure from whichever solution that
+build happened to reach.
+
+**WHAT IS NOT SETTLED.** Why the lower body is under-determined enough to
+mirror, and whether it should be constrained so that it is not. That is engine
+work on the solve rather than a guard, and it is not proposed here.
+
+**A COUNT CORRECTED.** A draft of this entry said "five of the library's square
+drills are bistable", taken from a relayed figure rather than measured. What is
+measured is four flips under one parameter exclusion and six between the two
+shipped builds above. The relayed five is not used.
