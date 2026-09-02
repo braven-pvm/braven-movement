@@ -8,7 +8,13 @@ The questions are for Erin and Marius. They are written to be answerable by a
 coach watching the athlete, not by reading a number. Where the engine has an
 opinion it is stated as a measurement and never as a recommendation.
 
-Eight items carry evidence. Three carry none, and say so.
+Seven items carry evidence. One is STRUCK, because it was raised on a
+measurement the solver read from a second solution for that drill. Three carry
+no engine evidence, and say so.
+
+**One section of item 2 is withdrawn, and the withdrawal is written out rather
+than tidied away.** The elbow-width question is unchanged; what was wrong was a
+claim about how it had been framed. Refer to `docs/CLAVICLE_ARTEFACT.md`.
 
 ---
 
@@ -63,28 +69,57 @@ On the six drills that put BOTH hands on the ball:
 
 | | mean | narrowest | widest |
 |---|---|---|---|
-| at 31.3, today | **36.40 cm** | 28.89 | 40.29 |
-| at 37.3, previewed | **38.45 cm** | 30.63 | 42.41 |
+| at 31.3, today | **36.43 cm** | 28.90 | 40.37 |
+| at 37.3, previewed | **38.42 cm** | 30.57 | 42.37 |
 
-The manual says 38.6. At 31.3 the gap is 2.20 cm. At 37.3 it is **0.15 cm**.
+The manual says 38.6. At 31.3 the gap is 2.17 cm. At 37.3 it is **0.18 cm**.
 
-**A correction to how this question has been framed.** It has been asked as
-"which of two populations does 38.6 describe". THE SECOND POPULATION IS NOT A
-POPULATION. It is two drills:
+Every cell in this table is read on one build, with the locked parameters
+pinned, and the whole row was re-measured rather than the mean alone. An
+earlier version mixed two builds: it read 36.40 and 38.45 for the means, and
+then kept 30.63 and 42.41 from the older build after the means were
+corrected.
 
-| drill | elbow width at contact |
-|---|---|
-| `hooks_outside_hand` | 19.01 cm |
-| `one_hand_snatch_to_other_hand` | 59.96 cm |
+**WITHDRAWN, 2026-09-02.** This section said:
 
-They sit 40.95 cm apart, with a standard deviation of 28.96 cm. Their mean of
-39.48 cm describes neither drill: it lies about 20 cm from each. The six
-two-handed drills are a real group by comparison, spread 11.40 cm with a
-standard deviation of 4.08.
+> **A correction to how this question has been framed.** It has been asked as
+> "which of two populations does 38.6 describe". THE SECOND POPULATION IS NOT A
+> POPULATION. It is two drills:
+>
+> | drill | elbow width at contact |
+> |---|---|
+> | `hooks_outside_hand` | 19.01 cm |
+> | `one_hand_snatch_to_other_hand` | 59.96 cm |
+>
+> They sit 40.95 cm apart, with a standard deviation of 28.96 cm. Their mean of
+> 39.48 cm describes neither drill: it lies about 20 cm from each. The six
+> two-handed drills are a real group by comparison, spread 11.40 cm with a
+> standard deviation of 4.08.
+>
+> So the choice is not between two populations. It is whether 38.6 describes
+> the drills that put both hands on the ball, and the one-handed pair belongs
+> outside that comparison rather than weighed against it.
 
-So the choice is not between two populations. It is whether 38.6 describes the
-drills that put both hands on the ball, and the one-handed pair belongs outside
-that comparison rather than weighed against it.
+**That was wrong.** `hooks_outside_hand` read 19.01 cm because the solver had
+reached a second solution for that drill — one of two, about 33 degrees apart
+in stance — and the parameter set that shipped was the only one measured that
+reaches it. Refer to `docs/CLAVICLE_ARTEFACT.md`.
+
+**The word "population" is not a claim two points can carry, in either
+direction**, and the withdrawn paragraph's standard deviation of 28.96 was the
+same error as the 3.63 that first replaced it. What the measurement supports:
+
+> Two one-handed drills sit 5.13 cm apart, at **54.83 and 59.96 cm**. Each is
+> 18.4 to 23.5 cm above the two-handed mean of 36.43, and 14.5 to 19.6 cm above
+> that group's widest member at 40.37.
+
+The question keeps its original form: does 38.6 describe the drills that put
+both hands on the ball, or the two that put one?
+
+| population | drills | mean elbow width at contact |
+|---|---|---|
+| both hands on the ball | 6 | **36.43 cm** |
+| one hand on the ball | 2 | **57.39 cm** |
 
 **A warning about the preview.** On `hooks_outside_hand` the 37.3 preview moves
 the elbow width by 37.91 cm. That is the FREE arm relocating rather than the
@@ -92,19 +127,17 @@ elbow width changing, and it would dominate anything a person watched on that
 drill. The comparison drill is `deflect_high`, where both hands are on the ball
 and nothing else moves.
 
-**A guard whose premise this dissolves, recorded and NOT acted on.**
-`test_elbow_pole.py` carries a tripwire on the distance between the two means.
-It records the history — about 8 cm, then about 20, then 3.09 — and holds a
-floor at 1 cm, below which the two would be one population under two names.
-That guard assumes both sides are populations. If one side is two outliers,
-the quantity it watches is the artefact described above rather than a fact
-about the athlete, and its 1 cm floor asks a question that cannot be answered
-by the drills it reads.
+**The guard that this section said it had dissolved was right.**
+`test_elbow_pole.py` holds a tripwire on the distance between the two means.
+This document argued its premise had dissolved, because one side was not a
+population. It had not. That guard, together with the turned-drill clause in
+`test_waiting_hand.py`, is what FOUND the artefact: both went red when the
+locked axis was pinned, and reading why is what produced
+`docs/CLAVICLE_ARTEFACT.md`.
 
-The guard is left exactly as it is. It is not retuned in the same change as
-the finding that questions it, because a guard and the evidence against it
-must not move together: whoever reads this later needs to see both, in that
-order. What to do about it is a decision, and it waits for one.
+Leaving it untouched was the right call for the wrong reason. It now records
+the whole history, artefact included: about 8 cm, then about 20, then 3.09 as
+an artefact reading, then 20.96.
 
 **Not settled.** Everything. The 0.15 cm agreement is the engine matching a
 figure read off a photograph. No coach has yet said the wider elbow looks
@@ -231,38 +264,31 @@ if the answer is no.
 
 ---
 
-## 7. Should a drill in the library start turned away?
+## 7. STRUCK. There is no library-content gap
 
-**The question.** Should the library hold a drill where the athlete begins with
-her back or her shoulder to the passer?
+**This item asked whether the library should hold a drill that begins turned
+away from the passer. IT ALREADY DOES.** The question was raised on a
+measurement that was wrong, and it is struck rather than reworded, because
+there is nothing left to decide.
 
-**Why it is being asked, and it is new.** Until the hand fix shipped,
-`hooks_outside_hand` began 48.23 degrees turned, read on `378fea0`. It now
-begins at 15.44 on `ac240b2`, and nothing else comes close:
+What it said: `hooks_outside_hand` had begun 48.23 degrees turned and now began
+at 15.44, so the athlete had straightened up and the library had lost the only
+shape that could exercise the engine's reach rule on a turned athlete.
+
+**She never straightened up.** That drill has two solved poses about 33 degrees
+apart in ready-stance turn, and the parameter set that shipped was the only one
+measured that reaches the 15 degree pose. She stands at 48.22 degrees under the
+correction, where her track always put her. The library holds what it always
+held.
 
 | drill | furthest turned at any frame before contact |
 |---|---|
-| `hooks_outside_hand` | 15.44 degrees |
+| `hooks_outside_hand` | **48.22 degrees** |
 | `deflect_high` | 0.78 |
 | `one_hand_snatch_to_other_hand` | 0.53 |
 | the other five | 0.05 or less |
 
-The athlete had been turning her shoulders 48 degrees to compensate for a hand
-whose fingers closed wrongly. With the hand corrected she stands nearly square.
-
-The window is every frame before contact, which is wider than the frames where
-she is purely waiting. Over the narrower window the two middle rows read 0.00
-and 0.50 rather than 0.78 and 0.53. Neither reading changes the finding: one
-drill turns and the rest do not.
-
-**What it cost.** A guard existed to make sure the engine's reach rule was
-tested on a turned athlete, because that rule is only wrong when she is turned.
-The library can no longer supply that case, so the rule is now pinned on a
-hand-built figure instead. That works, and it means the library itself no
-longer covers a shape netball actually contains.
-
-**Not settled.** Whether a turned drill belongs in the library on coaching
-grounds. This is content rather than a defect.
+Refer to `docs/CLAVICLE_ARTEFACT.md`. **Nothing is asked of the coach here.**
 
 ---
 

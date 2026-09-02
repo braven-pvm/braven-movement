@@ -14,13 +14,25 @@ solve was captured for all eight drills BEFORE the source changed, because
 afterwards the preview is a no-op and the comparison is a tautology. Shipped
 against that capture: **8 of 8 byte-identical, worst difference 0.0000000000.**
 
-**Section 5 below is SUPERSEDED.** Its cost table was measured on `378fea0`.
-On the shipped build the cost is **47 of 69 graded values moved, no verdict
-flipped**, largest `hooks_outside_hand` contact right elbow 72.82 to 49.66.
-Refer to "CLOSED: the right hand now opens the way the left one does" in
-`docs/KNOWN_ISSUES.md`, which also records the three things this opened —
-her changed ready stance, the library-content gap, and the overtaken
-pole-angle deferral.
+**Section 5 below is SUPERSEDED**, and so is the replacement first written
+here. That replacement said the shipped cost was "47 of 69 graded values moved,
+no verdict flipped, largest `hooks_outside_hand` contact right elbow 72.82 to
+49.66", and that this fix opened three things: a changed ready stance, a
+library-content gap and an overtaken pole-angle deferral.
+
+**WITHDRAWN 2026-09-02. All four of those claims came from a second solver
+basin, not from this fix.** That drill has two solved poses about 33 degrees
+apart in ready-stance turn, and the shipped parameter set reached the other
+one. Refer to `docs/CLAVICLE_ARTEFACT.md`.
+
+The honest cost of THIS fix, measured with the basin held still on both sides:
+**46 graded values move, no verdict flips, and the largest move away from the
+under-determined knee channel is 0.17 degrees.** The 23.16 belongs to the
+basin. The 3.09 that replaced it is a knee that flips under any perturbation,
+including one with no hand change in it.
+
+Her stance did not change, the library lost nothing, and the pole-angle
+deferral was not overtaken.
 
 
 Sections 1 to 5 were taken on `378fea0` with a clean tree. Section 6 was added

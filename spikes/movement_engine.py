@@ -15,6 +15,7 @@ import numpy as np
 import pymomentum.geometry as geometry
 import pymomentum.solver2 as solver2
 
+from athlete import minmax_limits  # noqa: E402
 from motion_track import (
     MotionTrack,
     arm_length,
@@ -47,6 +48,13 @@ WANTED = (
 )
 # Shape parameters must never move, or the solver stretches the athlete.
 FORBIDDEN = ("scale", "flexible")
+# How narrow a parameter's own range has to be before it counts as locked.
+#
+# It is a floating-point tolerance and nothing more. A locked parameter's range
+# is written as exactly zero in the model; this only avoids asking two floats
+# to be equal. A thousandth of a degree is far below the quarter degree
+# `check_joint_limits` treats as the smallest overshoot worth reporting.
+ZERO_WIDTH_RADIANS = 1e-9
 
 # The manual keeps the feet static. Pinning the feet and lowering the hips is
 # what produces the power position.
@@ -227,11 +235,43 @@ def joint_positions(character: geometry.Character, parameters: np.ndarray) -> np
 
 
 def enabled_parameters(character: geometry.Character) -> np.ndarray:
+    """Which parameters the solver may move.
+
+    A PARAMETER WHOSE OWN RANGE IS ZERO WIDE IS LOCKED BY THE MODEL, and
+    handing it to the solver is handing out freedom the body does not have.
+
+    The limit term is SOFT. It pulls a parameter back towards its range, it
+    does not hold it there. So a locked parameter left enabled sits wherever
+    the other terms drag it. Four were in that state: `l_clavicle_rx`,
+    `r_clavicle_rx`, `l_foot_lean1` and `r_foot_lean1`. On
+    `netball_hooks_outside_hand` the left clavicle sat 2.34 degrees outside a
+    range of zero on all 98 of its frames; no other drill moved that parameter
+    at all, their maximum being 0.000006 degrees.
+
+    THE JUSTIFICATION IS THE MODEL'S WORD, NOT MEASURED LOAD. The feet are
+    inert — `foot_lean1` peaks at 0.0003 degrees — and excluding them is
+    supported by their range being zero rather than by anything they were
+    doing. Excluding a locked parameter removes freedom rather than adding a
+    constraint, so nothing is tuned here and no weight is touched.
+
+    IT IS NOT WHY `hooks_outside_hand` CHANGED ITS STANCE. That drill has two
+    solved poses about 33 degrees apart, selected by the COMPOSITION of this
+    set rather than by any parameter in it: excluding an unrelated axis with a
+    real range does the same thing. Refer to docs/CLAVICLE_ARTEFACT.md before
+    attributing any posture to this function.
+    """
     names = list(character.parameter_transform.names)
+    limits = minmax_limits(character)
+    locked = {
+        name
+        for name, (low, high) in limits.items()
+        if abs(high - low) < ZERO_WIDTH_RADIANS
+    }
     return np.array(
         [
             any(key in name for key in WANTED)
             and not any(key in name for key in FORBIDDEN)
+            and name not in locked
             for name in names
         ],
         dtype=bool,

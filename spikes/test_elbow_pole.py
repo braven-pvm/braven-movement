@@ -64,23 +64,31 @@ OBLIQUE_DIRECTIONS = (
 # deferred: refer to the class docstring below.
 MEASURED_CM = 36.5
 # How far the one-handed drills sit ABOVE the two-handed ones at contact. This
-# is a recorded fact, not a target, and it has moved three times:
+# is a recorded fact, not a target, and its history now includes a reading that
+# was never true of the athlete:
 #
 #   about  8 cm  before the free-hand fix
 #   about 20 cm  after it
-#          3.09  after the hand mirror shipped on 2026-09-01
+#          3.09  on ac240b2 — AN ARTEFACT, see below
+#         20.96  once the locked parameters were excluded
 #
-# THE POPULATIONS CONVERGED WHEN THE HAND WAS FIXED, and the reason is that the
-# one-handed drills are the ones that lean on the outside hand: the right hand
-# whose fingers were anti-mirrored. The two-handed mean barely moved, from
-# 36.58 to 36.40.
+# THE 3.09 WAS NOT A CONVERGENCE. `netball_hooks_outside_hand` has two solved
+# poses about 33 degrees apart in ready-stance turn, and which one the solver
+# reaches depends on the COMPOSITION of the enabled parameter set. The set that
+# shipped as ac240b2 reached the second one, where that drill's contact elbow
+# width reads 19.01 cm and drags the one-handed mean down with it. Any change to
+# the set — including excluding an unrelated axis with a real range — returns it
+# to 54.83, beside the other one-handed drill's 59.96.
+# Refer to docs/CLAVICLE_ARTEFACT.md.
 #
-# This matters beyond a test. The whole "which population does the manual's
-# 38.6 cm describe" question — the one Marius deferred on 2026-08-30 — was
-# asked of two populations 20 cm apart. It must be RE-READ on the fixed build
-# before the coach morning, because the answer may not survive them being 3 cm
-# apart. Recorded here rather than silently refreshed.
-ONE_HANDED_GAP_CM = 3.09
+# So the two groups never converged. The pole question keeps its original form.
+# The two-handed mean is 36.40 to 36.43 through ALL of it, which is why nothing
+# caught the artefact for a day.
+#
+# THIS IS A PINNED FACT AND NOT A STATISTICAL CLAIM. Two drills cannot support
+# the word "population" in either direction, and both this file and the coach
+# bundle have made that error once each, pointing opposite ways.
+ONE_HANDED_GAP_CM = 20.96
 
 
 class Frame:
@@ -384,14 +392,17 @@ class TheContactSeparationOnTheEvidencedPopulation(unittest.TestCase):
         longer are, and the fact is recorded rather than the guard relaxed.
 
         This asked for more than 5 cm of separation, on the reasoning that
-        populations which converge no longer need splitting. The hand mirror
-        fix brought them from about 20 cm to 3.09, because the one-handed
-        drills are the ones that lean on the hand that was broken.
+        populations which converge no longer need splitting. It then failed on
+        ac240b2 at 3.09 cm and was re-recorded as a convergence.
 
-        So the question the guard was protecting is now LIVE rather than
-        settled, and it is on the coach agenda in those words. What this pins
-        is the measured gap, so a further move cannot happen in silence — the
-        same shape as the separation figure above.
+        THAT WAS WRONG, and this guard failing is what found it. The 3.09 was
+        one drill sitting in a second solver basin; refer to the constant
+        above. The two groups never converged.
+
+        What this pins is the measured gap, so a further move cannot happen in
+        silence. It is left as a pin rather than restored to a floor because a
+        pin catches movement in BOTH directions, and the direction nobody
+        expected is the one that cost two days.
         """
         two = sum(self.two_handed.values()) / len(self.two_handed)
         one = sum(self.one_handed.values()) / len(self.one_handed)
@@ -399,7 +410,8 @@ class TheContactSeparationOnTheEvidencedPopulation(unittest.TestCase):
             one - two, ONE_HANDED_GAP_CM, delta=0.5,
             msg=f"the one-handed drills average {one:.2f} cm against the "
             f"two-handed {two:.2f}, a gap of {one - two:.2f} against the "
-            f"{ONE_HANDED_GAP_CM} recorded when the hand mirror shipped. The "
+            f"{ONE_HANDED_GAP_CM} recorded when the locked parameters were "
+            "excluded. The "
             "populations have moved again. Re-record this with a ruling, and "
             "re-read the pole-angle question with it: the deferral was taken "
             "when they were 20 cm apart.",
@@ -408,8 +420,7 @@ class TheContactSeparationOnTheEvidencedPopulation(unittest.TestCase):
     def test_the_two_populations_are_still_distinguishable(self) -> None:
         """The anti-hollow clause for the split itself.
 
-        A gap pinned at 3.09 cm says nothing about whether the split is worth
-        keeping. What would kill it is the populations becoming the SAME, and
+        A pinned gap says nothing about whether the split is worth keeping. What would kill it is the populations becoming the SAME, and
         that is worth being told separately from a drift in the figure. The
         floor is the clinical five-degree threshold's length analogue: below a
         centimetre these are one population wearing two names.

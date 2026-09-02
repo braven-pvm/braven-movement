@@ -90,37 +90,39 @@ class NoHandWaitsPastFullStretch(unittest.TestCase):
         self.assertTrue(self.reaching, "no drill reaches for the ball")
         self.assertTrue(self.waiting, "no drill has a hand that waits")
 
-    def test_the_library_no_longer_turns_far_enough_to_show_the_fault(
-        self,
-    ) -> None:
-        """WAS the anti-hollow clause. It is now a RECORD of why that clause
-        moved to a synthetic fixture, and it fails if the library regains a
-        turned drill, which is a good thing to be told.
+    def test_a_turned_drill_is_among_them(self) -> None:
+        """The anti-hollow clause, RESTORED to the real library.
 
         The fault only appears on a turned athlete: with square shoulders the
         midpoint is the same distance from both, so the old code was correct by
-        accident. Until 2026-09-01 `netball_hooks_outside_hand` supplied that
-        case, starting 48.23 degrees turned.
+        accident. A library of square drills passes this file while proving
+        nothing.
 
-        THE HAND FIX TOOK IT AWAY, and the reason is the finding rather than a
-        side effect: the athlete had been turning her shoulders 48 degrees in
-        the ready pose to compensate for a right hand whose fingers were
-        anti-mirrored. With the hand correct she stands at 15.44, and no frame
-        of any drill now turns past 20 degrees while a hand waits.
+        THIS CLAUSE WAS INVERTED ON 2026-09-01 AND THAT WAS A MISTAKE, though
+        an honest one. `hooks_outside_hand` appeared to have stopped turning —
+        48.23 degrees down to 15.44 — and it was recorded as a library-content
+        gap, with the contract moved to a hand-built fixture.
 
-        So the library can no longer exercise this rule, and the contract is
-        pinned on a hand-built athlete in `ATurnedAthleteIsStillGuarded` below,
-        the same way the reference-curve floor is pinned on a hand-built
-        definition. Authoring a genuinely turned drill is coach territory and
-        is on the agenda as a library-content gap.
+        The drill had not changed. It has TWO solved poses about 33 degrees
+        apart in ready-stance turn, and which one the solver reaches depends on
+        the composition of the enabled parameter set. The set that shipped as
+        `ac240b2` was the only one measured that reaches the 15 degree pose.
+        Excluding the locked parameters returns her to 48.22 degrees, and so
+        does excluding an unrelated axis with a real range. Refer to
+        docs/CLAVICLE_ARTEFACT.md.
+
+        The synthetic fixture in `ATurnedAthleteIsStillGuarded` is KEPT. It is
+        now belt and braces rather than the only case, and it costs nothing to
+        hold a contract in two places when one of them is a library that can
+        change.
         """
-        worst = max(self.turned.values(), default=0.0)
-        self.assertLessEqual(
-            worst, 20.0,
-            f"a drill now starts {worst:.2f} degrees turned. The library can "
-            "exercise this rule again, which is what the content gap on the "
-            "coach agenda asks for. Restore the real-library anti-hollow "
-            "clause and say so here.",
+        self.assertTrue(
+            any(degrees > 20.0 for degrees in self.turned.values()),
+            "no drill starts turned, so the midpoint and the shoulders agree "
+            "and this file cannot see the fault it exists for. Before removing "
+            "this clause again, check whether the solver has changed BASIN on "
+            "that drill: it has two poses 33 degrees apart, and that is what "
+            "happened the last time it read square.",
         )
 
     def test_no_waiting_hand_is_further_out_than_a_reaching_one(self) -> None:
