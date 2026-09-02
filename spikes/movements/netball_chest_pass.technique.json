@@ -1,0 +1,54 @@
+{
+  "movementId": "netball_chest_pass",
+  "source": "202526 Netball Coaches Manual, Passing, pages 79 to 83, Niel du Plessis and Erin Burger. The manual gives this pass no technique block; refer to the definition file's source and cueSourceNote.",
+  "notes": "How the athlete sends the ball, rather than how she meets it. This is the first technique in the library with NO CATCH IN IT. She has the ball from frame 0, holds it at her chest through the step, drives it away and lets go at 0.80. Everything after that is follow-through and the ball is in flight.",
+  "hands": "both",
+  "turnToBall": false,
+  "turnNote": "false, and not for the usual reason. Every catch in this library turns to put the ball in front of her because the ball arrives off-centre. Nothing arrives here. She is already facing where she is passing.",
+  "possessionReady": true,
+  "possessionNote": "Switched on in the same commit that adds this file and the ball file. Before them the drill solved from hand keys, which measured the arm correctly and did not pretend a ball was present. The receipts for both solves are in the pack so the change is visible rather than asserted.",
+  "grip": {
+    "spreadDegrees": 90,
+    "faceBall": true,
+    "note": "The same 90 degrees every two-handed drill in this library uses, and for the same measured reason: below about 80 this athlete's forearm reaches its supination limit and the palms stay wider than requested. PROVISIONAL for a PASS specifically. The manual's own words for the ball at the chest are 'fingers up and thumbs behind in the middle of the ball', which is what 90 degrees with faceBall produces, but that sentence is written for a CATCH and its transfer to a pass is a judgment a coach must confirm."
+  },
+  "release": {
+    "atPhase": 0.8
+  },
+  "releaseNote": "Where the hand constraints stop and the ball is a thing in flight again. It is deliberately NOT at 1.0. The four releasing drills already in the library grade a release-named phase at 1.00 while their ball leaves at 0.805 to 0.953, so they grade the follow-through and call it the release. This drill releases at 0.80 and grades its follow-through as a separate phase at 1.0.",
+  "afterContact": [
+    {
+      "atPhase": 0.0,
+      "name": "held",
+      "across": 0.0,
+      "up": 0.12205,
+      "ahead": 0.55938,
+      "note": "The ball at her chest on the first frame. The same place netball_two_hand_catch_chest's pull_in key puts it, unchanged, because that is where a chest pass starts."
+    },
+    {
+      "atPhase": 0.34,
+      "name": "step",
+      "across": 0.0,
+      "up": 0.12205,
+      "ahead": 0.56955,
+      "note": "SHE STEPS AND THE BALL DOES NOT MOVE. 0.01 of a torso length, about half a centimetre. This is the manual's 'Keep hands where they were with catch, don't pull ball back' and it is the whole coaching point of the phase. NOTHING GRADES IT: refer to the definition's pullBackMeasureNote, where a checkpoint for it was authored, mutation-tested and deleted."
+    },
+    {
+      "atPhase": 0.62,
+      "name": "drive",
+      "across": 0.0,
+      "up": 0.22375,
+      "ahead": 0.80347,
+      "note": "The ball leaves the chest, rising as it goes. These keys move the BALL; the hands follow because they are holding it."
+    },
+    {
+      "atPhase": 0.8,
+      "name": "release",
+      "across": 0.0,
+      "up": 0.28477,
+      "ahead": 0.9662,
+      "note": "The last frame the hands are on the ball. These are netball_two_hand_catch_chest's send_back numbers exactly, because that drill's pass back and this drill's pass are the same act, and reusing its measured release point rather than authoring a second one keeps the two consistent."
+    }
+  ],
+  "carryUnitNote": "afterContact is measured in torso lengths, not arm lengths. Where a ball sits when it is held against the chest depends on the chest and the ball, not on how long the arm is, and in arm lengths two athletes of the same height whose reach differed by a tenth held the same ball 9 percent apart. Every number here was multiplied by 1.017053, the reference athlete's arm over her torso, so her positions are unchanged and only other bodies move."
+}
