@@ -138,6 +138,28 @@ STANCE_TOLERANCE_DEGREES = 2.0
 # A FOURTH SOLUTION COULD BREACH THESE, and that is not a reason to raise them.
 # If one does, the finding is that a new basin exists; read "The lower body has
 # no stable solution" in docs/KNOWN_ISSUES.md before touching a number here.
+#
+# WHAT THESE CEILINGS DO NOT COVER: A CHANGE TO A DRILL'S OWN KEYS.
+#
+# They are calibrated across three ENGINE configurations, and every drill stays
+# inside them in all three. They are not a claim about the authoring. A lateral
+# hip step planted into two_hand_catch_chest in equal increments of 0.01 gives:
+#
+#   0.00  4.44      0.01  3.49      0.02  5.85
+#   0.03  2.24      0.04  7.05      0.05  1.80
+#
+# THE MEASURE IS NOT A CONTINUOUS FUNCTION OF ITS INPUT. It does not rise with
+# the planted asymmetry; it oscillates across the whole range, and each step
+# moves some joint by 4.5 to 8.0 cm. The same sweep on hooks_jump_pull_in's
+# right foot behaves the same way. Every step lands in a different solution.
+#
+# So a red result here after a key change means "the lower body moved", which
+# is true and is the moment to look. It does not mean the change was wrong, and
+# the number must not be re-fitted to whatever the new keys produce.
+#
+# THE SOLVE ITSELF IS EXACTLY REPRODUCIBLE. Three runs of one drill on an
+# unchanged tree agree to 0.0000 cm at every joint and to four decimals in the
+# gap, so nothing in this table is a sampled average.
 KNEE_GAP_CEILING_DEGREES = {
     "netball_chest_pass": 5.56,
     "netball_deflect_high": 6.82,

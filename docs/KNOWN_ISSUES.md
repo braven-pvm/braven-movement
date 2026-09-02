@@ -1974,6 +1974,40 @@ to hands-only makes the population wrong on three tests; and the halved gap
 above. The turn and step clauses of the flag change no drill in today's
 library, so `test_motion_track.py` plants each of them into a square drill.
 
+### The sweep the mutations could not replace, and what it found
+
+A guard proved by a single mutation is not proved in a solver with basins. So
+an asymmetry was PLANTED and swept, in equal increments, to see the measure
+rise with it. **It does not rise.** A lateral hip step added to
+`two_hand_catch_chest` in increments of 0.01:
+
+| planted hip step | 0.00 | 0.01 | 0.02 | 0.03 | 0.04 | 0.05 |
+|---|---|---|---|---|---|---|
+| \|L−R\| knee | 4.44 | 3.49 | 5.85 | 2.24 | 7.05 | 1.80 |
+| worst joint move from the step before | — | 4.52 | 6.33 | 6.63 | 7.95 | 6.51 cm |
+
+**THE MEASURE IS NOT A CONTINUOUS FUNCTION OF ITS INPUT.** It oscillates over
+nearly its whole range while the planted asymmetry only grows, and every
+increment moves some joint by 4.5 to 8.0 cm. The same sweep on
+`hooks_jump_pull_in`'s right foot does the same thing: 6.48, 6.30, 6.47, 3.89,
+6.69, 3.48.
+
+**EVERY POINT IS A BASIN, NOT ONE CROSSING.** The entry above records two
+configurations reaching two solutions. This is stronger: a hair's change to the
+authoring reaches a different solution EVERY TIME, at every size tried, with no
+threshold to find.
+
+**WHAT THAT DOES AND DOES NOT COST THE GUARD.** The ceilings are calibrated
+across three ENGINE configurations, and every drill stays inside them in all
+three, so they are not noise. They say nothing about a change to a drill's own
+keys, and a red result after one means "the lower body moved" — the moment to
+look, not a number to re-fit.
+
+**THE SOLVE IS EXACTLY REPRODUCIBLE.** Three runs of one drill on an unchanged
+tree agree to 0.0000 cm at every joint and to four decimal places in the gap.
+The instability is entirely in the inputs, not in the arithmetic, so none of
+these figures is a sampled average.
+
 ### What is not settled
 
 Why the solver returns an uneven athlete for an even question. That is the same
