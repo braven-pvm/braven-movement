@@ -2325,7 +2325,7 @@ Only `double_foot_landing`, `hooks_outside_hand`,
 `one_hand_snatch_to_other_hand` and `two_hand_snatch_pull_in` keep it.
 
 **`netball_overhead_pass` THROWS ITS BALL DOWNWARD**, at 39.4 cm/s. It releases
-at 180.4 cm and its target is at 106.5, so the pass is 74 cm downhill and the
+at 180.4 cm and its target is at 126.32, so the pass is 54 cm downhill and the
 solver launches it below the horizontal. That is arithmetic rather than a
 defect, and it is the first time anything has said so.
 
@@ -2333,36 +2333,48 @@ defect, and it is the first time anything has said so.
 
 The ledger has carried "600 cm/s at the manual's 7 m produces a ball peaking at
 302 cm against a 305 cm goalpost", computed by hand from an assumed release
-height. **Recomputed from the engine's own release positions and its own
-`solve_launch`, to a receiver at 106.5 cm:**
+height. **Recomputed from the engine's own release positions, its own
+`solve_launch`, and its own receiver height of 126.32 cm:**
 
-| distance | `chest_pass` apex | `overhead_pass` apex |
+| horizontal run | `chest_pass` apex | `overhead_pass` apex |
 |---|---|---|
-| **2.11 m**, the authored 4 arm lengths | 144.9 | 180.4 |
-| 5.00 m | 210.6 | 232.6 |
-| **7.00 m**, the manual's own | 291.9 | **312.4 — over a 305 cm goalpost** |
+| **the authored one**, 161 and 177 cm | 145.0 | 180.4 |
+| 5.00 m | 219.7 | 240.7 |
+| **7.00 m**, the manual's own | 301.4 | **321.4 — over a 305 cm goalpost** |
 
-**The concern is real and it belongs to the overhead pass, not the chest pass.**
-At the manual's longest stated distance the overhead's ball goes over a
-goalpost; the chest pass's passes 13 cm under one. The 302 that has been quoted
-sits between the two and matches neither.
+**At the manual's longest stated distance the overhead's ball goes over a
+goalpost. The chest pass's passes 3.6 cm under one.**
+
+**THE LONG-QUOTED 302 WAS VERY NEARLY RIGHT, FOR THE CHEST PASS.** It sits 0.6
+cm from this measurement of it. What it never described is the overhead pass,
+which releases 38 cm higher and clears the post by 16 cm.
+
+**A FIRST VERSION OF THIS SECTION PUT THE RECEIVER AT 106.5 cm AND GOT 291.9
+AND 312.4.** That was a mistake in my own arithmetic and not in the engine: I
+measured where the ball is four arm lengths ahead of the RELEASE, and the
+target is four arm lengths ahead of her CHEST — which the ball is already 46 cm
+in front of at the moment she lets go. The horizontal run is 161 cm, not 211.
 
 **NOTHING IS CHANGED BY THIS ENTRY.** The authored distance is 2.11 m, where
 both are far clear. The 5 to 7 m figures describe what the ball speed would do
 at the manual's distances, which is the open question this measures rather than
 settles.
 
-### A discrepancy this turned up, not settled here
+### A concern raised here and then withdrawn by measuring it
 
-**The launch target for `up: 0.0` lands at 106.5 cm.** The ball files say that
-value is chosen because "a receiver of similar height has her hands at the
-height of this athlete's chest, where the stance frame is anchored". Her
-shoulder midpoint at frame 0 is **132.86 cm** and her crown is 163.45.
+A first version of this entry said the `up: 0.0` target lands at 106.5 cm,
+called that 26 cm below her shoulders, and asked whether the anchor or the note
+describing it was wrong.
 
-So the frame's anchor sits 26 cm below her shoulders, and every `up: 0.0`
-target inherits it. Whether that is the wrong anchor or the right anchor with a
-misleading note is a question for whoever owns the stance frame, and no ball
-file is changed here.
+**The anchor is `c_spine3`, and it sits at 126.32 cm.** Her shoulder midpoint at
+frame 0 is 132.86, so it is **6.5 cm** below her shoulders, which is where a
+chest is. `stance.place(up=0, ahead=4)` returns 126.32 exactly, because the
+anchor IS the zero of that axis.
+
+The ball files say `up: 0.0` puts the receiver's hands "at the height of this
+athlete's chest, where the stance frame is anchored". **That is accurate.**
+The 106.5 was mine, and it was the ball's height fifty centimetres PAST the
+target while it was still falling.
 
 ## The lower body has no stable solution
 

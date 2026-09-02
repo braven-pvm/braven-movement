@@ -98,9 +98,10 @@ class TheApexComesFromTheLaunch(unittest.TestCase):
         )
 
     def test_a_ball_thrown_downward_peaks_where_it_leaves(self):
-        """`netball_overhead_pass` releases 74 cm ABOVE its target, so the
-        engine launches it downward at 39 cm/s. Its highest point is the
-        release, and the arithmetic must not return a negative rise."""
+        """`netball_overhead_pass` releases 54 cm ABOVE its target — 180.4 cm
+        against 126.32 — so the engine launches it downward at 39 cm/s. Its
+        highest point is the release, and the arithmetic must not return a
+        negative rise."""
         found = self.apex("netball_overhead_pass")
 
         self.assertLess(found["verticalSpeedCmPerSecond"], 0.0)
