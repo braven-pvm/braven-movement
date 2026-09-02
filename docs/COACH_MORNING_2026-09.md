@@ -69,28 +69,49 @@ On the six drills that put BOTH hands on the ball:
 
 | | mean | narrowest | widest |
 |---|---|---|---|
-| at 31.3, today | **36.40 cm** | 28.89 | 40.29 |
-| at 37.3, previewed | **38.45 cm** | 30.63 | 42.41 |
+| at 31.3, today | **36.43 cm** | 28.90 | 40.37 |
+| at 37.3, previewed | **38.42 cm** | 30.63 | 42.41 |
 
-The manual says 38.6. At 31.3 the gap is 2.20 cm. At 37.3 it is **0.15 cm**.
+The manual says 38.6. At 31.3 the gap is 2.17 cm. At 37.3 it is **0.18 cm**.
+
+Every figure in this table is read on one build, with the locked parameters
+pinned. An earlier version mixed a build into it and read 36.40 and 38.45.
 
 **WITHDRAWN, 2026-09-02.** This section said:
 
-> A correction to how this question has been framed. It has been asked as
+> **A correction to how this question has been framed.** It has been asked as
 > "which of two populations does 38.6 describe". THE SECOND POPULATION IS NOT A
-> POPULATION. It is two drills, `hooks_outside_hand` at 19.01 cm and
-> `one_hand_snatch_to_other_hand` at 59.96, 40.95 cm apart with a standard
-> deviation of 28.96. Their mean of 39.48 describes neither drill.
+> POPULATION. It is two drills:
+>
+> | drill | elbow width at contact |
+> |---|---|
+> | `hooks_outside_hand` | 19.01 cm |
+> | `one_hand_snatch_to_other_hand` | 59.96 cm |
+>
+> They sit 40.95 cm apart, with a standard deviation of 28.96 cm. Their mean of
+> 39.48 cm describes neither drill: it lies about 20 cm from each. The six
+> two-handed drills are a real group by comparison, spread 11.40 cm with a
+> standard deviation of 4.08.
+>
+> So the choice is not between two populations. It is whether 38.6 describes
+> the drills that put both hands on the ball, and the one-handed pair belongs
+> outside that comparison rather than weighed against it.
 
-**That was wrong, and the reading it rested on was a pose the athlete cannot
-hold.** `hooks_outside_hand` read 19.01 cm because a zero-width-limit parameter
-was enabled for the solver and absorbed her turn into an impossible clavicle
-rotation. With that axis pinned the two one-handed drills read **54.83 and
-59.96**: spread 5.13, standard deviation 3.63, a tighter pair than the
-two-handed group's 4.09.
+**That was wrong.** `hooks_outside_hand` read 19.01 cm because the solver had
+reached a second solution for that drill — one of two, about 33 degrees apart
+in stance — and the parameter set that shipped was the only one measured that
+reaches it. Refer to `docs/CLAVICLE_ARTEFACT.md`.
 
-**There are two real populations, and there always were.** The question keeps
-its original form. Refer to `docs/CLAVICLE_ARTEFACT.md`.
+**The word "population" is not a claim two points can carry, in either
+direction**, and the withdrawn paragraph's standard deviation of 28.96 was the
+same error as the 3.63 that first replaced it. What the measurement supports:
+
+> Two one-handed drills sit 5.13 cm apart, at **54.83 and 59.96 cm**. Each is
+> 18.4 to 23.5 cm above the two-handed mean of 36.43, and 14.5 to 19.6 cm above
+> that group's widest member at 40.37.
+
+The question keeps its original form: does 38.6 describe the drills that put
+both hands on the ball, or the two that put one?
 
 | population | drills | mean elbow width at contact |
 |---|---|---|
@@ -251,10 +272,11 @@ What it said: `hooks_outside_hand` had begun 48.23 degrees turned and now began
 at 15.44, so the athlete had straightened up and the library had lost the only
 shape that could exercise the engine's reach rule on a turned athlete.
 
-**She never straightened up.** A zero-width-limit parameter was enabled for the
-solver, which absorbed her turn into a clavicle rotation the body cannot make.
-With that axis pinned she stands at 48.22 degrees, where her track always put
-her. The library holds what it always held.
+**She never straightened up.** That drill has two solved poses about 33 degrees
+apart in ready-stance turn, and the parameter set that shipped was the only one
+measured that reaches the 15 degree pose. She stands at 48.22 degrees under the
+correction, where her track always put her. The library holds what it always
+held.
 
 | drill | furthest turned at any frame before contact |
 |---|---|

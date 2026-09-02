@@ -70,19 +70,24 @@ MEASURED_CM = 36.5
 #   about  8 cm  before the free-hand fix
 #   about 20 cm  after it
 #          3.09  on ac240b2 — AN ARTEFACT, see below
-#         20.96  once the locked clavicle axis was pinned
+#         20.96  once the locked parameters were excluded
 #
-# THE 3.09 WAS NOT A CONVERGENCE. `l_clavicle_rx` has a range of zero width and
-# was enabled for the solver, whose limit term is soft, so on the drill that
-# pulls hardest the solver absorbed the athlete's turn into a rotation the body
-# cannot make. That distorted `hooks_outside_hand` alone, dragging its contact
-# elbow width to 19.01 cm and the one-handed mean down with it. Pinning the axis
-# restores 54.83, beside the other one-handed drill's 59.96.
+# THE 3.09 WAS NOT A CONVERGENCE. `netball_hooks_outside_hand` has two solved
+# poses about 33 degrees apart in ready-stance turn, and which one the solver
+# reaches depends on the COMPOSITION of the enabled parameter set. The set that
+# shipped as ac240b2 reached the second one, where that drill's contact elbow
+# width reads 19.01 cm and drags the one-handed mean down with it. Any change to
+# the set — including excluding an unrelated axis with a real range — returns it
+# to 54.83, beside the other one-handed drill's 59.96.
+# Refer to docs/CLAVICLE_ARTEFACT.md.
 #
-# So the two populations never converged, and the reading that said they had was
-# a measurement of a pose the athlete cannot hold. The pole question keeps its
-# original two-population form. The two-handed mean is 36.40 to 36.43 through
-# ALL of it, which is why nothing caught the artefact for two days.
+# So the two groups never converged. The pole question keeps its original form.
+# The two-handed mean is 36.40 to 36.43 through ALL of it, which is why nothing
+# caught the artefact for a day.
+#
+# THIS IS A PINNED FACT AND NOT A STATISTICAL CLAIM. Two drills cannot support
+# the word "population" in either direction, and both this file and the coach
+# bundle have made that error once each, pointing opposite ways.
 ONE_HANDED_GAP_CM = 20.96
 
 
@@ -391,8 +396,8 @@ class TheContactSeparationOnTheEvidencedPopulation(unittest.TestCase):
         ac240b2 at 3.09 cm and was re-recorded as a convergence.
 
         THAT WAS WRONG, and this guard failing is what found it. The 3.09 was
-        an artefact of a zero-width-limit parameter left enabled for the
-        solver; refer to the constant above. The populations never converged.
+        one drill sitting in a second solver basin; refer to the constant
+        above. The two groups never converged.
 
         What this pins is the measured gap, so a further move cannot happen in
         silence. It is left as a pin rather than restored to a floor because a
@@ -405,7 +410,8 @@ class TheContactSeparationOnTheEvidencedPopulation(unittest.TestCase):
             one - two, ONE_HANDED_GAP_CM, delta=0.5,
             msg=f"the one-handed drills average {one:.2f} cm against the "
             f"two-handed {two:.2f}, a gap of {one - two:.2f} against the "
-            f"{ONE_HANDED_GAP_CM} recorded when the hand mirror shipped. The "
+            f"{ONE_HANDED_GAP_CM} recorded when the locked parameters were "
+            "excluded. The "
             "populations have moved again. Re-record this with a ruling, and "
             "re-read the pole-angle question with it: the deferral was taken "
             "when they were 20 cm apart.",

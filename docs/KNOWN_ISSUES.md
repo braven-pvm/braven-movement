@@ -872,12 +872,18 @@ after. A five-point sweep puts the angle that would close the gap at about
 **SUPERSEDED IN PART on 2026-09-01 by the hand mirror fix (`fde5d5a`).** Every
 figure in this entry — the 44.60 one-handed average, the 36.57 two-handed one
 and the 37.3 degree sweep — was measured on a build whose right hand was
-anti-mirrored. The one-handed drills are the ones that lean on that hand. They
-have since come DOWN to 39.49 against a two-handed 36.40, so the two
-populations now differ by 3.09 cm where they differed by about 20. **The
-deferral below was taken on two populations that no longer exist, and the
-question must be re-read on the fixed build before the coach morning.** Refer
-to "CLOSED: the right hand now opens the way the left one does".
+anti-mirrored.
+
+**AND THAT SUPERSESSION WAS ITSELF WITHDRAWN on 2026-09-02.** It said the
+one-handed drills "have since come DOWN to 39.49 against a two-handed 36.40,
+so the two populations now differ by 3.09 cm where they differed by about 20",
+and that "the deferral below was taken on two populations that no longer exist".
+**None of that was true.** The 39.49 came from a second solver basin on one
+drill; with the locked parameters pinned the one-handed drills read 54.83 and
+59.96, and the two groups are about 21 cm apart as they always were. The
+figures in the entry above are still old, and the reason they are old is the
+build they were read on, NOT a change in the athlete. Refer to
+`docs/CLAVICLE_ARTEFACT.md`.
 
 **Marius ruled on 2026-08-30: record the gap, defer the angle.** The retune
 waits for the coach-morning data, because it moves every drill and the
@@ -1315,10 +1321,9 @@ unchanged in drill and phase; its figures on this build are 35.78, 49.98,
 1. **WITHDRAWN 2026-09-02: "her ready stance changed".** This entry said
    `hooks_outside_hand` starts 15.44 degrees turned where it started 48.23, and
    that she had been turning her shoulders 48 degrees to compensate for the
-   broken hand. **She had not.** The turn was being absorbed into a clavicle
-   rotation the body cannot make, through a zero-width-limit parameter left
-   enabled for the solver. She stands at 48.22 degrees once that axis is
-   pinned. Refer to `docs/CLAVICLE_ARTEFACT.md`. The claim was relayed to
+   broken hand. **She had not.** That drill has two solved poses about 33
+   degrees apart, and the parameter set that shipped reached the other one. She
+   stands at 48.22 degrees under the correction. Refer to `docs/CLAVICLE_ARTEFACT.md`. The claim was relayed to
    Marius and to the rendering lane and is withdrawn to both.
 2. **WITHDRAWN 2026-09-02: the library-content gap.** There was no gap. The
    drill turns 48.22 degrees while a hand waits, so the real library exercises
@@ -1421,17 +1426,27 @@ Four parameters have a range of ZERO WIDTH — the model says they must be
 exactly zero — and all four were enabled for the solver: `l_clavicle_rx`,
 `r_clavicle_rx`, `l_foot_lean1`, `r_foot_lean1`.
 
-**The limit term is soft.** It pulls a parameter towards its range rather than
-holding it there, so a locked parameter left enabled sits wherever the other
-terms drag it, and the breach is as large as the pull. On
-`netball_hooks_outside_hand` the left clavicle sat 2.34 degrees outside a range
-of zero on all 98 frames. Every other drill pulled it 0.06 to 0.10 degrees and
-stayed under the quarter-degree tolerance.
+**The limit term is soft**, so a locked parameter left enabled sits wherever
+the other terms drag it. On `netball_hooks_outside_hand` the left clavicle sat
+2.34 degrees outside a range of zero on all 98 frames. **No other drill moved
+that parameter at all**: their `l_clavicle_rx` maximum is 0.000006 degrees.
+
+**A CORRECTION.** An earlier version of this entry said the other drills pulled
+the same parameter 0.06 to 0.10 degrees. They do not. Those figures are
+`clavicle_RZ`, a different axis with a real range, read off the limits table.
+Two axes of one joint were conflated.
 
 **The fix removes freedom rather than adding a constraint**, and touches no
 weight: those four are excluded from the enabled set. `check_joint_limits` now
 passes at exit 0 with a worst overshoot of 0.1033 across the library. 42 graded
 values move, no verdict flips, and the largest change to any grip is 2 mm.
+
+**THE MECHANISM FIRST PUBLISHED FOR THIS WAS WRONG.** It said the solver had
+absorbed the athlete's turn into a clavicle rotation the body cannot make. A
+control refutes it: excluding an UNRELATED axis with a real range, `head_twist`,
+undoes the stance change identically, and in those solves the still-enabled
+`l_clavicle_rx` sits at 0.0000 degrees. A 2.34 degree rotation cannot hold a 33
+degree turn. Refer to the entry below on the two basins.
 
 **IT ALSO REVERSED FOUR PUBLISHED FINDINGS**, three of which had left this
 repository. The stance change, the population convergence, the "one-handed
@@ -1446,5 +1461,44 @@ athlete: the elbow-pole tripwire and the turned-drill clause in
 `test_waiting_hand.py`. They went red when the axis was pinned, and reading why
 is what produced the finding.
 
-**Nothing in the gate read `check_joint_limits`.** It exited 1 for weeks while
-the suite passed and the clip gate passed. Closing that is a separate change.
+**Nothing in the gate read `check_joint_limits`.** It exited 1 while the suite
+passed and the clip gate passed. That is now a suite row in
+`test_locked_parameters.py`.
+
+**How long, precisely, because two breaches are easy to conflate.** The 0.499
+degree breach on `l_clavicle_rz` — a real axis — was present at `716b3eb`,
+along with one frame of `two_hand_catch_chest` at 0.251 degrees on
+`r_thumb2_rz`. The 2.34 degree breach on the LOCKED axis dates from `ac240b2`
+at 14:04 on 1 September: **one day, not weeks.**
+
+
+## One drill has two solved poses 33 degrees apart
+
+Found 2026-09-02 by the review of the locked-parameter fix, and it is the
+finding the fix uncovered rather than the fix's own subject.
+
+`netball_hooks_outside_hand` reaches either of two solutions. They differ by
+about 33 degrees of ready-stance shoulder turn — 48.22 against 15.44 — and by
+about 36 cm of elbow width at contact. **Which one the solver reaches is decided
+by the COMPOSITION of the enabled parameter set, not by any one parameter in
+it.**
+
+Excluding the locked clavicle pair reaches the 48 degree pose. So does
+excluding `head_twist`, which is an unrelated axis with a real range. So does
+excluding either foot alone. The exact 54-parameter set that shipped as
+`ac240b2` is the only one measured that reaches the 15 degree pose.
+
+What differs inside that pose is not the clavicle. `spine_twist0` reads −11.56
+degrees at frame zero there, against +51.57 — saturated at its own limit — in
+every other state, and the root rotation is wound to 1030, 769 and 683 degrees.
+
+**Nothing here is a defect with a fix attached.** Both poses satisfy the
+solver's terms. The finding is the FRAGILITY: a drill whose look changes by 33
+degrees depending on which parameters are enabled has no single answer, and
+every measurement taken from it inherits that. It is the reason four published
+findings had to be withdrawn.
+
+**What it costs to leave alone**: any change to the enabled set — adding a
+parameter, removing one, or a model update that changes a range — can move that
+drill's look without touching a weight, a key or a band. Nothing would report
+it, because the two-handed mean does not move and no verdict flips.

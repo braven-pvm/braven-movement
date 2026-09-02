@@ -242,20 +242,23 @@ def enabled_parameters(character: geometry.Character) -> np.ndarray:
 
     The limit term is SOFT. It pulls a parameter back towards its range, it
     does not hold it there. So a locked parameter left enabled sits wherever
-    the other terms drag it, and the size of the breach is simply the size of
-    the pull. Four parameters were in that state — `l_clavicle_rx`,
-    `r_clavicle_rx`, `l_foot_lean1` and `r_foot_lean1` — and on
-    `netball_hooks_outside_hand`, the turned drill whose free arm pulls
-    hardest, the left clavicle sat 2.34 degrees outside a range of zero on all
-    98 of its frames. Every other drill pulled the same parameter 0.06 to 0.10
-    degrees and stayed under the reporting tolerance, which is why it looked
-    like one drill's problem rather than a rule.
+    the other terms drag it. Four were in that state: `l_clavicle_rx`,
+    `r_clavicle_rx`, `l_foot_lean1` and `r_foot_lean1`. On
+    `netball_hooks_outside_hand` the left clavicle sat 2.34 degrees outside a
+    range of zero on all 98 of its frames; no other drill moved that parameter
+    at all, their maximum being 0.000006 degrees.
 
-    Excluding them removes freedom rather than adding a constraint, so nothing
-    is tuned here and no weight is touched. It cost 42 graded values across the
-    library, no verdict flipped, and the worst change to any grip was 2 mm.
-    Refer to "The joint limits are exceeded on a locked parameter" in
-    docs/KNOWN_ISSUES.md.
+    THE JUSTIFICATION IS THE MODEL'S WORD, NOT MEASURED LOAD. The feet are
+    inert — `foot_lean1` peaks at 0.0003 degrees — and excluding them is
+    supported by their range being zero rather than by anything they were
+    doing. Excluding a locked parameter removes freedom rather than adding a
+    constraint, so nothing is tuned here and no weight is touched.
+
+    IT IS NOT WHY `hooks_outside_hand` CHANGED ITS STANCE. That drill has two
+    solved poses about 33 degrees apart, selected by the COMPOSITION of this
+    set rather than by any parameter in it: excluding an unrelated axis with a
+    real range does the same thing. Refer to docs/CLAVICLE_ARTEFACT.md before
+    attributing any posture to this function.
     """
     names = list(character.parameter_transform.names)
     limits = minmax_limits(character)

@@ -103,11 +103,13 @@ class NoHandWaitsPastFullStretch(unittest.TestCase):
         48.23 degrees down to 15.44 — and it was recorded as a library-content
         gap, with the contract moved to a hand-built fixture.
 
-        The drill had not changed. `l_clavicle_rx` has a range of zero width
-        and was enabled for the solver, whose limit term is soft, so the solver
-        absorbed her turn into a rotation the body cannot make. Pinning that
-        axis returns her to 48.22 degrees, which is where her track always put
-        her.
+        The drill had not changed. It has TWO solved poses about 33 degrees
+        apart in ready-stance turn, and which one the solver reaches depends on
+        the composition of the enabled parameter set. The set that shipped as
+        `ac240b2` was the only one measured that reaches the 15 degree pose.
+        Excluding the locked parameters returns her to 48.22 degrees, and so
+        does excluding an unrelated axis with a real range. Refer to
+        docs/CLAVICLE_ARTEFACT.md.
 
         The synthetic fixture in `ATurnedAthleteIsStillGuarded` is KEPT. It is
         now belt and braces rather than the only case, and it costs nothing to
@@ -118,9 +120,9 @@ class NoHandWaitsPastFullStretch(unittest.TestCase):
             any(degrees > 20.0 for degrees in self.turned.values()),
             "no drill starts turned, so the midpoint and the shoulders agree "
             "and this file cannot see the fault it exists for. Before removing "
-            "this clause again, check whether a solved pose has absorbed the "
-            "turn into a joint the body cannot rotate: that is what happened "
-            "the last time it read square.",
+            "this clause again, check whether the solver has changed BASIN on "
+            "that drill: it has two poses 33 degrees apart, and that is what "
+            "happened the last time it read square.",
         )
 
     def test_no_waiting_hand_is_further_out_than_a_reaching_one(self) -> None:

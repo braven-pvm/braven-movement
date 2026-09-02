@@ -1,157 +1,200 @@
-# A pose the athlete cannot hold, and the four findings it produced
+# Two solver basins, and the four findings that came from reading one
 
 For two days the engine reported that the hand-mirror fix had straightened the
-athlete's stance and brought two populations together. It had done neither.
-The solver was absorbing her turn into a joint rotation the body cannot make,
-through a degree of freedom the model does not grant.
+athlete's stance and brought two groups of drills together. It had done
+neither. `netball_hooks_outside_hand` has **two solved poses about 33 degrees
+apart in ready-stance turn**, and which one the solver reaches depends on the
+composition of the enabled parameter set.
 
-This document names the mechanism, separates what was real from what was not,
-and withdraws the four findings that were not. The withdrawn sentences are
-written out rather than replaced, because three of them left this repository.
+This document names that, separates what was real from what was not, and
+withdraws the four findings that were not. The withdrawn sentences are written
+out rather than replaced, because three of them left this repository.
 
-Measured on `d36af35` with the fix applied. Nothing here is a judgement call.
+**The filename is historical.** A first version of this document blamed a
+clavicle rotation. That explanation was refuted by a control described below,
+and the file keeps its name only so existing links still resolve.
 
-## The mechanism
+Measured on `d36af35` with the fix applied.
 
-A parameter whose own range is ZERO WIDE is locked by the model: the body says
-it must be exactly zero. Four such parameters were enabled for the solver —
-`l_clavicle_rx`, `r_clavicle_rx`, `l_foot_lean1`, `r_foot_lean1`.
+## What was actually wrong, and what only looked wrong
 
-**The limit term is soft.** It pulls a parameter back towards its range; it
-does not hold it there. So a locked parameter left enabled sits wherever the
-other terms drag it, and the size of the breach is simply the size of the pull.
+Four parameters have a limit range of ZERO WIDTH — the model says they must be
+exactly zero — and all four were enabled for the solver: `l_clavicle_rx`,
+`r_clavicle_rx`, `l_foot_lean1`, `r_foot_lean1`. **Handing the solver a
+parameter the model has locked is wrong on the model's own word**, and that is
+the whole justification for excluding them. It is not justified by load: on
+`d36af35` `foot_lean1` peaks at 0.0003 degrees and is inert.
 
-On `netball_hooks_outside_hand` — the turned drill, whose free arm pulls
-hardest — the left clavicle sat **2.34 degrees outside a range of zero, on all
-98 of its frames**. Every other drill pulled the same parameter 0.06 to 0.10
-degrees and stayed under the quarter-degree reporting tolerance, which is why
-it read as one drill's problem rather than as a rule being broken.
+On `netball_hooks_outside_hand` the left clavicle sat 2.34 degrees outside a
+range of zero on all 98 of its frames. That is a real breach and the fix
+removes it.
 
-The fix removes those four from the enabled set. It removes freedom rather than
-adding a constraint, and it touches no weight.
+**It is not what produced the stance change, and the first version of this
+document said it was.**
 
-## The three states that settle it
+## The control that refuted it
+
+Excluding an UNRELATED axis — `head_twist`, which has a real range and is not
+locked at all — undoes the stance change exactly as pinning the clavicle does:
+turn 48.22, elbow width 54.85. So does excluding either foot alone. **In every
+one of those solves the still-enabled `l_clavicle_rx` sits at 0.0000 degrees.**
+
+A magnitude check settles it without any of that: **a 2.34 degree rotation
+cannot hold a 33 degree shoulder-line turn.** I did not run it.
+
+What actually differs in the artefact state is elsewhere in the body.
+`spine_twist0` at frame zero reads −11.56 degrees there, against +51.57 —
+saturated at its own limit — in every other state, and the root rotation is
+wound to 1030, 769 and 683 degrees.
+
+**The state is a distinct local minimum, reached only with that exact
+54-parameter set.** The breach is what the instrument CAUGHT in that basin, not
+what created it. Changing the set's composition at all moves the solver to the
+other basin.
+
+**That fragility is the finding.** One drill has two solved poses 33 degrees
+apart, and the choice between them is decided by which parameters happen to be
+enabled.
+
+## The three states
 
 `hooks_outside_hand`'s shoulder line at frame zero, and the mean elbow width at
-contact for each population:
+contact for each group:
 
-| state | shoulder line | both hands | one hand | gap |
-|---|---|---|---|---|
-| **A** negation, axis free — before the mirror fix | 48.23 | 36.43 | 57.60 | 21.16 |
-| **B** mirror, axis free — `ac240b2`, what shipped | **15.44** | 36.40 | **39.49** | **3.09** |
-| **C** mirror, axis pinned — this change | 48.22 | 36.43 | 57.39 | 20.96 |
+| state | shoulder line | both hands | one hand |
+|---|---|---|---|
+| **A** negation, locked free — before the mirror fix | 48.23 | 36.43 | 57.60 |
+| **B** mirror, locked free — `ac240b2`, what shipped | **15.44** | 36.40 | **39.49** |
+| **C** mirror, locked pinned — this change | 48.22 | 36.43 | 57.39 |
 
-**State C reproduces state A.** The athlete never straightened up and the
-populations never converged. B is the artefact.
+**State C reproduces state A.** B is the outlier, and B is one basin.
 
 **The two-handed mean is 36.40 to 36.43 in all three states. It never moved,
-which is why nothing caught this.** Every guard, every gate and every review
-watched a quantity the artefact did not touch.
+which is why nothing caught this.** Every guard, gate and review watched a
+quantity the basin change did not touch.
 
 ## The four findings that fall
 
-Each was published. Each is withdrawn here in the form it was published in.
+Each was published. Each is withdrawn here in the form it was published.
 
-**1. "The ready stance changed, 48 to 15 degrees."** Published as the headline
-of the hand-mirror fix and relayed to Marius and to the rendering lane. It read
-that the athlete had been turning her shoulders 48 degrees to compensate for a
-hand whose fingers closed wrongly. **She had not.** The turn was being absorbed
-into an impossible clavicle rotation. She stands at 48.22 degrees under the pin,
-where her track always put her.
+**1. "The ready stance changed, 48 to 15 degrees."** The hand-mirror fix's
+headline, relayed to Marius and to the rendering lane. She never straightened
+up. The solver reached a different basin.
 
-**2. "The populations converged, about 20 cm to 3.09."** **They never
-converged.** 20.96 cm under the pin.
+**2. "The populations converged, about 20 cm to 3.09."** They never converged.
 
-**3. "The one-handed population is not a population."** This was the headline of
-the coach-morning bundle. It argued that two drills 40.95 cm apart, with a
-standard deviation of 28.96, could not be averaged, and that the pole question
-had therefore been framed wrongly for weeks. **The 19.01 cm reading that made
-`hooks_outside_hand` an outlier was the distorted clavicle.** Under the pin the
-two one-handed drills read **54.83 and 59.96**: spread 5.13, standard deviation
-3.63 — a tighter pair than the two-handed group's 4.09.
-
-The original framing was right all along. The correction was the artefact.
+**3. "The one-handed population is not a population."** The coach-morning
+bundle's headline. It argued that two drills 40.95 cm apart could not be
+averaged. The 19.01 cm reading came from the other basin.
 
 **4. "The library no longer holds a drill turned past 20 degrees while a hand
-waits."** Recorded as a library-content gap, put on the coach agenda as a
-question about authoring a new drill, and used to justify moving a test's
-contract onto a hand-built fixture. **There was no gap.** The drill turns 48.22
-degrees. The coach agenda item is STRUCK, not reworded: it asked about content
-that already exists.
+waits."** Recorded as a library-content gap and put on the coach agenda. There
+was no gap. The drill turns 48.22 degrees. The agenda item is STRUCK.
 
-The synthetic fixture is kept, as belt and braces rather than as the only case.
-It costs nothing to hold a contract in two places when one of them is a library
-that can change.
+## What the numbers support, and what they do not
+
+Under the fix the two one-handed drills read 54.83 and 59.96 cm.
+
+**Neither "a population" nor "not a population" is a claim two points can
+carry**, and this document made the second of those errors after the coach
+bundle made the first. The defensible statement is the measurement:
+
+> Two one-handed drills sit 5.13 cm apart, at 54.83 and 59.96 cm. Each is 18.4
+> to 23.5 cm above the two-handed mean of 36.43, and 14.5 to 19.6 cm above that
+> group's widest member at 40.37.
+
+A standard deviation over two points is the range divided by the square root of
+two. Comparing it to a six-point group's spread is illegitimate in either
+direction, and the coach bundle's 28.96 was the same error pointing the other
+way.
 
 ## The corrected cost of the hand-mirror fix
 
-Its cost table was measured with the artefact on both sides, so it measured the
-artefact. Four states, both hands of each comparison stated:
+Its cost table was measured with the basin change on both sides. A fourth
+state — negation WITH the locked parameters pinned — isolates the hand fix:
 
-| comparison | graded values moved | verdicts flipped | largest move |
+| comparison | moved | flips | largest |
 |---|---|---|---|
-| A to B — **what was reported** | 47 | 0 | **23.16** `hooks_outside_hand` contact right elbow, 72.82 to 49.66 |
-| D to C — **the hand fix alone**, both sides pinned | 46 | 0 | **3.09** `two_hand_snatch_straight_back` ready left knee |
-| B to C — the artefact removed from today's build | 42 | 0 | 22.50 |
-| A to D — the artefact removed from the old build | 45 | 0 | 15.72 |
+| A to B — **what was reported** | 47 | 0 | **23.16** |
+| D to C — **the hand fix alone**, both sides pinned | 46 | 0 | 3.09 |
+| B to C | 42 | 0 | 22.50 |
+| A to D | 45 | 0 | 15.72 |
 
-**The 23.16 degree move was the artefact, not the hand fix.** That elbow reads
-72.82 before the mirror fix and 72.16 under the pin: it returns to within 0.66
-degrees of where it started. The hand fix's real largest graded move is **3.09
-degrees, on a knee** — the under-determined channel this engine has moved on
-every hand or seed change it has ever had.
+**The 23.16 degree move belongs to the basin change, not to the hand fix.** That
+elbow reads 72.82 before the mirror fix and 72.16 under the pin.
 
-No verdict flips in any comparison.
+**The 3.09 is a bistable knee and should not be quoted as the hand fix's cost
+either.** `two_hand_snatch_straight_back` ready left knee reads 52.60 in states
+A and C and 55.69 in B, D and E; it flips under any perturbation, including one
+with no hand change in it. Six of the largest eight moves are knees.
+
+**The hand fix's largest move away from the knee channel is 0.17 degrees**, on
+`two_hand_snatch_straight_back` return left elbow. That is the honest figure.
+
+The largest change to any grip figure is **0.20 cm**, on `hooks_outside_hand`'s
+worst palm-skin gap, 0.013 to 0.214 cm — which moves it from unusually tight
+into the library's ordinary range of 0.11 to 0.37.
+
+## Excluding only what was proved
+
+A sixth state, E, excludes the clavicle pair alone and leaves the feet enabled.
+**Posture is identical to C.** 41 graded values differ, all by 3.25 degrees or
+less, and all in the knee channel.
+
+So the feet are inert and their exclusion is not supported by any measurement.
+It is supported by the model, which says their range is zero. That is a
+sufficient reason and it is the only one claimed here.
 
 ## What stands
 
-The artefact touched posture on one drill. It did not touch these, and each was
-verified independently of it.
-
-- **The hand-mirror fix itself.** The right hand is correctly mirrored: both
-  hands fan 14.37 cm and every fingertip is the reflection of its opposite. Only
-  its apparent postural side-effects were artefacts.
-- **The release anchor's three legs.** All four failing checkpoints sit inside
-  band where the ball leaves and outside only where they are graded.
+- **The hand-mirror fix itself.** Both hands fan 14.37 cm and every fingertip is
+  the reflection of its opposite.
+- **The release anchor's three legs.**
 - **The ball speed.** One constant, 600 cm/s, with no provenance.
 - **The finger ramp.** 89.95 degrees in one frame at the contact frame.
 - **The two-handed elbow width**, 36.40 to 36.43 through every state.
-- **The dial re-read.** At 31.3 the two-handed mean is 36.43, a gap of 2.17 to
-  the manual's 38.6. At 37.3 it is 38.42, a gap of 0.18. That survives.
+- **The dial re-read.** 36.43 at 31.3, a gap of 2.17 to the manual's 38.6;
+  38.42 at 37.3, a gap of 0.18.
 
-**The pole question returns to its original two-population form**, and both
-populations are now real: 36.43 cm with both hands on the ball, 57.39 with one.
+**The pole question returns to its original form**, with the one-handed drills
+described by the measurement above rather than by the word "population".
 
 ## A prediction this change must satisfy
 
-The rendering lane measured, before it knew about the pin, that between the
-pre-fix renders and `ac240b2` six phases improved their athlete-inside-the-ball
-figure and **three got worse**: `hooks_outside_hand` contact 7 to 8 vertices
-(−0.9 to −1.4 mm), `hooks_outside_hand` gather 1 to 3 (−0.1 to −0.6), and
-`deflect_high` contact 9 to 10 (−0.8 to −1.2).
+The rendering lane measured, before it knew about the pin, that three phases
+got worse between the pre-fix renders and `ac240b2`: `hooks_outside_hand`
+contact 7 to 8 vertices, `hooks_outside_hand` gather 1 to 3, and `deflect_high`
+contact 9 to 10.
 
-**The two hooks phases should push back on the pinned build.** That drill is the
-one the artefact distorted, and the prediction is strong there.
+**The two hooks phases should push back.** That drill is the one that changed
+basin.
 
-**`deflect_high` is a weaker prediction and is stated as such.** It never
-breached the reporting tolerance in any state — worst 0.0614 degrees — and its
-contact elbow width moves only 37.15 to 37.23 under the pin. If its intersection
-figure does not recover, that is not evidence against the mechanism.
+**`deflect_high` is a weak prediction and is stated as such.** It never breached
+the tolerance in any state, worst 0.0614 degrees, and its contact elbow width
+moves only 37.15 to 37.23. If it does not recover, that is not evidence about
+the basin.
 
-If the two hooks phases do not push back, that is a finding about the pin's
-completeness and not about the mechanism, which the three-state table settles
-independently.
+## How long this was wrong, precisely
 
-## Why it took two days
+Two breaches are easy to conflate and they have different ages.
 
-Nothing was careless, and that is the uncomfortable part.
+- **The 0.499 degree breach on `l_clavicle_rz`** — a real axis with a real range
+  — was present at `716b3eb`, along with one frame of `two_hand_catch_chest` at
+  0.251 degrees on `r_thumb2_rz`.
+- **The 2.34 degree breach on `l_clavicle_rx`**, the locked axis, dates from
+  `ac240b2` at 14:04 on 1 September. **One day, not weeks.**
 
-`check_joint_limits.py` reported the breach the whole time. It is a separate
-task, so the suite passed 564 tests and the clip gate passed while it exited 1.
-**Nothing in the gate read it.** That gap is being closed as its own change.
+`check_joint_limits.py` reported it for that day and exited 1 while the suite
+passed 564 tests and the clip gate passed, because nothing in the gate read it.
+That is now a suite row.
 
-And the artefact was invisible to every quantity anybody watched. The
-two-handed mean never moved. No verdict ever flipped. The clip gate's worst
-asserted gap stayed at 0.02 to 0.03 degrees. The only quantities that moved
-were on one drill, and each time they moved, the movement was read as a
-finding about the athlete rather than as a question about the solver.
+## Why the wrong explanation survived a day
+
+The clavicle breach and the stance change appeared together, on the same drill,
+in the same build. A mechanism that joins them is easy to write and it fit
+every number I had. What it did not survive was a control I did not run:
+changing the enabled set some other way.
+
+The magnitude check was available the whole time and cost nothing. **2.34
+degrees cannot account for 33.** Writing that sentence down would have stopped
+the explanation before it was published.

@@ -7,11 +7,15 @@ the other terms drag it, and the size of the breach is simply the size of the
 pull.
 
 Four were in that state: `l_clavicle_rx`, `r_clavicle_rx`, `l_foot_lean1` and
-`r_foot_lean1`. On `netball_hooks_outside_hand`, the turned drill whose free arm
-pulls hardest, the left clavicle sat 2.34 degrees outside a range of ZERO on all
-98 of its frames. Every other drill pulled the same parameter 0.06 to 0.10
-degrees and stayed under the reporting tolerance, which is why it read as one
-drill's problem for weeks rather than as a rule being broken everywhere.
+`r_foot_lean1`. On `netball_hooks_outside_hand` the left clavicle sat 2.34
+degrees outside a range of ZERO on all 98 of its frames. No other drill moved
+that parameter at all: their maximum is 0.000006 degrees.
+
+THE RULE IS JUSTIFIED BY THE MODEL, NOT BY LOAD. The feet are inert, peaking at
+0.0003 degrees. Their range is zero, and that is the whole reason they are
+excluded.
+
+It is NOT why that drill's stance changed. Refer to docs/CLAVICLE_ARTEFACT.md.
 
 Nothing here is tuned. Excluding a locked parameter REMOVES freedom; it does not
 add a constraint, and it touches no weight.
@@ -101,8 +105,8 @@ class TheLibraryStaysInsideItsOwnJointLimits(unittest.TestCase):
 
     The case above is about which parameters are handed out. This one is about
     what the athlete actually does with them, and it is the one that would have
-    caught the original fault: `check_joint_limits` reported it for weeks and
-    nothing in the suite read that report.
+    caught the original fault: `check_joint_limits` reported it and nothing in
+    the suite read that report.
     """
 
     def test_no_solved_pose_leaves_a_joint_outside_its_range(self) -> None:
