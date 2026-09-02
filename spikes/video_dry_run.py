@@ -15,11 +15,19 @@ only possible answer were "yes" would be a decoration.
 THE GATE, AND WHY IT IS NOT A CHECKLIST
 ---------------------------------------
 
-Eleven conditions, and they split in two.
+Twelve conditions, and they split in two.
 
-**Five belong to the CAPTURE** and are asked once — two views, a calibration,
-enough camera separation, a sync, and whether the filmed drill is one the
-engine models. A second camera and a clap are not properties of an elbow.
+**Six belong to the CAPTURE** and are asked once — two views, a calibration,
+enough camera separation, a sync, whether the filmed drill is one the engine
+models, and whether A BALL IS IN THE PICTURE. A second camera and a clap are
+not properties of an elbow.
+
+The last of those is the newest and it was found the hard way. Cutting clips
+for the coach page, the repetition the whole-curve scoring ranked BEST of
+twelve turned out to contain no ball at all — the athlete standing and
+gesturing. An elbow curve fits a gesture as happily as a catch, and every
+reading the gate had was computed from that curve. Refer to
+`video_ball_in_frame.py`.
 
 **Six belong to a MEASURE** and are asked of EVERY measure a checkpoint reads:
 does the modality carry it, were its landmarks seen, does an engine curve
@@ -84,6 +92,9 @@ sys.path.insert(0, str(SPIKE_DIR))
 from ball_track import MOVEMENT_DIR  # noqa: E402
 from build_stamp import generated_from  # noqa: E402
 from movement_definition import load as load_definition  # noqa: E402
+from video_ball_in_frame import BallAnnotationError  # noqa: E402
+from video_ball_in_frame import judge as judge_ball  # noqa: E402
+from video_ball_in_frame import annotation_path, load_annotation  # noqa: E402
 from video_measures import DEGREES, scarcest_landmark  # noqa: E402
 from video_measures import measure as video_measure  # noqa: E402
 from video_phase_align import featureless_share  # noqa: E402
@@ -197,7 +208,53 @@ def gather(set_id: str) -> dict:
         "alignment": load(OUTPUT / f"phase-alignment-{set_id}.json"),
         "reference": load(OUTPUT / "reference-curves.json"),
         "calibration": load(OUTPUT / f"calibration-{set_id}.json"),
+        # THE ANNOTATION IS LOADED HERE, not in the gate, so there is ONE way
+        # into `judge_capture` — a dict — rather than a dict for a test and a
+        # path for a run. A refusal is carried as text beside it instead of
+        # raised, because a stale annotation must shut the gate loudly and must
+        # not cost the reader the rest of the report.
+        **_ball_annotation(set_id),
     }
+
+
+def _ball_annotation(set_id: str) -> dict:
+    """The annotation and any refusal, from the COMMITTED path.
+
+    Committed rather than `poc-output`: an annotation is a person watching
+    footage, and it is the only artefact in this chain a machine cannot
+    rebuild.
+    """
+    try:
+        return {"ballAnnotation": load_annotation(annotation_path(set_id)),
+                "ballAnnotationRefusal": None}
+    except BallAnnotationError as refusal:
+        return {"ballAnnotation": None, "ballAnnotationRefusal": str(refusal)}
+
+
+# The artefacts a run cannot start without. AN ALLOWLIST OF WHAT IS REQUIRED,
+# never a denylist of what is optional.
+REQUIRED_ARTEFACTS = ("front", "side", "lift", "elbow", "alignment", "reference")
+
+
+def missing_artefacts(evidence: dict) -> list[str]:
+    """Which required artefacts are absent, in a testable place.
+
+    THIS LIVED INSIDE `main` AND THAT IS WHY IT BROKE UNCAUGHT. The check was
+    once written as a denylist — "every key whose value is None, except the
+    calibration" — so the first OPTIONAL key added after it stopped the run
+    from starting at all. The key was the ball annotation, whose absence is the
+    normal case, and the failure was `these artefacts are missing:
+    ballAnnotationRefusal` on a set with nothing wrong with it.
+
+    Restoring that denylist left all 81 tests green, because nothing could
+    reach the check: only a real run touched it. Lifting it out of `main` is
+    the fix, and the test that an optional key at None does not stop a run is
+    the point of lifting it.
+
+    A rule written as "everything except the exceptions I know about" breaks on
+    the next exception, and it breaks where nobody is looking.
+    """
+    return [name for name in REQUIRED_ARTEFACTS if evidence.get(name) is None]
 
 
 def graded_measures(movement: str) -> list[str]:
@@ -325,6 +382,44 @@ def judge_capture(evidence: dict, movement: str) -> list[dict]:
         "chose. A perfect two-camera capture of a self-toss still grades "
         "nothing, and no calibration fixes that.",
         "the null test in phase-alignment-<set>.json",
+    ))
+
+    # A BALL IN THE PICTURE, which no curve can tell you. Capture-wide because
+    # the ball's presence does not vary with the measure — the same frame either
+    # shows one or does not, whatever joint is read — and its READING is per
+    # repetition because that is where it does vary.
+    rows = (evidence.get("alignment") or {}).get("alignments") or []
+    stale = evidence.get("ballAnnotationRefusal")
+    if stale:
+        ball = {"withBall": [], "total": len(rows), "passes": None,
+                "detail": f"THE ANNOTATION WAS REFUSED: {stale}"}
+    else:
+        try:
+            ball = judge_ball(evidence.get("ballAnnotation"), rows)
+        except BallAnnotationError as refusal:
+            stale = str(refusal)
+            ball = {"withBall": [], "total": len(rows), "passes": None,
+                    "detail": f"THE ANNOTATION WAS REFUSED: {stale}"}
+    found.append(condition(
+        "a ball is in the picture",
+        "Was a ball in frame for every repetition the readings came from?",
+        len(ball["withBall"]), f"of {ball['total']} repetitions confirmed",
+        ball["total"] or None, "chosen",
+        "every repetition, because every reading in this report is computed "
+        "ACROSS the repetitions, so one gesture among them contaminates the set",
+        ball["passes"],
+        "AN ELBOW CURVE FITS A GESTURE AS HAPPILY AS A CATCH. On session 1.0 "
+        "the repetition the whole-curve scoring ranked BEST of twelve — 0.02369 "
+        "against 0.06093 for the next — contains no ball at all: a frame strip "
+        "shows the athlete standing and gesturing. It ranks 1 of 8 drills on "
+        "BOTH scorings, so the null test does not see it either. The "
+        "informative scoring placed it fifth of twelve, which is luck "
+        "rather than detection. " + ball["detail"],
+        f"ball-in-frame-<set>.json, a human reading frame strips per repetition"
+        if ball["passes"] is not None or stale else
+        "THE INSTRUMENT THAT DOES NOT EXIST: no ball detector is built, and "
+        "the only instrument that has ever answered this is a person reading "
+        "frame strips. Write ball-in-frame-<set>.json and it is read.",
     ))
     return found
 
@@ -751,8 +846,7 @@ def main(argv: list[str]) -> int:
     arguments = parser.parse_args(argv[1:])
 
     evidence = gather(arguments.set_id)
-    missing = [name for name, value in evidence.items()
-               if value is None and name != "calibration"]
+    missing = missing_artefacts(evidence)
     if missing:
         raise SystemExit(
             f"these artefacts are missing for set {arguments.set_id}: "

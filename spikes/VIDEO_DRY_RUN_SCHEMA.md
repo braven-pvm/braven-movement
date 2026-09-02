@@ -205,10 +205,10 @@ and it leads with the verdict rather than burying it under evidence.
 }
 ```
 
-### The eleven conditions, in two groups
+### The twelve conditions, in two groups
 
-**Five belong to the CAPTURE**, asked once. A second camera and a clap are not
-properties of an elbow.
+**Six belong to the CAPTURE**, asked once. A second camera, a clap and a ball
+in the picture are not properties of an elbow.
 
 | condition | bar | kind |
 |---|---|---|
@@ -217,6 +217,7 @@ properties of an elbow.
 | camera separation | 45 degrees | measured |
 | sync | one frame | chosen |
 | the drill is in the library | first place on every repetition | chosen |
+| a ball is in the picture | every repetition | chosen |
 
 **Six belong to a MEASURE**, asked of every measure a checkpoint reads. The
 right elbow being invisible says nothing about the left knee.
@@ -263,6 +264,94 @@ every condition passes. `thresholdKind` is one of `measured`, `derived`,
   looks like the strongest, because it is where the two numbers are furthest
   apart: it is read inside the reference's featureless lead, where the engine's
   value is simply its rest pose.
+
+## `video-annotations/ball-in-frame-<set>.json`
+
+**COMMITTED, not in `poc-output`.** Everything else in the video chain is
+regenerable — run the extractor again and the keypoints come back. An
+annotation is a person watching footage, and it is the only artefact in this
+pipeline a machine cannot rebuild. Left in a gitignored output directory it is
+one worktree teardown from not existing.
+
+```json
+{
+  "schemaVersion": "ball-in-frame-1",
+  "set": "0.1",
+  "annotatedBy": "…",
+  "annotatedUtc": "2026-09-02",
+  "method": "…what was actually looked at, and whether it was a fresh look…",
+  "windowSource": {"file": "phase-alignment-0.1.json", "commit": "…", "treeWasClean": true},
+  "repetitions": [
+    {
+      "index": 0,
+      "startSeconds": 5.267,
+      "endSeconds": 5.833,
+      "ballVisible": false,
+      "ballVisibleThroughout": false,
+      "evidence": "a frame strip across the whole window shows the athlete standing and gesturing"
+    }
+  ]
+}
+```
+
+### The decisions in it
+
+**`ballVisible` is asked at the ANCHORED MOMENT** — the pull-in onset through
+the peak, where a catch actually happens. That is the question "is this a catch
+rather than a gesture", and it is the one that blocks.
+
+**`ballVisibleThroughout` is optional** and asks about the whole window. It
+exists because session 1.0 forced it: repetition 1 has the athlete standing
+empty-handed for over two seconds before the ball drops in from off frame. One
+boolean would have had to call that either a clean catch or a gesture, and it
+is neither. Absent means not asked, which is not "no".
+
+**Both are TRISTATE.** `true`, `false`, `null`. Null is "nobody looked" and it
+blocks exactly as hard as false does — for the same reason every unmeasured
+condition in this gate blocks. Four of session 1.0's twelve repetitions are
+null because the clip lane rejected them on RANKING alone and recorded nothing
+about the picture; inferring a ball from a rejection that never mentioned one
+would be fabrication.
+
+**Every row carries `evidence`.** An annotation without evidence is an opinion,
+and loading refuses a row that has none.
+
+**Every row carries the WINDOW it looked at, and a stale file is refused
+whole.** Repetition indices are not stable: the alignment tooling changed twice
+in one evening and one change — a lookback widened from 0.5 s to 1.0 s — moved
+every window in the file. An annotation keyed on index alone would silently
+reattach a person's judgement about one repetition to different footage. If any
+window has moved by more than 0.1 s, **none of the file is used**, because a
+half-stale annotation is one nobody can tell the halves apart in.
+
+**A refusal shuts the condition and keeps the report.** `gather` catches the
+error and carries its text, so a malformed annotation costs the reader that one
+condition and not the whole dry run.
+
+## THE BLIND SPOT THIS PACK CLOSED, AND WHAT IT SAYS ABOUT THE REST
+
+The gate asked eleven questions and not one of them was **"is this a catch"**.
+
+Cutting clips for the coach page, the repetition the whole-curve scoring ranked
+BEST of twelve contained no ball at all. Rank 1 of 8 drills on both scorings.
+The null test — the guard built precisely because a warp fits anything to
+anything — ranked a gesture first, because a monotone warp does always exist.
+
+**Every reading in this file is computed from a joint curve, and a joint curve
+does not know what is in the picture.** That is not a defect in any one of
+them; it is the shape of the whole instrument. The lesson generalises past the
+ball:
+
+- The alignment ranks a CURVE. It cannot tell you the curve came from the
+  movement you think it did.
+- The level gap, the phase agreement and the warp distance all inherit that.
+- The one reading that was odd — 35 percent still, double the next highest —
+  is a symptom of "nothing is happening", and it is deliberately NOT promoted
+  into a proxy for "no ball". A proxy that happens to correlate on one clip is
+  how a gate comes to believe it can see something it cannot.
+
+**What a person looking at a frame strip found, no number in the pipeline
+could.** That is worth stating plainly in a document full of numbers.
 
 ## Open, and deliberately so
 
