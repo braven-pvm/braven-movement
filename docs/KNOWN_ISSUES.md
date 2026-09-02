@@ -1312,20 +1312,24 @@ unchanged in drill and phase; its figures on this build are 35.78, 49.98,
 
 **THREE THINGS THIS OPENED, all recorded rather than absorbed.**
 
-1. **Her ready stance changed.** `hooks_outside_hand` starts 15.44 degrees
-   turned where it started 48.23. She had been turning her shoulders 48 degrees
-   to compensate for the broken hand. This is a look change beyond the hand and
-   it goes to the coach morning.
-2. **A library-content gap.** No drill now turns past 20 degrees while a hand
-   waits, so the real library can no longer exercise the waiting-hand rule. The
-   contract is pinned on a hand-built athlete in `test_waiting_hand.py`, and
-   the old clause is kept inverted so it reports when a turned drill returns.
-   Authoring one is coach territory.
-3. **The pole-angle question must be re-read.** The one-handed and two-handed
-   contact populations converged from about 20 cm apart to 3.09 cm, because the
-   one-handed drills lean on the hand that was broken. The deferred question —
-   which population does the manual's 38.6 cm describe — was asked when they
-   were 20 cm apart. That deferral was overtaken by this fix.
+1. **WITHDRAWN 2026-09-02: "her ready stance changed".** This entry said
+   `hooks_outside_hand` starts 15.44 degrees turned where it started 48.23, and
+   that she had been turning her shoulders 48 degrees to compensate for the
+   broken hand. **She had not.** The turn was being absorbed into a clavicle
+   rotation the body cannot make, through a zero-width-limit parameter left
+   enabled for the solver. She stands at 48.22 degrees once that axis is
+   pinned. Refer to `docs/CLAVICLE_ARTEFACT.md`. The claim was relayed to
+   Marius and to the rendering lane and is withdrawn to both.
+2. **WITHDRAWN 2026-09-02: the library-content gap.** There was no gap. The
+   drill turns 48.22 degrees while a hand waits, so the real library exercises
+   the waiting-hand rule as it always did. The inverted clause has been
+   restored to its original form and the hand-built fixture is kept as belt and
+   braces. The coach-agenda item is STRUCK.
+3. **WITHDRAWN 2026-09-02: the populations converged.** They never converged.
+   The 3.09 cm reading was the same artefact: `hooks_outside_hand`'s contact
+   elbow width read 19.01 cm under a distorted clavicle and reads 54.83 once it
+   is pinned. The two populations are 20.96 cm apart, as they were before, and
+   the deferred pole-angle question keeps its original two-population form.
 
 **The mirror preview variant is retired.** `preview_variants` is coach-facing,
 and a variant rendering the shipped build while a page labels it the
@@ -1406,3 +1410,41 @@ universal drift is what that looks like.
 - **It found no wrong band and no wrong constant**, which is a real result and
   not an absence of effort: those two classes are mechanically checkable and
   they are clean.
+
+
+## The joint limits were exceeded on a parameter the model had locked
+
+Raised 2026-09-02 by the docs-wide sweep, ruled a DEFECT rather than a judgement
+call, and fixed. Measured in `docs/CLAVICLE_ARTEFACT.md`.
+
+Four parameters have a range of ZERO WIDTH — the model says they must be
+exactly zero — and all four were enabled for the solver: `l_clavicle_rx`,
+`r_clavicle_rx`, `l_foot_lean1`, `r_foot_lean1`.
+
+**The limit term is soft.** It pulls a parameter towards its range rather than
+holding it there, so a locked parameter left enabled sits wherever the other
+terms drag it, and the breach is as large as the pull. On
+`netball_hooks_outside_hand` the left clavicle sat 2.34 degrees outside a range
+of zero on all 98 frames. Every other drill pulled it 0.06 to 0.10 degrees and
+stayed under the quarter-degree tolerance.
+
+**The fix removes freedom rather than adding a constraint**, and touches no
+weight: those four are excluded from the enabled set. `check_joint_limits` now
+passes at exit 0 with a worst overshoot of 0.1033 across the library. 42 graded
+values move, no verdict flips, and the largest change to any grip is 2 mm.
+
+**IT ALSO REVERSED FOUR PUBLISHED FINDINGS**, three of which had left this
+repository. The stance change, the population convergence, the "one-handed
+drills are not a population" claim and the library-content gap were all
+measurements of a pose the athlete cannot hold. Refer to
+`docs/CLAVICLE_ARTEFACT.md` for the three-state table that settles it and for
+the corrected cost of the hand-mirror fix, whose reported largest graded move
+of 23.16 degrees was the artefact and whose real one is 3.09.
+
+**Two guards found it**, and both had been read as reporting something about the
+athlete: the elbow-pole tripwire and the turned-drill clause in
+`test_waiting_hand.py`. They went red when the axis was pinned, and reading why
+is what produced the finding.
+
+**Nothing in the gate read `check_joint_limits`.** It exited 1 for weeks while
+the suite passed and the clip gate passed. Closing that is a separate change.
