@@ -247,9 +247,10 @@ random, and a catch would play its follow-through before the ball arrived.
 So the clip declares the moment, by naming the phase it belongs to.
 
 The declaration is checked rather than trusted. The clip also carries
-`contactFrame`, which is what the possession model independently derives, and
-the exporter prints the difference. On the six catches and the block the two
-agree to within 0.03 s. On the landing they differ by 0.32 s, and **that
+`contactFrame` and `releaseFrame`, which the possession model derives
+independently, and both the exporter and the verifier print the difference
+against **whichever of the two the moment names**. On the six catches and the
+block the two agree to within 0.03 s. On the landing they differ by 0.32 s, and **that
 difference is correct**: she takes the ball in flight and lands a third of a
 second later. A landing lined up on the catch would put her feet down before she
 had come back to earth.
@@ -264,14 +265,32 @@ each named for what it is and neither standing in for the other: compare a
 `releaseFrame`.
 
 `releaseFrame` is null wherever the drill never lets go, which is every catch
-that ends holding the ball. Every clip in the library today is a catch, a block
-or a landing, so the first non-null value will arrive with the pass family.
+that ends holding the ball. **Two clips in the library are passes and carry a
+real one**: `netball_chest_pass` and `netball_overhead_pass`. An earlier
+version of this paragraph said every clip was a catch, a block or a landing,
+which was true when it was written and had stopped being true before the rule
+below was fixed.
 
-**One gap, stated rather than left to be found.** The exporter's
-`momentGapSeconds` report line still reads `contactFrame` unconditionally, so on
-a release-moment clip it prints the gap to the wrong moment. It is a report
-line and gates nothing, and no clip declares a release yet. It must be extended
-before anybody judges a pass clip by it.
+**THAT GAP IS CLOSED, AND IT HAD ALREADY BITTEN.** This section used to say
+the `momentGapSeconds` report line read `contactFrame` unconditionally, that it
+gated nothing, and that no clip declared a release yet. **Two did.**
+`netball_chest_pass` and `netball_overhead_pass` are both `release` moments in
+`CLASSES`, and both start with the ball, so their contact frame is 0 and the
+line reported the gap from the release to the START of the clip:
+
+| clip | before | after |
+|---|---|---|
+| `pass.netball.chest-pass` | −1.267 s | **−0.001 s** |
+| `pass.netball.overhead-pass` | −1.267 s | **−0.001 s** |
+
+Every catch reads −0.017 to −0.034 s, so the two passes sat forty times further
+out than anything else in the baseline and nobody read them.
+
+The rule now lives in `moment_frame` in `clip_geometry.py`, beside the
+`CLASSES` table that names the moments, and every report row carries
+`momentGapAgainst` saying which frame it used. **A release clip with no
+`releaseFrame` is refused rather than defaulted**, because the default was the
+defect.
 
 ## 7. Root travel, and why a clip is in place
 

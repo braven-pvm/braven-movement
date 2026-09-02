@@ -51,6 +51,8 @@ sys.path.insert(0, str(SPIKE_DIR))
 from ball_track import has_ball  # noqa: E402
 from clip_geometry import (  # noqa: E402
     CLASSES,
+    moment_against,
+    moment_frame,
     IN_PLACE_METRES,
     SCHEMA_VERSION,
     TRAVELS_FRACTION,
@@ -300,13 +302,19 @@ def main(argv: list[str]) -> int:
         # Said out loud rather than left in the file, because a landing whose
         # ball arrives a third of a second before the feet is a real difference
         # and not a fault to smooth over.
-        if abs(clip["contactFrame"] - clip["phases"][0]["frame"]) >= 0:
-            gap = clip["contactFrame"] / max(1, len(clip["frames"])) - clip["hit"]
-            if abs(gap) > 0.02:
-                print(
-                    f"   note: the ball is taken {gap * clip['seconds']:+.2f} s "
-                    f"from the {clip['hitPhase']} phase"
-                )
+        # THIS LINE CARRIED THE OLD RULE ONE FILE LONGER THAN THE VERIFIER.
+        # It divided `contactFrame` for every clip, so on the same `--all` run
+        # where the verifier printed "-0.00 s vs releaseFrame" it printed
+        # "the ball is taken -1.27 s from the release phase" for both passes.
+        # It now reads the same `moment_frame` the verifier does, and says
+        # which frame it used, so the two cannot disagree again.
+        against = moment_against(clip)
+        gap = moment_frame(clip) / max(1, len(clip["frames"])) - clip["hit"]
+        if abs(gap) > 0.02:
+            print(
+                f"   note: the {clip['hitPhase']} phase is "
+                f"{gap * clip['seconds']:+.2f} s from {against}"
+            )
     return 0
 
 
