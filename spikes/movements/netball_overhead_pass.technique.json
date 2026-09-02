@@ -30,7 +30,7 @@
       "across": 0.0,
       "up": 1.12,
       "ahead": 0.30512,
-      "note": "The manual's step 1, 'Pull the ball up into the air above your head'. 1.12 torso lengths puts the BALL CENTRE at 184.4 cm on the reference athlete, which is 10.0 cm above where its underside would touch her crown: the crown reference c_head_null sits at 163.5 and the ball's radius is 11.0. AUTHORED AGAINST HER ANATOMY, not against a band. The first draft used 0.9663, which cleared the crown by 1.9 cm and was marginal for a cue that says up into the air."
+      "note": "The manual's step 1, 'Pull the ball up into the air above your head'. 1.12 torso lengths puts the BALL CENTRE at 184.4 cm on the reference athlete, which clears her crown by 8.6 cm at the frame this is graded on. THE CROWN MOVES and the clearance must be read where the checkpoint reads it: c_head_null sits at 163.45 cm at frame 0 and at 164.80 at the lift frame, frame 33, and the ball's radius is 11.0. Against the frame-0 crown the clearance looks like 10.0, which is what a first draft claimed; against the lift-frame crown it is 8.6. AUTHORED AGAINST HER ANATOMY, not against a band. An earlier draft used 0.9663, which cleared by 0.5 cm at the graded frame and was far too marginal for a cue that says up into the air."
     },
     {
       "atPhase": 0.58,

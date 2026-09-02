@@ -316,6 +316,43 @@ frame.
 
 ---
 
+## 10. Which passes does the board need, and which does the manual teach?
+
+Added 2026-09-02 by the content lane, with the first two passes authored.
+
+**THE TWO LISTS DO NOT MATCH, AND NEITHER IS WRONG.**
+
+The manual teaches eight passes: overhead, 1 hand high, 1 hand low wide, 1 hand
+wide, bounce, underarm, lob and fake. Its syllabus lists a ninth, "Double hand
+chest", in two practice plans and gives it no technique block.
+
+Braven Tactics' `RELEASE_KINDS` names four: `chest-pass`, `shoulder-pass`, `lob`
+and `bounce-pass`. A board can only ask for a clip whose class is in that list.
+
+**They overlap on two: `lob` and `bounce-pass`.**
+
+- **`shoulder-pass` has ZERO occurrences in the manual.** Searched in full. The
+  board can ask for a pass the manual never teaches.
+- **`overhead` is absent from the vocabulary.** It is the manual's most fully
+  documented pass, second in its syllabus, and it is now authored and exported
+  as `pass.netball.overhead-pass`. **No board can select it.**
+
+**What is asked.** Not a code question. Which passes should the engine author
+next, and should the vocabulary change to name them? The engine can hold a
+technique the board cannot ask for, and does today, so nothing is broken while
+this is open. It only decides where the content lane spends its time.
+
+**Why it is worth a clip rather than an argument.** The overhead pass exists and
+can be watched. So can the chest pass, which IS in the vocabulary. Comparing the
+two against the manual is a better basis for the decision than comparing two
+lists.
+
+**One consequence for the lob.** The lob is a ball-file variant of a pass that
+lifts the ball overhead, and its own manual step is word for word the 1 HAND
+HIGH pass's step, not the overhead's. So the lob rides a one-handed pass the
+library does not have, or the overhead pass the board cannot select. Refer to
+`docs/LOB_AUTHORING_BRIEF.md`.
+
 ## Three items with no engine evidence
 
 These are on the agenda and this document has nothing to add to them.
@@ -323,7 +360,8 @@ These are on the agenda and this document has nothing to add to them.
 - **A second grader.** The provisional bands were set against one coach's
   marks. Whether a second coach agrees is not something the engine can measure.
 - **Vocabulary conflicts.** The manual and the engine use some words
-  differently. Nothing here resolves that.
+  differently. Nothing here resolves that. The pass family's version of this is
+  now item 10 above, with both lists written out.
 - **Two manual titles.** The library cites a manual whose title appears in two
   forms. It is a record-keeping question.
 

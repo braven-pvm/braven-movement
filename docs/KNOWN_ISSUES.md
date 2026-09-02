@@ -184,7 +184,11 @@ An open row, not a defect in anything shipped: nothing today reads a height,
 and no band sits where one would be needed.
 
 **What is missing.** A measure of how high the ball or the wrist is, in
-centimetres, with its unit declared. The manual's overhead cue is "Pull the
+centimetres, with its unit declared. It must be read AT THE FRAME THAT IS
+GRADED: the crown reference `c_head_null` sits at 163.45 cm at frame 0 of
+`netball_overhead_pass` and at 164.80 at its lift frame, and a first draft of
+that drill's floor used the frame-0 figure and overstated its clearance by
+1.35 cm. The manual's overhead cue is "Pull the
 ball up into the air above your head", which is a height, and the drill grades
 it on `leftShoulderElevationDegrees` instead.
 
@@ -205,13 +209,32 @@ from 0.100 to 0.800 at a fixed `up` of 1.12 so the ball stays at 184.4 cm.
 | where | fold range | shoulder elevation | spread |
 |---|---|---|---|
 | ball 184.4 cm | elbow 105.7 to 56.6 | 109.5, 107.7, 106.6, 114.8 | **8.2, non-monotonic** |
-| ball 174.1 cm, the crown line | elbow 123.5 and 81.1 | 87.3 and 91.0 | **3.7** |
+| ball 174.1 cm, near the crown line | elbow 123.5 and 81.1 | 87.3 and 91.0 | **3.7** |
 
 **So the leak grows with height and is smallest where the band's floor sits.**
-At the crown line it is under the 5 degree threshold and no verdict moves,
-which is why `netball_overhead_pass` ships on the substitute and says so beside
-its band. Above the crown the measure is impure, and **no band currently sits
+Near the crown line it is 3.7 degrees, under the 5 degree threshold, which is
+why `netball_overhead_pass` ships on the substitute and says so beside its band.
+
+Read that precisely rather than as "no verdict moves": the FLOOR ITSELF IS
+UNCERTAIN BY 3.7 DEGREES because of the fold, so a drill reading within 3.7 of
+its floor could fall either side depending on how the hands are placed. That is
+smaller than the measurement threshold, and no drill sits there — the overhead
+pass reads 107.7 against a floor of 91, a margin of 16.7. A future drill
+authored close to the floor would need the pure measure. Above the crown the measure is impure, and **no band currently sits
 there**, which is what makes this a row rather than a fault.
+
+**IT ALSO READS HAND PLACEMENT, at a completely fixed ball.** Found by the
+PR #60 reviewer and confirmed by the content lane on the same build. A grip
+`spreadDegrees` of 60 against 120 reads 102.13 against 113.67, an 11.5 degree
+spread. A ball radius of 8 against 14 cm reads 110.51 against 105.12, 5.4
+degrees.
+
+**That is safe for a technique file and would not be for a filmed athlete.** A
+technique fixes the grip and the ball, so every drill in this library is
+compared at one hand placement and the term cancels. A person filmed holding the
+same ball at the same height with her hands differently placed would read up to
+11.5 degrees apart on a checkpoint meant to be about height. Anyone pointing
+this measure at a capture should read this row first.
 
 **What a height measure would guard.** Discriminating height well above the
 crown: a lob, whose cue is "as high as arm can go" rather than "above your

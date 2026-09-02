@@ -83,11 +83,11 @@ those names.
 | `block` | A ball touched but not taken: a deflect, a tip | One |
 | `land` | Coming down, off one foot or two | One |
 | `shot` | Up at the ring | None yet |
-| `pass` | The ball leaving the hands. Also `chest-pass`, `shoulder-pass`, `lob`, `bounce-pass` | None yet |
+| `pass` | The ball leaving the hands. Also `chest-pass`, `shoulder-pass`, `lob`, `bounce-pass` | **Two**, and one of them the vocabulary cannot name |
 | `pivot` | Turning on a planted foot | None yet |
 | `jump` | Leaving the ground | None yet |
 
-The eight drills in the library map as follows.
+The ten drills in the library map as follows.
 
 | Movement | Class | Technique | Moment |
 |---|---|---|---|
@@ -99,6 +99,22 @@ The eight drills in the library map as follows.
 | `netball_hooks_outside_hand` | `catch` | `hooks-outside-hand` | `contact` |
 | `netball_deflect_high` | `block` | `deflect-high` | `contact` |
 | `netball_double_foot_landing` | `land` | `double-foot` | `land` |
+| `netball_chest_pass` | `pass` | `chest-pass` | `release` |
+| `netball_overhead_pass` | `pass` | `overhead-pass` | `release` |
+
+**`overhead-pass` IS NOT IN `RELEASE_KINDS` AND NO BOARD CAN SELECT IT.**
+That vocabulary lists `chest-pass`, `shoulder-pass`, `lob` and `bounce-pass`.
+The clip is exported anyway, deliberately: the engine may hold a technique the
+board cannot ask for, and a clip a person can watch is a better basis for the
+reconciliation than an argument about a list.
+
+The reconciliation is a coaching decision and a contract decision together, and
+it runs in both directions. The manual's pass family is overhead, 1 hand high,
+1 hand low wide, 1 hand wide, bounce, underarm, lob and fake; `RELEASE_KINDS`
+and the manual overlap on `lob` and `bounce-pass` alone. **`shoulder-pass` has
+ZERO occurrences in the manual**, and `overhead`, which the manual documents
+most fully and puts second in its syllabus, is absent from the vocabulary. It
+is on the coach agenda; refer to `docs/COACH_MORNING_2026-09.md`.
 
 ### The clip identifier
 
