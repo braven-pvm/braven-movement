@@ -57,6 +57,29 @@ def releasing_drills() -> list[str]:
     ]
 
 
+def authors_its_launch(movement_id: str) -> bool:
+    """Whether the drill says where its own pass goes.
+
+    A drill without this derives both the target and the speed from the
+    incoming flight, which is what everything in this file was written about.
+    A drill WITH it has no incoming flight to mirror, and the two classes are
+    measured differently below rather than averaged into one rule.
+    """
+    ball = MOVEMENTS / f"{movement_id}.ball.json"
+    if not ball.is_file():
+        return False
+    return "launch" in json.loads(ball.read_text(encoding="utf-8"))
+
+
+def deriving_releasing_drills() -> list[str]:
+    """Releasing drills whose return is derived from the pass that came in."""
+    return [
+        movement_id
+        for movement_id in releasing_drills()
+        if not authors_its_launch(movement_id)
+    ]
+
+
 class TheReturnIsMarkedProvisional(unittest.TestCase):
     """Reads authored files only, so it runs without the solver."""
 
@@ -64,18 +87,54 @@ class TheReturnIsMarkedProvisional(unittest.TestCase):
         """Guards the guard. With no releasing drill the rule below is empty."""
         self.assertTrue(releasing_drills(), "no drill releases the ball")
 
+    def test_the_deriving_restriction_excludes_something(self) -> None:
+        """The anti-hollow clause for `deriving_releasing_drills`.
+
+        Two tests in this file mirror the outgoing pass against the incoming
+        one, and a drill with no incoming pass cannot be measured that way. The
+        restriction that excludes those would become a silent no-op if the pass
+        family were removed, and the two tests would then be claiming to check
+        something they no longer reach. Both lists are asserted non-empty so
+        that either half disappearing is loud.
+        """
+        deriving = deriving_releasing_drills()
+        self.assertTrue(deriving, "no releasing drill derives its return")
+        authored = set(releasing_drills()) - set(deriving)
+        self.assertTrue(
+            authored,
+            "no releasing drill authors its launch, so the restriction in "
+            "deriving_releasing_drills excludes nothing and the two mirror "
+            "tests below are back to iterating every releasing drill",
+        )
+
     def test_every_releasing_drill_says_its_return_is_provisional(self) -> None:
+        """The rule is unchanged: a drill must say that where it sends the ball
+        is a reading no coach has confirmed. WHICH FIELD carries that sentence
+        depends on how the drill decides, so the check now reads the field that
+        applies instead of one field that used to be the only kind."""
         for movement_id in releasing_drills():
-            ball = MOVEMENTS / f"{movement_id}.ball.json"
-            note = json.loads(ball.read_text(encoding="utf-8")).get("returnNote", "")
-            with self.subTest(movement=movement_id):
-                self.assertIn(
-                    "PROVISIONAL",
-                    note,
-                    f"{movement_id} sends the ball back to the passer on a "
-                    "reading no coach has confirmed, and its ball file does "
-                    "not say so.",
-                )
+            ball = json.loads(
+                (MOVEMENTS / f"{movement_id}.ball.json").read_text(encoding="utf-8")
+            )
+            if authors_its_launch(movement_id):
+                # An authored launch states a target AND a speed, and both are
+                # choices a coach owns, so both must say so. This is stricter
+                # than the derived case, which has one note for both.
+                notes = {
+                    "launchTargetNote": ball.get("launchTargetNote", ""),
+                    "launchSpeedNote": ball.get("launchSpeedNote", ""),
+                }
+            else:
+                notes = {"returnNote": ball.get("returnNote", "")}
+            for field, note in notes.items():
+                with self.subTest(movement=movement_id, field=field):
+                    self.assertIn(
+                        "PROVISIONAL",
+                        note,
+                        f"{movement_id} decides where the ball goes on a "
+                        f"reading no coach has confirmed, and its {field} does "
+                        "not say so.",
+                    )
 
 
 @unittest.skipUnless(SOLVER, "needs pymomentum, which lives in the pixi environment")
@@ -111,7 +170,7 @@ class TheReturnMirrorsThePassItAnswers(unittest.TestCase):
         two ends: she releases from higher than the passer does, so the same
         corridor needs a flatter arc. Matching the total would be wrong.
         """
-        for movement_id in releasing_drills():
+        for movement_id in deriving_releasing_drills():
             flight = json.loads(
                 (MOVEMENTS / f"{movement_id}.ball.json").read_text(encoding="utf-8")
             )["flight"]
@@ -150,7 +209,7 @@ class TheReturnMirrorsThePassItAnswers(unittest.TestCase):
         flight before release, so on every one of these drills, whose passes
         leave after phase 0, the first frame is where the passer is holding it.
         """
-        for movement_id in releasing_drills():
+        for movement_id in deriving_releasing_drills():
             result = solve_movement(self.character, movement_id)
             frames = result["possession"].frames
             self.assertEqual(

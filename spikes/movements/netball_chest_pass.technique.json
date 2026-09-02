@@ -1,6 +1,6 @@
 {
   "movementId": "netball_chest_pass",
-  "source": "202526 Netball Coaches Manual, Passing, pages 79 to 83, Niel du Plessis and Erin Burger. The manual gives this pass no technique block; refer to the definition file's source and cueSourceNote.",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger, Passing section, page 79 to 83. The manual gives this pass no technique block; refer to the definition file's source and cueSourceNote.",
   "notes": "How the athlete sends the ball, rather than how she meets it. This is the first technique in the library with NO CATCH IN IT. She has the ball from frame 0, holds it at her chest through the step, drives it away and lets go at 0.80. Everything after that is follow-through and the ball is in flight.",
   "hands": "both",
   "turnToBall": false,
