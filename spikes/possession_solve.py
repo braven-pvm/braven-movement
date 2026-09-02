@@ -495,7 +495,18 @@ def solve_movement(
         "radiusCm": radius_cm,
         "armLengthCm": reach_cm,
         "identity": rest,
-        "secondsPerFrame": seconds / track.frames,
+        # THE SOLVER'S COST, not the animation timestep. It was called
+        # `secondsPerFrame` until 2026-09-02, which names both quantities and
+        # says which only by accident. The animation timestep is 1 over the
+        # track's own `frames_per_second`, which is 60 for every drill in this
+        # library; this is `time.perf_counter()` over the frame count, it
+        # differs from that timestep by more than a factor of two, and it
+        # changes between runs because it measures how busy the machine was.
+        # Dividing an angle by it produced "degrees per second of computer
+        # time" twice, and both readings reached documents before they were
+        # caught. Refer to "A field called secondsPerFrame holds the solver's
+        # cost" in docs/KNOWN_ISSUES.md.
+        "solveSecondsPerFrame": seconds / track.frames,
         "turnedByDegrees": round(turned_by, 2),
         "turns": turns,
     }
@@ -568,7 +579,7 @@ def build(character, movement_id: str, variant: str | None = None) -> dict:
             for name in pinned_parameters(character, result["motion"][number])
             if any(k in name for k in ("uparm", "lowarm", "elbow", "wrist"))
         ],
-        "secondsPerFrame": round(result["secondsPerFrame"], 4),
+        "solveSecondsPerFrame": round(result["solveSecondsPerFrame"], 4),
         "coaching": assessment.to_receipt(),
         "measurement": {"perFrame": measurements},
     }
@@ -622,7 +633,7 @@ def main(argv: list[str]) -> int:
             "  largest step between frames: "
             + ", ".join(f"{k} {v:.1f} deg" for k, v in worst)
         )
-        print(f"  {report['secondsPerFrame'] * 1000:.1f} ms per frame")
+        print(f"  {report['solveSecondsPerFrame'] * 1000:.1f} ms per frame")
         if report["ranOutOf"]:
             print("  ran out of: " + ", ".join(report["ranOutOf"]))
     return 1 if failed else 0
