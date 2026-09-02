@@ -181,9 +181,30 @@ Honest list of where we stand today.
 - **N4 is untested.** Nobody outside this work has produced a drill.
 - **R2 is partial.** The library reports checkpoint results, but a figure does
   not carry them.
-- **Two anatomy defects remain open.** The elbows sit 27.3 cm apart against
-  38.6 cm in the reference photographs. And `netball_hooks_outside_hand`
-  exceeds a joint limit on one frame by 0.715 degrees.
+- **Two anatomy defects remain open**, and BOTH FIGURES BELOW WERE STALE until
+  2026-09-02. Re-measured on `ac240b2`; the earlier readings are kept beside
+  them because the direction each moved is itself worth knowing.
+
+  - **The elbows.** They sit **36.40 cm** apart on the six drills that put both
+    hands on the ball, against 38.6 cm in the reference photographs: a gap of
+    2.20 cm. This entry said 27.3 cm, which is a gap of 11.3, and that figure
+    predates the elbow pole becoming an angle. The defect is FOUR TIMES SMALLER
+    than this document has been claiming. Refer to
+    `docs/COACH_MORNING_2026-09.md` item 2, which also records that the
+    one-handed drills must not be averaged into this figure.
+  - **The joint limit.** `netball_hooks_outside_hand` exceeds a limit on
+    **98 of its 98 frames, worst 2.3355 degrees on `l_clavicle_rx`**. This
+    entry said one frame at 0.715 degrees. The defect is far larger and far
+    more widespread than recorded, in both extent and magnitude.
+
+    **The mirror fix did not cause it.** Measured across that change, the same
+    drill breached 98 of 98 frames before it, worst 0.4990 degrees on
+    `l_clavicle_rz`. So the breach is older than the fix, and the fix made the
+    worst overshoot 4.7 times larger and moved it to a different axis. No other
+    drill in the library breaches at all.
+
+    **Nothing in the test suite reads this.** `check_joint_limits.py` is a
+    separate task; it exits 1 today while the suite passes 564 tests.
 
 ## 9. Roadmap
 

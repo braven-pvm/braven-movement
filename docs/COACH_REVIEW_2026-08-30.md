@@ -1,5 +1,32 @@
 # The first coach review, and what the instruments say about it
 
+> **THE ENGINE FIGURES IN THIS DOCUMENT WERE READ ON THE BUILD OF 2026-08-30,
+> and that build is three fixes behind `ac240b2`.** The pole basis, the free
+> hand and the hand mirror have all landed since, and each moved graded values.
+>
+> The document is NOT rewritten. Erin's marks, her words and the analysis of
+> them are a record of a real event and stay exactly as they were. What was
+> missing is the build they were read against, and that is what this note adds.
+>
+> **A sample was re-checked on `ac240b2`.** Seven rows in this document quote a
+> drill, a phase, a measure and a value, which is enough to re-measure. ALL
+> SEVEN MOVED, by 0.02 to 0.47 degrees:
+>
+> | drill / phase / measure | here | on `ac240b2` |
+> |---|---|---|
+> | `deflect_high` contact left elbow | 98.60 | 98.51 |
+> | `two_hand_catch_chest` pull_in trunk lean | 2.00 | 1.97 |
+> | `two_hand_snatch_pull_in` contact left elbow | 75.78 | 76.18 |
+> | `two_hand_snatch_pull_in` contact right elbow | 75.78 | 76.20 |
+> | `two_hand_snatch_straight_back` control trunk lean | 2.00 | 2.03 |
+> | `two_hand_snatch_straight_back` return left shoulder | 79.03 | 79.01 |
+> | `hooks_jump_pull_in` contact left elbow | 77.52 | 77.99 |
+>
+> None of those moves changes a verdict or an argument in this document. They
+> are small, and they are UNIVERSAL: not one of the seven was unchanged. Treat
+> every other engine figure here the same way — true when read, and not to be
+> quoted as current without re-measuring.
+
 Erin Burger graded the library blind. Her review is stamped
 2026-08-28T10:07:03Z, which is the morning the video spike shipped. This
 document analyses it on 2026-08-30. An earlier draft gave the 30th as the date
