@@ -260,6 +260,11 @@ front of the shoulder to behind it, while the wrist moved 0.2 cm and the ball di
 not move at all. Refer to that drill's `pullBackNote`, and to
 `docs/CLAVICLE_ARTEFACT.md` for the same shape in another drill.
 
+**THAT FLIP IS ONE OF SEVERAL.** The paragraph above describes it as the
+failure, which was what a four-point sweep could see. Refer to "The overhead
+pull-back has no boundary" below: the verdict crosses back and forth across the
+range, and this crossing is real but not the only one.
+
 **So the manual's own warning has NO instrument on either pass**, and an angle
 cannot stand in for it. The cue is a DISTANCE and the engine grades ANGLES. Both
 rows here are the same shape: the manual cues lengths, and a length needs a
@@ -1744,6 +1749,200 @@ The winding remains a true DESCRIPTION of that basin's parameters and it is
 kept in `docs/CLAVICLE_ARTEFACT.md` as such. It is not evidence of a bad pose.
 
 
+## The overhead pull-back has no boundary, and the checkpoint was right to go
+
+`netball_overhead_pass`'s pull-back checkpoint was deleted in `1fed5a1` for
+firing on a solver basin rather than on its cue. **The deletion was right and
+this entry makes it more right, not less.** What is corrected is the shape of
+the thing it fired on.
+
+That commit reports one boundary: "across 26.8 to 27.2 cm the elbow's z goes
+from +8.5 to −12.0". **That boundary is real. It is one of several, and the
+verdict crosses back and forth between them.**
+
+A first version of this entry said "there is no boundary". That was too strong
+and is withdrawn: refined far enough, each crossing resolves into a single
+clean edge. What is wrong is treating the sweep as having ONE.
+
+**TWO BUILDS APPEAR BELOW AND EACH TABLE NAMES ITS OWN.** The wide sweeps were
+measured on `32663a9`. The narrow-window sweep, the leg-and-arm table and the
+guard's readings were re-measured on `1da8843` after the review, and the
+lower-body figures are NOT interchangeable between the two — refer to "the
+solve is not noisy within a build" below.
+
+Everything uses the removed checkpoint's own measure
+(`leftShoulderElevationDegrees`), its own band (91 to 135) and its own graded
+frame (55), with the carry `step` key swept in even increments of 0.03 torso
+lengths unless a table says otherwise. **At 0 cm this reads 107.29, which is that commit's own figure to the
+decimal, so the two setups are the same setup.**
+
+| ball back, cm | 0.0 | 15.5 | 20.2 | 23.3 | **24.8** | **26.4** | **28.0** | **29.5** | **31.1** |
+|---|---|---|---|---|---|---|---|---|---|
+| left shoulder elevation | 107.29 | 110.26 | 116.87 | 111.51 | **162.59** | **127.74** | **162.75** | **120.48** | **162.95** |
+| verdict against 91–135 | within | within | within | within | **FAILS** | **within** | **FAILS** | **within** | **FAILS** |
+
+**THE INPUT.** The technique's `afterContact` `step` key had its `ahead`
+lowered in equal increments of 0.03 torso lengths, which is the same key and
+the same direction that commit swept. Every other field was left alone.
+
+**IT FAILS AT 24.8 CM AND PASSES AGAIN AT 26.4.** A sweep that samples 24.0 and
+26.0 finds both within the band and puts the edge past them. The four samples
+that commit took are each true, and the boundary drawn between them is not
+there.
+
+### Refinement alone does not discriminate. Joint continuity does.
+
+Halving the increment across the region that looked like one boundary does not
+turn it into a ramp:
+
+| ball back, cm | 24.1 | 24.8 | 25.6 | 26.4 | 27.2 | 27.9 | 28.7 |
+|---|---|---|---|---|---|---|---|
+| left shoulder elevation | 123.00 | **162.59** | 126.00 | 127.62 | **162.71** | **162.75** | 119.17 |
+| verdict | within | **FAILS** | within | within | **FAILS** | **FAILS** | within |
+
+**BUT THAT IS NOT A TEST, AND A FIRST VERSION OF THIS ENTRY OFFERED IT AS ONE.**
+Halving the spacing over the same WIDE window only samples the same field of
+crossings more finely. Narrow the window instead — 0.10 cm steps across one
+crossing — and it resolves completely:
+
+| ball back, cm | 23.95 | 24.05 | 24.15 | 24.26 | 24.36 | **24.47** | 24.57 | 24.67 |
+|---|---|---|---|---|---|---|---|---|
+| left shoulder elevation | 112.30 | 123.00 | 123.19 | 123.37 | 123.56 | **162.57** | 162.58 | 161.28 |
+| largest joint move, cm | — | 24.08 | 1.45 | 3.97 | 4.29 | **28.24** | 1.67 | 22.13 |
+
+**One clean edge, between 24.36 and 24.47.** So refinement resolves the field
+into individual edges and says nothing about what KIND of edge each one is.
+
+**THE DISCRIMINATOR IS JOINT CONTINUITY AT THE CROSSING.** At that edge
+`r_lowarm` moves **28.24 cm** for one increment of 0.10 cm of ball travel. On
+`1fed5a1`'s follow-through ramp — the case that resolved into smooth motion —
+the joint moves stay at or under 8.5 cm. **A forty-degree measure step beside a
+twenty-eight centimetre forearm jump is a basin; the same measure step beside a
+continuous pose is an edge.** Refinement is what lets you look. The joints are
+what you look at.
+
+### The legs move, and the graded arm measure cannot see it
+
+**The statistic is the largest move of a single joint between one increment and
+the next, at frame 55, split into leg joints and arm joints.** Leg joints are
+the `upleg`, `lowleg`, `foot`, `ball` and `toe` chains; arm joints are
+`uparm`, `lowarm`, `wrist`, `clavicle` and `scapula`. Measured on `1da8843`.
+
+| ball back, cm | worst LEG joint move | worst ARM joint move | left shoulder elevation | its step |
+|---|---|---|---|---|
+| 0.00 | — | — | 107.29 | — |
+| 1.54 | 0.63 `l_lowleg` | 1.32 `r_wrist_twist` | 107.68 | +0.39 |
+| 3.10 | 2.79 `r_lowleg` | 1.33 `r_wrist_twist` | 108.13 | +0.45 |
+| 4.65 | 0.65 `l_upleg` | 1.45 `r_lowarm` | 108.60 | +0.47 |
+| 6.20 | 4.15 `l_upleg` | 1.32 `l_wrist_twist` | 108.68 | +0.08 |
+| **7.76** | **17.50 `l_lowleg`** | 1.31 `l_wrist_twist` | 108.68 | **+0.00** |
+| 9.31 | 2.10 `l_lowleg` | 1.29 `l_wrist_twist` | 108.83 | +0.15 |
+
+**The arm joints move between 1.29 and 1.45 cm at every increment, steadily.
+The leg joints move 0.63 to 17.50.** At 7.76 cm a single leg joint moves 17.50
+cm while the graded shoulder measure moves **0.00**.
+
+**A CLAIM WITHDRAWN.** A first version of this section said the knees exchange
+which is the more bent at that step, and gave figures for it. Those figures
+came from a different run on a different tip and they do not reproduce here:
+this build's knees move 66.07 and 53.14 to 62.32 and 57.43 at that increment,
+which is toward each other rather than an exchange. **The exchange is real
+elsewhere in the sweep and its position is not stable between builds**, so it
+is not quoted with a step number. What survives is the row above, which does
+not depend on it.
+
+So one drill carries two independent instabilities at one phase: the arm's two
+families, which the deleted checkpoint fired on, and the leg mirror, which
+nothing grades there and which moves first.
+
+**THE PULL-BACK KEY REACHES THE LEGS BEFORE IT REACHES THE ARMS.** The input is
+a ball position for her hands. The first thing it moves is her stance.
+
+### The drill grades that knee, and the grade never notices
+
+`netball_overhead_pass` has a checkpoint on `leftKneeFlexionDegrees` at phase
+0.58 — the same phase — with a band of 35 to 85. Across the whole pull-back
+sweep:
+
+| ball back, cm | 0.0 | 3.1 | **6.2** | 9.3 | 18.6 | 24.8 | 31.1 |
+|---|---|---|---|---|---|---|---|
+| left knee | 57.67 | 57.91 | **66.07** | 62.22 | 54.26 | 64.17 | 63.55 |
+| right knee | 63.77 | 63.39 | **53.14** | 56.78 | 59.47 | 59.34 | 59.16 |
+| verdict against 35–85 | within | within | **within** | within | within | within | within |
+
+**NO VERDICT EVER CHANGES.** The left knee wanders from 54.26 to 66.07 — the
+knees exchange which is the more bent at 6.2 cm — and the band is wide enough
+that every one of those is "Good". A coach shown 66.07 at the step could
+equally have been shown 54.26, chosen by a 1.5 cm difference in an authored
+ball position, with the same verdict beside it either way.
+
+**THE LEFT-RIGHT KNEE GUARD DOES NOTICE**, and it was run rather than reasoned
+about. **The guard reads the WHOLE-DRILL worst gap, not the gap at the graded
+frame**, which a first version of this section got wrong by quoting 12.93 at
+frame 55. Measured on `1da8843`:
+
+| ball back, cm | whole-drill worst gap | at frame | gap at frame 55 | against the 7.27 ceiling |
+|---|---|---|---|---|
+| 0.00 | 6.27 | 37 | 6.10 | green |
+| 1.54 | 6.33 | 59 | 5.90 | green |
+| 6.15 | **19.31** | **23** | 12.93 | **RED** |
+| 7.69 | **19.32** | **24** | 4.89 | **RED** |
+
+`test_no_even_drill_solves_more_crookedly_than_it_did` goes red from 6.15 cm of
+pull-back, on 19.31 degrees at **frame 23** — a frame nothing grades — in a
+drill whose own graded knee at frame 55 reads 4.89 and "Good" at the very same
+input. **The guard reads the DIFFERENCE, over the whole clip, and that is what
+lets it see this.**
+
+### What this adds to the sweep method
+
+`1fed5a1` established that method and already warns that **a coarse sweep can
+imitate a basin**, having caught its own follow-through sweep doing exactly
+that. Two things go beside it:
+
+- **A coarse sweep can also imitate a single BOUNDARY where there are many.**
+  Three points cannot establish an edge. What lies between the samples is not
+  known, and here it alternates.
+- **A sweep must watch joints it is not grading.** The earliest and one of the
+  largest discontinuities here is invisible to every measure the checkpoint
+  reads.
+- **A suspected crossing must be RESAMPLED IN A NARROW WINDOW, and then judged
+  on its JOINTS.** Refining the spacing over a wide window only samples the
+  same field more finely. Narrowing the window resolves one edge; whether that
+  edge is a basin is answered by whether the pose moves continuously across
+  it.
+
+**A DIFFERENT KEY ON THIS SAME DRILL BEHAVES DIFFERENTLY**, which is why a
+sweep must name its key as well as its spacing. Under the lateral-asymmetry
+sweep used for the left-right knee guard, `netball_overhead_pass` is piecewise
+continuous with a single crossing. Under the pull-back key it alternates. One
+drill, two inputs, two answers.
+
+**THE SOLVE IS NOT NOISY WITHIN A BUILD.** Two adjacent inputs 1.5 cm apart
+that land in opposite families each reproduce exactly across three runs, to
+every decimal place. The alternation is a property of the solver's dependence
+on its input and not of the run.
+
+**IT IS NOT STABLE ACROSS BUILDS, AND THAT CAUGHT THIS ENTRY OUT.** The same
+input gave mirrored knees on two different tips while this branch was open —
+57.42 and 62.38 on one, 62.32 and 57.43 on the other. **So every reading here
+names its build, and a figure quoted without one is not reproducible.**
+
+What was probed and NOT found: an input step small enough to flip the mirror on
+its own. Signed left-minus-right at frame 55, on `1da8843`, at steps of 0.051,
+0.005, 0.0005 and 0.00005 cm, reads −6.04, −6.10, −6.05 and −6.07 against a
+baseline of −6.10, with the pelvis line at −15.6 throughout. **No flip at any
+of those sizes on this drill**, so the across-build difference is a build
+difference and is not demonstrated to be input sensitivity.
+
+### What is NOT claimed
+
+That the arm's second family is wrong. Elevation near 163 with the elbow behind
+the shoulder is the pose the manual warns against, and reaching it for a large
+pull-back is correct. **The fault is that it is reached for SOME pull-backs and
+not for larger ones.** Why is the same open question as the lower body's, and
+constraining the solve is NOT proposed here.
+
 ## The lower body has no stable solution
 
 Added 2026-09-02. A pelvis pin was built for this and WITHDRAWN before it
@@ -2017,13 +2216,39 @@ and every increment moves some joint by 4.5 to 8.0 cm. An independent run at a
 step of 0.0005 arm lengths — about 0.03 cm — flips the basin and moves a leg
 joint 6 to 10 cm, so no increment is small enough to be safe.
 
-**THE CLAIM IS LIMITED TO THE DRILLS MEASURED, AND THEY DISAGREE.** Under this
-same lateral sweep `netball_overhead_pass` is piecewise continuous with ONE
-crossing and joint moves of 1.2 to 2.0 cm inside the basin, and
-`netball_bounce_pass` gives knee gaps spanning 0.52 degrees where
-`two_hand_catch_chest` spans 1.80 to 7.05. **So the instability is not uniform
-across the library**, and where it lives belongs to the open question rather
-than being settled here.
+**THE CLAIM IS LIMITED TO THE DRILLS MEASURED, AND ONE OF THEM DISAGREES.**
+Under this same lateral sweep `netball_overhead_pass` is piecewise continuous
+with ONE crossing and joint moves of 1.2 to 2.0 cm inside the basin. **So the
+instability is not uniform across the library**, and where it lives belongs to
+the open question rather than being settled here.
+
+**A CORRECTION, AND IT IS ABOUT COMPARING TWO LEVERS AS THOUGH THEY WERE ONE.**
+A first version of this paragraph said `netball_bounce_pass` spans 0.52 degrees
+against `two_hand_catch_chest`'s 1.80 to 7.05, and offered it as a second drill
+that is stable. **The two figures came from different sweeps.**
+
+| | lever | spacing | read at |
+|---|---|---|---|
+| this entry's sweep | `root_across` on EVERY motion key | 0.01 arm lengths | frame 0 |
+| the 0.52 figure | the technique's `pull_to_side.across`, ONE key | 0.24 to 0.29 | frame 30 |
+
+Under THIS entry's lever `netball_bounce_pass` reads 2.09, 3.72, 4.12, 0.21,
+0.61, 5.77 — a span of **5.56 degrees** with joint jumps of 7.29 and 8.31 cm.
+**It oscillates like `two_hand_catch_chest` and is not a stable case at all.**
+
+**THOSE SIX FIGURES ARE RELAYED, NOT MEASURED HERE.** `netball_bounce_pass` is
+not in this branch's tree, so this lane cannot reproduce them and does not
+claim to have. They come from the bounce pass's own review. **They also do not
+say which frame the gap was read at**, and this entry's own readings are at
+frame 0 while the guard's are whole-drill — two different statistics that the
+0.52 confusion above should have taught. Treat the span as an indication that
+the bounce pass is NOT a stable counter-example, which is all it is used for
+here, and not as a measurement of this library.
+
+So the root-step lever oscillates on every drill it has been run on except the
+overhead, and a figure from a different lever says nothing about it. That is
+the rule this file already states, met again: **a sweep must name its key**, and
+two spans are not comparable until they do.
 
 A DIFFERENT SWEEP OF THE SAME DRILL BEHAVES DIFFERENTLY AGAIN, which is why a
 sweep must name its key. Refer to "The overhead pull-back has no boundary": the
