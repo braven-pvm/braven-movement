@@ -125,6 +125,27 @@ class CarriesNoSideTest(unittest.TestCase):
         self.assertFalse(method.carries_no_side(), "its technique carries across")
         self.assertFalse(movement_carries_no_side(track, ball, method))
 
+    def test_the_answer_is_about_the_BALL_it_was_given(self):
+        """The docstring's claim, asserted rather than described.
+
+        `netball_two_hand_snatch_pull_in` is even on its plain ball and its
+        `wide` ball arrives 0.60 arm lengths to her left. The knee guard passes
+        the plain ball and solves the plain ball, so its population and its
+        measurements agree — but nothing about that is automatic, and this
+        fails the day someone passes a variant expecting the same answer.
+        """
+        movement_id = "netball_two_hand_snatch_pull_in"
+        track = load_motion(MOVEMENT_DIR / f"{movement_id}.motion.json")
+        method = load_technique(technique_path(movement_id))
+        plain = load_ball(ball_path(movement_id))
+        wide = load_ball(ball_path(movement_id, "wide"))
+
+        self.assertTrue(movement_carries_no_side(track, plain, method))
+        self.assertFalse(
+            movement_carries_no_side(track, wide, method),
+            "a ball 0.60 across is a one-sided demand however even the keys are",
+        )
+
     def test_a_missing_file_is_not_evidence_of_evenness(self):
         track, ball, method = self.parts(self.EVEN)
 
