@@ -35,6 +35,7 @@ import unittest
 from pathlib import Path
 
 from ball_track import BALL_SUFFIX, MOVEMENT_DIR, load_ball
+from technique import has_technique, load_technique, technique_path
 
 # Guarded exactly as the other solver tests are: the module must LOAD on a
 # runner without pymomentum, and skip there.
@@ -67,6 +68,40 @@ def authored_launch_movements() -> list[str]:
             continue
         found.append(stem)
     return found
+
+
+def possession_movements() -> list[str]:
+    """Every drill the possession model solves, read from the files.
+
+    Deliberately wider than `authored_launch_movements`. The guard below is
+    about drills that FORGOT a launch, so it cannot start from the ones that
+    have one.
+    """
+    found = []
+    for path in sorted(MOVEMENT_DIR.glob("*" + BALL_SUFFIX)):
+        stem = path.name[: -len(BALL_SUFFIX)]
+        if "." in stem:  # a variant ball, not its own movement
+            continue
+        if not has_technique(stem):
+            continue
+        if not load_technique(technique_path(stem)).possession_ready:
+            continue
+        found.append(stem)
+    return found
+
+
+def ever_in_flight(states: list[str]) -> bool:
+    """Whether the ball is ever a thing in the air in this drill.
+
+    READ FROM THE SOLVE, not computed from the file, and the difference is not
+    pedantry. `BallTrack.state_at` calls a phase "flight" whenever it lies
+    between release and arrival, so on the chest pass, whose arrival is 0.02
+    over 96 frames, the TRACK calls frames 0 and 1 flight. The SOLVE calls
+    neither, because contact resolves to frame 0 and possession transfers
+    there. The solved state is the thing the drill actually lacks, and the
+    arithmetic on the file disagrees with it.
+    """
+    return "flight" in states
 
 
 def flight_frames_before_she_has_it(states: list[str]) -> int | None:
@@ -124,6 +159,78 @@ class ADrillThatStartsWithTheBallNeverFliesIt(unittest.TestCase):
 
 
 @unittest.skipUnless(SOLVER, "needs pymomentum, which lives in the pixi environment")
+class ADrillWithNoFlightMustSayWhereItsPassGoes(unittest.TestCase):
+    """The other half, and the other failure mode.
+
+    The guard above catches a pass that INVENTS a flight. This one catches a
+    pass that is authored honestly and then forgets to say where the ball goes.
+    Without a launch the engine DERIVES the throw from the incoming flight, and
+    a drill with no incoming flight has nothing to derive from. Both outcomes
+    are silent and both are wrong, measured on the chest pass's own geometry:
+
+        honest keys, both in her hands, no launch -> [0, 0, 0], 0.00 m/s.
+            The ball stops dead in her hands and hangs in mid air.
+        the same keys nudged 0.05 apart, no launch -> 0.84 m/s backwards.
+            A distance that small over 0.02 of a phase is not a throw.
+
+    Against the 6.00 m/s the library authors its passes at. Neither raises.
+
+    This class needs a solver and therefore SKIPS on the hosted runner. That is
+    stated rather than left implied: on CI these two rules are unchecked, and
+    the file-level half of the question cannot stand in for them, because
+    `ever_in_flight` explains why the arithmetic on the file disagrees with the
+    solve on exactly the drill this guards.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.character = load_character()
+
+    def test_the_library_has_both_kinds(self) -> None:
+        """The anti-hollow clause. A rule about drills with no flight is a
+        comment while every drill has one, and it would pass forever."""
+        movements = possession_movements()
+        self.assertTrue(movements, "no drill is solved by the possession model")
+        states = {
+            movement_id: [
+                frame["ballState"]
+                for frame in solve_movement(self.character, movement_id)["measurements"]
+            ]
+            for movement_id in movements
+        }
+        without = [m for m, s in states.items() if not ever_in_flight(s)]
+        self.assertTrue(
+            without,
+            "every drill has a flight, so the rule below reaches nothing. If "
+            "the pass family is gone, delete this class; if a pass is present "
+            "and its ball is flying, that is the other guard's fault.",
+        )
+        self.assertTrue(
+            [m for m, s in states.items() if ever_in_flight(s)],
+            "no drill has a flight at all, which is not a library of catches",
+        )
+
+    def test_a_drill_whose_ball_never_flies_authors_its_launch(self) -> None:
+        for movement_id in possession_movements():
+            states = [
+                frame["ballState"]
+                for frame in solve_movement(self.character, movement_id)["measurements"]
+            ]
+            if ever_in_flight(states):
+                continue
+            with self.subTest(movement=movement_id):
+                self.assertIsNotNone(
+                    load_ball(MOVEMENT_DIR / f"{movement_id}{BALL_SUFFIX}").launch,
+                    f"{movement_id}'s ball never enters a flight state, so it "
+                    "starts with the ball, and it does not author a launch. "
+                    "The engine will derive the throw from an incoming flight "
+                    "that never happened: the ball stops dead in her hands, or "
+                    "leaves at a speed the gap between two keys invented. "
+                    "Author a launch with a target and a speed.",
+                )
+
+
+@unittest.skipUnless(SOLVER, "needs pymomentum, which lives in the pixi environment")
 class TheGuardCanFail(unittest.TestCase):
     """A guard is not done until a mutation has failed it.
 
@@ -174,6 +281,38 @@ class TheGuardCanFail(unittest.TestCase):
         """Half the guard is the list. A mutation the list misses is not
         caught however good the assertion is."""
         self.assertIn(self.PROBE, authored_launch_movements())
+
+    def test_a_pass_with_its_launch_removed_is_caught(self) -> None:
+        """The mutation for the SECOND guard, and the fixture is the real
+        file with one key deleted.
+
+        `setUp` has already planted a mutant, so this rewrites its ball with
+        the honest keys and no `launch`. That is a drill whose ball never
+        flies and which does not say where its pass goes, which is exactly
+        what `test_a_drill_whose_ball_never_flies_authors_its_launch` refuses.
+        """
+        honest = json.loads(
+            (MOVEMENT_DIR / f"{self.SOURCE}{BALL_SUFFIX}").read_text(encoding="utf-8")
+        )
+        honest["movementId"] = self.PROBE
+        del honest["launch"]
+        (MOVEMENT_DIR / f"{self.PROBE}{BALL_SUFFIX}").write_text(
+            json.dumps(honest), encoding="utf-8"
+        )
+
+        self.assertIn(self.PROBE, possession_movements())
+        states = [
+            frame["ballState"]
+            for frame in solve_movement(self.character, self.PROBE)["measurements"]
+        ]
+        self.assertFalse(
+            ever_in_flight(states),
+            "the fixture's ball flies, so it is not the case this guards",
+        )
+        self.assertIsNone(
+            load_ball(MOVEMENT_DIR / f"{self.PROBE}{BALL_SUFFIX}").launch,
+            "the fixture still authors a launch, so it cannot fail the guard",
+        )
 
     def test_the_mutant_shows_the_flight_the_guard_refuses(self) -> None:
         result = solve_movement(self.character, self.PROBE)
