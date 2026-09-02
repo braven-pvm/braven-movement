@@ -2150,8 +2150,9 @@ that, and no change to the carry is proposed.
 word `variant`, and `CLASSES` in `clip_geometry.py` is keyed by movement alone,
 so three of them reach neither the library nor a clip.
 
-Measured on `2215713`. **No code changes with this entry.** It is the
-measurement a proposal needs, and the proposal's open questions are at the end.
+Measured on `2215713`, and the library side is built on it below. The
+measurement came first and the proposal's questions are answered where the
+evidence answers them and left open where it does not.
 
 ### What the variants are
 
@@ -2183,13 +2184,23 @@ checkpoints, all four balls:**
 | pull_in / left shoulder | 0–50 | 20.03 | 20.03 | 20.03 | 20.03 | **0.00** |
 | pull_in / left knee | 25–75 | 53.21 | 52.71 | 53.12 | 54.34 | 1.63 |
 
-**FORTY-THREE OF THE FORTY-FOUR READINGS ARE WITHIN BAND.** Eight of the eleven
-checkpoints move by 0.02 degrees or less across a ball that moves 0.78 arm
-lengths in height and 0.60 across. **The three that move are all at CONTACT**,
-which is the one phase where the ball's position IS the pose.
+**FORTY-THREE OF THE FORTY-FOUR READINGS ARE WITHIN BAND.** **SEVEN** of the
+eleven checkpoints move by 0.02 degrees or less and an eighth, `pull_in`'s left
+knee, moves 1.63 — across a ball that moves 0.78 arm lengths in height and 0.60
+across. **The three that move meaningfully are all at CONTACT**, which is the
+one phase where the ball's position IS the pose.
 
-So the variants do not test the technique. They test the contact, and the
-technique behind it holds still.
+A first version of this said eight move by 0.02 or less, which its own table
+above refutes.
+
+So the variants do not test the GRADED technique. They test the contact, and
+what the checkpoints read behind it holds still.
+
+**THE WHOLE POSE DOES NOT.** The `wide` ball turns the athlete **45.97
+degrees** where the other three turn 0.0, and **nothing grades a turn**. So
+"the technique holds still" is a statement about the eleven checkpoints and not
+about her body, and the difference is exactly the kind this file exists to
+name.
 
 ### The single miss is 0.05 degrees
 
@@ -2206,8 +2217,8 @@ a failure on its own.**
 
 ### What was built on that measurement
 
-**A variant is the SAME checkpoints to the grader**, because eight of eleven do
-not move at all. Per-variant bands would be numbers invented for a difference
+**A variant is the SAME checkpoints to the grader**, because seven of eleven do
+not move at all and an eighth moves 1.63 degrees. Per-variant bands would be numbers invented for a difference
 that is not there, and at contact the existing bands already hold all four
 balls.
 
@@ -2228,6 +2239,14 @@ what the ball changes on netball_two_hand_snatch_pull_in, in degrees:
 **THE LOW BALL IS GRADED AS IT READS: 10 of 11.** A miss by 0.05 degrees is a
 miss, and the receipt says so. This entry is why it carries no verdict about
 the athlete.
+
+**THE INDEX PUBLISHES `symmetric: false` FOR THE WIDE BALL** beside three
+`true` rows on the same drill, and that is right rather than odd: the wide
+ball arrives 0.60 arm lengths to her left, which is a one-sided demand however
+even the keys are. It is the same reading the left-right knee guard's
+population uses, applied to a variant. **That guard measures the PLAIN ball
+only** — `test_waiting_hand.py` passes no variant to either the population or
+the solve — so a variant's evenness is published and not measured.
 
 ### For the coach agenda
 

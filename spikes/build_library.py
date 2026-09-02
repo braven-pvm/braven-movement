@@ -83,13 +83,17 @@ def build_one(character, movement_id: str, variant: str | None = None) -> dict:
 
     A VARIANT IS THE SAME MOVEMENT WITH A DIFFERENT BALL, and it is graded
     against the same checkpoints. That is not a convenience: measured across
-    `netball_two_hand_snatch_pull_in`'s four balls, eight of its eleven
-    checkpoints move by 0.02 degrees or less, over a ball that moves 0.78 arm
-    lengths in height and 0.60 across. The three that move are all at CONTACT,
-    which is the one phase where the ball's position IS the pose. So the
-    technique does not change with the ball, which is what `solve_movement`
-    claims, and per-variant bands would be inventing numbers for a difference
-    that is not there. Refer to "Three solvable balls are invisible to the
+    `netball_two_hand_snatch_pull_in`'s four balls, SEVEN of its eleven
+    checkpoints move by 0.02 degrees or less and an eighth moves 1.63, over a
+    ball that moves 0.78 arm lengths in height and 0.60 across. The three that
+    move meaningfully are all at CONTACT, which is the one phase where the
+    ball's position IS the pose. So the GRADED technique does not change with
+    the ball, and per-variant bands would be inventing numbers for a difference
+    that is not there.
+
+    THAT IS A CLAIM ABOUT THE CHECKPOINTS AND NOT ABOUT THE WHOLE POSE. The
+    `wide` ball turns the athlete 45.97 degrees where the other three turn 0.0,
+    and nothing grades a turn. Refer to "Three solvable balls are invisible to the
     library" in docs/KNOWN_ISSUES.md.
     """
     track = load_motion(motion_path(movement_id))

@@ -13,6 +13,7 @@ balls are invisible to the library" in docs/KNOWN_ISSUES.md.
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -45,25 +46,54 @@ class BallsAreFoundWithoutTheSolver(unittest.TestCase):
 class AVariantIsReceiptedUnderTheSameCheckpoints(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        from build_library import build_one
+        import build_library
         from movement_engine import load_character
 
+        # A TEST MUST NOT WRITE INTO THE LIBRARY IT IS TESTING. `build_one`
+        # writes a receipt and a GLB to `OUTPUT` on every call, so running
+        # this against the real directory left two receipts under the test's
+        # own stamp and `archive_receipts` then refused the directory as two
+        # builds. The module global is redirected for the duration.
+        cls._output = tempfile.TemporaryDirectory()
+        cls._real_output = build_library.OUTPUT
+        build_library.OUTPUT = Path(cls._output.name)
+
         character = load_character()
-        cls.plain = build_one(character, WITH_VARIANTS, None)
-        cls.high = build_one(character, WITH_VARIANTS, "high")
+        cls.plain = build_library.build_one(character, WITH_VARIANTS, None)
+        cls.high = build_library.build_one(character, WITH_VARIANTS, "high")
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        import build_library
+
+        build_library.OUTPUT = cls._real_output
+        cls._output.cleanup()
+
+    def test_the_receipts_were_written_somewhere_temporary(self):
+        """Guards the guard above. If the redirect stops working, this fails
+        rather than the library quietly gaining two files again."""
+        import build_library
+
+        self.assertNotEqual(Path(self._output.name), self._real_output)
+        self.assertTrue(
+            (Path(self._output.name) / f"{WITH_VARIANTS}.high.json").is_file(),
+            "the redirect must still be the place build_one writes",
+        )
+        self.assertEqual(build_library.OUTPUT, Path(self._output.name))
 
     def test_a_receipt_names_the_ball_it_was_solved_against(self):
         """Without this a variant receipt is indistinguishable from the plain
         one, which is how three of them went unnoticed."""
-        self.assertIsNone(self.plain["variant"])
-        self.assertEqual(self.high["variant"], "high")
+        self.assertIsNone(self.plain.get("variant"))
+        self.assertEqual(self.high.get("variant"), "high")
 
     def test_both_are_graded_against_the_same_checkpoints(self):
         """THE RULING THIS IMPLEMENTS. No per-variant bands.
 
-        Eight of the eleven move by 0.02 degrees or less across a ball that
-        moves 0.78 arm lengths in height, so a separate band would be a number
-        invented for a difference that is not there.
+        Seven of the eleven move by 0.02 degrees or less and an eighth moves
+        1.63, across a ball that moves 0.78 arm lengths in height, so a
+        separate band would be a number invented for a difference that is not
+        there.
         """
         plain = self.plain["coaching"]["phases"]
         high = self.high["coaching"]["phases"]
