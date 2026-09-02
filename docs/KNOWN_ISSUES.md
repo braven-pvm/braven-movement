@@ -2204,20 +2204,54 @@ cannot give — and 0.05 degrees cannot separate them. **It is a band question
 for a coach, and it is exactly the kind of number that must not be reported as
 a failure on its own.**
 
-### What a proposal must settle before any code
+### What was built on that measurement
 
-- **What is a variant to the GRADER?** The measurement above says the same
-  checkpoints, because eight of eleven do not move at all. Inventing per-variant
-  bands would be inventing numbers for a difference that is not there — outside
-  contact, where the existing bands already hold all four.
-- **What is a variant to the CLIP CONTRACT?** `CLASSES` is keyed by movement.
-  A variant clip needs `(movement, variant)`, and that raises a question this
-  lane cannot answer: is a high-ball snatch the SAME technique to Tactics,
-  selected once, or a different one a board can ask for by name?
-- **Whether the `low` ball should ship at all** while its contact reads 0.05
-  below a floor nobody has looked at.
+**A variant is the SAME checkpoints to the grader**, because eight of eleven do
+not move at all. Per-variant bands would be numbers invented for a difference
+that is not there, and at contact the existing bands already hold all four
+balls.
 
-None of those is settled here.
+So `build_library.py` now solves, grades and receipts **every** ball. Each
+receipt names the ball it was solved against, the index lists a movement and a
+variant rather than a movement alone, and the summary prints only the readings
+that MOVE across the balls:
+
+```
+what the ball changes on netball_two_hand_snatch_pull_in, in degrees:
+  checkpoint                                       None     high      low     wide
+  contact/leftElbowFlexionDegrees                 76.05    83.66    79.70    58.21
+  contact/leftShoulderElevationDegrees            66.05    81.63    49.95    70.03
+  contact/rightElbowFlexionDegrees                76.03    83.66    79.67    76.01
+  the other 8 checkpoints move less than 5 degrees across every ball.
+```
+
+**THE LOW BALL IS GRADED AS IT READS: 10 of 11.** A miss by 0.05 degrees is a
+miss, and the receipt says so. This entry is why it carries no verdict about
+the athlete.
+
+### For the coach agenda
+
+**`netball_two_hand_snatch_pull_in`, the `low` ball, contact shoulder
+elevation: 49.95 against a floor of 50.0.** The four balls read 66.05 (plain),
+81.63 (high), **49.95** (low) and 70.03 (wide) at that checkpoint.
+
+The question for Erin is whether the floor is slightly high for a genuinely low
+ball, or the low ball asks for something the technique cannot give. **0.05
+degrees cannot separate those**, and the band is hers rather than this lane's.
+
+### The exporter is untouched, and that is deliberate
+
+**Three balls are now graded and receipted. NONE of them is exported as a
+clip.** `CLASSES` in `clip_geometry.py` is keyed by movement, so a variant clip
+would need `(movement, variant)` — and inventing that key would answer a
+question nobody has asked properly:
+
+> Is a high-ball snatch the SAME technique to Tactics, selected once, or a
+> different one a board can ask for by name?
+
+That is the clip contract's question and Marius's, not this lane's, and writing
+the code would settle it by accident. **No variant clips are exported until it
+is answered.**
 
 ## The lower body has no stable solution
 
