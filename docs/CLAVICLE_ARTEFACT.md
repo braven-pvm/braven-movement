@@ -87,7 +87,8 @@ read as a claim that the legs return to where they were.**
 
 The lower body has its own bistability, described in
 `docs/KNOWN_ISSUES.md` under "The lower body has no stable solution": SIX of the
-nine drills mirrored below the hips between two builds that both SHIPPED, with
+nine drills mirrored below the hips between the two configurations that shipped
+as `716b3eb` and `ac240b2`, reconstructed on one engine, with
 the pelvis line saturated near plus or minus 15.7 degrees and its sign flipping.
 The enabled set was identical on both sides, so this is not the parameter-set
 sensitivity described above — an ordinary code change did it.

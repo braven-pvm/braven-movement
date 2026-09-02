@@ -1667,7 +1667,17 @@ nine drills flipped their pelvis line, worst move 61.45 degrees:
 | `two_hand_snatch_pull_in` | 15.67 | −15.66 |
 | `two_hand_snatch_straight_back` | 15.67 | −15.67 |
 
-The pelvis line is `l_upleg` to `r_upleg` in the ground plane at frame 0.
+**WHAT THAT TABLE WAS READ FROM, because a comparison without its inputs is not
+reproducible.** The pelvis line is `l_upleg` to `r_upleg` in the ground plane,
+read from the solved joint positions at FRAME 0.
+
+**The two states are RECONSTRUCTED, not checked out.** Both were solved on the
+engine and the definitions at `a775502`, with only two things swapped: the
+`spread_fingers` body taken from `716b3eb`, and the enabled set left as it was
+before the locked parameters were excluded. So the comparison isolates the hand
+change on one engine; it is not two literal checkouts. That matters in one
+direction only — `netball_chest_pass` did not exist at `716b3eb`, and it is not
+one of the six.
 
 **THE ENABLED SET WAS IDENTICAL ON BOTH SIDES.** This is not the parameter-set
 sensitivity already recorded for `hooks_outside_hand`. It is an ordinary code
@@ -1692,9 +1702,51 @@ same thing seen through different instruments: the lower body's solution is not
 determined, so any figure read from it is a figure from whichever solution that
 build happened to reach.
 
+**WHICH CHECKPOINTS THIS GRADES, NAMED.** The library holds 75 graded
+checkpoints. **SIXTEEN read a below-the-hips measure, and FIFTEEN of those move
+between the two solutions:**
+
+| drill | phase | measure | one | the other |
+|---|---|---|---|---|
+| `hooks_outside_hand` | facing_away | left knee | 35.40 | **56.05** |
+| `two_hand_snatch_pull_in` | pull_in | left knee | 52.28 | 56.21 |
+| `two_hand_catch_chest` | ready | left knee | 49.32 | 52.56 |
+| `two_hand_snatch_straight_back` | ready | left knee | 52.60 | 55.69 |
+| `two_hand_snatch_pull_in` | ready | left knee | 52.60 | 55.68 |
+| `hooks_jump_pull_in` | gather | left knee | 66.84 | 64.01 |
+| `deflect_high` | ready | left knee | 46.79 | 45.04 |
+| `chest_pass` | ready | left knee | 49.06 | 50.27 |
+| `double_foot_landing` | absorb | left knee | 78.25 | 77.04 |
+| `double_foot_landing` | absorb | right knee | 77.55 | 78.75 |
+| the remaining five | | | move by 0.01 to 0.15 | |
+
+**NO VERDICT FLIPS.** Every one of those stays on the same side of its band, so
+no drill's pass or fail changes. **But the FIGURES move, by up to 20.65
+degrees, and the figures are what a coach is shown.** A knee angle presented to
+Erin is one of two answers, chosen by which solution that build reached, and
+nothing on the page says so.
+
+The landing drill is the one to look at first: `double_foot_landing` grades four
+below-the-hips checkpoints, more than any other, and landing is the skill whose
+coaching is most about the knees.
+
 **WHAT IS NOT SETTLED.** Why the lower body is under-determined enough to
 mirror, and whether it should be constrained so that it is not. That is engine
-work on the solve rather than a guard, and it is not proposed here.
+work on the solve rather than a guard, and it is NOT proposed here.
+
+The candidates visible from here, named so the question has somewhere to start
+and NOT as a diagnosis — none of these has been tested:
+
+- **No lower-body target.** The solve places hands and holds the trunk. The
+  legs are asked for a planted foot and a knee bend, and a mirrored pelvis can
+  satisfy both.
+- **The rest prior pulls toward rest rather than toward the previous frame**,
+  which this file already records, so nothing carries a leg's choice forward
+  from the frame before it.
+- **The foot placement is a height and a plant**, not a left-right position, so
+  swapping which leg is forward may cost the solve nothing.
+
+Testing any of those is a separate piece of work and it needs a ruling first.
 
 **A COUNT CORRECTED.** A draft of this entry said "five of the library's square
 drills are bistable", taken from a relayed figure rather than measured. What is
