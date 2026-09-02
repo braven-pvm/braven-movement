@@ -39,8 +39,12 @@ except ImportError:  # pragma: no cover - exercised only without the solver
     SOLVER = False
 
 # THE READY STANCE OF EVERY DRILL, in degrees of shoulder-line turn at frame 0,
-# measured on fc29bb2. These are RECORDED FACTS and not targets: nothing was
+# measured on c4a7a37. These are RECORDED FACTS and not targets: nothing was
 # tuned to reach them and no threshold was chosen to make them pass.
+#
+# The build matters and an earlier draft named the wrong one. It said fc29bb2,
+# where `netball_chest_pass` DID NOT EXIST — the drill arrived two merges
+# later. A figure whose named build could not have produced it is not sourced.
 STANCE_DEGREES = {
     "netball_chest_pass": -0.004,
     "netball_deflect_high": -0.000,
@@ -56,9 +60,10 @@ STANCE_DEGREES = {
 # an omission. It was built as a pin and the pin was withdrawn before it shipped.
 #
 # The lower body MIRRORS under ordinary code changes, not only under changes to
-# the enabled parameter set. Between two builds that both SHIPPED — 716b3eb and
-# ac240b2, whose difference is the sign on one hand's finger spread — SIX of the
-# nine drills flipped their pelvis line, worst move 61.45 degrees:
+# the enabled parameter set. Between the two configurations that shipped as
+# 716b3eb and ac240b2, whose difference is the sign on one hand's finger spread,
+# SIX of the nine drills flipped their pelvis line, worst move 61.45 degrees.
+# Both states are RECONSTRUCTED on one engine rather than checked out:
 #
 #   double_foot_landing           -15.65 ->  15.69
 #   hooks_jump_pull_in            -15.70 ->  15.65
@@ -75,15 +80,27 @@ STANCE_DEGREES = {
 # Nor is the magnitude pinnable: |pelvis| is stable on eight drills across that
 # transition and moves 6.05 to 55.40 on the ninth.
 #
-# THE SHOULDER LINE IS STABLE ACROSS THE SAME TRANSITION — worst move 0.041
-# degrees — which is why it can be pinned and the pelvis cannot. The upper body
-# is determined by its inputs. The lower body is not.
+# THE SHOULDER LINE IS STABLE ACROSS THE SAME TRANSITION ON THE EIGHT SQUARE
+# DRILLS — worst move 0.056 degrees — which is why it can be pinned there and
+# the pelvis cannot.
+#
+# IT IS NOT STABLE ON THE NINTH. `hooks_outside_hand`'s shoulder line moves
+# -48.234 to -15.442 across the same transition, 32.79 degrees, and an earlier
+# draft of this comment said the upper body was unaffected at 0.041. That was
+# read from the square drills alone and stated of all nine.
+#
+# So the same code change flipped ONE drill above the hips and SIX below it.
+# The one above was ruled on and REVERSED by PR #53, which is what
+# docs/CLAVICLE_ARTEFACT.md records. The six below were never ruled on at all,
+# and that is what withdraws the pin: a pelvis pin would go red on six drills
+# nobody has decided anything about. The square drills carry that argument by
+# themselves and do not need the ninth.
 #
 # Refer to "The lower body has no stable solution" in docs/KNOWN_ISSUES.md.
 # Wide enough to ignore ordinary drift, narrow enough to catch a basin flip.
 #
 # Ordinary drift on these is hundredths of a degree: across the hand-mirror fix
-# and the locked-parameter fix, every square drill moved by less than 0.05. The
+# and the locked-parameter fix, every square drill moved by 0.056 or less. The
 # flip this exists for is 33 degrees. Two is far above the one and far below the
 # other, and there is a great deal of room in between, so THE NUMBER IS NOT
 # DELICATE — which is the property being aimed for. A guard whose threshold has
@@ -190,10 +207,12 @@ class NoHandWaitsPastFullStretch(unittest.TestCase):
         0.039 across the same change.
 
         So the shoulder line alone watches one drill and is blind on four.
-        `test_each_drill_keeps_its_pelvis_line` below is the other half, and
-        the two are not redundant: the shoulder line does register the mirror,
-        at 0.02 degrees, and even flips sign with it. The signal was here all
-        along and the tolerance hid it.
+        THE OTHER HALF WAS NOT BUILT. A pelvis pin was written to be that half
+        and withdrawn by its own measurement; the comment beside
+        STANCE_DEGREES records why, and this drill's blindness is the cost of
+        the withdrawal rather than an oversight. The shoulder line does
+        register the mirror, at 0.02 degrees, and even flips sign with it, but
+        the tolerance that makes it robust also hides that.
 
         THE VALUES ARE SIGNED. They were unsigned until 2026-09-02, which meant
         a mirrored pose — same magnitude, opposite sign — would have passed.

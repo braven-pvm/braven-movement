@@ -1654,11 +1654,13 @@ Added 2026-09-02. A pelvis pin was built for this and WITHDRAWN before it
 shipped, because building it produced a larger finding than the one it was
 meant to guard.
 
-**THE MEASUREMENT.** Between two builds that both SHIPPED — `716b3eb` and
-`ac240b2`, whose difference is the sign on one hand's finger spread — SIX of the
-nine drills flipped their pelvis line, worst move 61.45 degrees:
+**THE MEASUREMENT.** Between the two configurations that shipped as `716b3eb`
+and `ac240b2`, whose difference is the sign on one hand's finger spread, SIX of
+the nine drills flipped their pelvis line, worst move 61.45 degrees. Both
+states are reconstructed on one engine rather than checked out, which the
+paragraph after the table sets out:
 
-| drill | 716b3eb | ac240b2 |
+| drill | negation, locked free | mirror, locked free |
 |---|---|---|
 | `double_foot_landing` | −15.65 | 15.69 |
 | `hooks_jump_pull_in` | −15.70 | 15.65 |
@@ -1683,22 +1685,45 @@ one of the six.
 sensitivity already recorded for `hooks_outside_hand`. It is an ordinary code
 change — a sign on a finger — mirroring the lower body of six drills.
 
-**THE UPPER BODY IS NOT AFFECTED.** Across the same transition the shoulder line
-moves by at most 0.041 degrees. So the upper body is determined by its inputs
-and the lower body is not, and that is why one can be pinned and the other
-cannot.
+**THE UPPER BODY IS NOT AFFECTED ON THE EIGHT SQUARE DRILLS.** Across the same
+transition their shoulder line moves by at most 0.056 degrees.
+
+**IT IS AFFECTED ON THE NINTH, AND AN EARLIER VERSION OF THIS ROW DENIED IT.**
+`hooks_outside_hand`'s shoulder line moves −48.234 to −15.442, **32.79
+degrees**. That is the A→B basin change `docs/CLAVICLE_ARTEFACT.md` records and
+PR #53 reversed. The claim "the upper body is not affected, at most 0.041
+degrees" was read from the square drills and stated of all nine.
+
+So the transition is not "a correct, ruled, shipped change" without
+qualification. **The same code change flipped one drill ABOVE the hips and six
+BELOW it. The one above was ruled on and reversed. The six below were never
+ruled on.** The withdrawal survives the correction and does not depend on the
+ninth drill: a pelvis pin would go red on six square drills for a change nobody
+has decided anything about.
 
 **WHY THE PIN WAS WITHDRAWN.** A pin on the pelvis with any workable tolerance
 would have gone RED on six drills for a correct, ruled, shipped change. That is
 the failure this project already names: a guard that fires on every legitimate
-change is noise within a week and deleted within two. The magnitude is not
-pinnable either — |pelvis| is steady on eight drills across that transition and
-moves 6.05 to 55.40 on the ninth.
+change is noise within a week and deleted within two.
+
+**THE MAGNITUDE IS NEARLY STEADY, AND THAT IS NOT WHY IT IS NOT PINNED.**
+Across the same transition |pelvis| moves 0.00 to 0.04 degrees on six drills,
+**1.99 on `deflect_high`**, **1.06 on `one_hand_snatch_to_other_hand`**, and
+49.35 on `hooks_outside_hand`, which goes 6.05 to 55.40. An earlier version of
+this row called the magnitude unpinnable, citing the ninth drill. The six
+square drills are steady enough to carry a pin.
+
+The reason not to pin it is that the value being held IS THE DEFECT. A drill
+that authors nothing asymmetric holds a hip line near 15.7 degrees with square
+shoulders. A pin would record the fault as the specification. Refer to the
+entry below, which measures the same population with an instrument that reads
+zero when the drill is right.
 
 **WHAT IT MEANS FOR EVERY LOWER-BODY NUMBER.** The bistable knee this file
-already records, the knees swapping between builds on a baseline refresh, and
-the 6.48 degree left-right knee gap on a drill flagged `symmetric` are all the
-same thing seen through different instruments: the lower body's solution is not
+already records and the 6.48 degree left-right knee gap on
+`netball_hooks_jump_pull_in`, measured on `c4a7a37` and reached independently
+from the graded checkpoints by the content lane, are the same thing seen
+through two instruments: the lower body's solution is not
 determined, so any figure read from it is a figure from whichever solution that
 build happened to reach.
 
@@ -1706,7 +1731,9 @@ build happened to reach.
 checkpoints. **SIXTEEN read a below-the-hips measure, and FIFTEEN of those move
 between the two solutions:**
 
-| drill | phase | measure | one | the other |
+Both columns name the CONFIGURATION they were solved under, not a checkout.
+
+| drill | phase | measure | negation, locked free | mirror, locked free |
 |---|---|---|---|---|
 | `hooks_outside_hand` | facing_away | left knee | 35.40 | **56.05** |
 | `two_hand_snatch_pull_in` | pull_in | left knee | 52.28 | 56.21 |
@@ -1718,7 +1745,17 @@ between the two solutions:**
 | `chest_pass` | ready | left knee | 49.06 | 50.27 |
 | `double_foot_landing` | absorb | left knee | 78.25 | 77.04 |
 | `double_foot_landing` | absorb | right knee | 77.55 | 78.75 |
-| the remaining five | | | move by 0.01 to 0.15 | |
+| `two_hand_snatch_pull_in` | ready | left knee | 52.60 | 55.68 |
+| `double_foot_landing` | approach | left knee | 35.56 | 35.71 |
+| `one_hand_snatch_to_other_hand` | ready | left knee | 55.21 | 55.09 |
+| `chest_pass` | step | left knee | 59.43 | 59.39 |
+| `double_foot_landing` | land | foot height gap | 0.01 | 0.00 |
+| `double_foot_landing` | absorb | foot height gap | 0.01 | 0.00 |
+| `double_foot_landing` | flight | foot height gap | 0.00 | 0.00 |
+
+The last row is the sixteenth, and it is the ONE that does not move. Both feet
+are off the ground in flight, so the gap between their heights is zero in every
+solution. The other fifteen move.
 
 **NO VERDICT FLIPS.** Every one of those stays on the same side of its band, so
 no drill's pass or fail changes. **But the FIGURES move, by up to 20.65
@@ -1726,9 +1763,11 @@ degrees, and the figures are what a coach is shown.** A knee angle presented to
 Erin is one of two answers, chosen by which solution that build reached, and
 nothing on the page says so.
 
-The landing drill is the one to look at first: `double_foot_landing` grades four
-below-the-hips checkpoints, more than any other, and landing is the skill whose
-coaching is most about the knees.
+The landing drill is the one to look at first: `double_foot_landing` grades SIX
+below-the-hips checkpoints, more than any other and more than a third of the
+sixteen, and landing is the skill whose coaching is most about the knees. An
+earlier version of this paragraph said four, having counted the knees and
+missed the three foot-height gaps.
 
 **WHAT IS NOT SETTLED.** Why the lower body is under-determined enough to
 mirror, and whether it should be constrained so that it is not. That is engine

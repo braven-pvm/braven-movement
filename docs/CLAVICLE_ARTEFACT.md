@@ -73,12 +73,21 @@ is one basin.
 **BELOW THE HIPS IT DOES NOT, and the first version of this document did not
 check.** On `hooks_outside_hand` at frame zero:
 
+The lines are read between `l_uparm` and `r_uparm` and between `l_upleg` and
+`r_upleg`, in the ground plane. The legs are the `l_lowleg` and `r_lowleg`
+joints, and the distance is how far each one sits from where it sat in the
+other state. Everything in the table is frame 0.
+
 | | state A | state C | apart |
 |---|---|---|---|
-| shoulder line | −48.23 | −48.22 | **0.01 deg** |
-| pelvis line | +6.05 | −53.57 | **59.62 deg** |
-| left lower leg | — | — | 2.2 cm |
-| right lower leg | — | — | **36.6 cm** |
+| shoulder line | −48.234 | −48.217 | **0.02 deg** |
+| pelvis line | +6.05 | −53.58 | **59.63 deg** |
+| `l_lowleg` | — | — | 2.21 cm |
+| `r_lowleg` | — | — | **36.51 cm** |
+
+The shoulder figure was published as 0.01 and is not that precise: two
+independent runs read 0.016 and 0.017. It is under a fiftieth of a degree,
+which is all the argument needs.
 
 So "C reproduces A" is true of the upper body and false of the lower. The
 withdrawals below rest on the shoulder line and the elbow widths, which are
@@ -89,7 +98,9 @@ The lower body has its own bistability, described in
 `docs/KNOWN_ISSUES.md` under "The lower body has no stable solution": SIX of the
 nine drills mirrored below the hips between the two configurations that shipped
 as `716b3eb` and `ac240b2`, reconstructed on one engine, with
-the pelvis line saturated near plus or minus 15.7 degrees and its sign flipping.
+the pelvis line holding a magnitude near 15.7 degrees and its sign flipping.
+**THAT MAGNITUDE IS UNEXPLAINED.** An earlier draft called it saturated, which
+asserts a limit. No parameter has a limit at 15.7 degrees, and none was found.
 The enabled set was identical on both sides, so this is not the parameter-set
 sensitivity described above — an ordinary code change did it.
 
