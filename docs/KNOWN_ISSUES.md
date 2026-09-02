@@ -1744,6 +1744,80 @@ The winding remains a true DESCRIPTION of that basin's parameters and it is
 kept in `docs/CLAVICLE_ARTEFACT.md` as such. It is not evidence of a bad pose.
 
 
+## The overhead pull-back has no boundary, and the checkpoint was right to go
+
+`netball_overhead_pass`'s pull-back checkpoint was deleted in `1fed5a1` for
+firing on a solver basin rather than on its cue. **The deletion was right and
+this entry makes it more right, not less.** What is corrected is the shape of
+the thing it fired on.
+
+That commit reports one boundary: "across 26.8 to 27.2 cm the elbow's z goes
+from +8.5 to −12.0". **There is no boundary. The verdict alternates.**
+
+Measured on `32663a9`, with the removed checkpoint's own measure
+(`leftShoulderElevationDegrees`), its own band (91 to 135), its own graded
+frame (55), and the carry `step` key swept in even increments of 0.03 torso
+lengths. **At 0 cm this reads 107.29, which is that commit's own figure to the
+decimal, so the two setups are the same setup.**
+
+| ball back, cm | 0.0 | 15.5 | 20.2 | 23.3 | **24.8** | **26.4** | **28.0** | **29.5** | **31.1** |
+|---|---|---|---|---|---|---|---|---|---|
+| left shoulder elevation | 107.29 | 110.26 | 116.87 | 111.51 | **162.59** | **127.74** | **162.75** | **120.48** | **162.95** |
+| verdict against 91–135 | within | within | within | within | **FAILS** | **within** | **FAILS** | **within** | **FAILS** |
+
+**IT FAILS AT 24.8 CM AND PASSES AGAIN AT 26.4.** A sweep that samples 24.0 and
+26.0 finds both within the band and puts the edge past them. The four samples
+that commit took are each true, and the boundary drawn between them is not
+there.
+
+### The first discontinuity is at 7.8 cm, and it is in the LEGS
+
+The largest joint steps do not line up with the verdict changes. Between 6.2
+and 7.8 cm of pull-back — an input step of 1.5 cm, with every graded arm
+measure unmoved — some joint moves **17.50 cm**.
+
+| across the 6.2 → 7.8 cm step | before | after | move |
+|---|---|---|---|
+| left shoulder elevation | 108.68 | 108.69 | **0.01** |
+| right shoulder elevation | 108.68 | 108.68 | **0.00** |
+| left knee flexion | 66.05 | 57.42 | 8.63 |
+| right knee flexion | 53.02 | 62.38 | 9.36 |
+
+The joints that move are `r_lowleg` and `r_upleg` with their twists, at 3.6 to
+4.3 cm each. **The knees exchange which of them is the more bent.** That is the
+lower-body mirror this file records below, reached here by moving a BALL, and
+seen at a phase where nothing reads a leg.
+
+So one drill carries two independent instabilities at one phase: the arm's two
+families, which the deleted checkpoint fired on, and the leg mirror, which
+nothing grades there and which moves first.
+
+### What this adds to the sweep method
+
+`1fed5a1` established that method and already warns that **a coarse sweep can
+imitate a basin**, having caught its own follow-through sweep doing exactly
+that. Two things go beside it:
+
+- **A coarse sweep can also imitate a single BOUNDARY where there are many.**
+  Three points cannot establish an edge. What lies between the samples is not
+  known, and here it alternates.
+- **A sweep must watch joints it is not grading.** The earliest and one of the
+  largest discontinuities here is invisible to every measure the checkpoint
+  reads.
+
+**THE SOLVE IS NOT NOISY.** Two adjacent inputs 1.5 cm apart that land in
+opposite families each reproduce exactly across three runs, to every decimal
+place. The alternation is a property of the solver's dependence on its input
+and not of the run.
+
+### What is NOT claimed
+
+That the arm's second family is wrong. Elevation near 163 with the elbow behind
+the shoulder is the pose the manual warns against, and reaching it for a large
+pull-back is correct. **The fault is that it is reached for SOME pull-backs and
+not for larger ones.** Why is the same open question as the lower body's, and
+constraining the solve is NOT proposed here.
+
 ## The lower body has no stable solution
 
 Added 2026-09-02. A pelvis pin was built for this and WITHDRAWN before it
