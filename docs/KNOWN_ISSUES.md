@@ -521,12 +521,20 @@ defect and is already queued. It is recorded separately only because these are
 new instances with known frames, and a fixer should not have to find them
 again.
 
-## A field called secondsPerFrame holds the solver's cost
+## RESOLVED: a field called secondsPerFrame held the solver's cost
 
-`possession_solve.py` puts the SOLVE time per frame in a result field named
+Renamed to `solveSecondsPerFrame` on 2026-09-02. The entry is kept because the
+sizes no longer separate the two quantities and the reason for the name does.
+
+`possession_solve.py` put the SOLVE time per frame in a result field named
 `secondsPerFrame`. The animation timestep is 1 over the motion track's own
-frame rate, which for this library is 60. The two differ by more than a factor
-of two, and nothing in the name says which one it is.
+frame rate, which for this library is 60. Nothing in the name said which one it
+held.
+
+**THE FACTOR OF TWO IS GONE, AND THAT MAKES IT WORSE.** This entry used to say
+the two "differ by more than a factor of two". Measured again on `92fcb4d` the
+ratio is **1.19** — the solve got faster — so the two numbers now look alike
+and a reader cannot tell them apart by eye at all.
 
 This cost real work. A release velocity was reported from that field, then
 "corrected" to figures that were too high by 2.2 times, then corrected back.
@@ -535,9 +543,11 @@ The wrong numbers were written into this file before they were caught.
 `build_library.py` reads the same field and prints it as "ms/frame", which is
 correct for what it holds and is where the meaning is visible.
 
-Renaming it to `solveSecondsPerFrame` is a small change with a handful of
-readers. It is not done here only because this pack is about the ball, and a
-rename belongs in a commit where it is the subject.
+**WHAT GUARDS IT NOW, since the sizes cannot.** One is a measurement of the
+MACHINE and the other is a property of the FILE. The cost changes between two
+solves of the same drill; the timestep cannot. `test_return_pass.py` asserts
+exactly that, so the guard holds on any machine at any speed, and it asserts
+the old name is absent from the result so it cannot quietly return.
 
 This is the same shape as the entry above about centimetres in a field called
 degrees.

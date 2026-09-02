@@ -148,7 +148,7 @@ class TheReturnMirrorsThePassItAnswers(unittest.TestCase):
         """Recovered from the released path, with gravity undone.
 
         The timestep is 1 over the motion's own frame rate. It is NOT
-        `result["secondsPerFrame"]`, which is the solver's cost per frame and
+        `result["solveSecondsPerFrame"]`, which is the solver's cost and
         has produced two wrong readings of this number.
         """
         step = 1.0 / load_motion(
@@ -240,3 +240,55 @@ class TheReturnMirrorsThePassItAnswers(unittest.TestCase):
 
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()
+
+
+class TheSolversCostIsNotTheAnimationTimestep(unittest.TestCase):
+    """One name held two quantities and cost two published readings.
+
+    `solveSecondsPerFrame` is `time.perf_counter()` over the frame count. The
+    animation timestep is 1 over the track's own `frames_per_second`. Dividing
+    an angle by the first produced "degrees per second of computer time" twice,
+    and both readings reached documents before they were caught.
+
+    THE SIZES NO LONGER SEPARATE THEM. The ledger said the two "differ by more
+    than a factor of two". On this machine today the ratio is 1.19 — the solve
+    got faster — so a reader comparing the two numbers cannot tell them apart
+    by eye any more. That makes the confusion MORE dangerous, not less.
+
+    What does separate them is that one is a MEASUREMENT OF THE MACHINE and the
+    other is a property of the file. The cost changes between two solves of the
+    same drill; the timestep cannot. That is asserted here because it holds on
+    any machine at any speed.
+    """
+
+    @unittest.skipUnless(SOLVER, "needs pymomentum")
+    def test_the_old_name_is_gone(self):
+        from movement_engine import load_character
+        from possession_solve import solve_movement
+
+        result = solve_movement(load_character(), "netball_two_hand_catch_chest")
+
+        self.assertNotIn("secondsPerFrame", result)
+        self.assertIn("solveSecondsPerFrame", result)
+
+    @unittest.skipUnless(SOLVER, "needs pymomentum")
+    def test_the_cost_moves_between_runs_and_the_timestep_does_not(self):
+        from movement_engine import load_character
+        from possession_solve import solve_movement
+
+        character = load_character()
+        runs = [
+            solve_movement(character, "netball_two_hand_catch_chest")
+            for _ in range(2)
+        ]
+        costs = [run["solveSecondsPerFrame"] for run in runs]
+        timesteps = [1.0 / run["track"].frames_per_second for run in runs]
+
+        self.assertEqual(timesteps[0], timesteps[1], "the timestep is a file's")
+        self.assertNotEqual(
+            costs[0],
+            costs[1],
+            "two solves of one drill returned the same cost to full precision. "
+            "Either the field stopped measuring wall-clock time, or this "
+            "machine is impossibly steady. Read it before relaxing this.",
+        )
