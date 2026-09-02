@@ -318,7 +318,7 @@ build `bb7dc4c`, repetition 0 of set 0.1 over 5.267 to 5.833 s:
 | reading | value | where it placed |
 |---|---|---|
 | whole-curve warp distance | 0.02369 | **best of twelve**, against 0.06093 next |
-| informative warp distance | 0.02213 | fourth of twelve |
+| informative warp distance | 0.02213 | fifth of twelve |
 | rank against all eight drills | 1 | **first, on both scorings** |
 
 **An elbow curve fits a gesture as happily as a catch.** Every reading the dry

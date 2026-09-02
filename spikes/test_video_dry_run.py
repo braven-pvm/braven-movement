@@ -34,6 +34,7 @@ from video_dry_run import (
     instrument_readings,
     judge_capture,
     judge_measure,
+    missing_artefacts,
     phase_bound_degrees,
     reading,
     render,
@@ -167,6 +168,48 @@ class TheGateCanOpen(unittest.TestCase):
         self.assertEqual(len(capture), 6)
         self.assertEqual(len(per_measure), 6)
         self.assertEqual(len({row["name"] for row in capture + per_measure}), 12)
+
+
+class RequiredArtefactsTest(unittest.TestCase):
+    """The check that broke uncaught because it lived inside `main`.
+
+    Restoring the denylist it replaced left every other test green: nothing
+    could reach it, and only a real run touched it. These tests exist so that
+    restoring it goes red the way restoring any other defect does.
+    """
+
+    def test_a_full_bundle_is_missing_nothing(self):
+        self.assertEqual(missing_artefacts(good()), [])
+
+    def test_a_required_artefact_is_reported_by_name(self):
+        self.assertEqual(missing_artefacts(good(lift=None)), ["lift"])
+
+    def test_several_missing_are_all_reported(self):
+        found = missing_artefacts(good(lift=None, elbow=None))
+
+        self.assertEqual(found, ["lift", "elbow"])
+
+    def test_AN_OPTIONAL_KEY_AT_NONE_DOES_NOT_STOP_A_RUN(self):
+        """THE REGRESSION. A ball annotation is absent in the normal case and
+        its refusal field is None when nothing was refused. Under the denylist
+        this bundle reported `ballAnnotationRefusal` as a missing artefact and
+        the run refused to start on a set with nothing wrong with it."""
+        bundle = good(ballAnnotation=None, ballAnnotationRefusal=None)
+
+        self.assertEqual(missing_artefacts(bundle), [])
+
+    def test_the_calibration_is_optional_too(self):
+        """The original exception, now covered by the rule rather than by an
+        exception to it."""
+        self.assertEqual(missing_artefacts(good(calibration=None)), [])
+
+    def test_an_unknown_key_at_none_is_ignored(self):
+        """The general form. A rule written as "everything except the
+        exceptions I know about" breaks on the next exception."""
+        bundle = good()
+        bundle["somethingAddedLater"] = None
+
+        self.assertEqual(missing_artefacts(bundle), [])
 
 
 class TheLoopCoversWhatIsGraded(unittest.TestCase):
@@ -305,6 +348,16 @@ class OneFaultAtATime(unittest.TestCase):
         row = named(both(bundle), "a ball is in the picture")
         self.assertIn("NO BALL IN FRAME", row["why"])
         self.assertIn("1", row["why"])
+
+    def test_the_why_text_gives_the_place_this_lane_computed(self):
+        """THE PLACE IS FIFTH AND A FIRST VERSION SAID FOURTH, read off a list
+        of three values with rep 7 left out of it. The alignment file this
+        number comes from is gitignored, so CI cannot recompute it — this holds
+        the shipped sentence instead, which is the guard that is available."""
+        row = named(both(good()), "a ball is in the picture")
+
+        self.assertIn("fifth of twelve", row["why"])
+        self.assertNotIn("fourth", row["why"])
 
     def test_a_stale_annotation_shuts_the_gate_and_keeps_the_report(self):
         """A window that moved refuses the whole file. The run must not crash:

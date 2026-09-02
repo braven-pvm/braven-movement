@@ -231,6 +231,32 @@ def _ball_annotation(set_id: str) -> dict:
         return {"ballAnnotation": None, "ballAnnotationRefusal": str(refusal)}
 
 
+# The artefacts a run cannot start without. AN ALLOWLIST OF WHAT IS REQUIRED,
+# never a denylist of what is optional.
+REQUIRED_ARTEFACTS = ("front", "side", "lift", "elbow", "alignment", "reference")
+
+
+def missing_artefacts(evidence: dict) -> list[str]:
+    """Which required artefacts are absent, in a testable place.
+
+    THIS LIVED INSIDE `main` AND THAT IS WHY IT BROKE UNCAUGHT. The check was
+    once written as a denylist — "every key whose value is None, except the
+    calibration" — so the first OPTIONAL key added after it stopped the run
+    from starting at all. The key was the ball annotation, whose absence is the
+    normal case, and the failure was `these artefacts are missing:
+    ballAnnotationRefusal` on a set with nothing wrong with it.
+
+    Restoring that denylist left all 81 tests green, because nothing could
+    reach the check: only a real run touched it. Lifting it out of `main` is
+    the fix, and the test that an optional key at None does not stop a run is
+    the point of lifting it.
+
+    A rule written as "everything except the exceptions I know about" breaks on
+    the next exception, and it breaks where nobody is looking.
+    """
+    return [name for name in REQUIRED_ARTEFACTS if evidence.get(name) is None]
+
+
 def graded_measures(movement: str) -> list[str]:
     """The measures this movement's checkpoints read, from the definition itself.
 
@@ -387,8 +413,8 @@ def judge_capture(evidence: dict, movement: str) -> list[dict]:
         "against 0.06093 for the next — contains no ball at all: a frame strip "
         "shows the athlete standing and gesturing. It ranks 1 of 8 drills on "
         "BOTH scorings, so the null test does not see it either. The "
-        "informative scoring placed it fourth, which is luck rather than "
-        "detection. " + ball["detail"],
+        "informative scoring placed it fifth of twelve, which is luck "
+        "rather than detection. " + ball["detail"],
         f"ball-in-frame-<set>.json, a human reading frame strips per repetition"
         if ball["passes"] is not None or stale else
         "THE INSTRUMENT THAT DOES NOT EXIST: no ball detector is built, and "
@@ -820,13 +846,7 @@ def main(argv: list[str]) -> int:
     arguments = parser.parse_args(argv[1:])
 
     evidence = gather(arguments.set_id)
-    # AN ALLOWLIST OF WHAT IS REQUIRED, not a denylist of what is optional. The
-    # check used to be "everything that is not the calibration", so the first
-    # optional key added after it — a ball annotation, whose absence is the
-    # normal case — made the run refuse to start at all. A rule written as
-    # "everything except the exceptions I know about" breaks on the next one.
-    REQUIRED = ("front", "side", "lift", "elbow", "alignment", "reference")
-    missing = [name for name in REQUIRED if evidence.get(name) is None]
+    missing = missing_artefacts(evidence)
     if missing:
         raise SystemExit(
             f"these artefacts are missing for set {arguments.set_id}: "

@@ -16,15 +16,20 @@ Repetition 0 of session 1.0, the window 5.267 to 5.833 s, on build bb7dc4c:
 
 - **whole-curve scoring: 0.02369, the BEST of the twelve**, against 0.06093 for
   the next best. A margin of 2.6 times.
-- **informative scoring: 0.02213, which is FOURTH**, behind 0.00435, 0.00626
-  and 0.01623.
+- **informative scoring: 0.02213, which is FIFTH**, behind 0.00435 (rep 6),
+  0.00626 (rep 3), 0.01623 (rep 4) and 0.01743 (rep 7).
 - **rank 1 of 8 drills on BOTH scorings.** It passes the null test either way.
 
 So the superlative depends on which scoring is quoted, and the conclusion does
 not: **neither scoring detects a missing ball.** The informative scoring
-happened to rank it fourth, which is luck and not detection — fourth of twelve
-is comfortably inside any band a person would pick from, and the clip lane
-picked it.
+happened to rank it fifth, which is luck and not detection — fifth of twelve is
+comfortably inside any band a person would pick from, and the clip lane picked
+it.
+
+A first version of this docstring said FOURTH. The place was read off a list of
+three values rather than computed, and rep 7 at 0.01743 was left out of the
+list. The argument does not move and the number was still wrong, which is the
+whole reason places get computed here now.
 
 One reading was odd about that repetition and nothing acted on it: its
 `videoStillSharePhase` is 35 percent, more than double the next highest at 16.
