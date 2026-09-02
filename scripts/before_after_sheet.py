@@ -145,8 +145,15 @@ def build_sheet(columns: list[Path], drill: str, view: str, out: Path,
     rows, report = [], []
     for phase in shared:
         pictures = [Image.open(c / f"{drill}.{phase}.{view}.png") for c in columns]
-        # Against the FIRST build, which is what a coach actually graded, so
-        # the number answers "has this figure changed since she saw it".
+        # Against the FIRST build, so the number answers "has this figure
+        # changed since THAT BUILD drew it".
+        #
+        # DO NOT CALL THE FIRST COLUMN "what a coach graded" unless it is. This
+        # tool cannot know which build a coach saw. On the pack that produced
+        # it the first column was the last batch before the fix, 31 Aug, while
+        # Erin graded the 27 Aug set. Both predate the fix, so the sheet was
+        # not wrong and the sentence would have been. Name the build; let the
+        # caller say what it was.
         readings = [difference(pictures[0], later) for later in pictures[1:]]
         width = max(1, round(pictures[0].width * height / pictures[0].height))
         rows.append((phase,
