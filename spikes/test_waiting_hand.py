@@ -52,11 +52,12 @@ STANCE_DEGREES = {
     "netball_hooks_jump_pull_in": -0.020,
     "netball_hooks_outside_hand": -48.217,
     "netball_one_hand_snatch_to_other_hand": -0.496,
-    # ADDED AS A HOTFIX. This drill arrived in PR #60 while the guard above
-    # arrived in PR #57. Each tip was green on its own and the merged tree was
-    # red, because the guard sweeps the library rather than a fixed list.
-    # Hosted CI cannot catch that: the runner has no assets, so it never solves
-    # and the guard never runs there. The local suite is the only instrument.
+    # ADDED AS A HOTFIX in PR #64. This drill arrived in PR #60 while the guard
+    # above arrived in PR #57. Each tip was green on its own and the merged
+    # tree was red, because the guard sweeps the library rather than checking a
+    # fixed list. Hosted CI cannot catch that: the runner has no assets, so it
+    # never solves and the guard never runs there. The local suite on the
+    # merged tree is the only instrument for this.
     "netball_overhead_pass": -0.011,
     "netball_two_hand_catch_chest": -0.018,
     "netball_two_hand_snatch_pull_in": 0.019,
@@ -135,6 +136,23 @@ STANCE_TOLERANCE_DEGREES = 2.0
 # margin is calibrated, not chosen: it sits above every basin move measured
 # except deflect_high's, whose own ceiling already carries its high state.
 #
+# THE CALIBRATION POPULATION IS THREE, AND THEY ARE NAMED: the finger negation
+# with the locked parameters free, the shipped mirror with them free, and the
+# mirror with them pinned. Three is a small population, and all three are
+# ENGINE-side changes. An engine change alters the solver's freedom; a key
+# change moves the target it chases. These are different acts on the solver, so
+# steadiness under the first is EVIDENCE that the ceilings are not noise and is
+# not PROOF that they hold under the second. The sweep below shows they do not.
+#
+# THE TENTH DRILL CONFIRMED THE FINDING WITHOUT BEING ASKED TO.
+# `netball_overhead_pass` was authored by another lane after this was written
+# and merged while the branch was open. Both coverage guards went red by name,
+# which is what they are for. It then read 6.26, 6.25 and 6.27 across the same
+# three configurations — a spread of 0.02, the tightest in the population —
+# with square shoulders at -0.011 and a pelvis line of 15.607, 15.583 and
+# -15.634. A drill nobody wrote to fit this landed on the same hip line and the
+# same six degrees of knee gap, so the fault is systematic and not per-drill.
+#
 # A FOURTH SOLUTION COULD BREACH THESE, and that is not a reason to raise them.
 # If one does, the finding is that a new basin exists; read "The lower body has
 # no stable solution" in docs/KNOWN_ISSUES.md before touching a number here.
@@ -164,6 +182,7 @@ KNEE_GAP_CEILING_DEGREES = {
     "netball_chest_pass": 5.56,
     "netball_deflect_high": 6.82,
     "netball_hooks_jump_pull_in": 7.48,
+    "netball_overhead_pass": 7.27,
     "netball_two_hand_catch_chest": 5.44,
     "netball_two_hand_snatch_pull_in": 5.20,
     "netball_two_hand_snatch_straight_back": 5.24,

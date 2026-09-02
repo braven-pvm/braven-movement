@@ -2008,6 +2008,33 @@ tree agree to 0.0000 cm at every joint and to four decimal places in the gap.
 The instability is entirely in the inputs, not in the arithmetic, so none of
 these figures is a sampled average.
 
+**THE CALIBRATION POPULATION IS THREE, NAMED, AND ALL ENGINE-SIDE:** the finger
+negation with the locked parameters free, the shipped mirror with them free,
+and the mirror with them pinned. An engine change alters the solver's freedom.
+A key change moves the target it chases. Steadiness under the first is evidence
+and not proof for the second.
+
+### What this costs every below-the-hips checkpoint
+
+The house rule is that a checkpoint is proven able to fail by a PROGRESSIVE
+SWEEP — inside, at the edge, past it — with the measure moving steadily and the
+joints moving continuously across the crossing. **Below the hips there is no
+continuity to sweep.**
+
+**So none of the sixteen below-the-hips checkpoints can be proven by that
+method.** That is not a claim that any of them is wrong. It is a limit on what
+their evidence can say.
+
+A below-the-hips checkpoint may claim **a reading on the build that produced
+it**. It may NOT claim **a property of the movement**, and a mutation that
+moves it is not proof that it discriminates — the same mutation at a slightly
+different size may move it the other way. This applies to the knee-bend
+checkpoint the bounce pass is expected to author, and it applies before that
+checkpoint is written rather than after.
+
+Above the hips the method still holds: the shoulder line moves 0.056 degrees or
+less across the same configurations on every square drill.
+
 ### What is not settled
 
 Why the solver returns an uneven athlete for an even question. That is the same
