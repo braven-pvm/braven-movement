@@ -92,6 +92,20 @@ elbow width changing, and it would dominate anything a person watched on that
 drill. The comparison drill is `deflect_high`, where both hands are on the ball
 and nothing else moves.
 
+**A guard whose premise this dissolves, recorded and NOT acted on.**
+`test_elbow_pole.py` carries a tripwire on the distance between the two means.
+It records the history — about 8 cm, then about 20, then 3.09 — and holds a
+floor at 1 cm, below which the two would be one population under two names.
+That guard assumes both sides are populations. If one side is two outliers,
+the quantity it watches is the artefact described above rather than a fact
+about the athlete, and its 1 cm floor asks a question that cannot be answered
+by the drills it reads.
+
+The guard is left exactly as it is. It is not retuned in the same change as
+the finding that questions it, because a guard and the evidence against it
+must not move together: whoever reads this later needs to see both, in that
+order. What to do about it is a decision, and it waits for one.
+
 **Not settled.** Everything. The 0.15 cm agreement is the engine matching a
 figure read off a photograph. No coach has yet said the wider elbow looks
 right, and a number agreeing with a number is not a coach agreeing with a pose.
