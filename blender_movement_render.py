@@ -31,7 +31,7 @@ MODULE_DIR = Path(__file__).resolve().parent
 if str(MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(MODULE_DIR))
 
-from render_receipt import render_outcome  # noqa: E402
+from render_receipt import git_build_stamp, render_outcome  # noqa: E402
 from reference_pose_config import (  # noqa: E402
     DEFAULT_CONFIG_PATH,
     load_reference_catch_config,
@@ -614,20 +614,34 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
         )
 
     receipt_path = output / f"{job['movementId']}.render.json"
-    receipt_path.write_text(
-        json.dumps(
-            {
-                "movementId": job["movementId"],
-                "skill": job["skill"],
-                "jobSha256": sha256(job_path),
-                "sourceAssets": [str(path) for path in studio.source_assets],
-                "animation": animation,
-                "phases": rendered,
-            },
-            indent=2,
-        ),
-        encoding="utf-8",
+    # WHICH BUILD DREW THIS. Read at write time from the tree this file lives
+    # in, never passed in by a caller, because a stamp a caller supplies is a
+    # claim about a build rather than a reading of one.
+    stamp = git_build_stamp(MODULE_DIR)
+    receipt = {
+        "movementId": job["movementId"],
+        "skill": job["skill"],
+        "build": stamp,
+        "jobSha256": sha256(job_path),
+        "sourceAssets": [str(path) for path in studio.source_assets],
+        "animation": animation,
+        "phases": rendered,
+    }
+    # The stamp is the point of the receipt for anyone asking which pictures
+    # predate a fix, so it is checked before the file is written rather than
+    # discovered missing by whoever reads it months later.
+    assert "commit" in receipt["build"], "the receipt must name a build"
+    assert "treeWasClean" in receipt["build"], (
+        "the receipt must say whether the tree was clean: a commit named from "
+        "a dirty tree names a build that never existed"
     )
+    receipt_path.write_text(json.dumps(receipt, indent=2), encoding="utf-8")
+    if receipt["build"]["treeWasClean"] is not True:
+        print(
+            "[movement-render] NOTE: "
+            f"tree not verified clean ({receipt['build']['commit']}), so these "
+            "pictures cannot be reproduced from that commit alone"
+        )
     # Never the bare word PASS. A run that posed no phase measured nothing,
     # and `--no-stills` took exactly that path over eight drills and printed
     # PASS eight times.
