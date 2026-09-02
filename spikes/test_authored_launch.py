@@ -107,7 +107,10 @@ def minimal(**extra) -> dict:
 # APPEARING in a catch drill, where it would silently replace the derived
 # return, AND a launch DISAPPEARING from a pass, where the derivation sends the
 # ball backwards over her shoulder. Both are the same silent class of fault.
-AUTHORS_A_LAUNCH = {"netball_chest_pass.ball.json"}
+AUTHORS_A_LAUNCH = {
+    "netball_chest_pass.ball.json",
+    "netball_overhead_pass.ball.json",
+}
 
 
 class ItIsAdditive(unittest.TestCase):

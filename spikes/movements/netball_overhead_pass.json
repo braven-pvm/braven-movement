@@ -1,0 +1,104 @@
+{
+  "movementId": "netball_overhead_pass",
+  "sport": "netball",
+  "skill": "Double Hand Overhead Pass",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger, Passing section, page 80. The manual heads this drill OVERHEAD PASS and gives it two numbered steps and a warning. SEVEN OF THE NINE CUES BELOW ARE QUOTED FROM ITS OWN BLOCK, not transferred, which no other pass in this library can say. The other two are INTERPRETATIONS of those lines and are labelled as such in their own why: one applies a line to the second arm, which the manual never addresses, and one reads a line for what it implies about the elbow, which the manual never mentions. The numeric bands are NOT the manual's. They are PROVISIONAL and a coach must set them.",
+  "cueSourceNote": "THE FIRST PASS IN THIS LIBRARY WHOSE CUES COME FROM ITS OWN BLOCK. netball_chest_pass had to assemble its cues from other passes, because the manual names 'Double hand chest' in the syllabus and gives it no technique block. This one has a block: an opening line at manual line 2661, two numbered steps at 2663 and 2664, and a warning at 2666. Seven of the nine cues below are one of those four, quoted, with the line named, and every elision is marked. TWO ARE NOT QUOTES and say so: the right-shoulder cue applies a line to an arm the manual does not address, and the release elbow cue reads a line for an implication the manual does not state. A first draft labelled both QUOTED, which was wrong and is corrected.",
+  "whyThisPassNext": "Ruled by the orchestrator on 2026-09-02 after the lob was measured. A lob is a ball-file variant of a pass that lifts the ball overhead, and the library had none: solving netball_chest_pass against a lob ball left the release pose BIT-IDENTICAL, because the carry lives in the technique's afterContact keys and a ball file does not touch them. The manual asks the lob for a ball 'as high as arm can go', about 185.5 cm on the reference athlete, and the chest pass releases at 137.1 cm at the wrist. No ball file closes 48.4 cm. So the lob's parent had to exist first.",
+  "lobParentNote": "THIS IS NOT QUITE THE LOB'S PARENT AND THE DIFFERENCE IS ONE MANUAL LINE. The lob's step 2 (line 2725) reads 'Pull the ball up as high as arm can go', which is word for word the 1 HAND HIGH PASS's step 1 (line 2672), NOT this pass's step 1 (line 2663, 'Pull the ball up into the air above your head'). Above the head and as high as the arm goes are different heights. This pass is the two-handed one the syllabus puts second and the closest parent the library can hold today; whether the lob rides it or the one-handed high pass is a coach question and stays open in docs/LOB_AUTHORING_BRIEF.md.",
+  "instrumentNote": "NO NEW INSTRUMENT WAS BUILT, AND ONE WAS ASKED FOR. The proposal was to grade 'above your head' as wrist height in centimetres. It was MEASURED FIRST and then NOT BUILT, and the reasoning is stated here in the form it ended in rather than the form it started in. THE MEASURE THIS DRILL USES IS NOT CLEAN: leftShoulderElevationDegrees reads arm FOLD as well as height. It is impure above the floor and within 3.7 degrees of pure at the crown line where the floor sits, which is why the band stands on it. The single sweep this file relies on, with its inputs, is in the lift checkpoint's why; AN EARLIER DRAFT OF THIS NOTE QUOTED A SECOND SWEEP taken against a hand-key solve rather than the possession solve, in a regime this drill never runs in, and it is deleted rather than reconciled. Two tables in one file with neither one's inputs stated is how a wrong number gets out. WHY IT WAS NOT BUILT: a checkpoint holds its bounds in minimumDegrees and maximumDegrees whatever the measure is in, so a centimetre value there would be the FOURTH such instance in the library. The orchestrator ruled on 2026-09-02 that no centimetre value goes into a degrees field and that the fix is a units-correct band. THE MISSING MEASURE IS AN OPEN LEDGER ROW, written in docs/KNOWN_ISSUES.md as 'No units-correct height measure, and one cue already wants it'.",
+  "pullBackNote": "THE MANUAL'S 'DON'T PULL BALL BACK BEHIND HEAD' HAS NO INSTRUMENT ON EITHER PASS. It was tried on netball_chest_pass, mutation-tested, and deleted for being insensitive. It was tried again here, appeared to work, and was deleted for a worse reason. This note is the record of both, kept so it is not tried a third time on the same evidence.\n\nFIRST, THE COMPARISON THAT LOOKED CONVINCING CANNOT BE STATED AT ALL. A draft of this note claimed the overhead was far more sensitive, on 5.1 degrees against 55.45. Those were different measures, solvers and builds. Re-measured like for like at one magnitude, 13.2 cm, possession solve, a775502, shoulder elevation then elbow flexion per centimetre: chest straight back 0.62 and 0.33; chest up-and-back 0.05 and 0.33; overhead straight back 0.19 and 0.72; overhead up-and-back 1.34 and 1.16. DIRECTION-MATCHED AT 13.2 CM STRAIGHT BACK THE CHEST IS THE MORE SENSITIVE OF THE TWO, which is the opposite of the claim.\n\nAND PER-CENTIMETRE IS NOT A STABLE QUANTITY IN EITHER DRILL. Straight back, shoulder elevation, at 6.6 / 13.2 / 20.0 / 27.7 cm: the chest gives 0.12 / 0.62 / 0.37 / 0.18 per cm and the overhead 0.21 / 0.19 / 0.03 / 2.00. Non-monotonic in both. NO RATIO OF ANY KIND IS STATED HERE, because none can be.\n\nTHEN THE REASON FOR THE DELETION. Swept against the band the checkpoint held, 91 to 135: 0 cm back reads 107.29 within, 20.0 cm reads 107.98 within, 24.0 reads 112.34 within, 26.0 reads 114.99 within, and 27.7 reads 162.73 and fails. A 26 CM PULL-BACK, THE BALL WELL BEHIND HER HEAD, PASSED. Everything from 0 to 26 moved the measure 7.7 degrees in total.\n\nTHE FAILURE AT 27.7 IS A SOLVER BASIN FLIP AND NOT SENSITIVITY. Across 26.8 to 27.2 cm the elbow's z goes from +8.5 to -12.0, swinging 20.5 cm from in front of the shoulder to behind it, while the wrist moves 0.2 cm and the ball does not move at all. The hand stays put and the elbow flips. That is the two-basin shape docs/CLAVICLE_ARTEFACT.md describes in another drill, and the boundary here is reported to the movement lane.\n\nSO THE CHECKPOINT FIRED ON AN ELBOW FLIP THAT HAPPENED TO OCCUR AT ONE DISPLACEMENT, not on the fault its cue named. A checkpoint that looks sensitive for the wrong reason is more dangerous than one that is honestly blind, and this one passed a single mutation. Refer to mutationNote for the proof method that replaced that single mutation.",
+  "mutationNote": "EVERY CHECKPOINT IS PROVEN BY A SWEEP, NOT BY ONE MUTATION. Ordered by the orchestrator on 2026-09-02 after this drill's pull-back checkpoint was found firing on a solver basin flip. ONE MUTATION THAT FAILS PROVES NOTHING IN A SOLVER WITH BASINS: it may simply have crossed a boundary. The rule now is at least three displacements \u2014 inside the band, near the edge, past it \u2014 the measure must move PROGRESSIVELY toward the edge, and at the crossing the joint positions must move CONTINUOUSLY. A single-point failure beside a joint discontinuity is a basin and is recorded as one.\n\nAll eight sweeps below are progressive and continuous, on a775502.\n\nREADY ELBOW, both ball keys swept ahead 0.55 / 0.70 / 0.82 / 0.95 in arm lengths: 145.87, 130.27, 115.80, 98.02, failing below 105. Joint steps 12.28, 10.09, 11.21.\nREADY KNEE, ready hipDrop 0.1003 / 0.07 / 0.04 / 0.005: 52.64, 44.26, 29.35, 14.20, failing below 25. Joint steps 5.09, 5.04, 5.89.\nLIFT SHOULDERS, both arms, carry up 1.12 / 1.02 / 0.95 / 0.85 torso lengths: 107.69, 97.60, 90.44, 79.70, failing below 91. Joint steps 9.66, 6.79, 9.89.\nSTEP KNEE, step hipDrop 0.14 / 0.10 / 0.06 / 0.02: 57.67, 47.43, 34.34, 11.77, failing below 35. Joint steps 6.72, 6.72, 6.72.\nRELEASE SHOULDER, release carry up 1.018 / 0.80 / 0.60 / 0.40: 97.16, 76.00, 57.18, 40.19, failing below 80. Joint steps 20.79, 18.53, 17.90.\nRELEASE ELBOW, release carry ahead 0.661 / 0.85 / 0.98 / 1.08: 85.45, 56.88, 53.12, 52.57, failing below 55. Joint steps 11.72, 8.91, 4.36.\nFOLLOW-THROUGH ELBOW, release phase 0.80 / 0.88 / 0.93 / 0.95 / 0.96 / 0.97 / 0.98: 46.22, 46.25, 49.05, 54.47, 66.49, 75.81, 82.45, failing above 75. THIS ONE WAS RESAMPLED. At the coarse spacing 0.93 to 0.98 it looked like a 33 degree jump beside a 24.97 cm joint step, which is the basin signature; refined, it is a smooth ramp. The mechanism is the frames left after the release, which fall 19, 11, 6, 4, 3, 2, 1 across that sweep. A COARSE SWEEP CAN IMITATE A BASIN as easily as a single point can imitate sensitivity, so THE METHOD MUST STATE ITS SPACING and a suspected discontinuity must be resampled before it is called one. Every sweep above names its settings for that reason. What separates the two is what happens BETWEEN the samples: refining the follow-through from five points to seven turned a 33 degree jump into a ramp, and refining the pull-back from 26 to 27.7 cm in four steps turned a ramp into a 47.7 degree jump with the elbow 20.5 cm away from where it had been.\n\nTHREE MUTATIONS FROM THE FIRST ROUND HAD TO BE REWRITTEN because they could not move what they aimed at, and each is a fact about the model. The ready pose is governed by the BALL FILE, not the technique: mutating the technique's afterContact key at phase 0.0 changed nothing, and mutating both ball keys to up 0.30 and ahead 0.95 moved the ready elbow from 145.9 to 97.9. The motion track's hand keys do not drive the hands in a possession solve, so the follow-through is reached by WHEN she releases and not by where the hands are put. And the left and right shoulder pair catches only a GROSS one-sided lift; refer to oneSidedLiftNote.\n\nA SECOND RELEASE-SEAM HITCH is recorded here too, found by the PR #60 reviewer and confirmed: shoulder elevation jumps 7.02 degrees between frames 76 and 77 on both sides, and 76 is the release frame. Separate from the frame-81 elbow stall. Both are with the movement lane.",
+  "oneSidedLiftNote": "WHAT THE LEFT AND RIGHT PAIR ACTUALLY CATCHES, measured rather than claimed. The carry key is a POINT and the grip places both hands around it, so the two shoulders move together for any ordinary authoring: at across 0.0 they are identical, and it takes 0.42 of a torso length off the midline to separate them by 7.35 degrees, with both still inside the band. Only at 1.2, about 62 cm off the midline, does one side reach 141.0 and break the ceiling. SO THE PAIR CATCHES A GROSS ONE-SIDED LIFT AND NOT A SUBTLE ONE, and there is no measure of the difference between the sides to catch the rest. The pair is kept because the two readings do diverge and carry independent information, but the claim is narrowed to what the mutation supports.",
+  "heldKeyNote": "The technique's afterContact key named `held` at phase 0.0 is REDUNDANT and is kept for readability only. The ball track's first key governs the pose at frame 0, which the mutation above proved by moving one and not the other. It is named here rather than deleted so that the next author does not spend the same measurement finding it.",
+  "pullBackLimitNote": "WHAT SHOULDER ELEVATION CANNOT DO, kept because the LIFT checkpoints still use it. It is an angle from the trunk and it does not say front from back, so it cannot separate a ball lifted high in front from one taken behind the head. AND HAND PLACEMENT MOVES IT AT A COMPLETELY FIXED BALL, which the PR #60 reviewer measured and this lane confirmed: a grip spread of 60 against 120 degrees reads 102.13 against 113.67, an 11.5 degree spread, and a ball radius of 8 against 14 cm reads 110.51 against 105.12, a 5.4 degree spread. THAT IS SAFE HERE AND WOULD NOT BE ON A FILMED ATHLETE. A technique file fixes the grip and the ball, so every drill in this library is compared at one hand placement and the term cancels. A person filmed holding the same ball at the same height with her hands differently placed would read up to 11.5 degrees apart on a checkpoint meant to be about height. Read this before pointing the measure at a capture.",
+  "phases": [
+    {
+      "name": "ready",
+      "atPhase": 0.0,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 105.0,
+          "maximumDegrees": 150.0,
+          "cue": "Two hands on the ball, fingers up and thumbs behind the middle of the ball.",
+          "why": "QUOTED from this block's own opening line, manual 2661: 'Player catch the ball the same every time with 2 hands and fingers up and thumbs behind in the middle of the ball'. ELIDED: 'catch the ball the same every time', because this drill starts with the ball already held and no catch is solved. BAND PROVISIONAL: the same 105 to 150 netball_chest_pass uses at its ready, which took it from netball_two_hand_catch_chest's pull_in, because all three are the same pose of a ball held at the chest."
+        },
+        {
+          "measure": "leftKneeFlexionDegrees",
+          "minimumDegrees": 25.0,
+          "maximumDegrees": 75.0,
+          "cue": "Balanced base before you lift.",
+          "why": "AUTHORED, NOT QUOTED. This block says nothing about the legs. It is here because the pass that follows needs a base under it and because every other drill in the library grades a ready knee, so its absence would be the odd case rather than its presence. BAND PROVISIONAL: the library's ready knee band, unchanged. FLAGGED for the coach: delete it if she does not coach it."
+        }
+      ]
+    },
+    {
+      "name": "lift",
+      "atPhase": 0.35,
+      "checkpoints": [
+        {
+          "measure": "leftShoulderElevationDegrees",
+          "minimumDegrees": 91.0,
+          "maximumDegrees": 135.0,
+          "cue": "Pull the ball up into the air above your head.",
+          "why": "QUOTED VERBATIM, manual 2663, step 1. This is the pass's defining action. BAND PROVISIONAL BUT ITS FLOOR IS ANATOMY, NOT A PREFERENCE \u2014 AND THE ANATOMY IS READ AT THE FRAME THAT IS GRADED, which a first draft got wrong. 'Above your head' is satisfied when the ball's underside clears her crown. THE CROWN MOVES: the reference c_head_null sits at 163.45 cm at frame 0 and at 164.80 at the lift frame, frame 33 of 96, which is the frame this checkpoint reads. Taking the frame-0 figure overstated the clearance by 1.35 cm. Against the lift-frame crown plus an 11.0 radius the ball centre must reach 175.80 cm. Sweeping the carry through the POSSESSION solve, reading the crown at the lift frame each time, zero clearance falls between a ball of 174.1 cm at 87.3 degrees and 176.4 cm at 92.1, so THE FLOOR IS 91. Measured on a775502. THIS MEASURE IS NOT PURE AND THE BAND IS SET IN SPITE OF THAT, not in ignorance of it: shoulder elevation reads arm FOLD as well as height. Holding the ball at 184.4 cm and varying only the fold, it moves 8.2 degrees across a 49-degree change in elbow flexion, and NOT monotonically. That sweep varied the carry's ahead from 0.100 to 0.800 at a fixed up of 1.12. AT THE FLOOR THE LEAK IS SMALLEST: at the 174.1 cm crown line the same two extreme folds read 87.3 and 91.0, 3.7 degrees apart and under the 5 degree threshold. Stated precisely, that means THE FLOOR ITSELF CARRIES 3.7 DEGREES OF UNCERTAINTY from hand placement, so a drill reading within 3.7 of the floor could fall either side of it. This drill reads 107.7 against a floor of 91, a margin of 16.7, so no verdict of ITS moves; a future drill authored near the floor would need the pure measure. The leak GROWS with height, so a future band that had to discriminate height well above the crown would need a units-correct height measure in centimetres, which the library does not have. Refer to the row in docs/KNOWN_ISSUES.md named 'No units-correct height measure, and one cue already wants it'. The upper bound is the pull-back guard; refer to pullBackNote and pullBackLimitNote."
+        },
+        {
+          "measure": "rightShoulderElevationDegrees",
+          "minimumDegrees": 91.0,
+          "maximumDegrees": 135.0,
+          "cue": "Both arms together. The ball goes straight up, not to one side.",
+          "why": "NOT A QUOTE. It APPLIES the block's line to the other arm, because the opening says 'with 2 hands'. The manual never addresses the second arm separately, so this is an interpretation and is labelled as one. WHAT THE PAIR CATCHES IS NARROWER THAN A FIRST DRAFT OF THIS FIELD CLAIMED, and the claim is corrected here rather than left to contradict oneSidedLiftNote: it does NOT see a subtle one-sided lift. The carry key is a point and the grip is symmetric, so the two sides move together for ordinary authoring, and it takes about 62 cm off the midline to push one out of band. BAND PROVISIONAL, identical to the left by construction."
+        }
+      ]
+    },
+    {
+      "name": "step",
+      "atPhase": 0.58,
+      "checkpoints": [
+        {
+          "measure": "leftKneeFlexionDegrees",
+          "minimumDegrees": 35.0,
+          "maximumDegrees": 85.0,
+          "cue": "Give a small step. Do not step so big that you shorten your own three feet.",
+          "why": "QUOTED, manual 2664 and 2666: 'Give a small step, and with wrist and hands pass the ball to other player' and 'Don't give a too big step (shortening own 3ft)'. WHAT THIS GRADES IS THE WEIGHT TRANSFER, NOT THE STEP LENGTH, which has no measure in this engine; the same gap netball_chest_pass records in its stepMeasureNote. BAND PROVISIONAL: the same band the chest pass uses for the same cue."
+        }
+      ],
+      "removedCheckpointNote": "A leftShoulderElevationDegrees checkpoint stood here, cueing the manual's 'Keep hands where they were with catch, don't pull ball back behind head'. IT WAS REMOVED because it did not measure its cue. Refer to pullBackNote."
+    },
+    {
+      "name": "release",
+      "atPhase": 0.8,
+      "checkpoints": [
+        {
+          "measure": "leftShoulderElevationDegrees",
+          "minimumDegrees": 80.0,
+          "maximumDegrees": 130.0,
+          "cue": "Send it with your wrists and hands from up there.",
+          "why": "QUOTED, manual 2664: 'with wrist and hands pass the ball to other player'. BAND PROVISIONAL: below 80 she has dropped the arm before letting go, which is a throw from the shoulder rather than the hands; above 130 the arm has not begun the pass at all."
+        },
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 55.0,
+          "maximumDegrees": 115.0,
+          "cue": "The arm stays bent. The hands do the work.",
+          "why": "NOT A QUOTE. It READS the same line for what it implies about the ELBOW: a pass made with the wrist and hands is not a pass made by straightening the arm. The manual does not mention the elbow, so this is an interpretation and is labelled as one. BAND PROVISIONAL, borrowed from netball_chest_pass's release, which drew it from the three releasing catch drills. IT INHERITS THEIR OPEN QUESTION, the release-anchor item on the coach agenda, and it is borrowed across a different arm shape, which is a second reason to treat it as provisional."
+        }
+      ]
+    },
+    {
+      "name": "follow_through",
+      "atPhase": 1.0,
+      "checkpoints": [
+        {
+          "measure": "leftElbowFlexionDegrees",
+          "minimumDegrees": 25.0,
+          "maximumDegrees": 75.0,
+          "cue": "Finish with your hands after the ball.",
+          "why": "AUTHORED, NOT QUOTED. The block describes no follow-through. This phase exists because the release above must grade the release and not the frames after it, which is the pattern netball_chest_pass established. GRADED ON THE ELBOW AFTER A FIRST DRAFT GRADED THE SHOULDER, and the correction is worth recording rather than hiding. A hand-key solve suggested the shoulder was the mover here and the possession solve says the opposite. Measured on a775502: the elbow runs 85.4 at release to 46.2 at the last frame, 39.2 degrees, while the shoulder moves 97.2 to 88.6, which is 8.6. When the first draft was written the carry sat lower and the shoulder moved only 4.55, so its phase was BLIND and build_library said so before any person did. RAISING THE CARRY LIFTED THE SHOULDER ABOVE THE THRESHOLD TOO, so the elbow is now the BETTER measure rather than the only viable one: 39.2 against 8.6. BAND PROVISIONAL: the 25 to 70 window the chest pass uses, widened to 75 because this arm begins its follow-through from overhead. A coach may decide she does not grade a follow-through at all, in which case this phase goes."
+        }
+      ]
+    }
+  ]
+}

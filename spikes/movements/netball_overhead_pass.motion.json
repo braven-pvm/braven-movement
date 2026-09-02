@@ -1,0 +1,60 @@
+{
+  "movementId": "netball_overhead_pass",
+  "frames": 96,
+  "framesPerSecond": 60,
+  "rateNote": "60 frames per second, matching the rest of the library. Settled on the catch drills and carried here for the same reason: a pass leaves the hand at the speed a caught pass arrives.",
+  "notes": "Hand positions are fractions of arm length, measured from the chest. across is out to the side, up is above the chest, ahead is in front. The second drill in the library that STARTS with the ball, and the first that lifts it overhead before sending it.",
+  "orderNote": "The manual's two numbered steps are in this order and the phases follow them: 'Pull the ball up into the air above your head' comes FIRST, then 'Give a small step, and with wrist and hands pass the ball'. She lifts, then steps and passes. A phase order that stepped first would contradict the source.",
+  "stance": {
+    "hipDropFraction": 0.1003,
+    "note": "The same hip drop as the chest catch and the chest pass. The manual's opening line for this pass describes a catch, so it begins in the pose a catch finishes in.",
+    "unitNote": "Stance is measured in leg lengths, not arm lengths. hipDrop, the foot placements and the root travel were all written in arm lengths, which made them depend on the wrong limb: two athletes of the same height with the same legs, differing only in reach, came out with knees 5 degrees apart. Every stance number here was multiplied by 0.626885, the reference athlete's arm over her leg, so her poses are exactly what they were and only other bodies change."
+  },
+  "keys": [
+    {
+      "atPhase": 0.0,
+      "name": "ready",
+      "across": 0.22,
+      "up": 0.04,
+      "ahead": 0.36,
+      "hipDrop": 0.1003,
+      "note": "Ball held at the chest in two hands, the same numbers netball_chest_pass starts from, because the manual opens this block with a catch: 'Player catch the ball the same every time with 2 hands and fingers up and thumbs behind in the middle of the ball'."
+    },
+    {
+      "atPhase": 0.35,
+      "name": "lift",
+      "across": 0.2,
+      "up": 0.95,
+      "ahead": 0.15,
+      "hipDrop": 0.1003,
+      "note": "The manual's step 1, 'Pull the ball up into the air above your head'. Up and very slightly in front, not behind: the block's own warning is 'don't pull ball back behind head'."
+    },
+    {
+      "atPhase": 0.58,
+      "name": "step",
+      "across": 0.2,
+      "up": 0.95,
+      "ahead": 0.18,
+      "hipDrop": 0.14,
+      "note": "She steps and the ball stays where the lift put it. The hands hold to within 0.03 of an arm length, about 1.6 cm. This is the manual's 'Keep hands where they were with catch, don't pull ball back behind head (waste time, change angle of release)'."
+    },
+    {
+      "atPhase": 0.8,
+      "name": "release",
+      "across": 0.24,
+      "up": 0.86,
+      "ahead": 0.45,
+      "hipDrop": 0.085,
+      "note": "The ball leaves. The manual says the pass is made 'with wrist and hands', so the hands travel forward from overhead rather than the whole arm swinging down."
+    },
+    {
+      "atPhase": 1.0,
+      "name": "follow_through",
+      "across": 0.26,
+      "up": 0.62,
+      "ahead": 0.68,
+      "hipDrop": 0.08,
+      "note": "Extended after the ball. A separate phase from the release, for the same reason the chest pass separates them: one phase cannot be both."
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "movementId": "netball_overhead_pass",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger, Passing section, page 80.",
+  "notes": "How the athlete sends the ball from overhead. The second technique in the library with no catch in it. She has the ball from frame 0, lifts it above her head, steps, and passes it with the wrists and hands at 0.80.",
+  "hands": "both",
+  "turnToBall": false,
+  "turnNote": "false. Nothing arrives, so there is nothing to turn toward. She is already facing where she is passing.",
+  "possessionReady": true,
+  "grip": {
+    "spreadDegrees": 90,
+    "faceBall": true,
+    "note": "The library's measured 90 degrees, the value at which this athlete's forearm is clear of its supination limit. The manual's own words for the hands here are 'fingers up and thumbs behind in the middle of the ball', which is what 90 with faceBall produces. PROVISIONAL FOR AN OVERHEAD HOLD SPECIFICALLY: that sentence is written for a catch at the chest and its transfer to a ball held above the head is a judgment a coach must confirm."
+  },
+  "release": {
+    "atPhase": 0.8
+  },
+  "releaseNote": "Anchored at the frame the hands come off the ball, with the follow-through graded as its own phase. The pattern netball_chest_pass established, and the reason the four older releasing drills are on the coach agenda: they grade a release-named phase at 1.00 while their ball leaves between 0.805 and 0.953.",
+  "afterContact": [
+    {
+      "atPhase": 0.0,
+      "name": "held",
+      "across": 0.0,
+      "up": 0.12205,
+      "ahead": 0.55938,
+      "note": "The ball at her chest on the first frame, the same place netball_two_hand_catch_chest's pull_in puts it. The manual opens this block with a catch, so the pass begins where a catch ends."
+    },
+    {
+      "atPhase": 0.35,
+      "name": "lift",
+      "across": 0.0,
+      "up": 1.12,
+      "ahead": 0.30512,
+      "note": "The manual's step 1, 'Pull the ball up into the air above your head'. 1.12 torso lengths puts the BALL CENTRE at 184.4 cm on the reference athlete, which clears her crown by 8.6 cm at the frame this is graded on. THE CROWN MOVES and the clearance must be read where the checkpoint reads it: c_head_null sits at 163.45 cm at frame 0 and at 164.80 at the lift frame, frame 33, and the ball's radius is 11.0. Against the frame-0 crown the clearance looks like 10.0, which is what a first draft claimed; against the lift-frame crown it is 8.6. AUTHORED AGAINST HER ANATOMY, not against a band. An earlier draft used 0.9663, which cleared by 0.5 cm at the graded frame and was far too marginal for a cue that says up into the air."
+    },
+    {
+      "atPhase": 0.58,
+      "name": "step",
+      "across": 0.0,
+      "up": 1.12,
+      "ahead": 0.33562,
+      "note": "SHE STEPS AND THE BALL STAYS WHERE THE LIFT PUT IT. 0.03 of a torso length ahead, about 1.6 cm, and no change in height. This is the manual's 'Keep hands where they were with catch, don't pull ball back behind head'. Unlike the chest pass, this cue IS gradeable here: refer to the definition's pullBackNote."
+    },
+    {
+      "atPhase": 0.8,
+      "name": "release",
+      "across": 0.0,
+      "up": 1.018,
+      "ahead": 0.66109,
+      "note": "The last frame the hands are on the ball. Forward and a little down from the lift, which is what 'with wrist and hands' produces: the ball travels ahead without the arm swinging down through it."
+    }
+  ],
+  "carryUnitNote": "afterContact is measured in torso lengths, not arm lengths. Where a ball sits relative to the body depends on the body and the ball, not on how long the arm is, and in arm lengths two athletes of the same height whose reach differed by a tenth held the same ball 9 percent apart. Every number here was multiplied by 1.017053, the reference athlete's arm over her torso, so her positions are unchanged and only other bodies move."
+}

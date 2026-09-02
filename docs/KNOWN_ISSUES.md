@@ -177,6 +177,102 @@ all three dead phases are dead in either unit. It is recorded because a name
 that does not say what it holds is how `fingerBaseDeviation` came to bound a
 flexion axis, and that cost a day.
 
+## No units-correct distance measures, and three cues already want them
+
+Raised 2026-09-02 by the content lane while authoring `netball_overhead_pass`.
+An open row, not a defect in anything shipped: nothing today reads a height,
+and no band sits where one would be needed.
+
+**TWO measures are missing, and both are lengths.**
+
+**A HEIGHT.** How high the ball or the wrist is, in centimetres, with its unit
+declared. It must be read AT THE FRAME THAT IS
+GRADED: the crown reference `c_head_null` sits at 163.45 cm at frame 0 of
+`netball_overhead_pass` and at 164.80 at its lift frame, and a first draft of
+that drill's floor used the frame-0 figure and overstated its clearance by
+1.35 cm. The manual's overhead cue is "Pull the
+ball up into the air above your head", which is a height, and the drill grades
+it on `leftShoulderElevationDegrees` instead.
+
+**Why it was not simply added.** `segment_measures.MEASURE_UNITS` already
+declares `footHeightGapCm` as `CENTIMETRES`, so the REGISTRY is not the gap. The
+gap is the band: a checkpoint holds its bounds in `minimumDegrees` and
+`maximumDegrees` whatever the measure is in, which is the entry above, "Centimetres
+are stored in a field called degrees", with three occurrences. Adding a height
+measure to a checkpoint today would make a fourth. The orchestrator ruled on
+2026-09-02 that no centimetre value goes into a degrees field, and that the fix
+is a units-correct band rather than a fourth instance.
+
+**What the substitute costs, measured.** `leftShoulderElevationDegrees` reads
+arm FOLD as well as height. Inputs: possession solve, grip `spreadDegrees` 90
+with `faceBall`, ball radius 11.0 cm, lift phase 0.35, the carry's `ahead` swept
+from 0.100 to 0.800 at a fixed `up` of 1.12 so the ball stays at 184.4 cm.
+
+| where | fold range | shoulder elevation | spread |
+|---|---|---|---|
+| ball 184.4 cm | elbow 105.7 to 56.6 | 109.5, 107.7, 106.6, 114.8 | **8.2, non-monotonic** |
+| ball 174.1 cm, near the crown line | elbow 123.5 and 81.1 | 87.3 and 91.0 | **3.7** |
+
+**So the leak grows with height and is smallest where the band's floor sits.**
+Near the crown line it is 3.7 degrees, under the 5 degree threshold, which is
+why `netball_overhead_pass` ships on the substitute and says so beside its band.
+
+Read that precisely rather than as "no verdict moves": the FLOOR ITSELF IS
+UNCERTAIN BY 3.7 DEGREES because of the fold, so a drill reading within 3.7 of
+its floor could fall either side depending on how the hands are placed. That is
+smaller than the measurement threshold, and no drill sits there — the overhead
+pass reads 107.7 against a floor of 91, a margin of 16.7. A future drill
+authored close to the floor would need the pure measure. Above the crown the measure is impure, and **no band currently sits
+there**, which is what makes this a row rather than a fault.
+
+**IT ALSO READS HAND PLACEMENT, at a completely fixed ball.** Found by the
+PR #60 reviewer and confirmed by the content lane on the same build. A grip
+`spreadDegrees` of 60 against 120 reads 102.13 against 113.67, an 11.5 degree
+spread. A ball radius of 8 against 14 cm reads 110.51 against 105.12, 5.4
+degrees.
+
+**That is safe for a technique file and would not be for a filmed athlete.** A
+technique fixes the grip and the ball, so every drill in this library is
+compared at one hand placement and the term cancels. A person filmed holding the
+same ball at the same height with her hands differently placed would read up to
+11.5 degrees apart on a checkpoint meant to be about height. Anyone pointing
+this measure at a capture should read this row first.
+
+**What a height measure would guard.** Discriminating height well above the
+crown: a lob, whose cue is "as high as arm can go" rather than "above your
+head", and any later band that had to separate two high positions. Refer to
+`docs/LOB_AUTHORING_BRIEF.md`.
+
+**A BALL POSITION AHEAD OF THE CHEST PLANE**, in centimetres, at the graded
+phase, with its unit declared. This one has been wanted twice and refused twice.
+
+The manual warns "Keep hands where they were with catch, don't pull ball back
+behind head". A checkpoint for it was authored on `netball_chest_pass`,
+mutation-tested and DELETED: moving the ball 13.2 cm shifted the largest
+measured angle 5.1 degrees, at the threshold this project calls meaningless.
+
+It was authored again on `netball_overhead_pass`, appeared to work, and was
+DELETED FOR A WORSE REASON. Swept against its band, a 26 cm pull-back — the ball
+well behind her head — PASSED at 114.99, and the whole range from 0 to 26 cm
+moved the measure 7.7 degrees. The failure at 27.7 cm was a SOLVER BASIN FLIP:
+across 26.8 to 27.2 the elbow's z ran +8.5 to −12.0, swinging 20.5 cm from in
+front of the shoulder to behind it, while the wrist moved 0.2 cm and the ball did
+not move at all. Refer to that drill's `pullBackNote`, and to
+`docs/CLAVICLE_ARTEFACT.md` for the same shape in another drill.
+
+**So the manual's own warning has NO instrument on either pass**, and an angle
+cannot stand in for it. The cue is a DISTANCE and the engine grades ANGLES. Both
+rows here are the same shape: the manual cues lengths, and a length needs a
+measure whose unit says so.
+
+**A caution for whoever builds them.** `netball_overhead_pass` was nearly
+shipped with a checkpoint that passed a single mutation and measured nothing it
+claimed. The proof method changed with it: a failing mutation is now a SWEEP of
+at least three displacements, the measure must move progressively, and the joint
+positions must move continuously at the crossing. A single-point failure beside a
+joint discontinuity is a basin. That drill's `mutationNote` carries the eight
+sweeps.
+
 ## A per-hand ready offset is a design candidate, not a gap
 
 `BallOffset` is a point, and `ready` in a technique file uses it. Both hands

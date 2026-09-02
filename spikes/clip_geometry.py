@@ -50,6 +50,13 @@ CLASSES = {
     # the possession model derives independently. The exporter prints the
     # difference between the two, as it does for every other clip.
     "netball_chest_pass": ("pass", "chest-pass", "release"),
+    # The second `pass`. `overhead-pass` is NOT in Tactics' RELEASE_KINDS today,
+    # which lists chest-pass, shoulder-pass, lob and bounce-pass, so no board can
+    # select this clip yet. It is exported anyway: the engine may hold a
+    # technique the board cannot ask for, and the reconciliation between the
+    # manual's pass family and that vocabulary is on the coach agenda. Refer to
+    # docs/TACTICS_CLIP_CONTRACT.md section 3 and docs/LOB_AUTHORING_BRIEF.md.
+    "netball_overhead_pass": ("pass", "overhead-pass", "release"),
 }
 
 # Above this much root travel, a clip is not in place and the consumer must
