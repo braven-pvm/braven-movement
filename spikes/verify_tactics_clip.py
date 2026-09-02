@@ -116,6 +116,7 @@ SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
 BASELINE = SPIKE_DIR / "clip-baseline.json"
 
+from clip_geometry import RELEASE_MOMENT, moment_frame  # noqa: E402
 from export_tactics_clip import CLASSES, build  # noqa: E402
 from movement_definition import load as load_definition  # noqa: E402
 from movement_engine import definition_path, load_character  # noqa: E402
@@ -140,6 +141,7 @@ REPORTED_ONLY = {
     "leftShoulderElevationDegrees": 7,
     "rightShoulderElevationDegrees": 9,
 }
+
 
 
 def check(character, movement_id: str) -> dict:
@@ -195,7 +197,19 @@ def check(character, movement_id: str) -> dict:
 
     # The declared moment against the frame the possession model derives. They
     # agree on a catch and must not on a landing.
-    contact_at = clip["contactFrame"] / max(1, len(clip["frames"]))
+    #
+    # A RELEASE MOMENT IS COMPARED AGAINST `releaseFrame`. This read
+    # `contactFrame` for every clip until 2026-09-02, which asked a release
+    # clip when she CAUGHT the ball. The clip contract named that gap in
+    # section 6 before any clip could hit it; `netball_chest_pass` and
+    # `netball_overhead_pass` both declare a `release` moment now, so two
+    # shipped clips were being reported against the wrong question.
+    #
+    # A release clip with no `releaseFrame` is a contradiction rather than a
+    # missing field: the class says she lets go and the possession model never
+    # saw it happen. It is raised, not defaulted, because a silent fall back to
+    # the contact frame is the defect this replaces.
+    moment_at = moment_frame(clip) / max(1, len(clip["frames"]))
 
     # A comparison that produced nothing is not a pass.
     #
@@ -223,7 +237,12 @@ def check(character, movement_id: str) -> dict:
         "seconds": clip["seconds"],
         "hit": clip["hit"],
         "hitPhase": clip["hitPhase"],
-        "momentGapSeconds": round((contact_at - clip["hit"]) * clip["seconds"], 3),
+        # Named for the moment it was actually measured against, so a reader
+        # of the report cannot mistake which question it answers.
+        "momentGapAgainst": (
+            "releaseFrame" if clip["hitPhase"] == RELEASE_MOMENT else "contactFrame"
+        ),
+        "momentGapSeconds": round((moment_at - clip["hit"]) * clip["seconds"], 3),
         "rootTravelM": clip["rootTravelM"],
         "ballAtPhases": {
             phase["name"]: clip["ball"][phase["frame"]] for phase in clip["phases"]
@@ -287,7 +306,8 @@ def main(argv: list[str]) -> int:
             f"{mark:5s}{row['clipId']:36s} worst gap "
             f"{row['worstAssertedGapDegrees']:5.2f} deg over "
             f"{row['assertedChannels']:2d} channels   "
-            f"moment {row['hitPhase']} {row['momentGapSeconds']:+.2f} s{moved}"
+            f"moment {row['hitPhase']} {row['momentGapSeconds']:+.2f} s "
+            f"vs {row['momentGapAgainst']}{moved}"
         )
         if row["structuralFault"]:
             print(f"      {row['structuralFault']}")

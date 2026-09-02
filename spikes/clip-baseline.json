@@ -6,7 +6,8 @@
     "seconds": 1.6,
     "hit": 0.792,
     "hitPhase": "release",
-    "momentGapSeconds": -1.267,
+    "momentGapAgainst": "releaseFrame",
+    "momentGapSeconds": -0.001,
     "rootTravelM": 0.0012,
     "ballAtPhases": {
       "ready": [
@@ -298,6 +299,7 @@
     "seconds": 1.467,
     "hit": 0.443,
     "hitPhase": "contact",
+    "momentGapAgainst": "contactFrame",
     "momentGapSeconds": -0.033,
     "rootTravelM": 0.0006,
     "ballAtPhases": {
@@ -538,6 +540,7 @@
     "seconds": 1.833,
     "hit": 0.809,
     "hitPhase": "land",
+    "momentGapAgainst": "contactFrame",
     "momentGapSeconds": -0.316,
     "rootTravelM": 0.3696,
     "ballAtPhases": {
@@ -776,6 +779,7 @@
     "seconds": 1.8,
     "hit": 0.574,
     "hitPhase": "contact",
+    "momentGapAgainst": "contactFrame",
     "momentGapSeconds": -0.033,
     "rootTravelM": 0.002,
     "ballAtPhases": {
@@ -1016,6 +1020,7 @@
     "seconds": 1.633,
     "hit": 0.49,
     "hitPhase": "contact",
+    "momentGapAgainst": "contactFrame",
     "momentGapSeconds": -0.034,
     "rootTravelM": 0.0009,
     "ballAtPhases": {
@@ -1254,6 +1259,7 @@
     "seconds": 1.633,
     "hit": 0.49,
     "hitPhase": "contact",
+    "momentGapAgainst": "contactFrame",
     "momentGapSeconds": -0.017,
     "rootTravelM": 0.0007,
     "ballAtPhases": {
@@ -1548,7 +1554,8 @@
     "seconds": 1.6,
     "hit": 0.792,
     "hitPhase": "release",
-    "momentGapSeconds": -1.267,
+    "momentGapAgainst": "releaseFrame",
+    "momentGapSeconds": -0.001,
     "rootTravelM": 0.0012,
     "ballAtPhases": {
       "ready": [
@@ -1840,6 +1847,7 @@
     "seconds": 1.633,
     "hit": 0.449,
     "hitPhase": "contact",
+    "momentGapAgainst": "contactFrame",
     "momentGapSeconds": -0.033,
     "rootTravelM": 0.002,
     "ballAtPhases": {
@@ -2080,6 +2088,7 @@
     "seconds": 1.633,
     "hit": 0.541,
     "hitPhase": "contact",
+    "momentGapAgainst": "contactFrame",
     "momentGapSeconds": -0.017,
     "rootTravelM": 0.0008,
     "ballAtPhases": {
@@ -2318,6 +2327,7 @@
     "seconds": 1.633,
     "hit": 0.49,
     "hitPhase": "contact",
+    "momentGapAgainst": "contactFrame",
     "momentGapSeconds": -0.017,
     "rootTravelM": 0.0014,
     "ballAtPhases": {

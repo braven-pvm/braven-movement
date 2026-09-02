@@ -285,3 +285,33 @@ def unwrap(frames: list[dict]) -> None:
                     frames[i][part][side]["upper"] - previous
                 )
 
+
+# The moment name that means the ball LEAVES. `CLASSES` in clip_geometry.py
+# gives every movement one of these, and only this one is measured against
+# `releaseFrame`.
+RELEASE_MOMENT = "release"
+
+
+def moment_frame(clip: dict) -> int:
+    """Return the frame the clip's declared moment must be compared against.
+
+    A clip names ONE moment and the possession model derives two. Comparing a
+    `release` moment against `contactFrame` asks when she CAUGHT the ball,
+    which is a different question and would agree only by accident.
+
+    A release clip with no `releaseFrame` is a contradiction rather than a
+    missing field: its class says she lets go and the model never saw it
+    happen. It raises instead of falling back, because falling back to the
+    contact frame is the defect this replaces.
+    """
+    if clip["hitPhase"] != RELEASE_MOMENT:
+        return clip["contactFrame"]
+    released = clip["releaseFrame"]
+    if released is None:
+        raise ValueError(
+            f"{clip['clipId']} declares a {RELEASE_MOMENT!r} moment and carries "
+            "no releaseFrame, so there is nothing to compare it against. Either "
+            "the possession model never released the ball, or the clip was built "
+            "before releaseFrame existed."
+        )
+    return released
