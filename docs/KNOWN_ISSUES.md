@@ -177,6 +177,47 @@ all three dead phases are dead in either unit. It is recorded because a name
 that does not say what it holds is how `fingerBaseDeviation` came to bound a
 flexion axis, and that cost a day.
 
+## No units-correct height measure, and one cue already wants it
+
+Raised 2026-09-02 by the content lane while authoring `netball_overhead_pass`.
+An open row, not a defect in anything shipped: nothing today reads a height,
+and no band sits where one would be needed.
+
+**What is missing.** A measure of how high the ball or the wrist is, in
+centimetres, with its unit declared. The manual's overhead cue is "Pull the
+ball up into the air above your head", which is a height, and the drill grades
+it on `leftShoulderElevationDegrees` instead.
+
+**Why it was not simply added.** `segment_measures.MEASURE_UNITS` already
+declares `footHeightGapCm` as `CENTIMETRES`, so the REGISTRY is not the gap. The
+gap is the band: a checkpoint holds its bounds in `minimumDegrees` and
+`maximumDegrees` whatever the measure is in, which is the entry above, "Centimetres
+are stored in a field called degrees", with three occurrences. Adding a height
+measure to a checkpoint today would make a fourth. The orchestrator ruled on
+2026-09-02 that no centimetre value goes into a degrees field, and that the fix
+is a units-correct band rather than a fourth instance.
+
+**What the substitute costs, measured.** `leftShoulderElevationDegrees` reads
+arm FOLD as well as height. Inputs: possession solve, grip `spreadDegrees` 90
+with `faceBall`, ball radius 11.0 cm, lift phase 0.35, the carry's `ahead` swept
+from 0.100 to 0.800 at a fixed `up` of 1.12 so the ball stays at 184.4 cm.
+
+| where | fold range | shoulder elevation | spread |
+|---|---|---|---|
+| ball 184.4 cm | elbow 105.7 to 56.6 | 109.5, 107.7, 106.6, 114.8 | **8.2, non-monotonic** |
+| ball 174.1 cm, the crown line | elbow 123.5 and 81.1 | 87.3 and 91.0 | **3.7** |
+
+**So the leak grows with height and is smallest where the band's floor sits.**
+At the crown line it is under the 5 degree threshold and no verdict moves,
+which is why `netball_overhead_pass` ships on the substitute and says so beside
+its band. Above the crown the measure is impure, and **no band currently sits
+there**, which is what makes this a row rather than a fault.
+
+**What a height measure would guard.** Discriminating height well above the
+crown: a lob, whose cue is "as high as arm can go" rather than "above your
+head", and any later band that had to separate two high positions. Refer to
+`docs/LOB_AUTHORING_BRIEF.md`.
+
 ## A per-hand ready offset is a design candidate, not a gap
 
 `BallOffset` is a point, and `ready` in a technique file uses it. Both hands
