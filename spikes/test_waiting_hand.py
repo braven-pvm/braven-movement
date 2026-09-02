@@ -52,6 +52,12 @@ STANCE_DEGREES = {
     "netball_hooks_jump_pull_in": -0.020,
     "netball_hooks_outside_hand": -48.217,
     "netball_one_hand_snatch_to_other_hand": -0.496,
+    # ADDED AS A HOTFIX. This drill arrived in PR #60 while the guard above
+    # arrived in PR #57. Each tip was green on its own and the merged tree was
+    # red, because the guard sweeps the library rather than a fixed list.
+    # Hosted CI cannot catch that: the runner has no assets, so it never solves
+    # and the guard never runs there. The local suite is the only instrument.
+    "netball_overhead_pass": -0.011,
     "netball_two_hand_catch_chest": -0.018,
     "netball_two_hand_snatch_pull_in": 0.019,
     "netball_two_hand_snatch_straight_back": 0.020,
