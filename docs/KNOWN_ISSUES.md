@@ -177,14 +177,16 @@ all three dead phases are dead in either unit. It is recorded because a name
 that does not say what it holds is how `fingerBaseDeviation` came to bound a
 flexion axis, and that cost a day.
 
-## No units-correct height measure, and one cue already wants it
+## No units-correct distance measures, and three cues already want them
 
 Raised 2026-09-02 by the content lane while authoring `netball_overhead_pass`.
 An open row, not a defect in anything shipped: nothing today reads a height,
 and no band sits where one would be needed.
 
-**What is missing.** A measure of how high the ball or the wrist is, in
-centimetres, with its unit declared. It must be read AT THE FRAME THAT IS
+**TWO measures are missing, and both are lengths.**
+
+**A HEIGHT.** How high the ball or the wrist is, in centimetres, with its unit
+declared. It must be read AT THE FRAME THAT IS
 GRADED: the crown reference `c_head_null` sits at 163.45 cm at frame 0 of
 `netball_overhead_pass` and at 164.80 at its lift frame, and a first draft of
 that drill's floor used the frame-0 figure and overstated its clearance by
@@ -240,6 +242,36 @@ this measure at a capture should read this row first.
 crown: a lob, whose cue is "as high as arm can go" rather than "above your
 head", and any later band that had to separate two high positions. Refer to
 `docs/LOB_AUTHORING_BRIEF.md`.
+
+**A BALL POSITION AHEAD OF THE CHEST PLANE**, in centimetres, at the graded
+phase, with its unit declared. This one has been wanted twice and refused twice.
+
+The manual warns "Keep hands where they were with catch, don't pull ball back
+behind head". A checkpoint for it was authored on `netball_chest_pass`,
+mutation-tested and DELETED: moving the ball 13.2 cm shifted the largest
+measured angle 5.1 degrees, at the threshold this project calls meaningless.
+
+It was authored again on `netball_overhead_pass`, appeared to work, and was
+DELETED FOR A WORSE REASON. Swept against its band, a 26 cm pull-back — the ball
+well behind her head — PASSED at 114.99, and the whole range from 0 to 26 cm
+moved the measure 7.7 degrees. The failure at 27.7 cm was a SOLVER BASIN FLIP:
+across 26.8 to 27.2 the elbow's z ran +8.5 to −12.0, swinging 20.5 cm from in
+front of the shoulder to behind it, while the wrist moved 0.2 cm and the ball did
+not move at all. Refer to that drill's `pullBackNote`, and to
+`docs/CLAVICLE_ARTEFACT.md` for the same shape in another drill.
+
+**So the manual's own warning has NO instrument on either pass**, and an angle
+cannot stand in for it. The cue is a DISTANCE and the engine grades ANGLES. Both
+rows here are the same shape: the manual cues lengths, and a length needs a
+measure whose unit says so.
+
+**A caution for whoever builds them.** `netball_overhead_pass` was nearly
+shipped with a checkpoint that passed a single mutation and measured nothing it
+claimed. The proof method changed with it: a failing mutation is now a SWEEP of
+at least three displacements, the measure must move progressively, and the joint
+positions must move continuously at the crossing. A single-point failure beside a
+joint discontinuity is a basin. That drill's `mutationNote` carries the eight
+sweeps.
 
 ## A per-hand ready offset is a design candidate, not a gap
 
