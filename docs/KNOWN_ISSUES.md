@@ -2345,9 +2345,23 @@ height. **Recomputed from the engine's own release positions, its own
 **At the manual's longest stated distance the overhead's ball goes over a
 goalpost. The chest pass's passes 3.6 cm under one.**
 
-**THE LONG-QUOTED 302 WAS VERY NEARLY RIGHT, FOR THE CHEST PASS.** It sits 0.6
-cm from this measurement of it. What it never described is the overhead pass,
-which releases 38 cm higher and clears the post by 16 cm.
+**THE 302 AND THE 301.4 ARE NOT THE SAME PASS, AND THEIR AGREEMENT IS A
+CANCELLATION.** A first version of this section called the old figure "very
+nearly right", which is the same fault this file names most often, one grain up:
+two numbers compared without their geometries.
+
+| | release | catch | vertical | apex |
+|---|---|---|---|---|
+| the quoted 302 | **135.0** | **135.0**, level | 572.2 | 301.9 |
+| this measurement | **142.4** | **126.3** | 558.4 | 301.4 |
+
+**The chest pass releases 7.4 cm HIGHER and catches 8.7 cm LOWER**, and those
+two nearly cancel over 7 m. The old figure describes a level pass between two
+135 cm points, which is not a drill in this library. It agrees with the engine
+by arithmetic accident, not because it was measuring the same thing.
+
+What it never described at all is the overhead pass, which releases 38 cm
+higher again and clears the post by 16 cm.
 
 **A FIRST VERSION OF THIS SECTION PUT THE RECEIVER AT 106.5 cm AND GOT 291.9
 AND 312.4.** That was a mistake in my own arithmetic and not in the engine: I
@@ -2366,10 +2380,20 @@ A first version of this entry said the `up: 0.0` target lands at 106.5 cm,
 called that 26 cm below her shoulders, and asked whether the anchor or the note
 describing it was wrong.
 
-**The anchor is `c_spine3`, and it sits at 126.32 cm.** Her shoulder midpoint at
-frame 0 is 132.86, so it is **6.5 cm** below her shoulders, which is where a
-chest is. `stance.place(up=0, ahead=4)` returns 126.32 exactly, because the
-anchor IS the zero of that axis.
+**The anchor is `c_spine3`, and it sits within a millimetre of 126.3 cm.** Her
+shoulder midpoint at frame 0 is 132.86, so it is about **6.5 cm** below her
+shoulders, which is where a chest is.
+
+**TWO QUANTITIES SIT THERE AND THIS ENTRY QUOTES ONE OF THEM.** The SOLVED
+frame-0 `c_spine3` reads **126.324**. The stance frame's anchor is the REST
+`c_spine3` placed into the trunk frame, which is what
+`stance.place(up=0, ahead=4)` returns and what the engine's launch actually
+aims at; the review reads it as **126.403**. Inverting the engine's own
+vertical velocity gives 126.32 on the chest pass and 126.27 on the overhead,
+but that inversion uses a run computed from the solved anchor and so cannot
+separate the two. **They differ by less than a millimetre and nothing here
+turns on which is used — but the number must say which it is**, which the
+first version of this section did not.
 
 The ball files say `up: 0.0` puts the receiver's hands "at the height of this
 athlete's chest, where the stance frame is anchored". **That is accurate.**

@@ -43,6 +43,7 @@ class TheApexComesFromTheLaunch(unittest.TestCase):
             for name in (
                 "netball_chest_pass",
                 "netball_overhead_pass",
+                "netball_hooks_jump_pull_in",
                 "netball_two_hand_snatch_pull_in",
             )
         }
@@ -75,26 +76,50 @@ class TheApexComesFromTheLaunch(unittest.TestCase):
             float(np.linalg.norm(passing.launch_velocity[[0, 2]])), 600.0, places=3
         )
 
-    def test_the_apex_is_the_closed_form_and_not_a_sampled_maximum(self):
-        """Guards against anyone replacing this with a scan of the frames.
+    def test_the_apex_is_the_closed_form(self):
+        for name in ("netball_chest_pass", "netball_hooks_jump_pull_in"):
+            found = self.apex(name)
+            start = found["releaseHeightCm"]
+            rise = found["verticalSpeedCmPerSecond"]
 
-        The chest pass's ball leaves at 142.4 cm rising at 71.5 cm/s, so it
-        peaks 2.6 cm higher, 0.07 s later — between two frames at 60 fps. A
-        sampled maximum cannot see that peak at all.
+            self.assertAlmostEqual(
+                found["apexHeightCm"],
+                start + rise * rise / (2 * GRAVITY_CM),
+                places=1,
+                msg=name,
+            )
+            self.assertAlmostEqual(
+                found["apexSeconds"], rise / GRAVITY_CM, places=3, msg=name
+            )
+
+    def test_a_scan_of_the_drawn_frames_would_be_wrong_and_by_how_much(self):
+        """The reason the closed form is used, asserted on the drill it bites.
+
+        A FIRST VERSION OF THIS TEST COULD NOT DETECT A FRAME SCAN. It asserted
+        on `netball_chest_pass`, whose ball peaks 0.07 s after release — and a
+        scan of that drill reads 145.02 against the closed form's 145.04. Two
+        hundredths of a centimetre. A frame-scanning `apex()` passed every
+        assertion in the file.
+
+        `netball_hooks_jump_pull_in` is where it bites: its ball is STILL
+        RISING at the last drawn frame, so the highest frame is 1.29 cm below
+        the real peak and no number of frames would fix it. The clip simply
+        ends before the ball does.
         """
-        found = self.apex("netball_chest_pass")
-        start = found["releaseHeightCm"]
-        rise = found["verticalSpeedCmPerSecond"]
+        found = self.apex("netball_hooks_jump_pull_in")
+        possession = self.solve["netball_hooks_jump_pull_in"]["possession"]
+        centres = np.asarray(possession.centres())
+        release = [f.number for f in possession.frames if f.state == "released"][0]
+        flown = centres[release:]
 
-        self.assertAlmostEqual(
-            found["apexHeightCm"], start + rise * rise / (2 * GRAVITY_CM), places=1
+        self.assertGreater(
+            flown[-1][1], flown[-2][1], "the ball must still be rising at the end"
         )
-        self.assertAlmostEqual(found["apexSeconds"], rise / GRAVITY_CM, places=3)
-        self.assertLess(
-            found["apexSeconds"],
-            1.0 / 60.0 * 5,
-            "the peak falls within a few frames of the release, so a frame scan "
-            "would report the release height and call it the peak",
+        self.assertGreater(
+            found["apexHeightCm"] - float(np.max(flown[:, 1])),
+            1.0,
+            "a scan of the drawn frames must be wrong by more than a centimetre "
+            "here, or this test cannot tell a closed form from a scan",
         )
 
     def test_a_ball_thrown_downward_peaks_where_it_leaves(self):

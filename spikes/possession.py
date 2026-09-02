@@ -132,8 +132,8 @@ class Possession:
     # then discarded, so nothing downstream could ask where the ball ENDS UP.
     # Every question about the library's one ball speed has been answered by
     # hand arithmetic outside the engine for that reason, and the answers have
-    # disagreed with each other. Refer to "The ball speed has no source" in
-    # docs/KNOWN_ISSUES.md.
+    # disagreed with each other. Refer to "The ball speed for the whole library
+    # is one undocumented constant" in docs/KNOWN_ISSUES.md.
     launch_from: np.ndarray | None = None
     launch_velocity: np.ndarray | None = None
 
