@@ -165,18 +165,36 @@ too far?
 **What the engine does.** On the two drills where one hand takes the ball and
 the other joins, the free hand goes out ahead of her shoulders and comes back:
 
+Measured from the midpoint of her two upper-arm joints, which is the origin
+`docs/KNOWN_ISSUES.md` used, so the two readings can be compared at all:
+
 | drill | at contact | furthest out | back to | travel |
 |---|---|---|---|---|
-| `one_hand_snatch_to_other_hand` | 17.6 cm | 32.1 cm | 17.6 cm | **14.5 cm** |
-| `hooks_outside_hand` | 13.1 cm | 22.5 cm | 13.0 cm | **9.4 cm** |
+| `one_hand_snatch_to_other_hand` | 11.85 cm | 25.97 cm | 12.07 cm | **14.12 cm** |
+| `hooks_outside_hand` | 3.43 cm | 14.33 cm | 3.48 cm | **10.90 cm** |
 
-**An older reading, kept beside this one.** `docs/KNOWN_ISSUES.md` records the
-same movement as 11.9 out to 26.0 and back to 12.0 on the first drill, and 11.8
-to 25.1 to 12.0 on the second. Those were read on an earlier build. The travel
-is close on the first drill and smaller on the second, and the hand now sits
-further forward at contact on both. The two readings may also project "ahead of
-the shoulders" slightly differently, so compare the shapes rather than the
-decimals.
+**WATCH THE TRAVEL, NOT THE HEIGHT ABOVE ZERO.** "Ahead of her shoulders" needs
+an origin, and the number changes completely with the choice while the movement
+does not. On the first drill, across four defensible origins, the contact
+reading ranges from 7.46 to 20.66 cm and the travel stays between 14.12 and
+14.67. The travel is the movement. The level is a choice of where to measure
+from.
+
+**Against the older reading in `docs/KNOWN_ISSUES.md`**, which records 11.9 out
+to 26.0 and back to 12.0 on the first drill and 11.8 to 25.1 to 12.0 on the
+second, both introduced in `1106617` on 2026-08-27:
+
+- **The first drill has not moved.** 11.85 to 25.97 to 12.07 against 11.9 to
+  26.0 to 12.0. The older reading reproduces on `ac240b2`.
+- **The second drill has moved**, and it is the drill the hand fix changed most.
+  Travel 10.90 cm against 13.3, and it sits closer in.
+
+**A correction to an earlier draft of this document.** It gave 17.6 and 13.1 cm
+at contact and said the hand now sits further forward on both drills. Those
+figures came from a DIFFERENT ORIGIN — the trunk frame's own shoulder places
+rather than the solved upper-arm joints — so the difference was in the
+measurement and not in the athlete. One drill had not moved at all. Retracted
+rather than corrected in place, because a coach could have repeated it.
 
 The movement is smooth either way. The hand ramps out over about thirteen
 frames and back over about thirty-nine.
@@ -219,10 +237,10 @@ if the answer is no.
 her back or her shoulder to the passer?
 
 **Why it is being asked, and it is new.** Until the hand fix shipped,
-`hooks_outside_hand` began 48.23 degrees turned. It now begins at 15.44, and
-nothing else comes close:
+`hooks_outside_hand` began 48.23 degrees turned, read on `378fea0`. It now
+begins at 15.44 on `ac240b2`, and nothing else comes close:
 
-| drill | how far turned while a hand still waits |
+| drill | furthest turned at any frame before contact |
 |---|---|
 | `hooks_outside_hand` | 15.44 degrees |
 | `deflect_high` | 0.78 |
@@ -231,6 +249,11 @@ nothing else comes close:
 
 The athlete had been turning her shoulders 48 degrees to compensate for a hand
 whose fingers closed wrongly. With the hand corrected she stands nearly square.
+
+The window is every frame before contact, which is wider than the frames where
+she is purely waiting. Over the narrower window the two middle rows read 0.00
+and 0.50 rather than 0.78 and 0.53. Neither reading changes the finding: one
+drill turns and the rest do not.
 
 **What it cost.** A guard existed to make sure the engine's reach rule was
 tested on a turned athlete, because that rule is only wrong when she is turned.
