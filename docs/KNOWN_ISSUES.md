@@ -1886,4 +1886,98 @@ Testing any of those is a separate piece of work and it needs a ruling first.
 **A COUNT CORRECTED.** A draft of this entry said "five of the library's square
 drills are bistable", taken from a relayed figure rather than measured. What is
 measured is four flips under one parameter exclusion and six between the two
-shipped builds above. The relayed five is not used.
+reconstructed configurations above. The relayed five is not used.
+
+## Every square drill solves with one knee more bent than the other
+
+**Six drills author nothing that distinguishes left from right, and not one of
+them solves as a mirror.** The gap between the knees runs **3.78 to 6.48
+degrees**, on every drill, in every solution measured. Nothing asks for it.
+
+Measured on `c4a7a37`.
+
+### The population comes from the files, not from a judgement
+
+A drill is in when NOTHING in its authoring carries a side. Four fields do:
+the hand offsets, the foot placements, `turn_degrees` (positive to the
+athlete's left) and `root_across` (positive the same way).
+
+| out of the population | what carries a side |
+|---|---|
+| `double_foot_landing` | feet: approach key asks left 0.150 ahead, right −0.163 |
+| `hooks_outside_hand` | a right-hand override, and a 48 degree turn |
+| `one_hand_snatch_to_other_hand` | a right-hand override on three keys |
+
+The other six are in: `chest_pass`, `deflect_high`, `hooks_jump_pull_in`,
+`two_hand_catch_chest`, `two_hand_snatch_pull_in`,
+`two_hand_snatch_straight_back`.
+
+**FIELD PRESENCE IS THE WRONG TEST, AND A FIRST VERSION OF THIS USED IT.**
+`hooks_jump_pull_in` writes `footLeft` and `footRight` on all five keys with
+IDENTICAL values, and `across` is mirrored per side in `foot_targets` — the
+left foot takes `+across`, the right takes `−across`. So identical values mean
+a symmetric stance, and the drill belongs in the population. Excluding it on
+the presence of the fields dropped the worst member.
+
+### The gap, across three solutions
+
+| drill | negation | shipped mirror | mirror, locked pinned | spread |
+|---|---|---|---|---|
+| `hooks_jump_pull_in` | 5.78 | 5.81 | **6.48** | 0.70 |
+| `deflect_high` | 3.79 | 5.82 | 3.78 | 2.04 |
+| `chest_pass` | 4.45 | 4.56 | 4.31 | 0.25 |
+| `two_hand_catch_chest` | 4.39 | 4.15 | 4.44 | 0.29 |
+| `two_hand_snatch_straight_back` | 3.93 | 4.24 | 4.02 | 0.31 |
+| `two_hand_snatch_pull_in` | 4.20 | 4.09 | 4.15 | 0.11 |
+
+**THE 6.48 IS THE CONTENT LANE'S FIGURE.** It reported a 6.48 degree left-right
+knee gap on a drill flagged `symmetric`, from the graded checkpoints. It is the
+worst member of this population on the shipped build. The two readings are one
+instrument at two thresholds, and neither lane knew that when it wrote its own.
+
+### Why this is pinnable where the pelvis line was not
+
+The entry above withdraws a pelvis pin because the pelvis line FLIPS between
+solutions — six of nine drills, worst 61.45 degrees — so any pin on it goes red
+for a correct change.
+
+**Two mirrored solutions read the same |left − right|.** The magnitude survives
+exactly the change that defeated the sign. Across the three states above each
+drill moves by 0.11 to 0.70, and 2.04 on `deflect_high`. That is the whole
+reason this quantity can carry a guard and the other cannot.
+
+### The flag was reading the hands only
+
+`MotionTrack.is_symmetric()` returned `all(key.left == key.right ...)`. Those
+are HAND keys. `double_foot_landing` lands off one foot, its hands match, and
+it was published to the library as **`symmetric: true`** — a split stance
+declared as a mirror. The flag now reads all four side-carrying fields, and one
+drill's published value changes with it. **A ONE-WORD NAME FOR TWO QUANTITIES,
+which is the fault class this file already names three times.**
+
+### What was landed
+
+- `test_an_even_drill_solves_evenly` is an **expected failure**. `unittest`
+  reports an expected failure that starts passing as a FAILURE, so the day the
+  solver answers evenly the suite goes red and someone must come back and
+  record what changed. A comment would have stayed true and told nobody.
+- `test_no_even_drill_solves_more_crookedly_than_it_did` holds each drill under
+  its worst measured state plus one degree. Nothing else reads the DIFFERENCE
+  between the knees — the graded checkpoints read each knee against its own
+  band, and both can drift together inside their bands while the gap widens.
+- **A gap that merely SHRINKS does not pass.** Halving every measured value
+  leaves the expected failure failing, which was verified as a mutation.
+
+Four mutations were run: the threshold raised to say "fixed" gives an
+unexpected success; a ceiling lowered gives a named failure; the flag reverted
+to hands-only makes the population wrong on three tests; and the halved gap
+above. The turn and step clauses of the flag change no drill in today's
+library, so `test_motion_track.py` plants each of them into a square drill.
+
+### What is not settled
+
+Why the solver returns an uneven athlete for an even question. That is the same
+open question as the entry above, and the candidates listed there are the
+candidates here. **NOT PROPOSED: constraining the solve.** This entry adds an
+instrument and changes no engine behaviour.
+

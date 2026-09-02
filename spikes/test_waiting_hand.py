@@ -113,10 +113,49 @@ STANCE_DEGREES = {
 # to be right is a guard somebody will retune.
 STANCE_TOLERANCE_DEGREES = 2.0
 
+# THE LEFT-RIGHT KNEE GAP, in degrees, on every drill whose authoring is even.
+#
+# `MotionTrack.is_symmetric()` names that population: no hand, foot, turn or
+# step in these six files distinguishes left from right. A mirrored athlete is
+# what they ask for, so the gap between her knees should be zero. IT IS NOT. It
+# is 3.78 to 6.48 degrees, on every drill, in every solution measured.
+#
+# WHERE THE SIGN COULD NOT BE PINNED, THE MAGNITUDE CAN. The pelvis line above
+# flips between solutions, which is why no pin was possible on it. Two mirrored
+# solutions read the SAME |left - right|, so this quantity survives exactly the
+# change that defeated the other. Measured across three states — the finger
+# negation, the shipped mirror, and the mirror with the locked parameters
+# pinned — each drill moves by:
+#
+#   two_hand_snatch_pull_in        0.11      chest_pass            0.25
+#   two_hand_catch_chest           0.29      straight_back         0.31
+#   hooks_jump_pull_in             0.70      deflect_high          2.04
+#
+# The ceilings below are the WORST of those three states plus one degree. The
+# margin is calibrated, not chosen: it sits above every basin move measured
+# except deflect_high's, whose own ceiling already carries its high state.
+#
+# A FOURTH SOLUTION COULD BREACH THESE, and that is not a reason to raise them.
+# If one does, the finding is that a new basin exists; read "The lower body has
+# no stable solution" in docs/KNOWN_ISSUES.md before touching a number here.
+KNEE_GAP_CEILING_DEGREES = {
+    "netball_chest_pass": 5.56,
+    "netball_deflect_high": 6.82,
+    "netball_hooks_jump_pull_in": 7.48,
+    "netball_two_hand_catch_chest": 5.44,
+    "netball_two_hand_snatch_pull_in": 5.20,
+    "netball_two_hand_snatch_straight_back": 5.24,
+}
+# What a fixed solver would read. Every measured value is above 3.78, and no
+# quantity here is noisy at the tenth of a degree, so one degree separates
+# "solved evenly" from "not solved evenly" with room on both sides.
+KNEE_GAP_SOLVED_DEGREES = 1.0
+
 if SOLVER:
     # Deliberately unguarded: a failure here is a real break and must be loud.
     from ball_track import has_ball
-    from movement_engine import library, load_character
+    from motion_track import load_motion
+    from movement_engine import library, load_character, motion_path
     from possession_solve import solve_movement
     from technique import has_technique, load_technique, technique_path
 
@@ -135,6 +174,8 @@ class NoHandWaitsPastFullStretch(unittest.TestCase):
         cls.turned: dict[str, float] = {}
         cls.stance: dict[str, float] = {}
         cls.pelvis: dict[str, float] = {}
+        cls.knee_gap: dict[str, float] = {}
+        cls.even: dict[str, bool] = {}
         for movement_id in library():
             if not (has_ball(movement_id) and has_technique(movement_id)):
                 continue
@@ -164,6 +205,20 @@ class NoHandWaitsPastFullStretch(unittest.TestCase):
             # magnitude and the opposite sign, so abs() would pass it.
             cls.stance[movement_id] = ground_angle("l_uparm", "r_uparm")
             cls.pelvis[movement_id] = ground_angle("l_upleg", "r_upleg")
+
+            # The WORST gap over the whole drill, not the gap at one landmark.
+            # An asymmetry that appears only under load would hide in a
+            # frame-zero reading, and load is when a knee matters.
+            cls.knee_gap[movement_id] = max(
+                abs(
+                    frame["leftKneeFlexionDegrees"]
+                    - frame["rightKneeFlexionDegrees"]
+                )
+                for frame in result["measurements"]
+            )
+            cls.even[movement_id] = load_motion(
+                motion_path(movement_id)
+            ).is_symmetric()
 
             if contact is None or contact < 1:
                 continue
@@ -294,6 +349,74 @@ class NoHandWaitsPastFullStretch(unittest.TestCase):
             "that drill: it has two poses 33 degrees apart, and that is what "
             "happened the last time it read square.",
         )
+
+    def test_the_even_population_is_what_it_claims(self) -> None:
+        """Guards the guard. The two below say nothing about an empty set.
+
+        A population read from a flag is only as good as the flag. If
+        `is_symmetric` ever narrows, these guards quietly cover fewer drills
+        and stay green, so the membership is asserted here by name.
+        """
+        even = {name for name, flag in self.even.items() if flag}
+        self.assertEqual(
+            even,
+            set(KNEE_GAP_CEILING_DEGREES),
+            "the drills whose authoring is even are not the drills guarded",
+        )
+        for name in (
+            "netball_double_foot_landing",
+            "netball_hooks_outside_hand",
+            "netball_one_hand_snatch_to_other_hand",
+        ):
+            self.assertIn(name, self.even, f"{name} was not solved")
+            self.assertFalse(
+                self.even[name],
+                f"{name} authors a side and must not be held to a mirror",
+            )
+
+    def test_no_even_drill_solves_more_crookedly_than_it_did(self) -> None:
+        """A left-right knee gap that GROWS is a regression nothing else reads.
+
+        The graded checkpoints read each knee against its own band, and both
+        knees can drift together inside their bands while the gap between them
+        widens. This is the only check that reads the difference.
+        """
+        for movement_id, ceiling in KNEE_GAP_CEILING_DEGREES.items():
+            self.assertIn(movement_id, self.knee_gap, f"{movement_id} not solved")
+            self.assertLessEqual(
+                self.knee_gap[movement_id],
+                ceiling,
+                f"{movement_id} now solves {self.knee_gap[movement_id]:.2f} "
+                f"degrees crooked, past its recorded {ceiling:.2f}",
+            )
+
+    @unittest.expectedFailure
+    def test_an_even_drill_solves_evenly(self) -> None:
+        """THIS IS EXPECTED TO FAIL TODAY, and the failure is the finding.
+
+        Nothing in these six files distinguishes left from right, so the
+        solver should return a mirrored athlete. It returns knees 3.78 to
+        6.48 degrees apart. The worst, 6.48 on `hooks_jump_pull_in`, is the
+        figure the content lane reported from the other end.
+
+        It is recorded as an EXPECTED failure rather than a comment because
+        an expected failure that starts passing is reported as a failure by
+        `unittest`. So the day the solver is made to answer evenly, this
+        goes red and someone has to come back here, delete it, and write
+        down what changed. A comment would have gone on being true forever
+        and told nobody.
+
+        A drill whose gap merely SHRINKS does not pass this. Half of 6.48 is
+        still not a mirror, and the ceiling guard above is what watches the
+        other direction.
+        """
+        for movement_id in KNEE_GAP_CEILING_DEGREES:
+            self.assertLessEqual(
+                self.knee_gap[movement_id],
+                KNEE_GAP_SOLVED_DEGREES,
+                f"{movement_id} solves {self.knee_gap[movement_id]:.2f} "
+                "degrees crooked with nothing asking it to",
+            )
 
     def test_no_waiting_hand_is_further_out_than_a_reaching_one(self) -> None:
         """The rule, measured against the library rather than a threshold.
