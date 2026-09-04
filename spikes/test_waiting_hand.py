@@ -70,6 +70,24 @@ STANCE_DEGREES = {
     "netball_hooks_jump_pull_in": -0.020,
     "netball_hooks_outside_hand": -48.217,
     "netball_one_hand_snatch_to_other_hand": -0.496,
+    # THE FIRST DRILL IN THIS LIBRARY THAT HOLDS THE BALL IN ONE HAND AT
+    # FRAME 0, and it reads -8.327 where every square drill reads under
+    # 0.05. That is a RECORDED FACT and not a target, like every value
+    # here, but it is large enough to explain.
+    #
+    # It is NOT the ball being on the midline. Sweeping the frame-0 ball
+    # from across 0.00 out to -0.32 arm lengths, toward the throwing
+    # side, moves this reading only from -8.33 to -9.06: the turn comes
+    # from one arm being on the ball while the other hangs, not from
+    # where the ball is. netball_one_hand_snatch_to_other_hand reads
+    # -0.496 because at ITS frame 0 the ball has not arrived yet and both
+    # arms are in a ready pose.
+    #
+    # NOTHING ELSE WOULD HAVE CAUGHT THIS. A one-handed drill is uneven by
+    # construction, so it is outside the even population the knee-mirror
+    # guards read, and this pin is the only instrument that looks at its
+    # shoulder line at all.
+    "netball_one_hand_high_pass": -8.327,
     # ADDED AS A HOTFIX in PR #64. This drill arrived in PR #60 while the guard
     # above arrived in PR #57. Each tip was green on its own and the merged
     # tree was red, because the guard sweeps the library rather than checking a
@@ -459,6 +477,11 @@ class NoHandWaitsPastFullStretch(unittest.TestCase):
             "netball_double_foot_landing",
             "netball_hooks_outside_hand",
             "netball_one_hand_snatch_to_other_hand",
+            # The library's first one-handed PASS. It is uneven for the
+            # simplest possible reason: `technique.carries_no_side` returns
+            # False on its first line for anything but hands="both". Named
+            # here so that reason is asserted rather than assumed.
+            "netball_one_hand_high_pass",
         ):
             self.assertIn(name, self.even, f"{name} was not solved")
             self.assertFalse(
