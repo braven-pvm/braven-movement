@@ -3134,10 +3134,36 @@ annotated "gesture", ARE THE CLAPS.** Measured on the front view:
 | repetition 0 | **5.867 s**, wrists 0.249 shoulder widths apart | **x26.5** over its local floor, at 5.800 s |
 | repetition 8 | **17.900 s**, wrists 0.266 apart | **x29.1** over its local floor, at 17.835 s |
 
-The whole-clip median wrist separation is 0.94 shoulder widths, and only seven
-frames in 785 fall under 0.5. The five other minima carry audio spikes of x1.3
-to x2.9 — nothing. The two that carry a x26+ spike are the two the annotation
-had already singled out as containing no ball.
+**THE COUNT IN AN EARLIER VERSION OF THIS ENTRY WAS FALSE.** It said "only
+seven frames in 785 fall under 0.5". **Fifty-five do.** Seven was a count of
+local minima after a separation rule, printed as a count of frames, and the
+deepest frame in the whole clip — 0.236 at 18.300 s — was not among the seven
+named. Corrected from a committed run of `spikes/video_clap_evidence.py`:
+
+| reading | value |
+|---|---|
+| frames read | 785 |
+| median separation | 0.94 shoulder widths |
+| **frames under 0.5** | **55** |
+| in stretches | **5** |
+| local minima | **12** |
+| deepest | 0.236 at 18.300 s |
+
+The five stretches are 5.833–6.033 (7 frames), 17.833–19.000 (36),
+21.000–21.067 (3), 22.300–22.400 (4) and 22.833–22.967 (5).
+
+**THE IDENTIFICATION DOES NOT REST ON THE COUNT. IT RESTS ON A COINCIDENCE.**
+Her hands come together often, because she talks with them; the room has many
+loud moments. What is rare is the two at once. Of the **twelve** hands-together
+minima, **exactly two** carry a broadband attack within 100 ms — 5.867 s with
+x26.5, and 17.900 s with x29.1. **The other ten carry nothing at all.** Those
+two are the two repetitions the annotation had already singled out as containing
+no ball.
+
+The long 17.833–19.000 stretch contains the second clap AND the deepest frame
+that follows it, which is consistent with the annotation's own reading of
+repetition 8: she claps, then stands and talks with her hands clasped at her
+chest.
 
 ### Why this matters more than the sync question
 
@@ -3187,6 +3213,23 @@ points and is withdrawn. Refer to "A fifth instrument, and a sixth that is
 withdrawn" in
 `docs/VIDEO_CAPTURE_FINDINGS.md`, where all eight moments are now named with
 their provenance.
+
+### Where the numbers come from
+
+`spikes/video_clap_evidence.py`, committed with this entry, and every figure
+above is from `python video_clap_evidence.py 0.1`. **It exists because the first
+version of this finding was published from a detector that lived in one
+session's scratchpad.** An independent reviewer could not re-measure any of it,
+reconstructed the detector by hand, and got 25.4 where this says 26.5 and counts
+from zero to twenty-seven depending on the rule guessed. A number nobody else
+can regenerate is not a measurement, whatever it happens to be.
+
+Every parameter is a named constant with its reason: the 4 kHz band, 5 ms
+blocks, a median floor over the preceding 0.5 s stopping 10 ms short, an attack
+ratio of 0.5, a 0.15 s separation between reported spikes and a x8 bar. **A
+reported spike is therefore a CLUSTER, not necessarily an isolated event**:
+anything within 150 ms of one is inside it. That is why the terminal pair reads
+as two spikes at 26.240 and 26.415 rather than three.
 
 ### The instruction it produced
 

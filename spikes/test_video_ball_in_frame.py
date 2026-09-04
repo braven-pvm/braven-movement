@@ -326,7 +326,9 @@ class TheCommittedAnnotationForSessionOne(unittest.TestCase):
     def test_no_prose_in_this_file_can_move_a_verdict(self):
         """THE ANNOTATION IS DATA THE GATE READS, so an edit to it has to be
         provably inert. `judge` reads index, ballVisible, cause and
-        marginFrames and nothing else; every other field is for a person.
+        marginFrames, and through `check_windows` it also reads startSeconds
+        and endSeconds — that is the whole list. Every other field is for a
+        person.
 
         This mutates EVERY prose field — the per-row evidence and all six
         top-level notes — and requires the verdict to come back identical. A

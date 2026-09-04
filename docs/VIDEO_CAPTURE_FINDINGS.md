@@ -116,7 +116,14 @@ three seconds, an eye on contact sheets at 1.0 to 1.27 s, and this.
 
 Nothing here narrows the offset and nothing should be read as narrowing it.
 
-**AND THE 1.22 s IN THAT PARAGRAPH WAS NEVER SOURCED.** Corrected 2026-09-04.
+**AND THE 1.22 s IN THAT PARAGRAPH IS SOURCED ONLY IN AN UNTRACKED FILE, BY A
+METHOD THAT DOES NOT SURVIVE RE-MEASUREMENT.** Corrected 2026-09-04, and
+corrected again the same day: an earlier version of this paragraph said the
+figure was "never sourced", which overstates it. The clip lane's manifest — also
+untracked output, like `clap-offsets.json` — records
+`sideOffsetSecondsUsed: 1.22` from "a wrist-height cross-correlation", and the
+clips were cut with it. So it has a source and a method; what it does not have
+is a tracked one or a result that reproduces.
 What the artefacts actually apply is **1.0 s with a 0.15 s uncertainty**:
 `keypoints-side-0.1.json` carries `offsetSecondsToReference: 1.0`,
 `offsetUncertaintySeconds: 0.15`, method "two visual events matched by eye",
@@ -143,18 +150,20 @@ named here so nobody has to take the list on trust:
 
 | moment | provenance |
 |---|---|
-| 9.175 s | rep01 catch, read by eye against the cut clip |
+| 9.175 s | rep01 catch, read by eye against the cut clip — recorded in the clip lane's UNTRACKED manifest |
 | 11.200 s | rep 2 catch, annotation FRESH LOOK |
 | 16.900 s | rep 7 catch, annotation FRESH LOOK, 16.800–17.000 |
-| 20.000 s | rep09 release arrival, pace work |
-| 22.030 s | rep09 hold arrival, pace work |
+| 20.000 s | rep09 release arrival, pace work — window from the UNTRACKED manifest |
+| 22.030 s | rep09 hold arrival, pace work — window from the UNTRACKED manifest |
 | 12.500 s | **NONE — a pick inside rep 3's window** |
 | 13.400 s | **NONE — a pick inside rep 4's window** |
 | 15.200 s | **NONE — a pick inside rep 6's window** |
 
 The last three were chosen by this lane inside annotated windows where no catch
 time was ever read, and an earlier version of this paragraph called all eight
-"proved on frame strips". Removing the three moves the answer:
+"proved on frame strips". **Three of the five that DO carry provenance carry it
+from an untracked manifest**, so their provenance is one grade weaker than
+repetitions 2 and 7, whose times are in the committed annotation. Removing the three moves the answer:
 
 | moments | peak | mean side height |
 |---|---|---|
@@ -671,6 +680,14 @@ distinctive signature is a pair of spikes 0.175 s apart; no offset within six
 seconds places that pair anywhere in the side track. Whether the side microphone
 missed the claps or the two files do not share the instant, no instrument here
 can say, and the sync fell back to matching catches by eye at about 1.0 s.
+
+**A FOLLOW-UP THIS PACK DOES NOT DO.** The sentence "there is no clap in this
+material" still stands in six tracked files, including `spikes/video_sync.py`
+and `spikes/video_keypoints.py`, and the second of those STAMPS IT INTO THE
+SYNC BLOCK OF EVERY KEYPOINT FILE IT WRITES. So the claim this section corrects
+is still being generated into new artefacts. Correcting the writer and
+re-stamping the existing files is its own pack, and it is named here so that it
+is queued rather than forgotten.
 
 **And the clap must not be mistaken for the drill.** Both of session 1.0's claps
 were recorded in the ball-in-frame annotation as "gesture" repetitions, and one
