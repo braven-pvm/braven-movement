@@ -45,7 +45,25 @@ except ImportError:  # pragma: no cover - exercised only without the solver
 # The build matters and an earlier draft named the wrong one. It said fc29bb2,
 # where `netball_chest_pass` DID NOT EXIST — the drill arrived two merges
 # later. A figure whose named build could not have produced it is not sourced.
+#
+# `netball_bounce_pass` was measured by its author on THE ENGINE AT eaecbb2 with
+# this branch applied, using the same `ground_angle("l_uparm", "r_uparm")`
+# expression this file uses on frame 0. It reads +0.0349 there, which rounds to
+# the 0.035 pinned below.
+#
+# THE BUILD NAMED IS THE MAIN COMMIT, not this branch's tip. An earlier version
+# named 5ce3f2c, which is main BEFORE this drill existed — the same fault the
+# paragraph above records, made again three lines below it. Naming the branch
+# tip instead would be worse: the comment lives IN the commit it would name, so
+# every amendment falsifies it. The engine is what the figure depends on and the
+# engine comes from main, so main is what gets named.
+#
+# THE AUTHOR OF A DRILL ADDS ITS PIN, ruled 2026-09-02 after the race the hotfix
+# comment below records. On the run that measured the bounce pass, the overhead
+# pass read -0.0110 against the -0.011 the movement lane had measured
+# independently, so the two instruments agree to the printed precision.
 STANCE_DEGREES = {
+    "netball_bounce_pass": 0.035,
     "netball_chest_pass": -0.004,
     "netball_deflect_high": -0.000,
     "netball_double_foot_landing": 0.034,

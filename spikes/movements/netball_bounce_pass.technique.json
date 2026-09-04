@@ -1,0 +1,53 @@
+{
+  "movementId": "netball_bounce_pass",
+  "source": "Netball Skills and Conditioning Manual, Level 1, 3rd version, Niel du Plessis and Erin Burger, Passing section, page 82.",
+  "notes": "How the athlete sends a bounce pass. The third technique in the library with no catch in it, and the first thrown DOWNWARD. She has the ball from frame 0, pulls it to the side and low, drives it forward and down, and lets it go at 0.80. THE BOUNCE IS NOT HERE: refer to the definition's source.",
+  "hands": "both",
+  "turnToBall": false,
+  "turnNote": "false. Nothing arrives, so there is nothing to turn toward.",
+  "possessionReady": true,
+  "grip": {
+    "spreadDegrees": 90,
+    "faceBall": true,
+    "note": "The library's measured 90 degrees. PROVISIONAL for this pass: the manual's cue 3 is 'Keep hand behind the ball', which is a hand ORIENTATION and not a spread. spikes/hand_orientation.py reports thumbToBallDegrees for exactly that question but is absent from segment_measures.MEASURE_UNITS, so no checkpoint can read it and the cue goes ungraded. It becomes gradeable the day that module's measures enter the registry."
+  },
+  "release": {
+    "atPhase": 0.8
+  },
+  "releaseNote": "Anchored at the frame the hands come off the ball, with the follow-through graded as its own phase, which is the pattern netball_chest_pass established.",
+  "afterContact": [
+    {
+      "atPhase": 0.0,
+      "name": "held",
+      "across": 0.0,
+      "up": 0.12205,
+      "ahead": 0.55938,
+      "note": "The ball at her chest on the first frame. REDUNDANT and kept for readability: the ball track's first key governs the pose at frame 0, which netball_overhead_pass's mutation work proved by moving one and not the other."
+    },
+    {
+      "atPhase": 0.32,
+      "name": "pull_to_side",
+      "across": 0.24,
+      "up": 0.0,
+      "ahead": 0.58,
+      "note": "The manual's step 1, 'Pull the ball to the side'. The carry key is a POINT and the grip puts both hands around it, so moving it sideways carries the whole two-handed hold across rather than separating the hands. NOT GRADED: refer to the definition's sideMeasureNote."
+    },
+    {
+      "atPhase": 0.62,
+      "name": "drive",
+      "across": 0.12,
+      "up": -0.16,
+      "ahead": 0.84,
+      "note": "Forward and DOWN. This is what distinguishes a bounce pass's carry from the chest pass's, which rises, and the overhead's, which starts high."
+    },
+    {
+      "atPhase": 0.8,
+      "name": "release",
+      "across": 0.0,
+      "up": -0.26,
+      "ahead": 0.96,
+      "note": "The last frame the hands are on the ball, and the lowest the ball gets while she has it. The manual's step 5 is 'Keep ball low' and this release height is the only part of that cue the drill can honour."
+    }
+  ],
+  "carryUnitNote": "afterContact is measured in torso lengths, not arm lengths. Where a ball sits relative to the body depends on the body and the ball, not on how long the arm is, and in arm lengths two athletes of the same height whose reach differed by a tenth held the same ball 9 percent apart. Every number here was multiplied by 1.017053, the reference athlete's arm over her torso, so her positions are unchanged and only other bodies move."
+}
