@@ -54,15 +54,26 @@ try:
 except ImportError:  # pragma: no cover - exercised only without the solver
     SOLVER = False
 
-# The job rounds every emitted number to six decimal places of a TORSO LENGTH.
-# Measured across all 1084 frames of the library, the worst reproduction gap is
-# 4.909e-07 torso lengths, which is 2.437e-07 m on this athlete.
+# The job rounds every emitted number to six decimal places of a TORSO LENGTH,
+# so ONE unit in the last place is 1e-6 torso lengths — 4.96e-07 m on this
+# athlete. Measured over all 1084 frames:
 #
-# THIS IS NOT A TOLERANCE CHOSEN TO MAKE THE TEST PASS. It is one unit in the
-# last emitted place. No wrong pair of joints — clavicles, scapulae, the rest
-# pose — lands within a micron of the right one. The rendering lane's own
-# agreement guard sits at 1e-5 m, twenty times above this.
+#     the midpoint reproduces the anchor      4.9086e-07 torsos
+#     each SIDE reproduces its own shoulder   4.9996e-07
+#     the end-to-end ball centre              9.2583e-07
+#
+# THE END-TO-END CHECK GETS TWO UNITS, AND NOT BECAUSE IT NEEDED THEM TO PASS.
+# It composes TWO independently rounded fields — the shift and
+# `fromShouldersInArms` — so its bound is twice the single-field bound by
+# construction. Holding it to one unit passed with 8 per cent to spare, which
+# is a threshold waiting to fail on another machine for a reason that would
+# not be a defect.
+#
+# NEITHER IS A TOLERANCE CHOSEN TO FIT. No wrong pair of joints — clavicles,
+# the rest pose, a swapped side — lands within a micron of the right one. The
+# rendering lane's own agreement guard sits at 1e-5 m, twenty times above.
 ROUNDING_TORSOS = 1e-6
+COMPOSED_TORSOS = 2e-6
 
 FIELD = "shoulderShiftFromRestInTorsos"
 
@@ -175,7 +186,7 @@ class TheJobCarriesItsOwnAnchor(unittest.TestCase):
                 float(np.max(np.abs(rebuilt - centre))) / rest_torso(rest_points, index),
             )
 
-        self.assertLess(worst, ROUNDING_TORSOS, f"worst ball error {worst:.3e} torsos")
+        self.assertLess(worst, COMPOSED_TORSOS, f"worst ball error {worst:.3e} torsos")
 
     def test_the_shift_is_the_girdle_and_not_the_body(self):
         """The subtraction must be pelvis-relative on BOTH sides.
