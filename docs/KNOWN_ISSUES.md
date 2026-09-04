@@ -49,6 +49,27 @@ opposite property. Shoulder positions sent in metres would place this rig's
 ball about 6 cm too high on every frame, including the 15 that pass today.
 Send them relative to the pelvis, in arm lengths.
 
+SEND THE DISPLACEMENT, NOT THE POSITION. Transmitting the shoulder POSITION
+does not work across these two bodies, even normalised. Resolving the engine's
+positions onto this rig at 42.7689 / 49.6456 puts ZERO of the 48 phases under
+the one-centimetre rule, with a smallest error of 1.108 cm. `chest_pass/ready`
+reads 2.488 cm, and that is a phase where both bodies are at their neutral
+girdle and nothing is wrong at all. An instrument that reports an error where
+there is none is measuring something else.
+
+It is measuring a constant. This rig's shoulders sit 0.2648 cm BEHIND its
+pelvis and the engine's sit 2.4622 cm AHEAD of its own, which is 2.386 cm after
+scaling. A divisor scales and it does not translate, so no scalar can remove a
+difference in where MHR's `root` sits against MPFB's `pelvis`, or a difference
+in neutral posture. Nobody can currently separate those two causes: this rig
+has no `root` bone and the movement lane has no MPFB rig.
+
+So the field carries `(position at phase - that body's own neutral) /
+restTorso`, and each side applies the displacement to its own neutral. Every
+constant cancels, a neutral phase reads exactly zero, and the quantity
+transmitted is the one that is actually missing, which is that this rig's
+girdle does not move.
+
 `girdle_agreement.py` holds the consumer guard. It refuses a frame whose
 transmitted positions are absent, because a frame nobody can check must not
 read the same as a frame that passed. On this rig the clavicle tail and the
