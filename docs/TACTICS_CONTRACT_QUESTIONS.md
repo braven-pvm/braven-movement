@@ -361,8 +361,12 @@ any board. That is a fact about the consumer, and not about the clip.
   restitution in `possession.py`, `ball_track.py` or `possession_solve.py`.
 - The ball reaches the ground at **0.584 s**, 400.0 cm from her chest.
 
-- The release sits at **0.80 of a 1.60 s clip**, leaving **0.3167 s of flight**.
-- The floor is reached **1.84 times later than that, short by 0.2673 s**.
+- The release sits at **0.80 of a 1.60 s clip**, leaving **0.32 s of flight**.
+- The floor is reached **1.84 times later than that, short by 0.268 s**.
+
+Those are the audit's own printed figures. **The unrounded 0.3167 s and
+0.2673 s used below are my reconstruction** from the frame count, not a
+quotation: the audit prints only the rounded pair.
 
 **Those figures are correct, and a first version of this section wrongly said
 they did not close.** The error is worth recording, because it was a unit
@@ -396,7 +400,10 @@ I speculated in the earlier version that the audit had measured on a commit
 before `hit` settled. That was wrong, and it was speculation offered where an
 arithmetic check was available.
 
-The other two passes complete inside their clips, at frames 93 and 94 of 95.
+The chest pass and the overhead pass complete inside their clips, at frames 93
+and 94 of 95. **I have no completion figure for the one-hand-high pass**:
+`docs/ONE_HAND_HIGH_INSTRUMENT_AUDIT.md` does not state one, and I did not
+measure it. It is not being reported as complete or as truncated.
 All four passes share `seconds` 1.6000, `frames` 96 and `hit` 0.7920 exactly, so
 what separates them is the flight each ball needs and not the shape of the clip.
 
@@ -418,7 +425,7 @@ CLASS in the first segment, so a bounce pass is `pass.netball.bounce-pass`.
 Therefore:
 
 - A `bounce-pass` event looks for `bounce-pass.netball.` and **finds nothing**.
-- A plain `pass` event looks for `pass.netball.` and **finds both passes**.
+- A plain `pass` event looks for `pass.netball.` and **finds all four passes**.
 
 **Membership of `ReleaseKind` by the technique segment plays no part in
 resolution at all.** The first segment does the work, and it is the class.
@@ -426,13 +433,13 @@ resolution at all.** The first segment does the work, and it is the class.
 ### What is actually true, and it is worse
 
 **No pass clip is in Tactics.** `clips.json` at `987e2e2` holds eight technique
-clips, all `catch`, `block` and `land`. Zero begin with `pass.`. All three engine
+clips, all `catch`, `block` and `land`. Zero begin with `pass.`. All four engine
 passes are unspliced, so nothing resolves today by any route.
 
 And there is a trap waiting in the splice. `DEFAULT_TECHNIQUE` has entries for
 `catch.netball`, `block.netball` and `land.netball`, and **none for
 `pass.netball`**. If the passes were spliced as they stand, a plain `pass` event
-would find two clips, find no default, and fall to "take the first rather than
+would find four clips, find no default, and fall to "take the first rather than
 dealing at random" — which sorts `pass.netball.bounce-pass` before
 `pass.netball.chest-pass`.
 
@@ -496,7 +503,7 @@ The reasons are measured rather than preferred:
 
 1. **The engine cannot produce the full flight for a bounce pass.** It has no
    floor. A contract that demanded the flight to the catch would make one of
-   three merged pass techniques unexportable. It would be a rule the supplier
+   four merged pass techniques unexportable. It would be a rule the supplier
    cannot satisfy.
 2. **The consumer does not want it.** Tactics computes ball flight from its own
    timeline. The board already knows where the ball goes, at what time, and to
@@ -750,7 +757,7 @@ convention, changed on **six of the eight**.
 
 **Read the history carefully, because it is not monotonic:**
 
-All three rows are re-read with `clip_gap_read.py` under the one convention, so
+All four rows are re-read with `clip_gap_read.py` under the one convention, so
 they can be compared with each other:
 
 | against | n | median | worst | over 15 |
@@ -795,11 +802,12 @@ Stated here so that nobody reads silence as a finding.
 - **Whether the eight passes in the manual should replace the four in the
   vocabulary.** That is a coach question, and it is on the coach agenda. Section
   2 adds one fact to it that was not there before: the lob is a variant of the
-  overhead or the 1 Hand High pass, neither is in the library, and neither is in
-  `ReleaseKind`. **The reconciliation is the lob's gate**, so it is not
-  housekeeping that can wait indefinitely.
+  overhead or the 1 Hand High pass. Since `a01cf07` the 1 Hand High IS in the
+  library and the overhead is not, so the lob's missing parent is the overhead
+  alone. Neither is in `ReleaseKind`. **The reconciliation is the lob's gate**,
+  so it is not housekeeping that can wait indefinitely.
 
-- **Whether the three engine passes should be spliced into Tactics.** Section 3
+- **Whether the four engine passes should be spliced into Tactics.** Section 3
   says what must happen first: `DEFAULT_TECHNIQUE` has no `pass.netball` entry,
   and splicing without one makes every ordinary pass draw the bounce pass.
 - **Whether the 0.05 degree miss on the low ball is a band error or a real
