@@ -1,9 +1,11 @@
 # Five questions on the clip contract, answered where the evidence answers them
 
 Written 2026-09-04 against `braven-movement` main at `cc2c20a` and
-`braven-tactics` main at `987e2e2`. Every number below names the file and the
-commit it was read from. Nothing here changes code, and nothing was written into
-`braven-tactics`.
+`braven-tactics` main at `987e2e2`, then revised against `braven-movement`
+`a01cf07`, which landed during the review. Every number below names the file and
+the commit it was read from. Where `a01cf07` changed a fact, the section says so
+rather than being silently updated. Nothing here changes code, and nothing was
+written into `braven-tactics`.
 
 What each of the five turns out to be:
 
@@ -22,7 +24,7 @@ were wrong in a way that is easy to repeat.
 
 **The single most useful fact in this document, because four of the five
 questions depend on it:** a clip loses fields at TWO places between the exporter
-and the board, and the first of the two is an allowlist that silently drops ten.
+and the board, and the first of the two is an allowlist that silently drops nine.
 Section 0 establishes this, and the later sections lean on it.
 
 ---
@@ -44,7 +46,7 @@ There are three stages, not two.
     travelsUnderItsOwnPower  framesPerSecond  contactFrame  releaseFrame
     phases  ballRadiusM  ball  frames
 
-### Stage two: an allowlist in Tactics drops ten of them
+### Stage two: an allowlist in Tactics drops nine of them
 
 `tools/add-technique-clip.mjs` on `braven-tactics` `987e2e2` does not copy the
 clip. It builds a new object field by field:
@@ -277,14 +279,27 @@ open authoring question, and makes it a gate:
 > is in the library.** Authoring the lob now requires authoring its parent
 > first.
 
-So the correct statement is stronger than the one it replaces. `1 Hand High` is
-a manual technique with no engine drill and no place in `ReleaseKind`, it is a
-recorded open question, and **the lob is blocked behind it**. The vocabulary
-reconciliation is not tidiness. It gates a technique somebody wants.
+**That quotation is now half out of date, and the change landed while this
+document was in review.** `a01cf07` (PR #77, 2026-09-04 12:14) added
+`netball_one_hand_high_pass` to `CLASSES` as
+`("pass", "one-hand-high-pass", "release")`. The baseline now carries twelve
+clips, four of them passes.
+
+So, as of `a01cf07`:
+
+- **`1 Hand High` HAS an engine drill.** An earlier version of this section said
+  it did not, which was true at `cc2c20a` and is false now.
+- **It still has no place in `ReleaseKind`**, exactly like `overhead-pass`.
+- **The lob's missing parent is now the overhead alone**, not both parents.
+
+The point survives the correction and narrows. The vocabulary reconciliation is
+not tidiness: it still gates the lob, and it now gates two authored engine
+techniques rather than one, because neither `one-hand-high-pass` nor
+`overhead-pass` can be named by a board.
 
 ### What the vocabulary change would cost Tactics
 
-Adding `overhead-pass` to `ReleaseKind` is a one-line type change. Two things a
+Adding `overhead-pass` to `ReleaseKind` is one line. **It is not a one-line change**, and the list below is why. Two things a
 first version of this section listed as costs are **not** costs, and the code
 says so:
 
@@ -346,40 +361,44 @@ any board. That is a fact about the consumer, and not about the clip.
   restitution in `possession.py`, `ball_track.py` or `possession_solve.py`.
 - The ball reaches the ground at **0.584 s**, 400.0 cm from her chest.
 
-The audit then states the release at "0.80 of a 1.60 s clip", leaving 0.32 s of
-flight, and the floor reached "1.84 times longer than the clip has left, short
-by 0.268 s".
+- The release sits at **0.80 of a 1.60 s clip**, leaving **0.3167 s of flight**.
+- The floor is reached **1.84 times later than that, short by 0.2673 s**.
 
-**Those three figures do not close against each other, and they do not match the
-baseline.** I repeated them from the audit in a first version of this section
-without checking them, which is the same fault the audit itself is about.
+**Those figures are correct, and a first version of this section wrongly said
+they did not close.** The error is worth recording, because it was a unit
+mistake of exactly the kind this document is about.
 
-From `spikes/clip-baseline.json` at `cc2c20a`:
+The baseline reports `hit` as 0.7920 and the audit says 0.80. **Those are two
+expressions of one frame, not two measurements and not two commits.** The chain:
 
-| quantity | audit | baseline |
-|---|---|---|
-| clip length | 1.60 s | 1.6000 s |
-| release, as a fraction | 0.80 | **0.7920** |
-| flight left in the clip | 0.32 s | **0.3328 s** |
-| shortfall against 0.584 s | 0.268 s | **0.2512 s** |
-| ratio, floor to flight left | 1.84 | **1.755** |
+1. `netball_bounce_pass.json:60-61` declares the release phase at `atPhase 0.8`.
+2. `export_tactics_clip.py:150` maps a phase to a frame as
+   `round(phase.at_phase * (count - 1))`, so `round(0.8 × 95)` is **frame 76**.
+3. The clip's `hit` is that frame over the frame count, `76 / 96` = **0.7917**,
+   which the baseline rounds to 0.7920.
 
-The audit's own arithmetic does not close either: 0.584 − 0.32 is 0.264 and not
-0.268, and 0.584 ÷ 0.32 is 1.83 and not 1.84. Both printed figures need a flight
-of about 0.317 s, which appears nowhere.
+So `0.80` is the authored phase and `0.7920` is the same instant expressed
+against the frame count. Nothing disagrees.
 
-**I am not calling the audit wrong.** It may have measured on a commit before
-`hit` settled at 0.7920, and I have not looked. What I can say is that the two
-documents must not both be quoted, and that whoever owns the audit should
-reconcile them.
+**What differed was my arithmetic, not the audit's.** The flight left in a clip
+is measured to the LAST FRAME, not to the clip's nominal end:
 
-**The conclusion survives on either set of numbers, which is why it is safe to
-state.** The clip has 0.33 s of flight at most and the ball needs 0.584 s. It
-ends with the ball in the air by any measurement.
+| reading | intervals | flight | shortfall | ratio |
+|---|---|---|---|---|
+| audit: frame 76 to frame 95 | 19 | **0.3167 s** | 0.2673 | **1.844** |
+| mine: release to clip end | 20 | 0.3333 s | 0.2507 | 1.752 |
+
+The audit's is right. Frame 95 is the last frame that exists, so there are
+nineteen intervals of drawn flight and not twenty. My reading counted an
+interval with no frame at the end of it.
+
+I speculated in the earlier version that the audit had measured on a commit
+before `hit` settled. That was wrong, and it was speculation offered where an
+arithmetic check was available.
 
 The other two passes complete inside their clips, at frames 93 and 94 of 95.
-They share the bounce pass's length and release fraction exactly, so what
-separates them is the flight each ball needs and not the shape of the clip.
+All four passes share `seconds` 1.6000, `frames` 96 and `hit` 0.7920 exactly, so
+what separates them is the flight each ball needs and not the shape of the clip.
 
 **A first version of this section argued that `bounce-pass` is the first
 truncated clip a board can already select, because `bounce-pass` is in
@@ -420,13 +439,53 @@ dealing at random" — which sorts `pass.netball.bounce-pass` before
 **Every ordinary netball pass would be drawn as a bounce pass**, and the bounce
 pass is the one clip of the three whose ball data stops before the ball lands.
 
-That is the same defect class that `6e01e82` fixed for catches, where six drills
-were dealt at random and one player received three different drills in one play.
-It is not fixed in general. It was fixed for the three classes that had clips.
+### What follows from the code, and what is inference
 
-**So the truncation fact and the proposal below both stand. The ordering
-argument does not, and the finding that replaces it is that splicing the passes
-without naming a default is a live trap.**
+The two must not be confused, so they are separated here.
+
+**From the code.** For an event whose kind is `pass`, on a netball board, with
+the pass clips spliced and no `pass.netball` default added,
+`techniqueChosenFor` returns `named[0]` — and the sort puts
+`pass.netball.bounce-pass` first of the four. That is `clips.ts:225-241` and it
+is not a judgement.
+
+**Inference about scope.** The word "ordinary" in "every ordinary pass" is mine.
+Events whose kind is `bounce-pass`, `lob` or any other member find nothing, and
+keep the written pose exactly as they do today. So the claim reaches events
+authored as a plain `pass`, and not the whole vocabulary.
+
+### A first version called this a live trap. A test already guards it
+
+**That was wrong, and the test is one I wrote.**
+`braven-tactics` `src/engine/techniqueSet.test.ts` at `987e2e2` does not read a
+list of classes. It reads them **from the shipped `clips.json`**, and says why:
+
+> So it asserts the table itself, and reads the classes from the shipped set
+> rather than from a list, so that adding a clip is what trips it.
+
+Splicing the passes therefore turns it red three times over, before anything is
+drawn on any board:
+
+1. `expect(authored).toHaveLength(8)` fails at twelve.
+2. `expect(Object.keys(byClass).sort()).toEqual(['block','catch','land'])` fails
+   with `pass` present.
+3. The default guard fails: `pass.netball` would have four techniques and name
+   none, with the message "has 4 techniques and names none as the ordinary
+   case".
+
+That guard is general because of how it reads its input, which is exactly what
+it was written for. Its own comment records that the first version of it was
+hollow, and that deleting the catch default left all twenty-four assertions
+passing.
+
+**So the corrected statement is this.** The behaviour is real and the code does
+what section 3 says. It is not a trap, because it cannot reach a board: the
+suite fails first, and it fails until somebody decides which pass is the
+ordinary case. **That decision is the precondition on the splice**, and the test
+is what converts it from a silent drawing error into a red build.
+
+The truncation fact and the proposal below both stand. The ordering argument
+does not.
 
 ### The answer this evidence supports
 
@@ -459,7 +518,7 @@ exactly this information for a pass. What is missing is the contract saying that
 not read past it.
 
 **That proposal does not work as written, and section 0 says why.**
-`releaseFrame` is one of the ten fields the allowlist in
+`releaseFrame` is one of the nine fields the allowlist in
 `tools/add-technique-clip.mjs` drops. It is exported, and it does not reach
 `clips.json`. So the field that would declare the boundary is already being
 thrown away at the boundary.
@@ -531,8 +590,14 @@ must be added to the allowlist in `tools/add-technique-clip.mjs`, or it stops at
 the boundary exactly as `releaseFrame` does. Refer to section 0.
 
 So this is a two-repository change, and it is still the cheapest of the
-proposals here. It is also the only one that makes a past mistake impossible to
-repeat.
+proposals here.
+
+It is also the only one that answers a question the artefact currently cannot
+answer at all. It does not make the mistake impossible: a field can carry a
+wrong value, and this document already printed an invented arm length into a
+proposed provenance field once. What it does is put the question and its answer
+on the same file, so that answering it does not depend on finding a commit
+message.
 
 ---
 
@@ -639,10 +704,10 @@ from?
 | input | value |
 |---|---|
 | exported build | `f0172cf` |
-| compared against | `cc2c20a`, `braven-movement` main, 2026-09-04 |
+| compared against | `a01cf07`, `braven-movement` main, 2026-09-04 12:14 |
 | instrument | `spikes/clip-baseline.json` at both commits |
 | script | **`spikes/clip_gap_read.py`**, added with this document |
-| command | `python spikes/clip_gap_read.py f0172cf cc2c20a` |
+| command | `python spikes/clip_gap_read.py f0172cf a01cf07` |
 | method | join on `(phase, measure)`, compare `engineDegrees` |
 | **median convention** | **the mean of the two middle values** |
 | clips compared | the 8 that `braven-tactics` consumes |
@@ -693,6 +758,12 @@ they can be compared with each other:
 | `ac240b2` | 198 | 1.86 | 140.13 | 37 |
 | `aa3f244` | 198 | 2.57 | 136.13 | 34 |
 | `cc2c20a` | 198 | 2.57 | 136.13 | 34 |
+| `a01cf07` | 198 | 2.57 | 136.13 | 34 |
+
+The last row was re-run on the merged tree after `a01cf07` was taken into this
+branch, rather than carried forward from the row above it. The four pass clips
+`a01cf07` adds are reported by the script as present in one build only, and are
+excluded from the comparison because they have nothing to compare against.
 
 The median rose between `ac240b2` and `aa3f244`, while the worst and the count
 over 15 degrees both fell. **The gap neither simply grew nor simply shrank.**
