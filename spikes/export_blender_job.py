@@ -286,6 +286,36 @@ def phase_job(result, index, frame: int, method) -> dict:
         "arms": {side: _arm(points, index, side) for side in ("l", "r")},
         "hands": {side: _hand(points, index, side) for side in ("l", "r")},
         "stance": _stance(points, index),
+        # THE ANCHOR `fromShouldersInArms` IS MEASURED FROM, which this job did
+        # not transmit until 2026-09-04. A consumer was told where the ball sits
+        # relative to the shoulder midpoint and never told where that midpoint
+        # is, so it had to guess — and the rendering lane's guess was to leave
+        # the shoulder girdle at rest, because nothing in the job asked it to
+        # move.
+        #
+        # THE GIRDLE MOVES A LOT ON THE DRILLS THAT MATTER MOST. This athlete's
+        # shoulder width ranges 33.91 to 39.53 cm WITHIN `netball_overhead_pass`
+        # and 34.74 to 38.11 within `netball_deflect_high`; every other drill
+        # stays inside 1.05 cm. Between the chest pass and the overhead at frame
+        # 75 the midpoint also RISES 4.52 cm, which is why this is two positions
+        # and not a width: a width is a scalar and cannot express a rise.
+        #
+        # `_grip` below already knew shoulder width mattered — it records that
+        # sending shoulder directions closed this athlete's grip from 19.0 cm
+        # between the wrists to 12.1 — and fixed it by placing the ball first
+        # and the hands on it. THAT MOVED THE PROBLEM UP A LEVEL RATHER THAN
+        # REMOVING IT: the hands became anchored to the ball, and the ball
+        # stayed anchored to shoulders nobody sent.
+        #
+        # ADDITIVE. Nothing else in the job changes, so a consumer that ignores
+        # this field renders exactly as it did before.
+        "shoulders": {
+            side: [
+                round(float(v), 6)
+                for v in to_blender(points[index[f"{side}_uparm"]])
+            ]
+            for side in ("l", "r")
+        },
         "ball": {
             # Absolute in metres, because a netball is a netball. Where it sits
             # is relative, because that depends on the body holding it.
