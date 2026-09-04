@@ -43,21 +43,32 @@ DISAGREES = "disagrees"
 REST_TORSO_M = 0.427689
 
 
-def resolve(offset, pelvis, rest_torso: float = REST_TORSO_M):
-    """Put a transmitted, torso-normalised offset onto THIS body.
+def resolve(displacement, rest_position, rest_torso: float = REST_TORSO_M):
+    """Put a transmitted girdle DISPLACEMENT onto this body's own rest pose.
 
-    The job sends the shoulders relative to the pelvis in TORSO LENGTHS, so a
-    consumer multiplies by its own rest torso. Arm lengths were proposed first
-    and refuted by measurement: a shoulder-above-pelvis distance is a torso
-    quantity, and the two rigs' arm-to-torso ratios differ by about 5 percent,
-    which would have failed the rule at the neutral phase the fix exists to
-    protect.
+    The job sends `(position at the frame - that body's REST-POSE shoulder
+    position) / restTorso`. A displacement is sent rather than a position
+    because a position cannot cross between two bodies. Resolving the engine's
+    POSITIONS onto this rig put zero of 48 phases under the 1 cm rule, with
+    `chest_pass/ready` reading 2.488 cm at a phase where both bodies sit at
+    their neutral girdle and nothing is wrong. That reading was a constant:
+    this rig's shoulders sit 0.2648 cm behind its pelvis and the engine's sit
+    2.4622 cm ahead of its own. A divisor SCALES and does not TRANSLATE, so no
+    scalar removes a landmark or a posture difference. A displacement cancels
+    every constant and reads zero where nothing is wrong.
 
-    Metres would be worse still. Every length in the job is normalised except
-    `ball.radiusM`, which is absolute because a real netball is one physical
-    size on every body. A shoulder position is the opposite.
+    The reference is the REST POSE and not a drill's neutral phase, because
+    the rest pose is the only reference both sides compute without being told.
+
+    The divisor is a TORSO length. Arm lengths were proposed by this lane and
+    refuted by measurement: the two rigs' arm-to-torso ratios differ by about
+    5 percent, which would have failed the rule at the neutral phase the fix
+    exists to protect. Metres are worse, because every length in the job is
+    normalised except `ball.radiusM`, which is absolute only because a real
+    netball is one physical size on every body.
     """
-    return tuple(p + o * rest_torso for p, o in zip(pelvis, offset))
+    return tuple(rest + step * rest_torso
+                 for rest, step in zip(rest_position, displacement))
 
 
 def midpoint(left, right):

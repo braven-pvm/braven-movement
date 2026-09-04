@@ -64,8 +64,10 @@ difference in where MHR's `root` sits against MPFB's `pelvis`, or a difference
 in neutral posture. Nobody can currently separate those two causes: this rig
 has no `root` bone and the movement lane has no MPFB rig.
 
-So the field carries `(position at phase - that body's own neutral) /
-restTorso`, and each side applies the displacement to its own neutral. Every
+So the field carries `(position at the frame - that body's REST-POSE shoulder
+position) / restTorso`, and each side applies the displacement to its own rest
+pose. The reference is the rest pose and not a drill's neutral phase, because
+the rest pose is the only reference both sides compute without being told. Every
 constant cancels, a neutral phase reads exactly zero, and the quantity
 transmitted is the one that is actually missing, which is that this rig's
 girdle does not move.

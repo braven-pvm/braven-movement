@@ -134,54 +134,71 @@ if __name__ == "__main__":
 
 
 class ResolveTest(unittest.TestCase):
-    """The transmitted offset is in TORSO lengths, and lands on this body."""
+    """The transmitted field is a DISPLACEMENT from each body's rest pose."""
 
-    PELVIS = (0.0, -0.0202, 0.914878)
+    # This rig's rest shoulder midpoint above the pelvis: across, up, ahead cm,
+    # measured on 2026-09-04 and identical on all 43 phases of all 10 drills.
+    REST = (0.0, 0.427681, -0.002648)
     ENGINE_REST_TORSO = 0.496456
 
-    def test_a_transmitted_offset_lands_on_this_body(self):
-        """The worked example from the ruling: 48.8867 on him is 42.114 here.
+    def test_a_transmitted_displacement_lands_on_this_body(self):
+        """The engine's -0.76 cm compression from rest becomes -0.65 cm here.
 
-        His neutral girdle sits 1.53 percent compressed from his own rest, and
-        reproducing that compression on this body is the entire point.
+        Scaled by this body's smaller torso, not copied across as a length.
         """
         from girdle_agreement import REST_TORSO_M, resolve
 
-        engine_neutral = 0.488867
-        offset = (0.0, 0.0, engine_neutral / self.ENGINE_REST_TORSO)
+        transmitted = (0.0, -0.0076 / self.ENGINE_REST_TORSO, 0.0)
 
-        landed = resolve(offset, (0.0, 0.0, 0.0), REST_TORSO_M)
+        landed = resolve(transmitted, self.REST, REST_TORSO_M)
 
-        # 11 microns from the ruling's quoted 42.114 cm. That residue is the
-        # rounding of the QUOTED inputs, which carry six significant figures,
-        # and it is LARGER than this guard's 1e-5 m tolerance. So the guard
-        # must run against the transmitted values themselves and never against
-        # numbers re-derived from a quoted table.
-        self.assertLess(abs(landed[2] - 0.42114), 2e-5)
+        # Bounded, not asserted to six places: -0.76 cm is itself a rounded
+        # quote of -0.7589, so the last micron here belongs to the quote and
+        # not to the arithmetic.
+        self.assertLess(abs((landed[1] - self.REST[1]) - -0.006548), 2e-6)
+        self.assertLess(abs(landed[1] - 0.421133), 2e-6)
+
+    def test_a_ZERO_displacement_leaves_this_body_at_its_own_rest(self):
+        """THIS is what a position could not do.
+
+        Resolving the engine's POSITIONS put `chest_pass/ready` 2.488 cm out at
+        a phase where both bodies sit at their neutral girdle. A displacement
+        of zero must leave this rig exactly where it is, whatever the engine's
+        own posture and landmark conventions are.
+        """
+        from girdle_agreement import REST_TORSO_M, agreement, resolve
+
+        landed = resolve((0.0, 0.0, 0.0), self.REST, REST_TORSO_M)
+
+        self.assertEqual(self.REST, landed)
+        self.assertEqual(AGREES, agreement(self.REST, landed)["verdict"])
 
     def test_an_ARM_divisor_gives_a_different_answer(self):
         """Arm lengths were proposed by this lane and refuted by measurement.
 
-        The test keeps the refutation, because the wrong divisor is a silent
-        error: it returns a number, and the number is wrong by centimetres.
+        The refutation is kept, because the wrong divisor is a silent error: it
+        returns a plausible number that is wrong by centimetres.
         """
         from girdle_agreement import REST_TORSO_M, resolve
 
-        offset = (0.0, 0.0, 0.488867 / self.ENGINE_REST_TORSO)
+        transmitted = (0.0, -0.074 / self.ENGINE_REST_TORSO, 0.0)
 
-        by_torso = resolve(offset, (0.0, 0.0, 0.0), REST_TORSO_M)
-        by_arm = resolve(offset, (0.0, 0.0, 0.0), 0.48547)
+        by_torso = resolve(transmitted, self.REST, REST_TORSO_M)
+        by_arm = resolve(transmitted, self.REST, 0.48547)
 
-        self.assertGreater(abs(by_arm[2] - by_torso[2]), 0.02)
+        self.assertGreater(abs(by_arm[1] - by_torso[1]), 0.0009)
 
-    def test_resolving_then_comparing_reads_agreement(self):
-        """The round trip the acceptance test runs, and it must reach zero."""
+    def test_the_real_defect_is_still_caught_after_resolving(self):
+        """A rig that never poses its girdle disagrees by the whole travel."""
         from girdle_agreement import REST_TORSO_M, agreement, resolve
 
-        offset = (0.01, -0.02, 0.98)
-        landed = resolve(offset, self.PELVIS, REST_TORSO_M)
+        travel = -0.074 / self.ENGINE_REST_TORSO
+        wanted = resolve((0.0, travel, 0.0), self.REST, REST_TORSO_M)
 
-        self.assertEqual(AGREES, agreement(landed, landed)["verdict"])
+        report = agreement(self.REST, wanted)
+
+        self.assertEqual(DISAGREES, report["verdict"])
+        self.assertAlmostEqual(63.75, report["offsetMm"], places=1)
 
     def test_the_divisor_is_the_MAGNITUDE_and_not_the_vertical(self):
         """42.7689 is the span. 42.7681 is its vertical component.
@@ -193,3 +210,7 @@ class ResolveTest(unittest.TestCase):
 
         self.assertAlmostEqual(0.427689, REST_TORSO_M, places=6)
         self.assertNotAlmostEqual(0.427681, REST_TORSO_M, places=6)
+
+
+if __name__ == "__main__":
+    unittest.main()
