@@ -90,6 +90,25 @@ def build_of(directory: Path, drill: str) -> str:
     return f"{commit} (retired `build` field)" if retired else commit
 
 
+def labelled(read: str, caption: str | None) -> str:
+    """The column's header: what the receipts say, or an honest caption.
+
+    SOME BUILDS CANNOT NAME THEMSELVES. Erin's page cites `02b25cd` for its
+    animations, and every receipt from that build predates the stamp tool, so
+    `build_of` reads UNSTAMPED and is right to. The build is known from the
+    page's own build line, which is a CAPTION and not a reading.
+
+    A caption is allowed and is marked as one, so a reader can tell a column
+    whose provenance was read from a column whose provenance was asserted by a
+    person. The alternative — re-solving that build to manufacture a stamp —
+    would produce a receipt that names a build these pictures did not come
+    from, which is the fault the stamp exists to prevent.
+    """
+    if not caption:
+        return read
+    return f"{caption} (captioned, receipts read: {read})"
+
+
 def difference(before, after) -> dict:
     """How much of the figure moved between two renders of it."""
     first = numpy.asarray(before.convert("RGB"), dtype=numpy.int16)
@@ -135,7 +154,8 @@ def load_font(size: int):
 
 
 def build_sheet(columns: list[Path], drill: str, view: str, out: Path,
-                height: int = 420, caption: str = "") -> dict:
+                height: int = 420, caption: str = "",
+                captions: list[str] | None = None) -> dict:
     """Any number of builds of one drill, measured against the FIRST.
 
     Two columns was not enough. A three-state record — what a coach graded,
@@ -145,6 +165,7 @@ def build_sheet(columns: list[Path], drill: str, view: str, out: Path,
     "middle" can never be read as "after".
     """
     require_imaging()
+    captions = captions or []
     label, head = load_font(14), load_font(19)
     if len(columns) < 2:
         raise SystemExit("give at least two builds to compare")
@@ -158,7 +179,8 @@ def build_sheet(columns: list[Path], drill: str, view: str, out: Path,
                         for c in columns)
         )
 
-    builds = [build_of(c, drill) for c in columns]
+    builds = [labelled(build_of(c, drill), captions[index] if index < len(captions) else None)
+              for index, c in enumerate(columns)]
     rows, report = [], []
     for phase in shared:
         pictures = [Image.open(c / f"{drill}.{phase}.{view}.png") for c in columns]
@@ -236,13 +258,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--view", default="front")
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--height", type=int, default=420)
+    parser.add_argument("--column-caption", action="append", default=[],
+                        metavar="TEXT",
+                        help="per column, in the same order as --build. Names "
+                             "a build the receipts cannot name, marked on the "
+                             "sheet as a caption rather than a reading. Pass "
+                             "an empty string to leave a column read-only.")
     parser.add_argument("--caption", default="",
                         help="a line printed on the sheet, for saying what a "
                              "column IS when its build alone does not say")
     arguments = parser.parse_args(argv)
 
     receipt = build_sheet(arguments.build, arguments.drill, arguments.view,
-                          arguments.out, arguments.height, arguments.caption)
+                          arguments.out, arguments.height, arguments.caption,
+                          arguments.column_caption)
     arguments.out.with_suffix(".json").write_text(
         json.dumps(receipt, indent=2), encoding="utf-8"
     )

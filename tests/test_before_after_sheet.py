@@ -13,7 +13,7 @@ from pathlib import Path
 MODULE_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(MODULE_DIR / "scripts"))
 
-from before_after_sheet import BAND, build_of, verdict  # noqa: E402
+from before_after_sheet import BAND, build_of, labelled, verdict  # noqa: E402
 
 
 class BuildOfTest(unittest.TestCase):
@@ -120,3 +120,36 @@ class VerdictTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CaptionedColumnTest(unittest.TestCase):
+    """A build the receipts cannot name may be captioned, never asserted.
+
+    Erin's page cites `02b25cd` for its animations and every receipt from that
+    build predates the stamp tool. The build is known from the page's own build
+    line, which is a person's statement rather than a reading.
+    """
+
+    def test_a_caption_is_marked_as_a_caption_and_carries_what_was_read(self):
+        said = labelled("UNSTAMPED, predates the build stamp", "02b25cd")
+
+        self.assertIn("02b25cd", said)
+        self.assertIn("captioned", said)
+        # The reading survives beside it. A caption that HID the reading would
+        # let a person's assertion pass for the receipt's own answer.
+        self.assertIn("UNSTAMPED", said)
+
+    def test_no_caption_leaves_the_reading_alone(self):
+        self.assertEqual("aa3f244", labelled("aa3f244", None))
+        self.assertEqual("aa3f244", labelled("aa3f244", ""))
+
+    def test_a_caption_never_replaces_a_real_reading_silently(self):
+        """Captioning a column that CAN name itself must still say so.
+
+        Otherwise a caption on a stamped column would read as the stamp, and
+        the two kinds of provenance become indistinguishable.
+        """
+        said = labelled("aa3f244", "02b25cd")
+
+        self.assertIn("captioned", said)
+        self.assertIn("aa3f244", said)
