@@ -3260,3 +3260,146 @@ open question as the entry above, and the candidates listed there are the
 candidates here. **NOT PROPOSED: constraining the solve.** This entry adds an
 instrument and changes no engine behaviour.
 
+
+## The alignment ranked a sync clap above every real catch
+
+Found 2026-09-04 while looking for the clap Marius said Erin used to sync the
+two cameras. It is in the front recording, twice, and it has been in our own
+records since 2 September under the wrong name.
+
+**Repetitions 0 and 8 of `spikes/video-annotations/ball-in-frame-0.1.json`,
+annotated "gesture", ARE THE CLAPS.** Measured on the front view:
+
+| | hands together | front audio above 4 kHz |
+|---|---|---|
+| repetition 0 | **5.867 s**, wrists 0.249 shoulder widths apart | **x26.5** over its local floor, at 5.800 s |
+| repetition 8 | **17.900 s**, wrists 0.266 apart | **x29.1** over its local floor, at 17.835 s |
+
+**THE COUNT IN AN EARLIER VERSION OF THIS ENTRY WAS FALSE.** It said "only
+seven frames in 785 fall under 0.5". **Fifty-five do.** Seven was a count of
+local minima after a separation rule, printed as a count of frames, and the
+deepest frame in the whole clip — 0.236 at 18.300 s — was not among the seven
+named. Corrected from a committed run of `spikes/video_clap_evidence.py`:
+
+| reading | value |
+|---|---|
+| frames read | 785 |
+| median separation | 0.94 shoulder widths |
+| **frames under 0.5** | **55** |
+| in stretches | **5** |
+| local minima | **12** |
+| deepest | 0.236 at 18.300 s |
+
+The five stretches are 5.833–6.033 (7 frames), 17.833–19.000 (36),
+21.000–21.067 (3), 22.300–22.400 (4) and 22.833–22.967 (5).
+
+**THE IDENTIFICATION DOES NOT REST ON THE COUNT. IT RESTS ON A COINCIDENCE.**
+Her hands come together often, because she talks with them; the room has many
+loud moments. What is rare is the two at once. Of the **twelve** hands-together
+minima, **exactly two** carry a broadband attack within 100 ms — 5.867 s with
+x26.5, and 17.900 s with x29.1. **The other ten carry nothing at all.** The
+result is not delicate about the 100 ms: it holds unchanged for any window
+between 0.067 and 0.230 s. Those
+two are the two repetitions the annotation had already singled out as containing
+no ball.
+
+The long 17.833–19.000 stretch contains the second clap AND the deepest frame
+that follows it, which is consistent with the annotation's own reading of
+repetition 8: she claps, then stands and talks with her hands clasped at her
+chest.
+
+### Why this matters more than the sync question
+
+**Repetition 0 scored 0.02369 on the whole-curve warp distance against 0.06093
+for the next best — BEST OF TWELVE — and rank 1 of 8 drills on both scorings.**
+
+The elbow curve of a woman clapping fits the catch reference better than any
+real catch in the set, and no scoring in the alignment can tell the difference.
+The informative scoring placed it fifth of twelve, which is luck rather than
+detection: it ranks the drill first either way.
+
+This is the blind spot the ball-in-frame condition was built for, and it now has
+a name. The gate asked eleven questions and none of them was "is this a catch".
+The condition refuses repetitions 0 and 8 already; what is new is knowing WHY
+the best-scoring repetition in the set is not a catch, which is a stronger
+statement than "a frame strip shows her gesturing".
+
+### What it does not settle
+
+**Nothing about the camera offset.** The clap is in the front and cannot be
+found in the side. The front's four broadband spikes include a distinctive pair
+0.175 s apart at 26.240 and 26.415 s, and no offset in ±6 s places that pair
+anywhere in the side track, whose only gap under half a second is 0.235 s. A
+randomly generated side track of 17 spikes matches the front's four as well as
+the real one does in **12 per cent** of 2000 trials, so the best alignment is
+not a reading.
+
+**THE NULL IS REPRODUCIBLE.** Python `random.seed(0)`, 2000 trials; each trial
+draws 17 times uniformly from 0 to 28 s as a fake side track, scans offsets from
+−6 to +6 s in 0.02 s steps, and counts a front spike as matched when it lands
+within 50 ms of a fake spike. The real side track scores 3 of 4; 12 per cent of
+the fake ones score 3 or more. The front's four spikes are 5.800, 17.835, 26.240
+and 26.415 s.
+
+Either the side camera's microphone never registered the claps — its strongest
+event is x24 against the front's x44, and it may be several metres away — or the
+two files do not contain the same instant. **The audio cannot separate those two
+readings**, and until a person does, the by-eye 1.0 s stands as the only measured
+offset.
+
+**AND A CORROBORATOR THIS LANE OFFERED IS WITHDRAWN.** A wrist-height scan was
+reported as peaking at −0.967 s, agreeing with the recorded −1.000. Three of its
+eight input moments had no provenance — they were picked inside annotated
+windows where no catch time was ever read — and removing them moves the peak to
++2.4167 s, a swing of 3.383 s. The reading was carried by the unprovenanced
+points and is withdrawn. Refer to "A fifth instrument, and a sixth that is
+withdrawn" in
+`docs/VIDEO_CAPTURE_FINDINGS.md`, where all eight moments are now named with
+their provenance.
+
+### Where the numbers come from
+
+`spikes/video_clap_evidence.py`, committed with this entry, and every figure
+above is from `python video_clap_evidence.py 0.1`. **It exists because the first
+version of this finding was published from a detector that lived in one
+session's scratchpad.** An independent reviewer could not re-measure any of it,
+reconstructed the detector by hand, and got 25.4 where this says 26.5 and counts
+from zero to twenty-seven depending on the rule guessed. A number nobody else
+can regenerate is not a measurement, whatever it happens to be.
+
+Every parameter is a named constant with its reason: the 4 kHz band, 5 ms
+blocks, a median floor over the preceding 0.5 s stopping 10 ms short, an attack
+ratio of 0.5, a 0.15 s separation between reported spikes and a x8 bar.
+
+**THE SPIKE COUNTS ARE CONDITIONAL ON THE SEPARATION CONSTANT, and that is
+stated rather than left for a reader to discover.** A reported spike is a
+CLUSTER: anything within 150 ms of one is inside it, not beside it. Sweeping
+the constant on session 1.0:
+
+| separation | front spikes | side spikes |
+|---|---|---|
+| 0.05 s | 5 | 17 |
+| 0.10 s | 4 | 17 |
+| **0.15 s (used)** | **4** | **17** |
+| 0.20 s | 3 | 17 |
+| 0.30 s | 3 | 16 |
+
+**At 0.05 s the terminal cluster is THREE — 26.240, 26.355 and 26.415 — and at
+0.20 s the pair merges into one.** So "a pair 0.175 s apart" is a statement
+about this constant as much as about the recording, and the third event between
+them is real and merged rather than absent. The constant is now pinned by a test
+that fails if it moves in either direction; before that, sweeping it changed
+three published counts and no test noticed at any value.
+
+**THE COINCIDENCE WINDOW HAS A STATED MARGIN.** "Exactly two of twelve" holds
+for every window from **0.067 s to 0.230 s**. Below 0.067 nothing pairs at all;
+at 0.232 a third minimum joins. The 0.100 s used sits inside that plateau with
+33 ms below it and 130 ms above. A claim with an unstated window is a threshold
+nobody can check.
+
+### The instruction it produced
+
+Section 18 of `docs/VIDEO_CAPTURE_FINDINGS.md`: the clap must be **in frame for
+both cameras**, not merely audible, and both files must be opened on the day to
+confirm that each one heard and saw it. A clap that only one camera records is
+worth nothing, and this session spent a morning proving that the hard way.

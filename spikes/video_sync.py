@@ -1,7 +1,7 @@
 """Find the clap offset between the two cameras of a filmed set.
 
 THIS INSTRUMENT FAILED ON SESSION 1.0 AND IS KEPT ANYWAY. There is no clap in
-that material, and all three methods below returned peak-to-sidelobe between
+that material, and all four methods below returned peak-to-sidelobe between
 1.01 and 1.35 — no peak, so no measurement. Its numbers are cited in
 `docs/VIDEO_CAPTURE_FINDINGS.md` as the evidence for the clap instruction, and
 a report citing a measurement nobody can rerun is worse than a failed script in
@@ -15,7 +15,7 @@ Two instruments, because one is not evidence
 --------------------------------------------
 
 This file runs the AUDIO one: cross-correlate the two soundtracks and read the
-lag at the peak. It runs it twice, in two ways that fail differently:
+lag at the peak. It runs it four times, in ways that fail differently:
 
 - on the RAW waveform, which is sharp but assumes the two microphones agree
   about the shape of a transient;

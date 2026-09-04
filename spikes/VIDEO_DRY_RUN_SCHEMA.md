@@ -185,6 +185,24 @@ and it leads with the verdict rather than burying it under evidence.
   },
   "measuresNote": "…taken from MovementDefinition.graded_measures()…",
 
+  "openQuestions": {
+    "canAnswer": false,
+    "cannotBeAsked": ["the floor is in view"],
+    "conditions": [
+      {
+        "name": "the release is resolved",
+        "question": "Are there enough frames in the release to see the hand accelerate?",
+        "reading": 30.0, "units": "frames per second", "threshold": 120.0,
+        "thresholdKind": "derived",
+        "thresholdWhy": "the athlete's own ramp, measured on this footage…",
+        "passes": false,
+        "why": "The engine's hands move 0.72 cm in the frame before release…",
+        "instrument": "framesPerSecondMeasured in BOTH keypoint files' source blocks…"
+      }
+    ],
+    "note": "THESE DO NOT GATE GRADING and they are not part of the verdict above…"
+  },
+
   "shape": {
     "status": "ILLUSTRATIVE, NEVER A MEASUREMENT AT THIS CALIBRATION…",
     "repetitions": 12,
