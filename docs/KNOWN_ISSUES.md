@@ -6,6 +6,44 @@ grading. An entry belongs to whichever lane can fix it.
 
 # Rendering and modelling
 
+## The ball is anchored to a landmark the job does not transmit
+
+`pose_phase` places the ball at `shoulders + fromShouldersInArms * arm`, where
+`shoulders` is the midpoint of this rig's two upper-arm heads. Every other term
+on that line comes from the job. The shoulder positions do not. The ball's
+position error is therefore the shoulder midpoint's error, one for one, with
+nothing to attenuate it.
+
+The movement renderer never poses a clavicle. Measured on 2026-09-04, this rig
+holds its shoulder midpoint 42.7681 cm above the pelvis on all 18 graded phases
+of four drills, with a range of 0.0000 cm. The engine's midpoint travels 7.40 cm
+inside the overhead pass alone, 4.22 cm inside `hooks_jump_pull_in`, 3.81 cm
+inside `deflect_high` and 1.96 cm inside the chest pass.
+
+Against a one-centimetre rule, 3 of those 18 figures pass. The three that pass
+are the three neutral-girdle phases. That is the evidence that this rig is
+calibrated to the engine's rest pose, because a wrong calibration point would
+put the passes somewhere else. The worst held phase is `overhead_pass/lift` at
+7.41 cm, which is 67 percent of the ball's radius.
+
+A width instrument cannot find this defect. A symmetric change of shoulder width
+does not move the midpoint at all. The engine's width range on the overhead pass
+is 5.63 cm while its vertical travel is 7.40 cm, in a different axis. Six drills
+are still unmeasured for this reason. They were set aside on a width range, so
+they are not yet known to be clean.
+
+The published numbers are a LOWER BOUND. The engine's column is vertical only. A
+fore-and-aft shift of the midpoint moves the ball just as far and no instrument
+here reads it.
+
+The fix is a contract change. The job will carry both shoulder positions per
+frame. `girdle_agreement.py` holds the consumer guard, and it refuses a frame
+whose transmitted positions are absent, because a frame nobody can check must
+not read the same as a frame that passed.
+
+Do not add a scapula motion to the renderer to close this. A pose that no solve
+produced must not reach a figure.
+
 ## Reference catch is not yet a final coaching sample
 
 The current MPFB catch render remains a review artifact. Its hand orientation in the locked
