@@ -91,13 +91,57 @@ stance.ankleFromPelvisInLegs   {l,r} ankle offset from the pelvis, in leg
                                lengths
 ball.radiusM                   absolute. A netball is a netball
 ball.fromShouldersInArms       ball centre from the shoulder midpoint, in arm
-                               lengths
+                               lengths. THE MIDPOINT IS THE ONE BELOW — this
+                               field was anchored to a landmark the job did not
+                               transmit until 2026-09-04
+shoulderShiftFromRestInTorsos  {l,r} how far that shoulder has moved from its
+                               own REST position, measured from the pelvis on
+                               both sides of the subtraction, in units of the
+                               body's own rest torso. Apply it to YOUR rest
+                               girdle. Zero at rest by construction
 ball.holding                   whether she has it
 grip.{l,r}.outward             present only when holding. Unit vector from the
                                ball centre to that wrist
 grip.{l,r}.wristFromSurfaceInArms   how far outside the ball surface the wrist
                                sits, in arm lengths
 ```
+
+### Resolving the girdle, and the ball on it
+
+**Your rest torso is the divisor, and you measure it on YOUR rig.** It is the
+distance from your pelvis to the midpoint of your two shoulders, in your own
+rest pose, in three axes and not in the vertical alone:
+
+```
+restTorso = | mean(restShoulderL, restShoulderR) - restPelvis |
+```
+
+Nothing transmits it. Each side derives it from its own rest pose, so the two
+cannot disagree about a number neither sent. On this athlete it is 0.496456 m.
+On the MPFB rig the rendering lane measures 0.427689 m.
+
+**Then each shoulder, in your own metres:**
+
+```
+shoulder[side] = pelvis                              # yours, posed
+               + (restShoulder[side] - restPelvis)   # yours, at rest
+               + shift[side] * restTorso             # what this job sends
+```
+
+The field is zero at rest by construction, so a consumer that resolves it on
+its own rest pose gets its own rest girdle back. **Then the ball:**
+
+```
+ballCentre = mean(shoulder.l, shoulder.r) + fromShouldersInArms * yourArmLength
+```
+
+**THE AGREEMENT CHECK IS WITHIN ONE RIG AND NOT ACROSS TWO.** Each side
+resolves the shift on its OWN rest girdle and its OWN rest torso, then compares
+the result against its own posed shoulders. A check that compares this rig's
+resolved shoulders against that rig's posed ones measures the two rigs' rest
+postures, which differ by about 2.5 cm fore-and-aft and are a separate open
+question — refer to `KNOWN_ISSUES.md`. Such a check reads that constant as a
+girdle error on every frame, including the frames that are correct.
 
 ### knuckleLimitsDegrees, and the rule behind it
 

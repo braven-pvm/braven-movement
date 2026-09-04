@@ -2671,6 +2671,144 @@ athlete's chest, where the stance frame is anchored". **That is accurate.**
 The 106.5 was mine, and it was the ball's height fifty centimetres PAST the
 target while it was still falling.
 
+## The Blender job anchored the ball to a landmark it did not transmit
+
+`ball.fromShouldersInArms` is an offset from the shoulder MIDPOINT, and the job
+never said where that midpoint was. A consumer had to guess. **The rendering
+lane's guess was to leave the shoulder girdle at rest**, because nothing in the
+job asked it to move — so every figure this project has rendered placed the
+ball from a girdle that never moved.
+
+Found by the rendering lane on 2026-09-04. Measured on `cc2c20a`.
+
+### The girdle moves on every drill
+
+Midpoint travel relative to the pelvis, over the whole clip:
+
+| drill | travel | | drill | travel |
+|---|---|---|---|---|
+| `overhead_pass` | **8.45 cm** | | `chest_pass` | 2.21 |
+| `deflect_high` | 5.02 | | `two_hand_snatch_pull_in` | 2.14 |
+| `hooks_jump_pull_in` | 4.09 | | `two_hand_snatch_straight_back` | 2.02 |
+| `hooks_outside_hand` | 3.00 | | `two_hand_catch_chest` | 1.98 |
+| `one_hand_snatch_to_other_hand` | 2.40 | | `bounce_pass` | 1.93 |
+| | | | `double_foot_landing` | 1.77 |
+
+**31 of the 48 graded phases sit more than a centimetre from the neutral
+girdle**, and the re-render is the whole library rather than the four drills a
+first reading suggested.
+
+Three definitions that count needs, because a count is only as good as what it
+counted:
+
+- **The girdle position is the shoulder midpoint taken from `root`**, the MHR
+  pelvis joint. `root` is the landmark on this side of the boundary, and the
+  rendering rig has no bone of that name — refer to the residual below.
+- **The neutral girdle is `chest_pass/ready`**, which sits at
+  `[0.0020, 48.8246, 2.4622]` cm from `root`. It is one graded phase of the 48
+  and not an average of them, chosen because it is the phase closest to a
+  standing athlete.
+- **A phase is measured on ONE frame**, the frame `round(at_phase x
+  (frames - 1))` clamped to the clip, which is the frame `build` renders that
+  phase at. So these are 48 frames and not 48 spans of frames.
+- **The 48 is the library of `cc2c20a`, which held ELEVEN drills and 1084
+  frames.** The count is a measurement of that library and does not move when a
+  drill is added. `netball_one_hand_high_pass` arrived on 2026-09-04 and took
+  the library to twelve drills and 1180 frames; nothing above was re-counted
+  for it, and the ratio is what the entry is about.
+
+### A withdrawn number, recorded because it is the fault this field is about
+
+An earlier version of the table above gave the rendering rig's
+shoulder-above-pelvis as **0.8759** of this athlete's. That figure is
+withdrawn. It is **42.7689 / 48.8246 = 0.87597**, truncated — the rendering
+rig's REST torso over
+this athlete's POSED shoulder height at `chest_pass/ready`. Two rigs, one at
+rest and one posed, one measured in three axes and one vertical, under a single
+label. The rendering lane says it never produced that number and is right: its
+two ratios are 0.9215 for the arms and 0.861484 for the rest torsos.
+
+The 2.23 cm is unaffected, because it never came from the ratio. It is
+`48.8246 x (48.547 / 52.680) - 42.7689 = 2.2252`, and its inputs are now
+written beside it.
+
+**A WIDTH RANGE IS THE WRONG STATISTIC AND A FIRST VERSION OF THIS USED IT.**
+It read 0.65 to 1.05 cm on seven drills and set them aside. Width is one axis of
+three: the overhead's width ranges 5.63 cm while its midpoint travels 8.45, and
+`bounce_pass` moves almost entirely FORE AND AFT — 2.46 to 0.54 cm ahead of the
+pelvis with the vertical barely changing — so on a width-and-height check **it
+would have read as the cleanest drill in the library and shipped**.
+
+### The field took four attempts, and each was killed by a measurement
+
+| attempt | what killed it |
+|---|---|
+| absolute metres | the job is normalised; `radiusM` is the only absolute, because a netball is one size on every body and a shoulder is not. It raised the consumer's ball ~6 cm on EVERY frame, including the ones that pass today |
+| arm lengths | a shoulder-above-pelvis distance is a TORSO quantity. The two rigs' arms are 52.680 and 48.547 cm, a ratio of 0.9215; their rest torsos are 49.6456 and 42.7689, a ratio of 0.8615. An arm divisor is therefore 6.5 per cent wrong on a torso span, and this athlete's 48.8246 cm shoulder height at `chest_pass/ready` resolves to 45.00 cm on a rig whose own rest torso is 42.7689 — **2.23 cm** out against a 1 cm rule |
+| a torso-normalised POSITION | failed on **all 48** phases by 1.1 to 5.8 cm, including phases where both girdles are neutral and nothing is wrong. A divisor scales and cannot translate |
+| a displacement from the WORLD | carries the root, which is never at its rest position. It read **30.97 cm** on the landing drill, against a girdle that moves 1.77 |
+
+What ships is a **pelvis-relative displacement from rest, in units of each
+body's own rest torso**. It cancels every constant — landmark convention,
+neutral posture, build — reads zero at rest by construction, and carries the one
+thing that was missing.
+
+### The grip fix moved the problem up a level rather than removing it
+
+`_grip`'s docstring already knew shoulder width mattered: it records that
+sending shoulder directions closed this athlete's grip from 19.0 cm between the
+wrists to 12.1 and put both hands in front of the ball. The fix was to place the
+ball first and the hands on it. **So the hands became anchored to the ball, and
+the ball stayed anchored to shoulders nobody sent.**
+
+### Two guards of this field were measured on eleven drills and spent on twelve
+
+Both were found on 2026-09-04, when `netball_one_hand_high_pass` merged and the
+suite was run on the merged tree. Neither is a defect in that drill, and the
+field itself was untouched by both.
+
+**A COVERAGE GUARD THAT COUNTED INSTEAD OF COVERING.** The anchor check ended
+with `assertEqual(checked, 1084)`, written to prove it reads the whole library
+rather than a sample. It read `1180 != 1084` the moment a 96-frame drill
+arrived — a red suite caused by a correct new drill and by the guard. **Any new
+drill would have fired it**, so it was a tripwire on library growth wearing a
+coverage guard's name. It now takes its population from `library()` and each
+drill's span from its own clip, and holds a FLOOR rather than a total: the
+drills covered must equal the library's list, each drill's frames must be
+exactly `range(0, its clip length)`, and the cover must not shrink below what
+the field was proved on. A drill's author satisfies it by adding the drill.
+
+**A ROUNDING BOUND WITH LESS MARGIN THAN IT LOOKED.** The end-to-end ball check
+first shipped against one unit in the last place, 1e-6 torso lengths, and
+passed at 9.2583e-07 — 8 per cent to spare. On twelve drills it reads
+**9.3398e-07**. One drill consumed a tenth of the remaining margin, so the
+library sat a few drills from a red suite with nothing wrong in it.
+
+The correct bound is not one unit and never was. That check composes **two
+roundings in two different units** — the girdle shift in torso lengths and
+`fromShouldersInArms` in arm lengths — so its exact per-coordinate maximum is
+`0.5e-6 x (1 + arm / torso) = 1.031e-6` torsos on this athlete. The measured
+worst passed one unit by alignment, not by margin. The guard now holds 2e-6 as
+a stated ceiling above that derivation.
+
+**Both are the same shape as the rest of this ledger**: a quantity measured in
+one regime and spent in another. Here the regime is the library itself — a
+count and a bound both measured on eleven drills and spent on every drill that
+would ever be added.
+
+### A residual this does NOT fix, bounded and left open
+
+The two rigs' rest poses are not quite the same posture. MHR's rest shoulders
+sit **−0.0648** torso lengths ahead of its `root`; MPFB's sit **−0.0062** ahead
+of its `pelvis` — a 0.059-torso gap, about **2.5 cm** fore-and-aft on the
+consumer's rig.
+
+**Nothing here can separate a landmark convention from a posture difference**:
+that rig has no `root` bone at all, and this lane has no MPFB rig. So the
+displacement removes the 8.45 cm of variation and leaves a constant of about
+2.5 cm in one axis. **No figure should be described as accurate to better than
+2.5 cm fore-and-aft until a landmark comparison closes it**, which is a
+separate piece of work and is not done here.
 ## A one-handed release is far less determined than a two-handed one
 
 Added 2026-09-04 by the content lane while authoring `netball_one_hand_high_pass`,
