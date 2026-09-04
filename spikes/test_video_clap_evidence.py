@@ -39,20 +39,25 @@ class ThreeCountsAreThreeNumbers(unittest.TestCase):
     for another is how "fifty-five" was published as "seven"."""
 
     def series(self):
-        # Two separate dips under the bar. The first is long and has TWO local
-        # minima in it; the second is short with one. So: 8 frames under, 2
-        # stretches, 3 minima — three numbers, all different, none guessable
-        # from the others.
-        widths = np.array([1.0, 0.4, 0.3, 0.4, 0.2, 0.45, 1.0, 1.0,
-                           0.4, 0.3, 0.4, 1.0, 1.0])
+        # 11 frames under the bar, in 3 stretches, holding 4 local minima —
+        # three numbers, all different, none guessable from the others.
+        #
+        # AND THE DEEPEST FRAME IS THE FIRST ONE, WHICH IS NOT A LOCAL MINIMUM.
+        # An earlier fixture put the deepest value in the interior, where it is
+        # necessarily a minimum too, so a mutation deriving `deepest` from the
+        # minima list PASSED every test in this file. The guard could not see
+        # the fault its own docstring named. A clip that opens mid-clasp is the
+        # ordinary case this represents.
+        widths = np.array([0.15, 1.0, 0.4, 0.3, 0.4, 0.2, 0.45, 1.0, 1.0,
+                           0.4, 0.3, 0.4, 0.3, 0.4, 1.0])
         return np.arange(len(widths)) / 30.0, widths
 
     def test_the_three_counts_are_reported_separately(self):
         found = together(*self.series())
 
-        self.assertEqual(found["framesUnder"], 8)
-        self.assertEqual(len(found["stretches"]), 2)
-        self.assertEqual(len(found["minima"]), 3)
+        self.assertEqual(found["framesUnder"], 11)
+        self.assertEqual(len(found["stretches"]), 3)
+        self.assertEqual(len(found["minima"]), 4)
 
     def test_no_two_of_them_are_equal_in_this_fixture(self):
         # If a future version returned the same number for two of the three,
@@ -65,10 +70,16 @@ class ThreeCountsAreThreeNumbers(unittest.TestCase):
 
     def test_the_deepest_frame_is_reported_even_when_it_is_not_a_named_minimum(self):
         """The published seven did not include the deepest frame in the clip.
-        The deepest is now its own field and cannot be dropped by a rule."""
+
+        The fixture's deepest frame is its FIRST, which no local-minimum rule
+        can return. So `deepest` has to come from the whole series, and a
+        version deriving it from the minima list fails here."""
         found = together(*self.series())
 
-        self.assertAlmostEqual(found["deepest"]["widths"], 0.2)
+        self.assertAlmostEqual(found["deepest"]["widths"], 0.15)
+        self.assertNotIn(found["deepest"]["widths"],
+                         [m["widths"] for m in found["minima"]],
+                         "the fixture must keep the deepest OUT of the minima")
 
     def test_a_stretch_running_to_the_end_is_still_closed(self):
         times = np.arange(5) / 30.0
@@ -132,6 +143,28 @@ class ASpikeIsAnAttackNotALoudMoment(unittest.TestCase):
 
         self.assertEqual(len(found), 1)
 
+    def test_the_separation_constant_is_pinned_from_both_sides(self):
+        """THIS CONSTANT DECIDES THREE PUBLISHED COUNTS AND NOTHING HELD IT.
+
+        Sweeping it moves the front spike count 5 / 4 / 4 / 3 / 3 at 0.05 /
+        0.10 / 0.15 / 0.20 / 0.30 s, and no test noticed at any value. At 0.05
+        the terminal cluster is THREE spikes — 26.240, 26.355, 26.415 — and at
+        0.20 the 0.175 s pair merges into one, so "a pair 0.175 s apart" is a
+        statement about this constant as much as about the recording.
+
+        Two cases hold it: impulses 0.10 s apart must MERGE, and impulses
+        0.25 s apart must NOT. Together they fail if the constant moves in
+        either direction."""
+        close = spikes(*high_band_energy(
+            self.track([(1.0, 0.5, 0.02), (1.10, 0.5, 0.02)]), RATE))
+        apart = spikes(*high_band_energy(
+            self.track([(1.0, 0.5, 0.02), (1.25, 0.5, 0.02)]), RATE))
+
+        self.assertEqual(len(close), 1, "0.10 s apart must merge at 0.15 s")
+        self.assertEqual(len(apart), 2, "0.25 s apart must stay separate")
+        self.assertLess(0.10, SEPARATION_SECONDS)
+        self.assertLess(SEPARATION_SECONDS, 0.25)
+
     def test_the_bar_is_honoured(self):
         loud = self.track([(1.5, 0.5, 0.02)])
         many = spikes(*high_band_energy(loud, RATE), rise=1.0)
@@ -163,6 +196,34 @@ class TheCoincidenceIsTheArgument(unittest.TestCase):
                              [{"seconds": 5.3, "rise": 40.0}], window=0.10)
 
         self.assertIsNone(found[0]["rise"])
+
+    def test_the_window_has_a_stated_margin_on_both_sides(self):
+        """A CLAIM WITH AN UNSTATED WINDOW IS A THRESHOLD NOBODY CAN CHECK.
+
+        On session 1.0 the "exactly two of twelve" result holds for every
+        window from 0.067 to 0.230 s: below 0.067 NOTHING pairs, and at 0.232
+        a third minimum joins. The published 0.100 sits inside that plateau
+        with 33 ms below it and 130 ms above.
+
+        This fixture reproduces the shape — a pair at 70 ms, a rival at
+        235 ms — so a version that widened or narrowed the default until the
+        answer changed fails here."""
+        minima = [{"seconds": 1.000, "widths": 0.25},
+                  {"seconds": 2.000, "widths": 0.30}]
+        sound = [{"seconds": 1.070, "rise": 26.5},
+                 {"seconds": 2.235, "rise": 30.0}]
+
+        self.assertEqual(sum(1 for c in coincidences(minima, sound, 0.060) if c["rise"]), 0)
+        self.assertEqual(sum(1 for c in coincidences(minima, sound, 0.100) if c["rise"]), 1)
+        self.assertEqual(sum(1 for c in coincidences(minima, sound, 0.240) if c["rise"]), 2)
+
+        # AND THE DEFAULT ITSELF, called with no window at all. The three
+        # assertions above pass explicit values, so a version that widened the
+        # DEFAULT to 0.30 survived them — the same hollowness this file exists
+        # to catch, one level along. This line is what fails when it moves.
+        self.assertEqual(
+            sum(1 for c in coincidences(minima, sound) if c["rise"]), 1,
+            "the default window must sit inside the plateau, not beyond it")
 
     def test_every_minimum_gets_a_row_whether_or_not_it_pairs(self):
         # A row per minimum, so the ten that pair with nothing are visible.

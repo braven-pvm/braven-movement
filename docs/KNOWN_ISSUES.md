@@ -3156,7 +3156,9 @@ The five stretches are 5.833–6.033 (7 frames), 17.833–19.000 (36),
 Her hands come together often, because she talks with them; the room has many
 loud moments. What is rare is the two at once. Of the **twelve** hands-together
 minima, **exactly two** carry a broadband attack within 100 ms — 5.867 s with
-x26.5, and 17.900 s with x29.1. **The other ten carry nothing at all.** Those
+x26.5, and 17.900 s with x29.1. **The other ten carry nothing at all.** The
+result is not delicate about the 100 ms: it holds unchanged for any window
+between 0.067 and 0.230 s. Those
 two are the two repetitions the annotation had already singled out as containing
 no ball.
 
@@ -3226,10 +3228,33 @@ can regenerate is not a measurement, whatever it happens to be.
 
 Every parameter is a named constant with its reason: the 4 kHz band, 5 ms
 blocks, a median floor over the preceding 0.5 s stopping 10 ms short, an attack
-ratio of 0.5, a 0.15 s separation between reported spikes and a x8 bar. **A
-reported spike is therefore a CLUSTER, not necessarily an isolated event**:
-anything within 150 ms of one is inside it. That is why the terminal pair reads
-as two spikes at 26.240 and 26.415 rather than three.
+ratio of 0.5, a 0.15 s separation between reported spikes and a x8 bar.
+
+**THE SPIKE COUNTS ARE CONDITIONAL ON THE SEPARATION CONSTANT, and that is
+stated rather than left for a reader to discover.** A reported spike is a
+CLUSTER: anything within 150 ms of one is inside it, not beside it. Sweeping
+the constant on session 1.0:
+
+| separation | front spikes | side spikes |
+|---|---|---|
+| 0.05 s | 5 | 17 |
+| 0.10 s | 4 | 17 |
+| **0.15 s (used)** | **4** | **17** |
+| 0.20 s | 3 | 17 |
+| 0.30 s | 3 | 16 |
+
+**At 0.05 s the terminal cluster is THREE — 26.240, 26.355 and 26.415 — and at
+0.20 s the pair merges into one.** So "a pair 0.175 s apart" is a statement
+about this constant as much as about the recording, and the third event between
+them is real and merged rather than absent. The constant is now pinned by a test
+that fails if it moves in either direction; before that, sweeping it changed
+three published counts and no test noticed at any value.
+
+**THE COINCIDENCE WINDOW HAS A STATED MARGIN.** "Exactly two of twelve" holds
+for every window from **0.067 s to 0.230 s**. Below 0.067 nothing pairs at all;
+at 0.232 a third minimum joins. The 0.100 s used sits inside that plateau with
+33 ms below it and 130 ms above. A claim with an unstated window is a threshold
+nobody can check.
 
 ### The instruction it produced
 
