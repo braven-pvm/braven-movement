@@ -5,9 +5,20 @@ Written 2026-09-04 against `braven-movement` main at `cc2c20a` and
 commit it was read from. Nothing here changes code, and nothing was written into
 `braven-tactics`.
 
-Two of the five questions turn out to have measured answers already in the
-repository. Two are decisions for Marius, and this document frames them without
-deciding them. One is a defect that nobody has named yet.
+What each of the five turns out to be:
+
+| | question | what it is |
+|---|---|---|
+| 1 | variants | **a decision**, framed here in three options and not taken |
+| 2 | the release vocabulary | **a coach question**, and it gates the lob |
+| 3 | truncation | **answered by the code**, and the answer is "nothing reads it" |
+| 4 | `generatedFrom` | **a proposal**, for a gap with no field at all |
+| 5 | the ball anchor | **a proposal**, for a residual on a design that is right |
+
+This document has been through one independent review, which found three
+blocking errors and ten smaller ones. Every correction is kept visible in the
+section it belongs to rather than quietly folded in, because two of the three
+were wrong in a way that is easy to repeat.
 
 **The single most useful fact in this document, because four of the five
 questions depend on it:** a clip loses fields at TWO places between the exporter
@@ -48,14 +59,29 @@ set[clip.clipId] = {
 }
 ```
 
-**Ten exported fields are dropped here and never reach the file:**
+**Nine exported fields are dropped here and never reach the file:**
 
     schemaVersion  class  sport  technique  source
     travelsUnderItsOwnPower  framesPerSecond  contactFrame  releaseFrame
-    clipId (kept, but as the object key rather than as a field)
 
-I confirmed this against the live file rather than against the tool. The clip
-`catch.netball.two-hand-snatch` on production has exactly thirteen keys.
+A tenth, `clipId`, is not dropped. It becomes the key of the object, so it
+survives as the name of the clip rather than as a field inside it. That is why
+23 − 13 = 10 while only nine fields are lost.
+
+I confirmed the count against the shipped file rather than against the tool. The
+clip `catch.netball.two-hand-snatch` has exactly thirteen keys.
+
+**There is a second allowlist inside the first, and it is easy to miss.**
+`phases` is not copied either. It is rebuilt entry by entry:
+
+```js
+phases: (clip.phases ?? []).map((p) => ({ name: p.name, at: p.at, cues: p.cues })),
+```
+
+so a phase's `frame` and `checkpoints` are dropped even though `phases` itself
+survives. **A field can therefore be lost at three depths**: never exported,
+dropped by the outer allowlist, or dropped by this inner one. Any proposal that
+adds something inside `phases` has to change this line as well.
 
 **This is the fact that matters most in this document.** A new field on the
 exporter does NOT arrive at the board. It stops here, silently, because the
@@ -119,8 +145,14 @@ Three are variants, and all three sit on one drill:
 `(movement, variant)` pair. `export_coach_animations.py` mentions it fourteen
 times. **`export_tactics_clip.py` mentions it zero times, `clip_geometry.py`
 zero, and the single occurrence in `verify_tactics_clip.py` is an unrelated note
-about BLAS.** The Tactics side of the boundary has no notion of a variant, by
-omission rather than by decision.
+about BLAS.** The Tactics side of the boundary has no notion of a variant.
+
+**That is a decision and not an oversight**, and
+`docs/KNOWN_ISSUES.md:2460-2470` records it under the heading "The exporter is
+untouched, and that is deliberate": inventing a `(movement, variant)` key would
+answer Marius's question by writing code rather than by asking him. A first
+version of this section called it omission rather than decision, which
+contradicted that entry.
 
 `CLASSES` in `clip_geometry.py` is keyed by movement alone. So three of the four
 balls cannot reach a clip, whatever a board asks for.
@@ -231,31 +263,62 @@ The engine has three `pass` drills in `CLASSES` on `cc2c20a`:
 | `netball_bounce_pass` | `pass.netball.bounce-pass` | **yes** |
 | `netball_overhead_pass` | `pass.netball.overhead-pass` | **no** |
 
-`one-hand-high-pass` has **zero occurrences anywhere in `spikes/` or `docs/`** on
-`cc2c20a`. It is absent from the engine as well as from the vocabulary, so it is
-not a mismatch between the two. It is a manual technique that nobody has
-authored.
+### The high pass, and a search that proved nothing
+
+A first version of this section stated that `one-hand-high-pass` has zero
+occurrences anywhere in `spikes/` or `docs/`. **That was true of the spelling I
+searched and false of the technique.** The repository writes it "1 Hand High",
+and under its own spelling there are **seventeen** hits.
+
+It is not unmentioned. `docs/LOB_AUTHORING_BRIEF.md:250-256` records it as an
+open authoring question, and makes it a gate:
+
+> **So the lob is a variant of the OVERHEAD or the 1 HAND HIGH pass, and neither
+> is in the library.** Authoring the lob now requires authoring its parent
+> first.
+
+So the correct statement is stronger than the one it replaces. `1 Hand High` is
+a manual technique with no engine drill and no place in `ReleaseKind`, it is a
+recorded open question, and **the lob is blocked behind it**. The vocabulary
+reconciliation is not tidiness. It gates a technique somebody wants.
 
 ### What the vocabulary change would cost Tactics
 
-Adding `overhead-pass` to `ReleaseKind` is a one-line type change. The cost sits
-entirely in what must move with it:
+Adding `overhead-pass` to `ReleaseKind` is a one-line type change. Two things a
+first version of this section listed as costs are **not** costs, and the code
+says so:
 
-1. **`actionShapeOf` must map it.** Every release kind resolves to a shape, and
-   an unmapped kind reaches the pose with no shape.
-2. **`isKick` must answer for it.** The code asks `isKick` rather than keeping a
-   second list, and `docs/animation-demand.md` records what happened when two
-   lists disagreed: a netball goal shoot came out as a drop kick at the ring.
-3. **Every stored project keeps working**, because the change only adds a
-   member. No saved board can contain the new kind.
-4. **The board author gains a name with a real capture behind it**, which is the
-   point of the change.
+- **`actionShapeOf` needs no change.** `pose.ts:275-283` ends with
+  `return 'throw'` for everything out of the hands that is not a catch, a kick
+  or a shot. A new hand kind is already handled.
+- **`isKick` needs no change.** `kicks.ts:174` answers it as
+  `kickShape(kind, 10) !== null`, which is false for a kind it does not know.
+  This is the single-definition design working as intended, and it is the reason
+  the code asks `isKick` rather than keeping a second list.
+
+**What the change does force**, none of which is in the engine's gift:
+
+1. **`RELEASE_KINDS`** and its compile-time `Exact<>` guard,
+   `contract/vocabulary.ts:164`.
+2. **`THROW_WORDS: Record<ReleaseKind, string>`**, `scene/vocabulary.ts:534`,
+   which is exhaustive by type and will not compile with a member missing.
+   `hang.test.ts:152` reads it.
+3. **The netball `throws` ring**, `sports/netball.ts:259-263`, which today lists
+   only `pass`, `lob` and `bounce-pass`. A kind absent here cannot be authored
+   on a netball board whatever the type says.
+4. **The tool's third copy of `CLASSES`**, in `add-technique-clip.mjs`.
+
+That last one deserves its own note: `CLASSES` now exists in three places, in
+two repositories, and nothing compares them.
+
+**Every stored project keeps working**, because the change only adds a member.
+No saved board can contain the new kind.
 
 That is a small change. **Its size is not the reason to be careful.** The
 vocabulary and the manual disagree in a way this repository has already
-recorded: the manual teaches eight passes, the vocabulary names four, the two
-overlap on `lob` and `bounce-pass`, and `shoulder-pass` has zero occurrences in
-the manual. Adding one member to a list that is already out of step with the
+recorded in `docs/COACH_MORNING_2026-09.md:325`: the manual teaches eight
+passes, the vocabulary names four, the two overlap on `lob` and `bounce-pass`,
+and `shoulder-pass` has zero occurrences in the manual. Adding one member to a list that is already out of step with the
 source of truth corrects one name and leaves the disagreement in place. **The
 vocabulary is a coach question before it is a typing question**, and it belongs
 on the coach agenda rather than in a pull request.
@@ -282,17 +345,88 @@ any board. That is a fact about the consumer, and not about the clip.
 - The engine **has no floor**. There is no floor term, no bounce and no
   restitution in `possession.py`, `ball_track.py` or `possession_solve.py`.
 - The ball reaches the ground at **0.584 s**, 400.0 cm from her chest.
-- The release sits at **0.80 of a 1.60 s clip**, which leaves **0.32 s of
-  flight**.
-- The floor is reached **1.84 times later than the clip has left, short by
-  0.268 s**.
+
+The audit then states the release at "0.80 of a 1.60 s clip", leaving 0.32 s of
+flight, and the floor reached "1.84 times longer than the clip has left, short
+by 0.268 s".
+
+**Those three figures do not close against each other, and they do not match the
+baseline.** I repeated them from the audit in a first version of this section
+without checking them, which is the same fault the audit itself is about.
+
+From `spikes/clip-baseline.json` at `cc2c20a`:
+
+| quantity | audit | baseline |
+|---|---|---|
+| clip length | 1.60 s | 1.6000 s |
+| release, as a fraction | 0.80 | **0.7920** |
+| flight left in the clip | 0.32 s | **0.3328 s** |
+| shortfall against 0.584 s | 0.268 s | **0.2512 s** |
+| ratio, floor to flight left | 1.84 | **1.755** |
+
+The audit's own arithmetic does not close either: 0.584 − 0.32 is 0.264 and not
+0.268, and 0.584 ÷ 0.32 is 1.83 and not 1.84. Both printed figures need a flight
+of about 0.317 s, which appears nowhere.
+
+**I am not calling the audit wrong.** It may have measured on a commit before
+`hit` settled at 0.7920, and I have not looked. What I can say is that the two
+documents must not both be quoted, and that whoever owns the audit should
+reconcile them.
+
+**The conclusion survives on either set of numbers, which is why it is safe to
+state.** The clip has 0.33 s of flight at most and the ball needs 0.584 s. It
+ends with the ball in the air by any measurement.
 
 The other two passes complete inside their clips, at frames 93 and 94 of 95.
+They share the bounce pass's length and release fraction exactly, so what
+separates them is the flight each ball needs and not the shape of the clip.
 
-**`bounce-pass` is the first truncated clip whose class name a board can already
-select.** `overhead-pass` is truncated in theory only, because no board can ask
-for it. That difference is the whole finding. Until now, truncation was a
-property of clips nobody could reach.
+**A first version of this section argued that `bounce-pass` is the first
+truncated clip a board can already select, because `bounce-pass` is in
+`ReleaseKind` and `overhead-pass` is not. That argument is wrong, and the
+resolution code was in my hand while I wrote it.**
+
+`techniqueChosenFor` in `clips.ts:218-226` matches on a prefix:
+
+```ts
+Object.keys(clips).filter((k) => k.startsWith(`${kind}.${sport}.`))
+```
+
+`kind` is the release event's own kind, put on the blip by `blips.ts:132` as
+`e.kind` and passed through `tokens.ts:595`. The clips are exported with the
+CLASS in the first segment, so a bounce pass is `pass.netball.bounce-pass`.
+
+Therefore:
+
+- A `bounce-pass` event looks for `bounce-pass.netball.` and **finds nothing**.
+- A plain `pass` event looks for `pass.netball.` and **finds both passes**.
+
+**Membership of `ReleaseKind` by the technique segment plays no part in
+resolution at all.** The first segment does the work, and it is the class.
+
+### What is actually true, and it is worse
+
+**No pass clip is in Tactics.** `clips.json` at `987e2e2` holds eight technique
+clips, all `catch`, `block` and `land`. Zero begin with `pass.`. All three engine
+passes are unspliced, so nothing resolves today by any route.
+
+And there is a trap waiting in the splice. `DEFAULT_TECHNIQUE` has entries for
+`catch.netball`, `block.netball` and `land.netball`, and **none for
+`pass.netball`**. If the passes were spliced as they stand, a plain `pass` event
+would find two clips, find no default, and fall to "take the first rather than
+dealing at random" — which sorts `pass.netball.bounce-pass` before
+`pass.netball.chest-pass`.
+
+**Every ordinary netball pass would be drawn as a bounce pass**, and the bounce
+pass is the one clip of the three whose ball data stops before the ball lands.
+
+That is the same defect class that `6e01e82` fixed for catches, where six drills
+were dealt at random and one player received three different drills in one play.
+It is not fixed in general. It was fixed for the three classes that had clips.
+
+**So the truncation fact and the proposal below both stand. The ordering
+argument does not, and the finding that replaces it is that splicing the passes
+without naming a default is a live trap.**
 
 ### The answer this evidence supports
 
@@ -404,7 +538,16 @@ repeat.
 
 ## 5. The ball anchor: the clip is anchored to a landmark it never sends
 
-This is the defect nobody has named on this side of the boundary.
+**A first version of this section called it "the defect nobody has named". That
+was wrong, and the contract I wrote names it.**
+`docs/TACTICS_CLIP_CONTRACT.md:376-391` gives the landmark, the unit, and the
+reason:
+
+> The offset is in arm lengths for the same reason everything else is: the
+> athlete this was solved on is not the size of the body it will be drawn on.
+
+That is a deliberate design and it is the right one. The residual is narrower,
+and it survives the correction. Refer to "the residual" below.
 
 `export_tactics_clip.py` on `cc2c20a`, at the `ball` field:
 
@@ -428,36 +571,51 @@ The fifteen pose channels cannot supply them. They are `bob`, `lean`, `twist`,
 and four limbs of `upper`, `lower` and `out`. Every one is an angle or a
 normalised offset. **None is a position, a length or a landmark.**
 
-### The inconsistency, stated plainly
+### The residual, stated narrowly
 
-    the SIZE of the ball      ballRadiusM, absolute metres
-    the POSITION of the ball  arm lengths from a landmark the clip does not send
+The contract's design is right and the contract's own §8 states the rule the
+design rests on: a clip travels in units that do not depend on the body it was
+solved on. The ball channel obeys that rule. **One field breaks it.**
 
-A consumer can draw the ball at the right size and cannot place it, unless it
-assumes an arm length and a shoulder midpoint of its own. Any such assumption
-describes the DRAWN figure, while the numbers describe the SOLVED body. Where
-the two differ, the ball is wrong by that difference, and nothing reports it.
+    the SIZE of the ball      ballRadiusM, absolute metres, shipped
+    the POSITION of the ball  arm lengths, and the arm length is NOT shipped
 
-### Why this is familiar
+So the two halves of one ball are expressed against different standards, and
+only one of them travels. A consumer holding the clip knows the NAME of the unit
+its ball positions are written in and does not know its VALUE.
 
-This is the same shape as the defect in the Blender job, which anchored the ball
-to a shoulder midpoint it never transmitted. The parallel is not a coincidence.
-Somebody who has the body in hand does not notice that the recipient will not.
+The consequence is narrow and real. To place the ball at all, a consumer must
+supply an arm length. The only one available to it is the DRAWN figure's, while
+the numbers describe the SOLVED body. Where those differ, the ball is wrong by
+that ratio, and nothing reports it. `ballRadiusM` is exempt because a netball
+really is one size on every body, which is the contract's stated reason for it.
+
+**This is not an argument to change the unit**, and section "What the fix costs"
+says so again. It is an argument that a unit must travel with the numbers
+written in it.
 
 ### What keeps it from being live today
 
-Tactics does not read the ball channel. Refer to section 0. **The defect is
-real, it is latent, and it would surface on the first day anybody used the
-channel.** That is also the day it would be hardest to diagnose, because the ball
-would be nearly right.
+Tactics does not read the ball channel. Refer to section 0. **The residual is
+real and it is latent**, and the mechanism, rather than a prediction about it,
+is this: the error is a ratio between two arm lengths, so it scales the offset
+rather than displacing it. A ball placed with the wrong arm length sits near the
+hands and not beside them. That is the property that makes it hard to see, and
+it is a fact about the arithmetic rather than a forecast about a future day.
 
 ### What the fix costs
 
 One field, and it can ride with `generatedFrom`:
 
 ```json
-"anchor": { "landmark": "shoulderMidpoint", "armLengthM": 0.61 }
+"anchor": { "landmark": "shoulderMidpoint", "armLengthM": 0.52675 }
 ```
+
+The value is not an example. `docs/BALL_SPEED_PROVENANCE.md:26` records
+`arm_length_cm` as **52.675 cm**, recovered from each ball file with every file
+agreeing. A first version of this section printed 0.61, which was invented, and
+an invented number in a proposed provenance field is the exact failure the field
+exists to prevent.
 
 The clip then carries the unit its own numbers are written in. As with every
 other proposal here, the field must also be added to the allowlist in
@@ -483,15 +641,27 @@ from?
 | exported build | `f0172cf` |
 | compared against | `cc2c20a`, `braven-movement` main, 2026-09-04 |
 | instrument | `spikes/clip-baseline.json` at both commits |
+| script | **`spikes/clip_gap_read.py`**, added with this document |
+| command | `python spikes/clip_gap_read.py f0172cf cc2c20a` |
 | method | join on `(phase, measure)`, compare `engineDegrees` |
+| **median convention** | **the mean of the two middle values** |
 | clips compared | the 8 that `braven-tactics` consumes |
 | readings compared | 198 |
+
+**The convention line is there because a first version of this document did not
+have one, and needed one.** That version used an inline script which took the
+LOWER of the two middle values for the summary and the UPPER for the per-clip
+rows. Both are defensible, neither was stated, and the two cannot be compared
+with each other. A reviewer reproduced every other figure and could not
+reproduce the medians. The script now fixes one convention, in one place, and
+names it. The medians below are therefore slightly different from the ones first
+published, and the worst values and counts are unchanged.
 
 **Result:**
 
 | measure | value |
 |---|---|
-| median movement | **2.52 degrees** |
+| median movement | **2.57 degrees** |
 | worst movement | **136.13 degrees** |
 | readings over 15 degrees | **34** |
 
@@ -499,14 +669,14 @@ Worst and median for each clip:
 
 | clip | worst | median | worst at |
 |---|---|---|---|
-| `block.netball.deflect-high` | 31.12 | 2.63 | ready / left shoulder elevation |
-| `catch.netball.hooks-jump` | 17.29 | 3.57 | pull_in / right shoulder elevation |
-| `catch.netball.hooks-outside-hand` | 136.13 | 4.81 | facing_away / left elbow flexion |
-| `catch.netball.one-hand-snatch` | 65.60 | 1.47 | reach / left elbow flexion |
-| `catch.netball.two-hand-chest` | 20.49 | 2.32 | pull_in / right shoulder elevation |
-| `catch.netball.two-hand-snatch` | 21.76 | 1.85 | pull_in / right shoulder elevation |
-| `catch.netball.two-hand-snatch-back` | 14.24 | 2.62 | control / right shoulder elevation |
-| `land.netball.double-foot` | 21.47 | 4.45 | absorb / right shoulder elevation |
+| `block.netball.deflect-high` | 31.12 | 2.53 | ready / left shoulder elevation |
+| `catch.netball.hooks-jump` | 17.29 | 3.19 | pull_in / right shoulder elevation |
+| `catch.netball.hooks-outside-hand` | 136.13 | 4.54 | facing_away / left elbow flexion |
+| `catch.netball.one-hand-snatch` | 65.60 | 1.43 | reach / left elbow flexion |
+| `catch.netball.two-hand-chest` | 20.49 | 2.14 | pull_in / right shoulder elevation |
+| `catch.netball.two-hand-snatch` | 21.76 | 1.80 | pull_in / right shoulder elevation |
+| `catch.netball.two-hand-snatch-back` | 14.24 | 2.57 | control / right shoulder elevation |
+| `land.netball.double-foot` | 21.47 | 4.38 | absorb / right shoulder elevation |
 
 **The reading is a change in the pose and not a change in the measurement.**
 Measure names are identical across both builds. Phase names are identical. Frame
@@ -515,11 +685,14 @@ convention, changed on **six of the eight**.
 
 **Read the history carefully, because it is not monotonic:**
 
+All three rows are re-read with `clip_gap_read.py` under the one convention, so
+they can be compared with each other:
+
 | against | n | median | worst | over 15 |
 |---|---|---|---|---|
-| `ac240b2` | 198 | 1.84 | 140.13 | 37 |
-| `aa3f244` | 198 | 2.52 | 136.13 | 34 |
-| `cc2c20a` | 198 | 2.52 | 136.13 | 34 |
+| `ac240b2` | 198 | 1.86 | 140.13 | 37 |
+| `aa3f244` | 198 | 2.57 | 136.13 | 34 |
+| `cc2c20a` | 198 | 2.57 | 136.13 | 34 |
 
 The median rose between `ac240b2` and `aa3f244`, while the worst and the count
 over 15 degrees both fell. **The gap neither simply grew nor simply shrank.**
@@ -549,7 +722,15 @@ Stated here so that nobody reads silence as a finding.
 - **What the four balls do to the fifteen pose channels.** Only the turn is
   known, and it comes from the known issue. That read needs a solve.
 - **Whether the eight passes in the manual should replace the four in the
-  vocabulary.** That is a coach question, and it is on the coach agenda.
+  vocabulary.** That is a coach question, and it is on the coach agenda. Section
+  2 adds one fact to it that was not there before: the lob is a variant of the
+  overhead or the 1 Hand High pass, neither is in the library, and neither is in
+  `ReleaseKind`. **The reconciliation is the lob's gate**, so it is not
+  housekeeping that can wait indefinitely.
+
+- **Whether the three engine passes should be spliced into Tactics.** Section 3
+  says what must happen first: `DEFAULT_TECHNIQUE` has no `pass.netball` entry,
+  and splicing without one makes every ordinary pass draw the bounce pass.
 - **Whether the 0.05 degree miss on the low ball is a band error or a real
   miss.** `docs/KNOWN_ISSUES.md` states that 0.05 degrees cannot separate the two
   readings, and that it must not be reported as a failure on its own.
