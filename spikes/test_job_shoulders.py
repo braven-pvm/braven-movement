@@ -62,22 +62,20 @@ except ImportError:  # pragma: no cover - exercised only without the solver
 
 # The job rounds every emitted number to six decimal places of a TORSO LENGTH,
 # so ONE unit in the last place is 1e-6 torso lengths — 4.96e-07 m on this
-# athlete. Measured over all 1084 frames:
+# athlete. Measured over all 1180 frames of the twelve-drill library:
 #
 #     the midpoint reproduces the anchor      4.9086e-07 torsos
 #     each SIDE reproduces its own shoulder   4.9996e-07
-#     the end-to-end ball centre              9.2583e-07
+#     the end-to-end ball centre              9.3398e-07
 #
-# THE END-TO-END CHECK GETS TWO UNITS, AND NOT BECAUSE IT NEEDED THEM TO PASS.
-# It composes TWO independently rounded fields — the shift and
-# `fromShouldersInArms` — so its bound is twice the single-field bound by
-# construction. Holding it to one unit passed with 8 per cent to spare, which
-# is a threshold waiting to fail on another machine for a reason that would
-# not be a defect.
+# THE END-TO-END CHECK GETS ITS OWN CONSTANT, because it composes TWO
+# independently rounded fields — the shift and `fromShouldersInArms`. Its bound
+# is derived beside that constant below, and it is 1.031 units and not two.
 #
-# NEITHER IS A TOLERANCE CHOSEN TO FIT. No wrong pair of joints — clavicles,
-# the rest pose, a swapped side — lands within a micron of the right one. The
-# rendering lane's own agreement guard sits at 1e-5 m, twenty times above.
+# NEITHER CONSTANT IS A TOLERANCE CHOSEN TO FIT. No wrong pair of joints —
+# clavicles, the rest pose, a swapped side — lands within a micron of the right
+# one. The rendering lane's own agreement guard sits at 1e-5 m, twenty times
+# above.
 ROUNDING_TORSOS = 1e-6
 # A CEILING, NOT THE BOUND, and an earlier version of this said "twice the
 # single-field bound by construction". That is imprecise: the composed check
@@ -85,12 +83,15 @@ ROUNDING_TORSOS = 1e-6
 # `fromShouldersInArms` in arm lengths, so the exact per-coordinate maximum is
 # 0.5e-6 x (1 + arm / torso) = 1.031e-6 torsos on this athlete, not 2e-6.
 #
-# One unit was therefore never a bound at all. The measured worst, 9.258e-07,
-# passed it by ALIGNMENT — the two errors landed on the same axis with the same
-# sign on the landing's frame 73 — and a re-roll of the roundings puts the
-# chance of exceeding one unit at about one library in nine, on a machine with
-# no defect in it. 2e-6 is above 1.031e-6 with room, so it fails only on a
-# defect.
+# One unit was therefore never a bound at all. THE MEASURED WORST MOVED WHEN A
+# DRILL WAS ADDED: 9.2583e-07 on the eleven-drill library, 9.3398e-07 once
+# `netball_one_hand_high_pass` arrived. That is the whole argument in one
+# number — under a 1e-6 threshold the library was a few drills from a red suite
+# with nothing wrong in it. The worst passes one unit by ALIGNMENT — the two
+# errors landed on the same axis with the same sign on the landing's frame 73.
+# A re-roll of the roundings puts the chance of exceeding one unit at about one
+# library in nine, on a machine with no defect in it. 2e-6 is above 1.031e-6
+# with room, so it fails only on a defect.
 COMPOSED_TORSOS = 2e-6
 
 FIELD = "shoulderShiftFromRestInTorsos"
@@ -105,6 +106,21 @@ FIELD = "shoulderShiftFromRestInTorsos"
 # POSITION about 0.98, and metres about 1.3 in the vertical. 0.5 is the only
 # round value above the first and below the other three.
 LOOKS_ABSOLUTE_TORSOS = 0.5
+
+# A FLOOR ON THE COVER, NOT A TOTAL, and it replaces a total that fired on the
+# first new drill. `assertEqual(checked, 1084)` was written to prove the loop
+# reads the whole library rather than a sample. It did that, and it also failed
+# the moment `netball_one_hand_high_pass` arrived with 96 frames — a red suite
+# on a merged tree, caused by a correct new drill and by this file.
+#
+# So the POPULATION now comes from `library()` and each drill's frame count
+# from its own clip, which is the rule a drill's author can satisfy by adding
+# the drill and nothing else. This number only says the cover has not SHRUNK
+# below what the field was proved on when it shipped. A new drill raises the
+# cover and does not touch it. Removing a drill does fire it, which is the one
+# case worth a person's attention, and then this line moves with the reason
+# written beside it.
+COVERED_AT_LEAST = 1084
 
 
 @unittest.skipUnless(SOLVER, "needs pymomentum, which lives in the pixi environment")
@@ -152,7 +168,7 @@ class TheJobCarriesItsOwnAnchor(unittest.TestCase):
         }
 
     def every_frame(self):
-        """Every frame of every drill, with its job. 1084 frames."""
+        """Every frame of every drill in the library, with its job."""
         from export_blender_job import phase_job
 
         for movement_id in self.library:
@@ -171,9 +187,10 @@ class TheJobCarriesItsOwnAnchor(unittest.TestCase):
         """The whole point. Every frame of every drill, not a sample."""
         from export_blender_job import rest_torso, to_blender
 
-        checked = 0
+        covered: dict[str, list[int]] = {}
+        in_the_clip: dict[str, int] = {}
         worst = 0.0
-        for _, frame, result, index, rest_points, job in self.every_frame():
+        for movement_id, frame, result, index, rest_points, job in self.every_frame():
             points = result["points"][frame]
             back = self.resolved(job, rest_points, points, index)
             sent = np.stack([back[side] for side in ("l", "r")]).mean(axis=0)
@@ -182,9 +199,25 @@ class TheJobCarriesItsOwnAnchor(unittest.TestCase):
             ).mean(axis=0)
             gap = float(np.max(np.abs(sent - anchor))) / rest_torso(rest_points, index)
             worst = max(worst, gap)
-            checked += 1
+            covered.setdefault(movement_id, []).append(frame)
+            in_the_clip[movement_id] = len(result["points"])
 
-        self.assertEqual(checked, 1084, "the whole library must be covered")
+        # The drills come from the library and the frames from each clip, so a
+        # new drill is covered by being in the library and by nothing else.
+        self.assertEqual(
+            sorted(covered), sorted(self.library), "a drill went uncovered"
+        )
+        for movement_id, frames in covered.items():
+            self.assertEqual(
+                frames,
+                list(range(in_the_clip[movement_id])),
+                f"{movement_id} is covered with a gap, a repeat or a short tail",
+            )
+        self.assertGreaterEqual(
+            sum(in_the_clip.values()),
+            COVERED_AT_LEAST,
+            "the cover has shrunk below what this field was proved on",
+        )
         self.assertLess(worst, ROUNDING_TORSOS, f"worst gap {worst:.3e} torsos")
 
     def test_a_consumer_can_rebuild_the_ball_from_what_the_job_carries(self):

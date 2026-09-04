@@ -2708,6 +2708,11 @@ counted:
 - **A phase is measured on ONE frame**, the frame `round(at_phase x
   (frames - 1))` clamped to the clip, which is the frame `build` renders that
   phase at. So these are 48 frames and not 48 spans of frames.
+- **The 48 is the library of `cc2c20a`, which held ELEVEN drills and 1084
+  frames.** The count is a measurement of that library and does not move when a
+  drill is added. `netball_one_hand_high_pass` arrived on 2026-09-04 and took
+  the library to twelve drills and 1180 frames; nothing above was re-counted
+  for it, and the ratio is what the entry is about.
 
 ### A withdrawn number, recorded because it is the fault this field is about
 
