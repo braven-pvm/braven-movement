@@ -133,6 +133,69 @@ class TheApexComesFromTheLaunch(unittest.TestCase):
         self.assertEqual(found["apexHeightCm"], found["releaseHeightCm"])
         self.assertEqual(found["apexSeconds"], 0.0)
 
+    def test_the_launch_aims_at_the_trunk_PLACEMENT_not_the_solved_chest(self):
+        """Two chest heights sit a millimetre apart and only one is read.
+
+        `stance_frame` is built from `trunk_frame`'s placement of the REST
+        `c_spine3` — 126.403 on both passes. The SOLVED frame-0 `c_spine3` is
+        126.3242 and 126.3170, because the solver moves the chest 0.08 cm over
+        the solve, and nothing in the launch path reads it.
+
+        An earlier ledger entry quoted the solved one. The error survived being
+        checked, because it was checked by INVERTING the engine's velocity —
+        and that inversion computes its horizontal run from the same wrong
+        anchor, so the mistake cancelled itself. This reads the placement
+        directly and requires the wrong quantity to give a DIFFERENT answer,
+        which is the half an inversion could not supply.
+        """
+        import finger_wrap
+        import motion_track
+        import movement_engine
+        from ball_track import ball_path, load_ball, solve_launch
+        from possession_solve import stance_frame
+        from technique import load_technique, technique_path
+
+        character = movement_engine.load_character()
+        index = {n: i for i, n in enumerate(character.skeleton.joint_names)}
+
+        for name in ("netball_chest_pass", "netball_overhead_pass"):
+            solved = self.solve[name]
+            track = solved["track"]
+            method = load_technique(technique_path(name))
+            zeros = np.zeros(len(character.parameter_transform.names))
+            rest = finger_wrap.spread_fingers(character, zeros, method.every_side)
+            rest_positions = movement_engine.joint_positions(character, rest)
+            arm = motion_track.arm_length(rest_positions, index)
+            placed = movement_engine.trunk_frame(
+                track, 0.0, rest_positions, index, arm, track.turn_at(0.0)
+            )
+            stance = stance_frame(placed.chest, arm, track.turn_at(0.0))
+            target = np.asarray(
+                stance.place(load_ball(ball_path(name)).launch.target), dtype=float
+            )
+            release = np.asarray(solved["possession"].launch_from, dtype=float)
+            engine = float(solved["possession"].launch_velocity[1])
+
+            self.assertAlmostEqual(float(target[1]), 126.403, places=2, msg=name)
+            self.assertAlmostEqual(
+                float(solve_launch(release, target, 600.0)[1][1]),
+                engine,
+                places=4,
+                msg=f"{name}: the placement must reproduce the engine exactly",
+            )
+
+            # THE HALF THAT MAKES THIS A TEST. The solved chest is a millimetre
+            # away, so an assertion that only checks the right answer would
+            # pass on the wrong one too.
+            wrong = target.copy()
+            wrong[1] = float(solved["points"][0][index["c_spine3"]][1])
+            self.assertNotAlmostEqual(
+                float(solve_launch(release, wrong, 600.0)[1][1]),
+                engine,
+                places=4,
+                msg=f"{name}: the solved chest must NOT reproduce the engine",
+            )
+
     def test_no_shipped_pass_goes_over_a_goalpost(self):
         """A netball goalpost is 305 cm. Recorded so that the day one does,
         this says so rather than a person noticing."""

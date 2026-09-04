@@ -2380,20 +2380,42 @@ A first version of this entry said the `up: 0.0` target lands at 106.5 cm,
 called that 26 cm below her shoulders, and asked whether the anchor or the note
 describing it was wrong.
 
-**The anchor is `c_spine3`, and it sits within a millimetre of 126.3 cm.** Her
-shoulder midpoint at frame 0 is 132.86, so it is about **6.5 cm** below her
-shoulders, which is where a chest is.
+**The anchor is `c_spine3`, and it sits at 126.403 cm.** Her shoulder midpoint
+at frame 0 is 132.86, so it is **6.5 cm** below her shoulders, which is where a
+chest is.
 
-**TWO QUANTITIES SIT THERE AND THIS ENTRY QUOTES ONE OF THEM.** The SOLVED
-frame-0 `c_spine3` reads **126.324**. The stance frame's anchor is the REST
-`c_spine3` placed into the trunk frame, which is what
-`stance.place(up=0, ahead=4)` returns and what the engine's launch actually
-aims at; the review reads it as **126.403**. Inverting the engine's own
-vertical velocity gives 126.32 on the chest pass and 126.27 on the overhead,
-but that inversion uses a run computed from the solved anchor and so cannot
-separate the two. **They differ by less than a millimetre and nothing here
-turns on which is used — but the number must say which it is**, which the
-first version of this section did not.
+**TWO QUANTITIES SIT THERE AND AN EARLIER VERSION OF THIS ENTRY QUOTED THE
+WRONG ONE.** Measured on `aa3f244`, by the calls `solve_movement` itself makes
+at `possession_solve.py:138-174`:
+
+```python
+zeros = np.zeros(len(character.parameter_transform.names))
+rest  = finger_wrap.spread_fingers(character, zeros, method.every_side)
+rp    = movement_engine.joint_positions(character, rest)   # c_spine3 y = 134.832
+arm   = motion_track.arm_length(rp, index)                 # 52.6801
+placed0 = movement_engine.trunk_frame(track, 0.0, rp, index, arm, track.turn_at(0.0))
+```
+
+`movement_engine.py:213` sets `chest = place(rest_positions[c_spine3])`, with
+the root dropped by `hip_drop_at(0.0)` — 0.1003 leg lengths, 8.43 cm on both
+passes. That gives **`placed0.chest = (0, 126.403, −3.713)`**, and
+`stance.place(ball.launch.target)` returns **`(0, 126.403, 207.008)`**: the
+`up: 0.0` leaves the height untouched, and so does the turn matrix.
+
+| quantity | chest pass | overhead pass | does the launch read it? |
+|---|---|---|---|
+| the trunk PLACEMENT, `placed0.chest[1]` | **126.403** | **126.403** | **yes** |
+| the SOLVED chest, `points[0][c_spine3][1]` | 126.3242 | 126.3170 | **no** |
+
+**`solve_launch(launch_from, stance.place(target), 600)` reproduces the
+engine's own `launch_velocity[1]` — 71.4690 and −39.3721 — to 0.000000, and
+only with 126.403.** The solver moves the chest 0.08 cm off the placement over
+the solve, and `stance_frame` never reads the solved value.
+
+So the earlier 126.32 was **the wrong quantity, not a rounding**. It was
+reached by inverting the engine's velocity, which could not detect the error
+because the inversion fed the solved anchor back into its own run. Reading the
+placement directly settles it, which is what the guard below now does.
 
 The ball files say `up: 0.0` puts the receiver's hands "at the height of this
 athlete's chest, where the stance frame is anchored". **That is accurate.**
