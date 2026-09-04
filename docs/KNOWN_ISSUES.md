@@ -2156,10 +2156,31 @@ The tail is `ceil` of the spare, not the fraction: no frame lands on
 release + 7.2, and the frame before full extension is already at
 `out = 0.99923`.
 
+**THREE FRAME NUMBERS DESCRIBE ONE FREEZE ON `deflect_high` AND THEY ARE NOT
+INTERCHANGEABLE.** An earlier version used all three without saying which was
+which:
+
+| frame | what it is |
+|---|---|
+| **77** | the first CLIP ROW identical to its predecessor, after the export rounds |
+| **78** | the first frame at which the engine's `out` reaches 1 — the aim point is pinned from here |
+| **79** | the first frame whose measured elbow step is exactly 0.0000 |
+
+The pinned tail of 10 counts from 78. The clip's 11 identical rows count from
+77. They differ because rounding to the clip's precision hides the last frame
+of real motion.
+
+**THE STATISTIC IN THAT LAST COLUMN**, because a drift figure without one is
+not reproducible: it is the largest displacement of ANY joint in the skeleton,
+between the first frame at which the aim point is pinned and the last frame of
+the clip. Not per frame, and not one joint.
+
 **TWO OF THE FOUR GO STILL AND TWO DO NOT.** `deflect_high` drifts 0.0025 cm
 across ten frames — a still image. `chest_pass` and `overhead_pass` drift about
-0.3 cm across twelve, which is IK residual rather than movement, but it is not
-a stop and this entry does not call it one.
+0.3 cm across twelve, which is not a stop and this entry does not call it one.
+**That drift is AUTHORED MOTION, not solver residue**: their hips are still
+being asked to move, as the next paragraph shows. An earlier version called it
+IK residual, which contradicts the paragraph that follows it.
 
 **THE THIRD NUMBER IS WHAT DECIDES IT, AND IT IS AUTHORED.** A drill goes fully
 still only if it ALSO has no lower-body motion left in the tail:
@@ -2177,25 +2198,65 @@ of which was chosen with the others in mind.
 `FOLLOW_THROUGH_SECONDS` moves the onset exactly where the arithmetic says:
 0.06 → 75, 0.09 → 77, 0.12 → 79, 0.16 → 81, 0.20 → 83, five for five on
 `deflect_high`, and at 0.30 the freeze is abolished entirely — the last four
-relative-arm steps read 0.99, 0.61, 0.44, 0.27 cm. Solver convergence, the
-possession state, the ball leaving, and a held final key were each ruled out
-separately.
+steps of the right wrist MEASURED RELATIVE TO THE SHOULDER MIDPOINT, so the
+trunk's own travel cannot flatter them, read 0.99, 0.61, 0.44, 0.27 cm.
+
+The possession state, the ball leaving the solve and a held final key were each
+ruled out by measurement. **SOLVER CONVERGENCE WAS NOT.** It is ruled out by
+inference from the same sweep — at 0.30 s nothing freezes and the pose is still
+changing on the last frame, so the solver is not settling on its own — but
+**nobody read a residual**, and this entry does not claim anyone did.
 
 ### Who sees the frozen frames, and who does not
 
 **The exported clip carries them.** `netball_deflect_high.clip.json` holds
-**11 byte-identical frames of 88 — 12.5%** — with the ball still flying through
-all of them. `export_coach_animations.py` writes every solved frame, so a coach
-watching the grading pack sees the figure stop.
+**11 byte-identical frames of 88 — rows 77 to 87** — with the ball still flying
+through all of them. `export_coach_animations.py` writes every solved frame, so
+a coach watching the grading pack sees the figure stop.
+
+**A STILL RUN IS NOT BY ITSELF A DEFECT, AND THAT CLIP HAS A LONGER ONE.** Rows
+0 to 20 are also byte-identical — **21 rows**, almost twice the tail — and that
+is her waiting for a ball that is still in flight, which is authored and
+correct. 30 of the 88 rows repeat their predecessor. What distinguishes the
+tail is not that it is still but WHERE it is: a hold before the action is a
+pose, and a hold after the follow-through is the follow-through having stopped
+before the clip did.
 
 **A graded checkpoint reads inside the freeze.** Every definition's last phase
 sits at `atPhase` 1.0, so `deflect_high`'s `send_on` checkpoints grade frame
 87 — ten frames into the still span, on values unchanged since 78.
 
-**NO GUARD NOTICES.** `verify_tactics_clip`'s structural check fires only below
-two frames; its numeric gate passes trivially on a frame where nothing moved;
-and `snap_report`'s worst on `deflect_high` is 7.84 at frame 70, the release
-seam, **because a still region floors its own denominator**.
+**NO GUARD NOTICES, AND THE THREE FAIL IN THREE DIFFERENT WAYS.**
+
+`verify_tactics_clip`'s structural check fires only below two frames.
+
+Its numeric gate compares the clip's stored pose against the engine's
+measurement from the same solve, so **a still clip reproduces its stillness
+exactly and passes**. It measures fidelity, not liveness.
+
+`snap_report`'s worst on `deflect_high` is 7.84 at frame 70, the release seam.
+**An earlier version of this entry said that was "because a still region floors
+its own denominator". That names the wrong mechanism.** The floor —
+`SNAP_FLOOR_DEGREES` at `snap_report.py:139-140` — is never reached, because
+the gate at `:137` has already skipped the frame: it judges a frame only when
+`max(step, neighbour median)` reaches the 5 degree meaningful band, and in a
+freeze neither side does. On `deflect_high` the floor is applied to **no frame
+at all**.
+
+| frame | step | neighbour median | judged? |
+|---|---|---|---|
+| 76 | 9.5500 | 4.5100 | yes |
+| 77 | 3.8500 | 2.5950 | **no** |
+| 79–87 | 0.0000 | 0.0000 | **no** |
+
+**AND THE REASON IS THE DETECTOR'S OWN ROBUSTNESS.** Its docstring records that
+an earlier version "could not see a stall at all", and the fix was to judge a
+frame when EITHER its step or its neighbourhood is meaningful — which works,
+because a one-frame stall sits between two large steps. But the denominator is
+a median over `SNAP_WINDOW = 3` frames either side, so **a still run longer
+than that window makes the median still as well**, and both sides fall under
+the band together. The detector that was repaired to see a stall of one frame
+cannot see a stall of ten.
 
 **BUT TACTICS NEVER SAMPLES THEM.** The contract gives a consumer 0.9 s of
 wind-up and 0.5 s of follow-through around the declared moment. `deflect_high`
