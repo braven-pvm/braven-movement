@@ -93,11 +93,50 @@ inherited it.
 keeps falling. By 1.5 s it is 8.5 m below the court.** The aim is right; nothing
 stops the ball once it gets there, and nothing reports it.
 
-**And the clip is too short to hold the bounce.** This drill releases at phase
-0.80 of a 1.60 s clip, which leaves **0.32 s of flight**. The floor is reached
-at 0.584 s, **1.84 times longer than the clip has left, short by 0.268 s**. So
-even with a floor, the bounce would happen after the last frame, and the clip a
-board plays would show a ball still descending.
+**And the clip is too short to hold the bounce.** This drill releases at
+**frame 76 of 96**, which is phase 0.80 in the definition, and the flight the
+clip then contains is **19 intervals at 60 frames per second, frame 76 to frame
+95 = 0.3167 s**. The floor is reached at 0.5842 s, **1.84 times longer than the
+clip has left, short by 0.268 s**. So even with a floor, the bounce would happen
+after the last frame, and the clip a board plays would show a ball still
+descending.
+
+**THE INTERVAL COUNT IS STATED BECAUSE THE FLIGHT FIGURE WAS NOT REPRODUCIBLE
+WITHOUT IT.** An earlier version of this paragraph gave the flight as 0.32 s,
+which is (1 − 0.80) × 1.60, while its shortfall and ratio were derived from
+0.3167 s. **0.5842 − 0.32 is 0.264, not 0.268**, so a reader could not get the
+stated shortfall from the stated flight. Nothing was measured on a stale build
+and no figure here changes; the intermediate was simply never printed. Found by
+the contract lane while reconciling its own arithmetic.
+
+**AND THE SHIPPED CLIP RECORDS THE SAME FRAME A SECOND WAY.**
+`export_tactics_clip.py` stores `hit = hit_frame / frames`, so frame 76 of 96 is
+written as **`hit` 0.7920**, while the definition's `atPhase` 0.80 maps to that
+frame through `round(0.80 × 95)`. **0.80 and 0.7920 are two expressions of one
+frame, not two frames**, and neither is stale.
+
+**WHY THE COUNT IS 19 AND NOT 20**, since a 20-interval reading briefly stood in
+another document and has been withdrawn. Counting 20 intervals from frame 76
+reaches t = 1.6000 s, which is the clip's stored `seconds` — but **the last
+frame is 95, at 95 / 60 = 1.5833 s**. The `seconds` field is `frames / fps`, a
+DURATION, and it runs one frame period past the last frame. So a twentieth
+interval ends at a time where no frame exists, and 0.3333 s counts a stretch of
+clip that has nothing in it to play. The measurable flight is the 19 intervals
+between the release frame and the last frame.
+
+**The conclusion never depended on this**: on either count the shortfall is
+around a quarter of a second and the clip still ends before the ball reaches the
+court. The count matters because a figure a reader cannot reproduce is a figure
+that will be re-derived wrongly later.
+
+**A fact from the contract lane, recorded here because it is about this clip's
+family and confirmed against the shipped baseline:** **all four** `pass` clips —
+chest, overhead, bounce and one hand high — share `seconds` 1.6000, `frames` 96
+and `hit` 0.7920 exactly, and they are the only clips in the baseline whose
+moment is a `release`. Every other family differs: the catches sit at 1.6330 s
+over 98 frames, the landing at 1.8330 over 110. **So the arithmetic in this
+section is the pass family's arithmetic and not this drill's alone**, and a
+change to the release phase would move all four together.
 
 **A bounce pass therefore needs two things this engine does not have**: a floor
 the ball reacts to, and a longer clip or an earlier release. Both are engine and
@@ -153,7 +192,7 @@ is a real drill and it is worth authoring. It is NOT a graded bounce.
    authoring?** It would be an honest drill for the throw and silent on the
    thing the manual names in two of its five steps. I can build that and say so
    plainly in the file, which is what the chest pass did with its pull-back.
-3. **Should the clip be longer, or the release earlier?** 0.32 s of flight does
+3. **Should the clip be longer, or the release earlier?** 0.3167 s of flight does
    not reach the floor at any plausible speed. This is worth settling even
    without a floor, because the same shortness truncates the two passes already
    merged.

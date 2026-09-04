@@ -60,8 +60,15 @@ CLASSES = {
     # The third `pass`, and the FIRST whose class name a board can already
     # select: `bounce-pass` is in Tactics' RELEASE_KINDS, unlike `overhead-pass`.
     # THE CLIP DOES NOT CONTAIN THE BOUNCE. The engine has no floor, and the
-    # release at 0.80 of a 1.60 s clip leaves 0.32 s of flight against the
-    # 0.584 s the ball needs to reach the court, so it is short by 0.268 s. A
+    # release at frame 76 of 96 leaves 19 intervals at 60 fps, frame 76 to
+    # frame 95 = 0.3167 s of flight, against the 0.5842 s the ball needs to
+    # reach the court: short by 0.268 s. THE INTERVAL COUNT IS PART OF THE
+    # FIGURE. An earlier version of this comment said 0.32 s, which is
+    # (1 - 0.80) * 1.60 and does not give 0.268 when subtracted from 0.5842.
+    # The baseline writes the same frame a second way, hit = 76/96 = 0.7920.
+    # The count is 19 and not 20: seconds is frames/fps, a DURATION that runs
+    # one frame period past the last frame at 95/60 = 1.5833 s, so a 20th
+    # interval ends where no frame exists. A
     # consumer gets the throw and a ball still descending. The other two passes
     # DO complete inside their clips, at frames 93 and 94 of 95.
     # Refer to docs/BOUNCE_PASS_INSTRUMENT_AUDIT.md.
