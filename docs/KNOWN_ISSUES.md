@@ -2621,6 +2621,76 @@ athlete's chest, where the stance frame is anchored". **That is accurate.**
 The 106.5 was mine, and it was the ball's height fifty centimetres PAST the
 target while it was still falling.
 
+## The Blender job anchored the ball to a landmark it did not transmit
+
+`ball.fromShouldersInArms` is an offset from the shoulder MIDPOINT, and the job
+never said where that midpoint was. A consumer had to guess. **The rendering
+lane's guess was to leave the shoulder girdle at rest**, because nothing in the
+job asked it to move — so every figure this project has rendered placed the
+ball from a girdle that never moved.
+
+Found by the rendering lane on 2026-09-04. Measured on `cc2c20a`.
+
+### The girdle moves on every drill
+
+Midpoint travel relative to the pelvis, over the whole clip:
+
+| drill | travel | | drill | travel |
+|---|---|---|---|---|
+| `overhead_pass` | **8.45 cm** | | `chest_pass` | 2.21 |
+| `deflect_high` | 5.02 | | `two_hand_snatch_pull_in` | 2.14 |
+| `hooks_jump_pull_in` | 4.09 | | `two_hand_snatch_straight_back` | 2.02 |
+| `hooks_outside_hand` | 3.00 | | `two_hand_catch_chest` | 1.98 |
+| `one_hand_snatch_to_other_hand` | 2.40 | | `bounce_pass` | 1.93 |
+| | | | `double_foot_landing` | 1.77 |
+
+**31 of the 48 graded phases sit more than a centimetre from the neutral
+girdle**, and the re-render is the whole library rather than the four drills a
+first reading suggested.
+
+**A WIDTH RANGE IS THE WRONG STATISTIC AND A FIRST VERSION OF THIS USED IT.**
+It read 0.65 to 1.05 cm on seven drills and set them aside. Width is one axis of
+three: the overhead's width ranges 5.63 cm while its midpoint travels 8.45, and
+`bounce_pass` moves almost entirely FORE AND AFT — 2.46 to 0.54 cm ahead of the
+pelvis with the vertical barely changing — so on a width-and-height check **it
+would have read as the cleanest drill in the library and shipped**.
+
+### The field took four attempts, and each was killed by a measurement
+
+| attempt | what killed it |
+|---|---|
+| absolute metres | the job is normalised; `radiusM` is the only absolute, because a netball is one size on every body and a shoulder is not. It raised the consumer's ball ~6 cm on EVERY frame, including the ones that pass today |
+| arm lengths | a shoulder-above-pelvis distance is a TORSO quantity. That rig's arm is 0.9215 of this athlete's but its shoulder-above-pelvis is 0.8759, so it put the neutral phase **2.23 cm** out against a 1 cm rule |
+| a torso-normalised POSITION | failed on **all 48** phases by 1.1 to 5.8 cm, including phases where both girdles are neutral and nothing is wrong. A divisor scales and cannot translate |
+| a displacement from the WORLD | carries the root, which is never at its rest position. It read **30.97 cm** on the landing drill, against a girdle that moves 1.77 |
+
+What ships is a **pelvis-relative displacement from rest, in units of each
+body's own rest torso**. It cancels every constant — landmark convention,
+neutral posture, build — reads zero at rest by construction, and carries the one
+thing that was missing.
+
+### The grip fix moved the problem up a level rather than removing it
+
+`_grip`'s docstring already knew shoulder width mattered: it records that
+sending shoulder directions closed this athlete's grip from 19.0 cm between the
+wrists to 12.1 and put both hands in front of the ball. The fix was to place the
+ball first and the hands on it. **So the hands became anchored to the ball, and
+the ball stayed anchored to shoulders nobody sent.**
+
+### A residual this does NOT fix, bounded and left open
+
+The two rigs' rest poses are not quite the same posture. MHR's rest shoulders
+sit **−0.0648** torso lengths ahead of its `root`; MPFB's sit **−0.0062** ahead
+of its `pelvis` — a 0.059-torso gap, about **2.5 cm** fore-and-aft on the
+consumer's rig.
+
+**Nothing here can separate a landmark convention from a posture difference**:
+that rig has no `root` bone at all, and this lane has no MPFB rig. So the
+displacement removes the 8.45 cm of variation and leaves a constant of about
+2.5 cm in one axis. **No figure should be described as accurate to better than
+2.5 cm fore-and-aft until a landmark comparison closes it**, which is a
+separate piece of work and is not done here.
+
 ## The lower body has no stable solution
 
 Added 2026-09-02. A pelvis pin was built for this and WITHDRAWN before it

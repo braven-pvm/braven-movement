@@ -91,7 +91,14 @@ stance.ankleFromPelvisInLegs   {l,r} ankle offset from the pelvis, in leg
                                lengths
 ball.radiusM                   absolute. A netball is a netball
 ball.fromShouldersInArms       ball centre from the shoulder midpoint, in arm
-                               lengths
+                               lengths. THE MIDPOINT IS THE ONE BELOW — this
+                               field was anchored to a landmark the job did not
+                               transmit until 2026-09-04
+shoulderShiftFromRestInTorsos  {l,r} how far that shoulder has moved from its
+                               own REST position, measured from the pelvis on
+                               both sides of the subtraction, in units of the
+                               body's own rest torso. Apply it to YOUR rest
+                               girdle. Zero at rest by construction
 ball.holding                   whether she has it
 grip.{l,r}.outward             present only when holding. Unit vector from the
                                ball centre to that wrist

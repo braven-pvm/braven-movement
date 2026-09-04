@@ -215,6 +215,32 @@ def _arm(points, index, side: str) -> dict:
     }
 
 
+
+def rest_torso(rest_points, index) -> float:
+    """The distance from the pelvis to the shoulder midpoint, at REST.
+
+    The unit the shoulder positions cross in, and the counterpart of the leg
+    length `_stance` computes: each body derives it from its OWN rest pose, so
+    nothing has to be told what it is and the two sides cannot disagree about
+    a number neither transmitted.
+
+    IT IS A TORSO LENGTH AND NOT AN ARM LENGTH, which was measured rather than
+    assumed. A shoulder-above-pelvis distance is a torso quantity, and the
+    first ruling for this field said arm lengths, as everything else in the job
+    uses. On the rendering rig that is 5 per cent wrong — its arm is 0.9215 of
+    this athlete's and its shoulder-above-pelvis 0.8759 — so an arm divisor put
+    the neutral phase 2.23 cm out, against a rule of 1 cm, on the very phase
+    the field exists to protect. A torso divisor moves it 0.65 cm, in the right
+    direction, because a girdle slightly compressed from rest at neutral on one
+    body should be slightly compressed on the other.
+    """
+    pelvis = to_blender(rest_points[index["root"]])
+    middle = np.stack(
+        [to_blender(rest_points[index[f"{side}_uparm"]]) for side in ("l", "r")]
+    ).mean(axis=0)
+    return float(np.linalg.norm(middle - pelvis))
+
+
 def _stance(points, index) -> dict:
     """The stance, in leg lengths, measured from the pelvis."""
     pelvis = to_blender(points[index["root"]])
@@ -267,7 +293,7 @@ def _grip(points, index, centre, radius: float, arm: float, sides) -> dict:
     return grip
 
 
-def phase_job(result, index, frame: int, method) -> dict:
+def phase_job(result, index, frame: int, method, rest_points) -> dict:
     points = result["points"][frame]
     held = result["possession"].frames[frame]
 
@@ -280,6 +306,7 @@ def phase_job(result, index, frame: int, method) -> dict:
            + np.linalg.norm(to_blender(points[index["l_wrist"]]) - elbow))
     centre = to_blender(held.centre)
     radius = float(result["radiusCm"]) / 100.0
+    torso = rest_torso(rest_points, index)
 
     job = {
         "frame": int(frame),
@@ -307,12 +334,46 @@ def phase_job(result, index, frame: int, method) -> dict:
         # REMOVING IT: the hands became anchored to the ball, and the ball
         # stayed anchored to shoulders nobody sent.
         #
+        # A DISPLACEMENT FROM REST, NOT A POSITION, and that took three
+        # attempts. Metres failed because every position in this job is
+        # normalised and only `radiusM` is absolute. Arm lengths failed
+        # because a shoulder-above-pelvis distance is a TORSO quantity and an
+        # arm divisor put the rendering rig's neutral 2.23 cm out. And a
+        # torso-normalised POSITION failed on all 48 phases, 1.1 to 5.8 cm,
+        # including the phases where both girdles are neutral and nothing is
+        # wrong — because a divisor SCALES and cannot TRANSLATE, and the two
+        # rigs carry a constant offset between where MHR puts `root` and where
+        # MPFB puts `pelvis`: +2.46 cm ahead here against −0.26 there.
+        #
+        # A displacement cancels every constant — landmark convention, neutral
+        # posture, build — reads zero at rest by construction, and carries the
+        # one thing that was actually missing, which is that this girdle MOVES
+        # and the consumer's does not.
+        #
+        # AND IT IS PELVIS-RELATIVE ON BOTH SIDES OF THE SUBTRACTION. The
+        # solved root is never at its rest position — 8.4 cm off at every ready
+        # phase and 37 cm at the landing's approach — so a displacement taken
+        # from the world would carry the whole body's travel into a field about
+        # the shoulder girdle. The guard below caught exactly that: it read
+        # 0.6239 torso lengths, 30.97 cm, on `netball_double_foot_landing`
+        # frame 0, against the 5.7 to 7.4 cm the girdle actually moves.
+        #
         # ADDITIVE. Nothing else in the job changes, so a consumer that ignores
         # this field renders exactly as it did before.
-        "shoulders": {
+        "shoulderShiftFromRestInTorsos": {
             side: [
                 round(float(v), 6)
-                for v in to_blender(points[index[f"{side}_uparm"]])
+                for v in (
+                    (
+                        to_blender(points[index[f"{side}_uparm"]])
+                        - to_blender(points[index["root"]])
+                    )
+                    - (
+                        to_blender(rest_points[index[f"{side}_uparm"]])
+                        - to_blender(rest_points[index["root"]])
+                    )
+                )
+                / torso
             ]
             for side in ("l", "r")
         },
@@ -340,12 +401,13 @@ def build(character, movement_id: str, every: int = 0) -> dict:
     method = load_technique(technique_path(movement_id))
     result = solve_movement(character, movement_id)
     index = result["index"]
+    rest_points = joint_positions(character, result["identity"])
     frames = len(result["points"])
 
     phases = []
     for phase in definition.phases:
         frame = max(0, min(frames - 1, round(phase.at_phase * (frames - 1))))
-        job = phase_job(result, index, frame, method)
+        job = phase_job(result, index, frame, method, rest_points)
         job["name"] = phase.name
         phases.append(job)
 
@@ -354,7 +416,7 @@ def build(character, movement_id: str, every: int = 0) -> dict:
     frames_out = []
     if every > 0:
         for frame in range(0, frames, every):
-            frames_out.append(phase_job(result, index, frame, method))
+            frames_out.append(phase_job(result, index, frame, method, rest_points))
 
     return {
         "schemaVersion": 1,
