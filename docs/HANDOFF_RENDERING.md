@@ -106,6 +106,43 @@ grip.{l,r}.wristFromSurfaceInArms   how far outside the ball surface the wrist
                                sits, in arm lengths
 ```
 
+### Resolving the girdle, and the ball on it
+
+**Your rest torso is the divisor, and you measure it on YOUR rig.** It is the
+distance from your pelvis to the midpoint of your two shoulders, in your own
+rest pose, in three axes and not in the vertical alone:
+
+```
+restTorso = | mean(restShoulderL, restShoulderR) - restPelvis |
+```
+
+Nothing transmits it. Each side derives it from its own rest pose, so the two
+cannot disagree about a number neither sent. On this athlete it is 0.496456 m.
+On the MPFB rig the rendering lane measures 0.427689 m.
+
+**Then each shoulder, in your own metres:**
+
+```
+shoulder[side] = pelvis                              # yours, posed
+               + (restShoulder[side] - restPelvis)   # yours, at rest
+               + shift[side] * restTorso             # what this job sends
+```
+
+The field is zero at rest by construction, so a consumer that resolves it on
+its own rest pose gets its own rest girdle back. **Then the ball:**
+
+```
+ballCentre = mean(shoulder.l, shoulder.r) + fromShouldersInArms * yourArmLength
+```
+
+**THE AGREEMENT CHECK IS WITHIN ONE RIG AND NOT ACROSS TWO.** Each side
+resolves the shift on its OWN rest girdle and its OWN rest torso, then compares
+the result against its own posed shoulders. A check that compares this rig's
+resolved shoulders against that rig's posed ones measures the two rigs' rest
+postures, which differ by about 2.5 cm fore-and-aft and are a separate open
+question — refer to `KNOWN_ISSUES.md`. Such a check reads that constant as a
+girdle error on every frame, including the frames that are correct.
+
 ### knuckleLimitsDegrees, and the rule behind it
 
 **The rule, which is general.** A POSE crosses this boundary as geometry,

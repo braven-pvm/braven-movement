@@ -18,10 +18,16 @@ was arrived at by a measurement that killed the previous attempt:
   only absolute length, because a netball is one size on every body and a
   shoulder is not. An absolute midpoint raised the rendering rig's ball about
   6 cm on every frame, including the phases that pass today.
-- NOT arm lengths. A shoulder-above-pelvis distance is a TORSO quantity: that
-  rig's arm is 0.9215 of this athlete's but its shoulder-above-pelvis is
-  0.8759, so an arm divisor put its neutral phase 2.23 cm out against a 1 cm
-  rule — on the very phase the field exists to protect.
+- NOT arm lengths. A shoulder-above-pelvis distance is a TORSO quantity. The
+  rendering rig's arm is 0.9215 of this athlete's (48.547 / 52.680) and its
+  REST TORSO 0.8615 (42.7689 / 49.6456), so an arm divisor is 6.5 per cent
+  wrong on a torso span: this athlete's 48.8246 cm shoulder height at
+  `chest_pass/ready` resolves to 45.00 on a rig whose own rest torso is
+  42.7689, which is 2.23 cm out against a 1 cm rule — on the very phase the
+  field exists to protect. An earlier version of these lines wrote that second
+  ratio as 0.8759, WHICH IS WITHDRAWN: it is 42.7689 / 48.8246, a rest length
+  over a posed height, and the two rigs' rest torsos are what the sentence
+  claims to compare.
 - NOT a POSITION, even torso-normalised, which failed on all 48 graded phases
   by 1.1 to 5.8 cm INCLUDING the phases where both girdles are neutral and
   nothing is wrong. A divisor scales and cannot translate, and the two rigs
@@ -73,15 +79,32 @@ except ImportError:  # pragma: no cover - exercised only without the solver
 # the rest pose, a swapped side — lands within a micron of the right one. The
 # rendering lane's own agreement guard sits at 1e-5 m, twenty times above.
 ROUNDING_TORSOS = 1e-6
+# A CEILING, NOT THE BOUND, and an earlier version of this said "twice the
+# single-field bound by construction". That is imprecise: the composed check
+# adds two roundings in two DIFFERENT units, the shift in torso lengths and
+# `fromShouldersInArms` in arm lengths, so the exact per-coordinate maximum is
+# 0.5e-6 x (1 + arm / torso) = 1.031e-6 torsos on this athlete, not 2e-6.
+#
+# One unit was therefore never a bound at all. The measured worst, 9.258e-07,
+# passed it by ALIGNMENT — the two errors landed on the same axis with the same
+# sign on the landing's frame 73 — and a re-roll of the roundings puts the
+# chance of exceeding one unit at about one library in nine, on a machine with
+# no defect in it. 2e-6 is above 1.031e-6 with room, so it fails only on a
+# defect.
 COMPOSED_TORSOS = 2e-6
 
 FIELD = "shoulderShiftFromRestInTorsos"
 
-# A metre-valued shoulder reads about 1.3 in the vertical on this athlete and a
-# torso-normalised POSITION about 0.98. The largest true shift measured across
-# the library is 0.3932 torso lengths, on the turned drill. This sits between
-# them.
-LOOKS_ABSOLUTE_TORSOS = 0.75
+# THIS SAT AT 0.75 AND WAS ABOVE ONE OF THE THREE MUTATIONS IT NAMES. The
+# world-relative form reads 0.6239 torso lengths on the landing's frame 0, so
+# this guard PASSED it and the swap and side guards caught it instead — a guard
+# whose own docstring cites a number it cannot fail on.
+#
+# Measured, all four: the largest TRUE shift across the library is 0.3932 torso
+# lengths, on the turned drill. World-relative reads 0.6239, a torso-normalised
+# POSITION about 0.98, and metres about 1.3 in the vertical. 0.5 is the only
+# round value above the first and below the other three.
+LOOKS_ABSOLUTE_TORSOS = 0.5
 
 
 @unittest.skipUnless(SOLVER, "needs pymomentum, which lives in the pixi environment")
@@ -205,8 +228,9 @@ class TheJobCarriesItsOwnAnchor(unittest.TestCase):
         self.assertLess(
             worst,
             LOOKS_ABSOLUTE_TORSOS,
-            f"largest shift {worst:.4f} torsos — a position reads about 0.98 and "
-            "metres about 1.3, so this is carrying more than a girdle",
+            f"largest shift {worst:.4f} torsos — world-relative reads 0.6239, a "
+            "position about 0.98 and metres about 1.3, so this is carrying "
+            "more than a girdle",
         )
 
     def test_each_shift_reproduces_its_own_shoulder_exactly(self):
@@ -251,8 +275,29 @@ class TheJobCarriesItsOwnAnchor(unittest.TestCase):
         A first version compared the KEY SET, which a dropped `grip` or a
         changed `radiusM` both pass. This rebuilds each block from the helper
         that owns it and requires the job to carry exactly that.
+
+        AND IT NOW REBUILDS `grip`, WHICH IT DID NOT. `grip` is the one
+        conditional block in the job, so it was the one block a change could
+        reach without any guard reading it. It is also the only consumer of the
+        metre-valued arm divisor, which is why `blender_arm` exists: this
+        rebuild calls the same function the job calls, rather than restating
+        its formula and then agreeing with itself.
+
+        AND NO GUARD REJECTED AN EXTRA KEY. Every check here was an assertion
+        that some named thing is present and correct, so a job carrying a
+        twelfth block nobody documented passed all six. The key set is now
+        derived — from `holding` and `sides_at`, the two conditions that decide
+        it — and compared whole, so an addition and a removal both fail.
         """
-        from export_blender_job import _arm, _hand, _stance, phase_job
+        from export_blender_job import (
+            _arm,
+            _grip,
+            _hand,
+            _stance,
+            blender_arm,
+            phase_job,
+            to_blender,
+        )
 
         for movement_id in self.library:
             result, index, rest_points, method = self.parts(movement_id)
@@ -276,6 +321,27 @@ class TheJobCarriesItsOwnAnchor(unittest.TestCase):
                 self.assertEqual(
                     sorted(job["ball"]),
                     ["fromShouldersInArms", "holding", "radiusM"],
+                )
+
+                held = result["possession"].frames[frame]
+                sides = tuple(method.sides_at(held.phase)) if held.holding else ()
+                if sides:
+                    self.assertEqual(
+                        job["grip"],
+                        _grip(
+                            points,
+                            index,
+                            to_blender(held.centre),
+                            float(result["radiusCm"]) / 100.0,
+                            blender_arm(points, index),
+                            sides,
+                        ),
+                    )
+                self.assertEqual(
+                    set(job),
+                    {"frame", "arms", "hands", "stance", FIELD, "ball"}
+                    | ({"grip"} if sides else set()),
+                    f"{movement_id} frame {frame} carries an unexpected key set",
                 )
 
     def test_the_girdle_really_moves_or_this_guards_nothing(self):

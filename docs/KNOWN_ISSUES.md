@@ -2648,6 +2648,34 @@ Midpoint travel relative to the pelvis, over the whole clip:
 girdle**, and the re-render is the whole library rather than the four drills a
 first reading suggested.
 
+Three definitions that count needs, because a count is only as good as what it
+counted:
+
+- **The girdle position is the shoulder midpoint taken from `root`**, the MHR
+  pelvis joint. `root` is the landmark on this side of the boundary, and the
+  rendering rig has no bone of that name — refer to the residual below.
+- **The neutral girdle is `chest_pass/ready`**, which sits at
+  `[0.0020, 48.8246, 2.4622]` cm from `root`. It is one graded phase of the 48
+  and not an average of them, chosen because it is the phase closest to a
+  standing athlete.
+- **A phase is measured on ONE frame**, the frame `round(at_phase x
+  (frames - 1))` clamped to the clip, which is the frame `build` renders that
+  phase at. So these are 48 frames and not 48 spans of frames.
+
+### A withdrawn number, recorded because it is the fault this field is about
+
+An earlier version of the table above gave the rendering rig's
+shoulder-above-pelvis as **0.8759** of this athlete's. That figure is
+withdrawn. It is **42.7689 / 48.8246** — the rendering rig's REST torso over
+this athlete's POSED shoulder height at `chest_pass/ready`. Two rigs, one at
+rest and one posed, one measured in three axes and one vertical, under a single
+label. The rendering lane says it never produced that number and is right: its
+two ratios are 0.9215 for the arms and 0.861484 for the rest torsos.
+
+The 2.23 cm is unaffected, because it never came from the ratio. It is
+`48.8246 x (48.547 / 52.680) - 42.7689 = 2.2252`, and its inputs are now
+written beside it.
+
 **A WIDTH RANGE IS THE WRONG STATISTIC AND A FIRST VERSION OF THIS USED IT.**
 It read 0.65 to 1.05 cm on seven drills and set them aside. Width is one axis of
 three: the overhead's width ranges 5.63 cm while its midpoint travels 8.45, and
@@ -2660,7 +2688,7 @@ would have read as the cleanest drill in the library and shipped**.
 | attempt | what killed it |
 |---|---|
 | absolute metres | the job is normalised; `radiusM` is the only absolute, because a netball is one size on every body and a shoulder is not. It raised the consumer's ball ~6 cm on EVERY frame, including the ones that pass today |
-| arm lengths | a shoulder-above-pelvis distance is a TORSO quantity. That rig's arm is 0.9215 of this athlete's but its shoulder-above-pelvis is 0.8759, so it put the neutral phase **2.23 cm** out against a 1 cm rule |
+| arm lengths | a shoulder-above-pelvis distance is a TORSO quantity. The two rigs' arms are 52.680 and 48.547 cm, a ratio of 0.9215; their rest torsos are 49.6456 and 42.7689, a ratio of 0.8615. An arm divisor is therefore 6.5 per cent wrong on a torso span, and this athlete's 48.8246 cm shoulder height at `chest_pass/ready` resolves to 45.00 cm on a rig whose own rest torso is 42.7689 — **2.23 cm** out against a 1 cm rule |
 | a torso-normalised POSITION | failed on **all 48** phases by 1.1 to 5.8 cm, including phases where both girdles are neutral and nothing is wrong. A divisor scales and cannot translate |
 | a displacement from the WORLD | carries the root, which is never at its rest position. It read **30.97 cm** on the landing drill, against a girdle that moves 1.77 |
 

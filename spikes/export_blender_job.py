@@ -200,11 +200,31 @@ def _hand(points, index, side: str) -> dict:
     }
 
 
+def blender_arm(points, index, side: str = "l") -> float:
+    """The arm length, shoulder to elbow to wrist, IN BLENDER METRES.
+
+    `motion_track.arm_length` is the same span in the rig's centimetres. This
+    one divides the metre-valued spans this job sends, so it is measured in the
+    frame those spans are measured in. Two names because they are two numbers,
+    a hundred apart.
+
+    It was written inline in two places. One of them is the divisor under
+    `grip`, which a guard could only rebuild by restating the formula — and a
+    guard that restates a formula agrees with itself rather than with the code.
+    """
+    shoulder = to_blender(points[index[f"{side}_uparm"]])
+    elbow = to_blender(points[index[f"{side}_lowarm"]])
+    wrist = to_blender(points[index[f"{side}_wrist"]])
+    return float(
+        np.linalg.norm(elbow - shoulder) + np.linalg.norm(wrist - elbow)
+    )
+
+
 def _arm(points, index, side: str) -> dict:
     shoulder = to_blender(points[index[f"{side}_uparm"]])
     elbow = to_blender(points[index[f"{side}_lowarm"]])
     wrist = to_blender(points[index[f"{side}_wrist"]])
-    arm = np.linalg.norm(elbow - shoulder) + np.linalg.norm(wrist - elbow)
+    arm = blender_arm(points, index, side)
     reach = wrist - shoulder
     return {
         # Where the hand is, as a direction and a fraction of this athlete's
@@ -227,12 +247,27 @@ def rest_torso(rest_points, index) -> float:
     IT IS A TORSO LENGTH AND NOT AN ARM LENGTH, which was measured rather than
     assumed. A shoulder-above-pelvis distance is a torso quantity, and the
     first ruling for this field said arm lengths, as everything else in the job
-    uses. On the rendering rig that is 5 per cent wrong — its arm is 0.9215 of
-    this athlete's and its shoulder-above-pelvis 0.8759 — so an arm divisor put
-    the neutral phase 2.23 cm out, against a rule of 1 cm, on the very phase
-    the field exists to protect. A torso divisor moves it 0.65 cm, in the right
-    direction, because a girdle slightly compressed from rest at neutral on one
-    body should be slightly compressed on the other.
+    uses. Four lengths decide it, and each is named with the rig it came from:
+
+        this athlete's arm          52.680 cm    the rendering rig's  48.547
+        this athlete's rest torso   49.6456      the rendering rig's  42.7689
+
+    The two ratios are 0.9215 for the arms and 0.8615 for the rest torsos, so
+    an arm divisor is 6.5 per cent wrong on a torso span. Sent as arms, this
+    athlete's 48.8246 cm shoulder height at `chest_pass/ready` resolves to
+    45.00 cm on a rig whose own rest torso is 42.7689 — 2.23 cm out, against a
+    rule of 1 cm, on the very phase the field exists to protect. A torso
+    divisor gives 0.71 cm in the other direction, which is a girdle slightly
+    compressed from rest at neutral on one body reading as slightly compressed
+    on the other.
+
+    AN EARLIER VERSION OF THIS DOCSTRING SAID "its shoulder-above-pelvis is
+    0.8759" AND THAT NUMBER IS WITHDRAWN. It is 42.7689 / 48.8246: the
+    rendering rig's REST torso over this athlete's POSED shoulder height. Two
+    rigs, one at rest and one posed, one measured in three axes and one
+    vertical — a single label over two quantities, which is the fault this
+    whole field exists to fix. The rendering lane does not recognise the
+    figure, and is right not to. The 2.23 cm never depended on it.
     """
     pelvis = to_blender(rest_points[index["root"]])
     middle = np.stack(
@@ -300,10 +335,7 @@ def phase_job(result, index, frame: int, method, rest_points) -> dict:
     shoulders = np.stack(
         [to_blender(points[index[f"{side}_uparm"]]) for side in ("l", "r")]
     ).mean(axis=0)
-    shoulder = to_blender(points[index["l_uparm"]])
-    elbow = to_blender(points[index["l_lowarm"]])
-    arm = (np.linalg.norm(elbow - shoulder)
-           + np.linalg.norm(to_blender(points[index["l_wrist"]]) - elbow))
+    arm = blender_arm(points, index)
     centre = to_blender(held.centre)
     radius = float(result["radiusCm"]) / 100.0
     torso = rest_torso(rest_points, index)
@@ -320,12 +352,19 @@ def phase_job(result, index, frame: int, method, rest_points) -> dict:
         # the shoulder girdle at rest, because nothing in the job asked it to
         # move.
         #
-        # THE GIRDLE MOVES A LOT ON THE DRILLS THAT MATTER MOST. This athlete's
-        # shoulder width ranges 33.91 to 39.53 cm WITHIN `netball_overhead_pass`
-        # and 34.74 to 38.11 within `netball_deflect_high`; every other drill
-        # stays inside 1.05 cm. Between the chest pass and the overhead at frame
-        # 75 the midpoint also RISES 4.52 cm, which is why this is two positions
-        # and not a width: a width is a scalar and cannot express a rise.
+        # THE GIRDLE MOVES ON EVERY DRILL, AND A WIDTH RANGE CANNOT SEE IT.
+        # The midpoint travels 8.45 cm relative to the pelvis within
+        # `netball_overhead_pass`, 5.02 within `netball_deflect_high`, and 1.77
+        # on the quietest drill in the library. 31 of the 48 graded phases sit
+        # more than a centimetre from the neutral girdle, so the re-render is
+        # the whole library and not the loudest few drills.
+        #
+        # AN EARLIER VERSION OF THIS COMMENT QUOTED A WIDTH RANGE AND SET SEVEN
+        # DRILLS ASIDE AT 0.65 TO 1.05 cm. Width is one axis of three.
+        # `netball_bounce_pass` moves almost entirely FORE AND AFT — 2.46 to
+        # 0.54 cm ahead of the pelvis, with the width barely changing — so on a
+        # width check that drill reads as the CLEANEST in the library and
+        # ships. That is why this field sends two positions.
         #
         # `_grip` below already knew shoulder width mattered — it records that
         # sending shoulder directions closed this athlete's grip from 19.0 cm
