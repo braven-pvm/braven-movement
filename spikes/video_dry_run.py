@@ -856,9 +856,18 @@ def render(document: dict) -> str:
     if opened:
         lines += ["## The open questions", "",
                   "**"
-                  + ("This capture can answer them." if opened["canAnswer"]
+                  + ("This capture can answer the ones that can be asked."
+                     if opened["canAnswer"]
                      else "This capture cannot answer them.")
-                  + "**", "", opened["note"], ""]
+                  + "**", ""]
+        if opened.get("cannotBeAsked"):
+            lines += [
+                "And "
+                + ", ".join(f"`{name}`" for name in opened["cannotBeAsked"])
+                + " CANNOT BE ASKED AT ALL — the bar does not exist, so no "
+                  "capture settles it and none is being blamed for failing to.",
+                ""]
+        lines += [opened["note"], ""]
         lines += table(opened["conditions"]) + [""]
 
     measures = document.get("measures") or {}
@@ -972,6 +981,8 @@ def assemble(evidence: dict, set_id: str, movement: str) -> dict:
     # verdict travels beside it so a reader can see WHICH measure blocks rather
     # than only that something did. THE OPEN QUESTIONS ARE NOT IN IT.
     everything = capture + [row for rows in measures.values() for row in rows]
+    askable = [row for row in open_questions
+               if row["thresholdKind"] != "unavailable"]
     document = {
         "schemaVersion": SCHEMA_VERSION,
         "set": set_id,
@@ -995,7 +1006,17 @@ def assemble(evidence: dict, set_id: str, movement: str) -> dict:
             "cannot carry a number at all."
         ),
         "openQuestions": {
-            "canAnswer": all(row["passes"] is True for row in open_questions),
+            # A row whose threshold kind is `unavailable` HAS NO BAR and can
+            # never pass, so counting it made canAnswer a constant False and
+            # the report told a perfect 240 fps capture that it could answer
+            # nothing. The two are different states and the field says which:
+            # `canAnswer` is about the questions a capture CAN be asked, and
+            # `cannotBeAsked` names the ones no capture can settle while the
+            # engine lacks the thing they are about.
+            "canAnswer": bool(askable) and all(
+                row["passes"] is True for row in askable),
+            "cannotBeAsked": [row["name"] for row in open_questions
+                              if row["thresholdKind"] == "unavailable"],
             "conditions": open_questions,
             "note": (
                 "THESE DO NOT GATE GRADING and they are not part of the "

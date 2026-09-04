@@ -740,8 +740,19 @@ class TheOpenQuestionsAreAskedSeparately(unittest.TestCase):
         # the capture conditions and the measure conditions and nothing else.
         # Asserting only that the names are absent would still pass a version
         # that folded in a group whose conditions all happened to pass.
+        #
+        # AND THE FIXTURE MUST CONTAIN A FAILING ROW. Without one every open
+        # question here reads unmeasured, so a version folding in only the
+        # `passes is False` rows would fold in nothing and survive. 30 fps is
+        # session 1.0's own reading and it FAILS the release condition.
         bundle = good()
+        for view in ("front", "side"):
+            bundle[view].setdefault("source", {})["framesPerSecondMeasured"] = 30.0
         document = assemble(bundle, "0.1", MOVEMENT)
+        states = {row["passes"]
+                  for row in document["openQuestions"]["conditions"]}
+        self.assertIn(False, states, "the fixture must hold a FAILING row")
+        self.assertIn(None, states, "and an unmeasured one")
         grading = judge_capture(bundle, MOVEMENT) + [
             row for name in graded_measures(MOVEMENT)
             for row in judge_measure(bundle, MOVEMENT, name)]
@@ -871,6 +882,47 @@ class TheOpenQuestionsAreAskedSeparately(unittest.TestCase):
 
         self.assertIn("MEASURED", row["why"])
         self.assertIn("never typed", row["why"])
+
+    # --- what "cannot answer" means, which is two different states
+
+    def test_a_capture_that_does_everything_asked_can_answer_them(self):
+        # A permanently unaskable row must not sink the answer: counting the
+        # floor condition made this a constant False, so the report told a
+        # 240 fps capture that it could answer nothing.
+        bundle = good()
+        for view in ("front", "side"):
+            bundle[view].setdefault("source", {}).update(
+                {"framesPerSecondMeasured": 240.0,
+                 "keyframeIntervalSecondsMeasured": 0.5})
+        opened = assemble(bundle, "0.1", MOVEMENT)["openQuestions"]
+
+        self.assertTrue(opened["canAnswer"])
+
+    def test_the_unaskable_question_is_named_rather_than_dropped(self):
+        opened = assemble(good(), "0.1", MOVEMENT)["openQuestions"]
+
+        self.assertEqual(opened["cannotBeAsked"], ["the floor is in view"])
+
+    def test_a_failing_askable_row_still_says_it_cannot_answer(self):
+        bundle = good()
+        for view in ("front", "side"):
+            bundle[view].setdefault("source", {}).update(
+                {"framesPerSecondMeasured": 30.0,
+                 "keyframeIntervalSecondsMeasured": 0.5})
+        opened = assemble(bundle, "0.1", MOVEMENT)["openQuestions"]
+
+        self.assertFalse(opened["canAnswer"])
+
+    def test_the_report_separates_the_two_states(self):
+        bundle = good()
+        for view in ("front", "side"):
+            bundle[view].setdefault("source", {}).update(
+                {"framesPerSecondMeasured": 240.0,
+                 "keyframeIntervalSecondsMeasured": 0.5})
+        text = render(assemble(bundle, "0.1", MOVEMENT))
+
+        self.assertIn("can answer the ones that can be asked", text)
+        self.assertIn("CANNOT BE ASKED AT ALL", text)
 
     # --- the group as a whole
 

@@ -264,7 +264,14 @@ and the measure conditions and from nothing else.
 |---|---|---|---|
 | the release is resolved | 120 fps | derived | **FAILS**, it is 30 |
 | the release moment is addressable | 1 second | chosen | UNMEASURED, nothing writes it |
-| the floor is in view | none | unavailable | UNMEASURED, the engine has no floor |
+| the floor is in view | none | unavailable | CANNOT BE ASKED, the engine has no floor |
+
+`openQuestions.canAnswer` counts only the rows that CAN be asked. A row whose
+threshold kind is `unavailable` has no bar and can never pass, so counting it
+made the field a constant false and the report told a perfect 240 fps capture
+that it could answer nothing. Those rows are named in
+`openQuestions.cannotBeAsked` instead, so they are separated from a capture's
+failure rather than dropped.
 
 **BOTH VIEWS, and the worse of the two.** The frame rate takes the SLOWER
 camera, because a hand speed read in one image is a projection and therefore a
@@ -276,7 +283,9 @@ would have missed the reading it exists for. If either view fails to record the
 field, the condition is UNMEASURED rather than judged on one camera.
 
 **Where the 120 comes from.** Measured on session 1.0: at the rep 7 toss the
-athlete's wrist goes from 0.7 to 6.3 cm per frame in about 67 ms. Five samples
+athlete's hands go from 0.74 to 6.34 cm per frame across 67 ms. That pair is the
+MEAN OF THE TWO WRISTS and neither wrist alone reads it — the left runs 1.09 to
+7.75 and the right 0.38 to 4.94. Five samples
 inside that ramp is a CHOSEN minimum and needs 75 fps, so the next standard rate
 above it. The engine's own claim — 0.72 cm in the frame before release against
 7.37 cm in the frame after — is a difference between two ADJACENT frames of a

@@ -433,26 +433,47 @@ the mechanism behind what Marius saw when he said the wrist action was missing,
 and whether the carry should accelerate before release is decided by measuring
 a real athlete and by nothing else available.
 
-**Session 1.0 cannot answer it, and the reason is the frame rate rather than
-the pixels.** Measured on this footage, at the rep 7 toss her wrist goes from
-**0.7 to 6.3 cm per frame in about 67 ms**. At 30 fps that ramp holds **two
-samples**. Two samples give a start and an end and say nothing about the shape
-between them. Worse, one 30 fps frame spans both of the engine's 60 fps frames,
-so the 0.72 and the 7.37 are averaged together and the step cannot be seen even
-in principle.
+**Session 1.0 cannot answer it, and the binding limit is the frame rate.**
+Measured on this footage, at the rep 7 toss her hands go from **0.74 to 6.34 cm
+per frame across 67 ms** — 17.033 s to 17.100 s. That pair is the **mean of the
+two wrists**, and neither wrist alone reads it: the left runs 1.09 to 7.75 and
+the right 0.38 to 4.94. At 30 fps the ramp holds **two samples**. Two samples
+give a start and an end and say nothing about the shape between them. Worse, one
+30 fps frame spans both of the engine's 60 fps frames, so the 0.72 and the 7.37
+are averaged together and the step cannot be seen even in principle.
 
 **Instruction: shoot the release at 120 fps or faster.** Five samples inside a
 67 ms ramp is a chosen minimum and needs 75 fps, so the next standard rate above
 it. 240 fps is better and costs nothing but light. Below 60 fps there is no
 frame pair that corresponds to the engine's claim at all.
 
-**The pixels are not the limit here, and this is measured rather than assumed.**
-The landmark jitter on this footage, taken as each sample's departure from a
-smooth track through its neighbours, is **0.05 cm per axis typically and 0.36 cm
-at the 90th percentile** — that is **0.24 and 1.79 pixels**. A one-frame
-displacement carries two samples of it, so about 0.10 cm typically. The engine's
-0.72 cm step is **7.2 times that**, and the 1.44 cm it becomes across a 30 fps
-frame is 14.6 times it. There are enough pixels; there are not enough frames.
+**The pixels are not the binding limit, but they have no margin either, and
+both halves of that are measured.** The landmark jitter is taken as each
+sample's departure from **a 5-point quadratic fitted through its own two
+neighbours on each side** — real motion is smooth across five frames at 30 fps
+and landmark jitter is not. Over both wrists, both image axes and 781 frame
+positions, that is **3122 residuals**: a median of **0.0494 cm** and a 90th
+percentile of **0.3596 cm** per axis, which is **0.246 and 1.791 pixels**.
+
+**The smoother has to be named, because the number depends on it.** Other
+reasonable definitions of "departure from a smooth track" give two to six times
+more. The figures above belong to this one and to no other.
+
+A one-frame displacement pairs two samples, so its noise is **twice** a single
+sample's when the two err in opposite directions. That is a **worst case, not an
+RMS** — the RMS pairing is 1.41 times, which would read 0.070 and 0.509 cm.
+Against the worst case:
+
+| | pairing jitter | the engine's 0.72 cm step is |
+|---|---|---|
+| typical | 0.099 cm | **7.3 times it** |
+| 90th percentile | 0.719 cm | **1.00 times it** |
+
+**At the 90th percentile the noise equals the whole signal, exactly.** One frame
+in ten carries as much jitter as the step being looked for. So the frame rate is
+what makes the measurement impossible, and the resolution is what would make it
+uncomfortable — instruction 14's hundred pixels across the hand is asked for
+this measurement as well as for the wrist.
 
 **This also settles an assumption instruction 14 had to leave open.** That
 instruction estimated the wrist floor "assuming the landmark jitter stays about
