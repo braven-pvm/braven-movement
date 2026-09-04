@@ -2173,9 +2173,12 @@ table above is what a ruling needs.
 The drill that decides the table is not measuring the same defect as the rest
 of it.
 
-It releases at **frame 87 of 98**. The follow-through window is 0.12 s, which
-is 7.2 frames, so the aim point reaches `out = 1` at frame **94.2** — and the
-clip runs to frame **97**. **The aim point stops dead 2.8 frames before the
+It releases at **frame 88 of 98** — a first version said 87, which is
+`round(release_phase × (frames − 1))`. `possess` uses the first frame whose
+phase REACHES the release phase, which is the ceiling, and that is 88. The
+follow-through window is 0.12 s, which is 7.2 frames, so the aim point reaches
+`out = 1` at frame **95.2** — and the clip runs to frame **97**. **The aim
+point stops dead 2 frames before the
 clip ends**, under all three easings. Its last frames read:
 
 | | last eight frames |
@@ -2193,8 +2196,143 @@ and reads 20.41.
 **SO THE LIBRARY TABLE CONFLATES TWO DEFECTS.** The release seam is one, and
 the follow-through window closing before the clip ends is another. The easing
 choice moves both, in opposite directions, and the drill that decides the table
-is only measuring the second. **The window-end question is separate and is not
-answered here.**
+is only measuring the second.
+
+### The window closes early on FOUR drills, and one number decides how much it shows
+
+Measured on `eaecbb2`. **This section used to end "the window-end question is
+separate and is not answered here". This answers its scope and its cause, and
+nothing else.**
+
+| drill | frames | release | `out = 1` at | pinned tail | pose drift over that tail |
+|---|---|---|---|---|---|
+| `chest_pass` | 96 | 76 | 83.2 | **12** | 0.30 cm |
+| `deflect_high` | 88 | 70 | 77.2 | **10** | **0.0025 cm** |
+| `overhead_pass` | 96 | 76 | 83.2 | **12** | 0.26 cm |
+| `two_hand_snatch_straight_back` | 98 | 88 | 95.2 | **2** | **0.0106 cm** |
+| `hooks_jump_pull_in` | 108 | 102 | 109.2 | — | the clip ends first |
+| `two_hand_catch_chest` | 98 | 90 | 97.2 | — | the clip ends first |
+
+The tail is `ceil` of the spare, not the fraction: no frame lands on
+release + 7.2, and the frame before full extension is already at
+`out = 0.99923`.
+
+**THREE FRAME NUMBERS DESCRIBE ONE FREEZE ON `deflect_high` AND THEY ARE NOT
+INTERCHANGEABLE.** An earlier version used all three without saying which was
+which:
+
+| frame | what it is |
+|---|---|
+| **77** | the first CLIP ROW identical to its predecessor, after the export rounds |
+| **78** | the first frame at which the engine's `out` reaches 1 — the aim point is pinned from here |
+| **79** | the first frame whose measured elbow step is exactly 0.0000 |
+
+The pinned tail of 10 counts from 78. The clip's 11 identical rows count from
+77. They differ because rounding to the clip's precision hides the last frame
+of real motion.
+
+**THE STATISTIC IN THAT LAST COLUMN**, because a drift figure without one is
+not reproducible: it is the largest displacement of ANY joint in the skeleton,
+between the first frame at which the aim point is pinned and the last frame of
+the clip. Not per frame, and not one joint.
+
+**TWO OF THE FOUR GO STILL AND TWO DO NOT.** `deflect_high` drifts 0.0025 cm
+across ten frames — a still image. `chest_pass` and `overhead_pass` drift about
+0.3 cm across twelve, which is not a stop and this entry does not call it one.
+**That drift is AUTHORED MOTION, not solver residue**: their hips are still
+being asked to move, as the next paragraph shows. An earlier version called it
+IK residual, which contradicts the paragraph that follows it.
+
+**THE THIRD NUMBER IS WHAT DECIDES IT, AND IT IS AUTHORED.** A drill goes fully
+still only if it ALSO has no lower-body motion left in the tail:
+
+| | per-key `hipDrop` | tail |
+|---|---|---|
+| `deflect_high`, `two_hand_snatch_straight_back` | **none** — one `hipDropFraction` and nothing else | still to microns |
+| `chest_pass`, `overhead_pass` | 0.1003 → 0.14 → … → 0.085 → **0.080** | keeps drifting |
+
+So the freeze is the conjunction of the follow-through constant, the drill's
+typed frame count, and whether its hips are still moving. Three numbers, none
+of which was chosen with the others in mind.
+
+**PROVED BY A SWEEP, NOT A POINT**, which is this file's own rule. Moving
+`FOLLOW_THROUGH_SECONDS` moves the onset exactly where the arithmetic says:
+0.06 → 75, 0.09 → 77, 0.12 → 79, 0.16 → 81, 0.20 → 83, five for five on
+`deflect_high`, and at 0.30 the freeze is abolished entirely — the last four
+steps of the right wrist MEASURED RELATIVE TO THE SHOULDER MIDPOINT, so the
+trunk's own travel cannot flatter them, read 0.99, 0.61, 0.44, 0.27 cm.
+
+The possession state, the ball leaving the solve and a held final key were each
+ruled out by measurement. **SOLVER CONVERGENCE WAS NOT.** It is ruled out by
+inference from the same sweep — at 0.30 s nothing freezes and the pose is still
+changing on the last frame, so the solver is not settling on its own — but
+**nobody read a residual**, and this entry does not claim anyone did.
+
+### Who sees the frozen frames, and who does not
+
+**The exported clip carries them.** `netball_deflect_high.clip.json` holds
+**11 byte-identical frames of 88 — rows 77 to 87** — with the ball still flying
+through all of them. `export_coach_animations.py` writes every solved frame, so
+a coach watching the grading pack sees the figure stop.
+
+**A STILL RUN IS NOT BY ITSELF A DEFECT, AND THAT CLIP HAS A LONGER ONE.** Rows
+0 to 20 are also byte-identical — **21 rows**, almost twice the tail — and that
+is her waiting for a ball that is still in flight, which is authored and
+correct. 30 of the 88 rows repeat their predecessor. What distinguishes the
+tail is not that it is still but WHERE it is: a hold before the action is a
+pose, and a hold after the follow-through is the follow-through having stopped
+before the clip did.
+
+**A graded checkpoint reads inside the freeze.** Every definition's last phase
+sits at `atPhase` 1.0, so `deflect_high`'s `send_on` checkpoints grade frame
+87 — ten frames into the still span, on values unchanged since 78.
+
+**NO GUARD NOTICES, AND THE THREE FAIL IN THREE DIFFERENT WAYS.**
+
+`verify_tactics_clip`'s structural check fires only below two frames.
+
+Its numeric gate compares the clip's stored pose against the engine's
+measurement from the same solve, so **a still clip reproduces its stillness
+exactly and passes**. It measures fidelity, not liveness.
+
+`snap_report`'s worst on `deflect_high` is 7.84 at frame 70, the release seam.
+**An earlier version of this entry said that was "because a still region floors
+its own denominator". That names the wrong mechanism.** The floor —
+`SNAP_FLOOR_DEGREES` at `snap_report.py:139-140` — is never reached, because
+the gate at `:137` has already skipped the frame: it judges a frame only when
+`max(step, neighbour median)` reaches the 5 degree meaningful band, and in a
+freeze neither side does. On `deflect_high` the floor is applied to **no frame
+at all**.
+
+| frame | step | neighbour median | judged? |
+|---|---|---|---|
+| 76 | 9.5500 | 4.5100 | yes |
+| 77 | 3.8500 | 2.5950 | **no** |
+| 79–87 | 0.0000 | 0.0000 | **no** |
+
+**AND THE REASON IS THE DETECTOR'S OWN ROBUSTNESS.** Its docstring records that
+an earlier version "could not see a stall at all", and the fix was to judge a
+frame when EITHER its step or its neighbourhood is meaningful — which works,
+because a one-frame stall sits between two large steps. But the denominator is
+a median over `SNAP_WINDOW = 3` frames either side, so **a still run longer
+than that window makes the median still as well**, and both sides fall under
+the band together. The detector that was repaired to see a stall of one frame
+cannot see a stall of ten.
+
+**BUT TACTICS NEVER SAMPLES THEM.** The contract gives a consumer 0.9 s of
+wind-up and 0.5 s of follow-through around the declared moment. `deflect_high`
+declares `contact` at frame 39, so the last frame any board can sample is 69,
+and the freeze starts at 77. **It reaches a coach and a grader. It does not
+reach a board.**
+
+### What is NOT new here, and it is worth saying
+
+`docs/WRIST_AND_PACE.md:151` already states in bold that the frame count "HAS
+NO NOTE ANYWHERE", and this section already computed the window arithmetic for
+one drill. **A first draft of this measurement presented "nothing authors this"
+as a discovery. It is not one — it is the same lane's own finding from the
+night before.** What is added is the scope, the third number, and the sweep
+that proves the cause.
 
 ### What is not settled
 
