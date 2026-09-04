@@ -1,6 +1,8 @@
 # The coach morning: what to ask, and the evidence behind each question
 
-Every figure here was re-measured on `ac240b2` with a clean tree. Where an
+**Items 1 to 9 were re-measured on `ac240b2` with a clean tree.** Items 10 and
+above were added later, as each drill was authored, and **each states its own
+date and build** — do not read the `ac240b2` line as covering them. Where an
 older document gives a different number, both are shown with the build each was
 read on. Nothing in this document changes any code.
 
@@ -8,9 +10,13 @@ The questions are for Erin and Marius. They are written to be answerable by a
 coach watching the athlete, not by reading a number. Where the engine has an
 opinion it is stated as a measurement and never as a recommendation.
 
-Seven items carry evidence. One is STRUCK, because it was raised on a
-measurement the solver read from a second solution for that drill. Three carry
-no engine evidence, and say so.
+**Fifteen numbered items.** One, item 7, is STRUCK, because it was raised on a
+measurement the solver read from a second solution for that drill. The rest
+carry engine evidence. Three further items at the end carry none, and say so.
+
+**Items 10 to 15 were added as the pass family was authored** and are the newest
+part of this agenda: the vocabulary mismatch, a band floor, and then one item
+per pass drill plus two that are about the family rather than any one drill.
 
 **One section of item 2 is withdrawn, and the withdrawal is written out rather
 than tidied away.** The elbow-width question is unchanged; what was wrong was a
@@ -336,6 +342,10 @@ and `bounce-pass`. A board can only ask for a clip whose class is in that list.
 - **`overhead` is absent from the vocabulary.** It is the manual's most fully
   documented pass, second in its syllabus, and it is now authored and exported
   as `pass.netball.overhead-pass`. **No board can select it.**
+- **AND SO IS `1 hand high`, ADDED 2026-09-04.** It is authored and exported as
+  `pass.netball.one-hand-high-pass` and is not in the list either. **Two of the
+  four authored passes can now be watched but not selected**, which is the same
+  question at twice the size.
 
 **What is asked.** Not a code question. Which passes should the engine author
 next, and should the vocabulary change to name them? The engine can hold a
@@ -347,13 +357,20 @@ can be watched. So can the chest pass, which IS in the vocabulary. Comparing the
 two against the manual is a better basis for the decision than comparing two
 lists.
 
-**One consequence for the lob.** The lob is a ball-file variant of a pass that
-lifts the ball overhead, and its own manual step is word for word the 1 HAND
-HIGH pass's step, not the overhead's. So the lob rides a one-handed pass the
-library does not have, or the overhead pass the board cannot select. Refer to
-`docs/LOB_AUTHORING_BRIEF.md`.
+**One consequence for the lob, and it has moved since this item was written.**
+The lob is a ball-file variant of a pass that lifts the ball overhead, and two
+of its three manual steps are word for word the 1 HAND HIGH pass's, not the
+overhead's. **When this was written the library did not have that pass. It does
+now**, so the lob's most literal parent exists. What has not changed is that
+NEITHER candidate parent is in the vocabulary. Refer to
+`docs/LOB_AUTHORING_BRIEF.md` and to item 13.
 
 ## 11. One band floor, missed by five hundredths of a degree
+
+Added 2026-09-02 with the ball variants, in `3f95fd1`. (The date was missing
+from this item and is filled in from the commit that added it, so the note at
+the head of this document — that every item from 10 onward states its own build
+— is true of all of them.)
 
 `netball_two_hand_snatch_pull_in` has four balls. All four are now solved and
 graded against the same eleven checkpoints, and one reading needs your ruling.
@@ -395,7 +412,9 @@ checkpoints.
 **What is missing from it, and why she should be told before she watches.** The
 engine has no floor. The ball leaves her hands on a path aimed at the right spot
 on the court and then keeps going in a straight parabola; the clip ends 0.268 s
-before it would land. So **the drill shows a bounce pass with no bounce.**
+before it would land. (That is 19 frame intervals of flight at 60 frames a
+second, from the release frame to the last frame. Refer to item 15, which is
+about the whole pass family rather than this drill.) So **the drill shows a bounce pass with no bounce.**
 
 **What was deliberately NOT graded.** Two of the manual's five steps — the
 bounce point "approximately 1m in front of receiver" and "keep ball low" — have
@@ -459,8 +478,7 @@ stands at frame 0**. Against the shoulder at the release frame itself, which
 rises as the arm goes up, they are 51.9, 39.8 and 6.3. The ordering and the
 conclusion are the same either way; the inputs are stated because a height
 without its reference point is what this project keeps having to correct.)
-**Does
-`shoulder-pass` instead name the manual's 1 HAND LOW WIDE or 1 HAND WIDE
+**Does `shoulder-pass` instead name the manual's 1 HAND LOW WIDE or 1 HAND WIDE
 block?** Neither is authored yet, so the slot can still be given to whichever
 she means.
 
@@ -471,6 +489,83 @@ hand"*. The library now holds two of the three, including the one whose wording
 the lob actually copies. **Which parent the lob rides is still hers to decide**
 and stays open in `docs/LOB_AUTHORING_BRIEF.md`; this drill only removes the
 reason the question could not be asked.
+
+## 14. The one-handed pass is harder for the engine to place than a two-handed one
+
+Added 2026-09-04 with `netball_one_hand_high_pass`. **This is not a question
+about her coaching. It is a warning about how much to trust one frame of one
+drill**, and it is here because she is the person who will look at the pose.
+
+**What was measured.** The same experiment on all four passes: take the key that
+says where the ball is at the release, move it through the same nine positions,
+and count how far the body jumps between one position and the next.
+
+| drill | hands | jumps over 5 cm | largest jump |
+|---|---|---|---|
+| **1 hand high** | **one** | **4** | **21.9 cm** |
+| overhead | two | 1 | 7.5 cm |
+| bounce | two | 2 | 7.0 cm |
+| chest | two | 1 | 5.2 cm |
+
+**The one-handed drill jumps two to four times as often, and its largest jump is
+three times the worst of the others.** A "jump" means the solved body moved to a
+noticeably different pose for a very small change in what was asked of it.
+
+**Why it may matter to her.** The pose she is shown is one of several the engine
+could have produced for the same instruction. On the two-handed passes those
+alternatives are close together. On this one they are not.
+
+**What was done about it.** The shipped pose was checked rather than assumed: it
+sits in a region where the same small changes move the graded angle by half a
+degree in total. **One checkpoint was authored and then deleted** because no
+stable way could be found to make it fail, and a checkpoint that cannot fail is
+not a check.
+
+**A guess at the reason, and it is only a guess.** Two hands on the ball hold
+both arms and the trunk between them. One hand leaves the other arm and the
+trunk with nothing asked of them, so the engine has more equally good answers to
+choose from. **Nothing has tested that.** It is engine work and it is queued.
+
+**What is asked of her.** Only this: when a one-handed pose looks slightly wrong
+to her, say so even if the numbers are inside their bands. On this family the
+numbers are less able to see a wrong pose than usual.
+
+---
+
+## 15. Every pass clip stops before the ball arrives
+
+Added 2026-09-04. **A question about the clips a board plays, not about her
+grading**, and it applies to the whole pass family rather than to one drill.
+
+**All four pass clips are built the same way**: 96 frames at 60 a second, 1.60
+seconds long, with the ball leaving her hand at frame 76. That leaves **19
+frame intervals, 0.3167 seconds, of flight** in every one of them. The four are
+the chest, overhead, bounce and 1 hand high passes.
+
+**On three of them the ball reaches its target before the clip ends. On the
+bounce pass it never does.** Measured against a last frame of 95:
+
+| clip | ball reaches its target | margin |
+|---|---|---|
+| 1 hand high | frame 91 | 4 frames |
+| chest | frame 93 | 2 frames |
+| overhead | frame 94 | **1 frame** |
+| **bounce** | **never** | **0.268 s short of the court** |
+
+**So a board playing the bounce pass shows a throw and a ball that never lands**
+— the point item 12 makes about that drill. What is new here is that **the
+margin on the others is between one and four frames**, which is thin rather than
+comfortable, and that a change to when she releases would move all four clips
+together. The overhead pass has a single frame in hand.
+
+**The question, and it is one for the manual rather than for the engine.**
+Should a pass clip carry the flight all the way to the catch, or only the
+release and the follow-through? A coach teaching a pass may only need the
+release. A board showing a play may need the ball to arrive.
+
+**Nothing is being proposed.** The engine can make the clip longer or move the
+release earlier; both change what every pass clip contains, so the choice is
+hers and Marius's rather than the content lane's.
 
 ## Three items with no engine evidence
 
@@ -488,9 +583,15 @@ These are on the agenda and this document has nothing to add to them.
 
 ## Provenance
 
-Read on `ac240b2` with a clean tree, the tip that passed the suite at 564 tests
-and passed the clip gate on the morning of 2026-09-02. The figures come from
-one solve of each of the eight drills, plus one preview solve at 37.3 degrees.
+**Items 1 to 9** were read on `ac240b2` with a clean tree, the tip that passed
+the suite at 564 tests and passed the clip gate on the morning of 2026-09-02.
+Those figures come from one solve of each of the eight drills that existed then,
+plus one preview solve at 37.3 degrees.
+
+**Items 10 to 15 were added later and each carries its own date and build.**
+They were written as the pass family was authored, on a library that has grown
+from eight drills to twelve. **This paragraph does not cover them**, and an
+earlier version of it implied that it did.
 Elbow width is elbow to elbow at the contact frame, which is the measure the
 pole question has always used. Older figures, where they differ, are kept
 beside the new ones with the build each was read on.
