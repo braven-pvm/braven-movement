@@ -424,6 +424,123 @@ time**, and that is what caught this. The dry-run gate now carries the
 condition, reads UNMEASURED until an annotation exists, and accepts one in
 `spikes/video-annotations/ball-in-frame-<set>.json`.
 
+### 15. Enough frames in the release to see the hand accelerate
+
+**The engine does not drive the ball.** Its hands move **0.72 cm in the frame
+before release and 7.37 cm in the frame after** — a factor of 10.2 across one
+frame boundary. Nothing accelerates the ball at the moment it leaves. That is
+the mechanism behind what Marius saw when he said the wrist action was missing,
+and whether the carry should accelerate before release is decided by measuring
+a real athlete and by nothing else available.
+
+**Session 1.0 cannot answer it, and the binding limit is the frame rate.**
+Measured on this footage, at the rep 7 toss her hands go from **0.74 to 6.34 cm
+per frame across 67 ms** — 17.033 s to 17.100 s. That pair is the **mean of the
+two wrists**, and neither wrist alone reads it: the left runs 1.09 to 7.75 and
+the right 0.38 to 4.94. At 30 fps the ramp holds **two samples**. Two samples
+give a start and an end and say nothing about the shape between them. Worse, one
+30 fps frame spans both of the engine's 60 fps frames, so the 0.72 and the 7.37
+are averaged together and the step cannot be seen even in principle.
+
+**Instruction: shoot the release at 120 fps or faster.** Five samples inside a
+67 ms ramp is a chosen minimum and needs 75 fps, so the next standard rate above
+it. 240 fps is better and costs nothing but light. Below 60 fps there is no
+frame pair that corresponds to the engine's claim at all.
+
+**The pixels are not the binding limit, but they have no margin either, and
+both halves of that are measured.** The landmark jitter is taken as each
+sample's departure from **a 5-point quadratic fitted through its own two
+neighbours on each side** — real motion is smooth across five frames at 30 fps
+and landmark jitter is not. Over both wrists, both image axes and 781 frame
+positions, that is **3122 residuals**: a median of **0.0494 cm** and a 90th
+percentile of **0.3596 cm** per axis, which is **0.246 and 1.791 pixels**.
+
+**The smoother has to be named, because the number depends on it.** Other
+reasonable definitions of "departure from a smooth track" give two to six times
+more. The figures above belong to this one and to no other.
+
+A one-frame displacement pairs two samples, so its noise is **twice** a single
+sample's when the two err in opposite directions. That is a **worst case, not an
+RMS** — the RMS pairing is 1.41 times, which would read 0.070 and 0.509 cm.
+Against the worst case:
+
+| | pairing jitter | the engine's 0.72 cm step is |
+|---|---|---|
+| typical | 0.099 cm | **7.3 times it** |
+| 90th percentile | 0.719 cm | **1.00 times it** |
+
+**At the 90th percentile the noise equals the whole signal, exactly.** One frame
+in ten carries as much jitter as the step being looked for. So the frame rate is
+what makes the measurement impossible, and the resolution is what would make it
+uncomfortable — instruction 14's hundred pixels across the hand is asked for
+this measurement as well as for the wrist.
+
+**This also settles an assumption instruction 14 had to leave open.** That
+instruction estimated the wrist floor "assuming the landmark jitter stays about
+one pixel" and said plainly that nothing measured that assumption. It is now
+measured: **0.24 px typical, 1.79 px at the 90th**. The assumption was
+reasonable and slightly optimistic at the tail. The wrist figures do not change.
+
+**Where these readings come from.** `keypoints-front-0.1.json`, whose source
+block names `front 0.1.mp4` at sha256 `f7faf38b…`. The scale is the athlete's
+own measurement — 0.280 m across the shoulders — which reads 139.5 pixels
+median across 785 frames, so one pixel is 0.2007 cm. The file carries a −90
+rotation, so the decoded frame is 576 by 1024 and the landmark pixels are in
+that frame, not in the 1024 by 576 the container reports.
+
+**Its dry-run condition** is `the release is resolved`. It reads
+`framesPerSecondMeasured` from BOTH keypoint files and takes the SLOWER, because
+a hand speed read in one image is a projection and therefore a lower bound, so
+the measurement needs the pair. Session 1.0 reads 30 and FAILS it.
+
+### 16. A keyframe interval that keeps the important frame reachable
+
+**A separate fault from the frame rate, and it has already cost this project a
+reading.** The side file of session 1.0 carries **three keyframes, at 0.000,
+9.996 and 19.992 seconds** — a ten-second interval, where the front camera has
+one per second. Any reader that snaps to a keyframe, asked for 16.93 on that
+file, lands at 9.996. That is where repetition 2's catch lives, which is exactly
+how repetition 2's catch came to appear under a repetition 7 label.
+
+A capture can run at 240 fps and still put the one frame that matters out of
+reach. The two properties are independent and the instructions must be too.
+
+**Instruction: keep the keyframe interval at about one second.** That is what
+the front camera did, and nothing about it caused trouble. If the camera cannot
+be told, record what it produced so a reader knows before trusting a timestamp.
+
+**Its dry-run condition** is `the release moment is addressable`. It reads both
+files and takes the LONGER interval, because one unreachable view is enough to
+lose the frame — and on session 1.0 the fault is on the SIDE file while the
+front is fine, so a condition reading only the front would miss the very reading
+it exists for. No tool in this repository records the interval yet, so it reads
+UNMEASURED on every set until `video_keypoints.py` writes it.
+
+### 17. A bounce pass, filmed so the rebound can be measured
+
+**The engine has no floor.** A released ball is one unbroken parabola, so a
+bounce pass cannot be represented today. It cannot be graded and it cannot be
+authored either. If Marius rules the floor in, the model needs a rebound ratio,
+and that ratio must be **MEASURED from footage and never typed**. A typed ratio
+is a number with no instrument behind it, which is the shape of every figure
+this lane has had to withdraw.
+
+**Instruction: film a bounce pass with the floor contact in view in both
+cameras.** Record what the measurement needs:
+
+- The ball's height before the floor contact and after it.
+- A known distance in the same frames, so both heights carry a scale.
+- The contact itself in both views, not inferred from the ball leaving one.
+
+The side camera is the one that sees the height. The front camera is what makes
+the reading two instruments rather than one.
+
+**Its dry-run condition** is `the floor is in view`, and its threshold kind is
+`unavailable` — **there is no bar to set**. No drill in the library can declare
+that its ball bounces, because the engine has no floor, so the gate cannot ask
+the question of a capture at all. The condition exists to say so out loud rather
+than to let the silence pass for a pass.
+
 ## What was measured, and how well
 
 ### Two-view agreement
