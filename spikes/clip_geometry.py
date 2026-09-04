@@ -66,6 +66,21 @@ CLASSES = {
     # DO complete inside their clips, at frames 93 and 94 of 95.
     # Refer to docs/BOUNCE_PASS_INSTRUMENT_AUDIT.md.
     "netball_bounce_pass": ("pass", "bounce-pass", "release"),
+    # The fourth `pass` and the first ONE-HANDED one. `one-hand-high-pass`
+    # is NOT in Tactics' RELEASE_KINDS, which lists chest-pass,
+    # shoulder-pass, lob and bounce-pass, so no board can select it today.
+    # Exported anyway, for the reason netball_overhead_pass is.
+    #
+    # IT IS DELIBERATELY NOT MAPPED ONTO `shoulder-pass`, THE ONE UNCLAIMED
+    # SLOT IN THAT VOCABULARY, and the reason is a measurement rather than
+    # an opinion: this drill releases the ball 59.31 cm ABOVE the shoulder,
+    # against 47.55 for the overhead pass and 9.58 for the chest pass. A
+    # pass released nearly 60 cm over the shoulder is not a shoulder pass,
+    # and quietly calling it one to fill a slot is the substitution this
+    # library keeps refusing. Whether `shoulder-pass` should instead name
+    # the manual's 1 HAND LOW WIDE or 1 HAND WIDE block is a coach
+    # question and is on the agenda.
+    "netball_one_hand_high_pass": ("pass", "one-hand-high-pass", "release"),
 }
 
 # Above this much root travel, a clip is not in place and the consumer must

@@ -1,0 +1,41 @@
+{
+  "movementId": "netball_one_hand_high_pass",
+  "variant": null,
+  "source": "Authored by hand, NOT by author_flight.py. That tool authors an incoming flight from a passer position, and this drill has no incoming flight: the athlete starts with the ball.",
+  "startsWithTheBallNote": "THE AUTHORING RULE FOR ANY DRILL THAT STARTS WITH THE BALL, followed here for the fourth time. Put BOTH keys where the ball actually is, in her hands, and name the smallest tidy arrival. DO NOT INVENT AN INCOMING FLIGHT TO SATISFY THE arrival FIELD. Two guards in spikes/test_starts_with_the_ball.py hold this: one refuses a flight state before the first carried frame, the other refuses a drill whose ball never flies and authors no launch.",
+  "radiusCm": 11.0,
+  "radiusFraction": 0.2088,
+  "arrival": {
+    "atPhase": 0.02
+  },
+  "arrivalNote": "A formality, not a catch. arrival names the frame possession transfers, and for this pass that already happened before the drill began. 0.0 is refused by load_ball, which requires release < arrival, so 0.02 is the smallest tidy value.",
+  "keys": [
+    {
+      "atPhase": 0.0,
+      "name": "in_her_hands",
+      "across": 0.0,
+      "up": 0.12,
+      "ahead": 0.55,
+      "note": "Where the ball is when the drill starts, at her chest. The same numbers the other three passes open on."
+    },
+    {
+      "atPhase": 0.02,
+      "name": "still_in_her_hands",
+      "across": 0.0,
+      "up": 0.12,
+      "ahead": 0.55,
+      "note": "The same place. A flight of zero length is the honest statement for a drill that begins with possession."
+    }
+  ],
+  "launch": {
+    "target": {
+      "across": 0.0,
+      "up": 0.0,
+      "ahead": 4.0
+    },
+    "speedCmPerSecond": 600.0
+  },
+  "launchTargetNote": "PROVISIONAL, and unchanged from the chest and overhead passes for the same reason: 4.0 arm lengths is author_flight.DEFAULT_PASSER_AHEAD, the distance every feed in this library is thrown from, so the passes and the catches share one geometry. THE TARGET IS 4.0 ARM LENGTHS AHEAD OF HER CHEST, which is the stance anchor, and NOT ahead of the release point. That distinction cost the bounce pass pack two rounds of correction, so it is stated here in the field's own note. THE MANUAL DISAGREES WITH THE 4.0 and a coach must settle it: its passing drills stand players 5 to 7 m apart, which is 9.5 to 13.3 arm lengths.",
+  "launchSpeedNote": "PROVISIONAL AND IT INHERITS AN OPEN QUESTION. 600 cm/s is author_flight.DEFAULT_SPEED_CM, the one speed the whole library uses, recorded in docs/KNOWN_ISSUES.md as having no coach, no measurement and no source. speedCmPerSecond is the HORIZONTAL component only and the vertical is solved from gravity to reach the target, so this drill's much higher release produces a flatter arc to the same point without any change to this field. WHAT THAT HIGHER RELEASE DOES TO THE FLIGHT IS MEASURED in the definition's flightNote, with the release height and the span both stated beside every figure.",
+  "notALobNote": "THIS IS NOT THE LOB, AND THE DIFFERENCE IS THE BALL FILE RATHER THAN THE TECHNIQUE. The manual's LOB PASS (BOMB) at line 2720 reuses two of this block's three steps word for word: its step 2 (2725) is this block's step 1 (2672), and its step 3 (2726) is this block's step 3 (2674). Its step 1 (2724) names its permitted parents, '1 Hand high/wide or double hand'. So a lob authored on this drill changes WHERE THE BALL GOES and leaves how she handles it alone, which is exactly what a ball-file variant is for. Refer to docs/LOB_AUTHORING_BRIEF.md."
+}

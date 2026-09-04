@@ -101,11 +101,25 @@ All heights are from the floor, on the reference athlete, at frame 0 of
 | shoulder, `r_uparm` | 132.87 cm |
 | crown, `c_head_null` | 163.45 cm |
 | **wrist, arm straight up** | **185.55 cm** |
-| fingertip, arm straight up | 198.79 cm |
 
-Segment lengths behind those: upper arm 25.68 cm, forearm 27.00 cm, wrist to
-fingertip 13.24 cm. The engine's arm length is 52.68 cm, which is upper plus
-forearm exactly.
+Segment lengths behind those: upper arm 25.68 cm, forearm 27.00 cm. The
+engine's arm length is 52.68 cm, which is upper plus forearm exactly.
+
+**CORRECTED AFTER AUTHORING, AND THE CORRECTION IS WORTH READING.** A first
+version of this table carried a fingertip row of 198.79 cm and used it in the
+construction below. **That row is withdrawn** and the construction below is
+rebuilt on the wrist. **A fingertip height is not a reach figure.** The
+wrist-to-fingertip distance is read along whatever direction the fingers happen
+to point, so it depends on the grip pose: 13.24 cm here, **6.83 cm on
+`netball_one_hand_high_pass`** at its own frame 0. A construction whose input
+moves 6.4 cm between two drills of the same athlete is not a skeletal limit.
+The WRIST figure is one, because shoulder plus two segment lengths does not
+depend on the hand.
+
+**And these are `netball_overhead_pass`'s landmarks, not every drill's.** The
+frame-0 pose differs between drills: the authored drill reads chest 125.99,
+shoulder 131.32, straight-arm wrist 184.00. Refer to that drill's `reachNote`
+for its own figures.
 
 **Where the overhead pass actually puts the ball**, by ball CENTRE:
 
@@ -127,6 +141,21 @@ drills it published a lob's geometry under a straight pass's label.
 **On that construction the drill has about 16 cm of headroom above the overhead
 pass**, 200.7 against 184.41. That is the difference the coach is being asked
 about, and **nothing in the engine measures it.**
+
+### The construction was tested, and it held
+
+**Added after authoring.** A construction is a prediction, and this one was
+checkable as soon as the drill existed. Predicted **200.7 cm**; the authored
+drill's ball centre peaks at **199.95 cm**, which is **0.75 cm low**. The
+assumption behind it — that the hand stays aligned with the forearm — is
+therefore good to about a centimetre at full extension on this athlete.
+
+The wrist prediction is the one that moved more, and in the direction the note
+warned about: the frame-0 construction gives 184.00 cm on the authored drill,
+and the wrist actually reaches **185.27 cm**, **1.27 cm higher**, because the
+shoulder itself rises when the arm goes overhead. **A frame-0 reach
+construction is a LOWER BOUND, not a ceiling**, and that is now written into
+the drill's own `reachNote` rather than left here.
 
 ---
 
