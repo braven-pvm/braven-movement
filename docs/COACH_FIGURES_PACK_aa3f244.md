@@ -67,6 +67,38 @@ Two corrections this lane made to its own numbers, both kept on the record:
 `unavailable` and never as agreement, because the whole defect was a missing
 field behaving like a satisfied one.
 
+### What the fix does NOT remove: a 2.5 cm rest-pose mismatch
+
+**A figure can pass the acceptance test and still be up to 2.5 cm out
+fore-and-aft. These are two different claims and the pack must not merge them.**
+
+The acceptance guard compares this rig's RENDERED girdle displacement against
+the TRANSMITTED one, inside this body. It proves the renderer applied what the
+solve sent. It does not prove the resulting pose matches the solve's athlete,
+because the two rigs' rest poses are not the same posture.
+
+    MHR rest shoulders, ahead of the root    -0.0648 torso lengths
+    MPFB rest shoulders, ahead of the pelvis -0.0062 torso lengths
+    mismatch                                  0.0586 torso lengths
+    on this rig                               2.507 cm
+
+That is the 2.386 cm constant this lane measured and could not attribute. It is
+a landmark and rest-pose convention difference, it is bounded, and it is
+separate from the 8.5 cm of girdle variation the fix removes.
+
+Two consequences a reader must have:
+
+- On the calibration phase this rig's girdle moves **4.893 cm forward**. That
+  follows the solve and is correct, given the transmitted displacement.
+- A residual fore-and-aft uncertainty of about **2.5 cm at every phase**
+  remains. That is 2.5 times the one-centimetre rule and 23 percent of the
+  ball's radius.
+
+The uncertainty closes only when someone compares the two landmarks directly.
+Neither lane can do it alone: this rig has no `root` bone and the movement lane
+has no MPFB rig. Until then the number is recorded, not fixed, and no figure
+should be described as accurate to better than 2.5 cm in that axis.
+
 ## 3. The sheets, by build
 
 Three columns: before the hand fix, the interim build carrying the clavicle

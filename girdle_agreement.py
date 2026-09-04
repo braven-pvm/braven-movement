@@ -43,32 +43,49 @@ DISAGREES = "disagrees"
 REST_TORSO_M = 0.427689
 
 
-def resolve(displacement, rest_position, rest_torso: float = REST_TORSO_M):
-    """Put a transmitted girdle DISPLACEMENT onto this body's own rest pose.
+def resolve(displacement, rest_span, rest_torso: float = REST_TORSO_M):
+    """Scale a transmitted girdle displacement onto this body, PELVIS-RELATIVE.
 
-    The job sends `(position at the frame - that body's REST-POSE shoulder
-    position) / restTorso`. A displacement is sent rather than a position
-    because a position cannot cross between two bodies. Resolving the engine's
-    POSITIONS onto this rig put zero of 48 phases under the 1 cm rule, with
-    `chest_pass/ready` reading 2.488 cm at a phase where both bodies sit at
-    their neutral girdle and nothing is wrong. That reading was a constant:
-    this rig's shoulders sit 0.2648 cm behind its pelvis and the engine's sit
-    2.4622 cm ahead of its own. A divisor SCALES and does not TRANSLATE, so no
-    scalar removes a landmark or a posture difference. A displacement cancels
-    every constant and reads zero where nothing is wrong.
+    `rest_span` is (rest shoulder - rest PELVIS) on this body, not an absolute
+    rest shoulder position, and the return is a span too. Both sides of the
+    engine's subtraction are pelvis-relative, so both sides of this one must be.
+    The solved root is never at its rest position, 8.4 cm off at every ready
+    phase, so applying a displacement to an absolute rest position would carry
+    the root's own motion into the girdle. Add the POSED pelvis afterwards with
+    `shoulder_position`.
 
-    The reference is the REST POSE and not a drill's neutral phase, because
-    the rest pose is the only reference both sides compute without being told.
+    A displacement is sent rather than a position because a position cannot
+    cross between two bodies. Resolving the engine's POSITIONS onto this rig
+    put zero of 48 phases under the 1 cm rule, and `chest_pass/ready` read
+    2.488 cm at a phase where both bodies sit at their neutral girdle and
+    nothing is wrong. A divisor SCALES and does not TRANSLATE, so no scalar
+    removes a landmark or a posture difference. A displacement cancels every
+    constant and reads zero where nothing is wrong.
+
+    The reference is the REST POSE and not a drill's neutral phase, because the
+    rest pose is the only reference both sides compute without being told.
 
     The divisor is a TORSO length. Arm lengths were proposed by this lane and
-    refuted by measurement: the two rigs' arm-to-torso ratios differ by about
-    5 percent, which would have failed the rule at the neutral phase the fix
+    refuted by measurement: the two rigs' arm-to-torso ratios differ by about 5
+    percent, which would have failed the rule at the neutral phase the fix
     exists to protect. Metres are worse, because every length in the job is
     normalised except `ball.radiusM`, which is absolute only because a real
     netball is one physical size on every body.
     """
     return tuple(rest + step * rest_torso
-                 for rest, step in zip(rest_position, displacement))
+                 for rest, step in zip(rest_span, displacement))
+
+
+def shoulder_position(displacement, rest_span, posed_pelvis,
+                      rest_torso: float = REST_TORSO_M):
+    """Where the shoulder goes on a POSED body, in world coordinates.
+
+    The span is resolved first and the POSED pelvis is added last. Adding the
+    rest pelvis instead would hold the girdle to a root that has moved.
+    """
+    return tuple(pelvis + span for pelvis, span
+                 in zip(posed_pelvis, resolve(displacement, rest_span,
+                                              rest_torso)))
 
 
 def midpoint(left, right):

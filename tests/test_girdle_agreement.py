@@ -214,3 +214,43 @@ class ResolveTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PelvisRelativeTest(unittest.TestCase):
+    """Both sides of the subtraction are pelvis-relative, or the root leaks in."""
+
+    REST_SPAN = (0.0, 0.427681, -0.002648)
+    REST_PELVIS = (0.0, 0.914878, -0.0202)
+
+    def test_the_posed_pelvis_is_added_and_not_the_rest_pelvis(self):
+        """The solved root is 8.4 cm off its rest at every ready phase.
+
+        Applying a displacement to an absolute rest position would carry that
+        motion into the girdle, which is a pose no solve produced.
+        """
+        from girdle_agreement import REST_TORSO_M, shoulder_position
+
+        posed = (0.0, 0.830878, -0.0202)  # the pelvis 8.4 cm below its rest
+
+        placed = shoulder_position((0.0, 0.0, 0.0), self.REST_SPAN, posed,
+                                   REST_TORSO_M)
+
+        self.assertAlmostEqual(posed[1] + self.REST_SPAN[1], placed[1],
+                               places=9)
+        self.assertNotAlmostEqual(self.REST_PELVIS[1] + self.REST_SPAN[1],
+                                  placed[1], places=3)
+
+    def test_a_span_and_an_absolute_position_are_not_interchangeable(self):
+        """Passing the absolute rest shoulder where a span belongs.
+
+        It returns a number either way, which is what makes it dangerous.
+        """
+        from girdle_agreement import REST_TORSO_M, resolve
+
+        absolute_rest = (0.0, 1.342558, -0.017551)
+        step = (0.0, 0.1144, 0.0)
+
+        as_span = resolve(step, self.REST_SPAN, REST_TORSO_M)
+        as_absolute = resolve(step, absolute_rest, REST_TORSO_M)
+
+        self.assertGreater(abs(as_absolute[1] - as_span[1]), 0.9)
