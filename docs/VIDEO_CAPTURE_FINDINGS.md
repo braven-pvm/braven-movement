@@ -41,12 +41,35 @@ was present.
 
 ### 1. A clap — audible AND visible in both frames
 
-There is no clap in this material. In both views the athlete stands and talks
-for the first eight seconds, hands at her sides. The first shared event of any
-kind is her first ball catch.
+**CORRECTED 2026-09-04. THERE IS A CLAP, TWICE, AND IT IS IN THE FRONT ONLY.**
+This sentence used to read "there is no clap in this material" and that is false.
+Erin clapped to sync the cameras, and the front recording holds both claps: at
+**5.800 s and 17.835 s**, each a broadband spike over x26 times its local floor,
+each within 70 ms of her wrists closing to about a quarter of a shoulder width
+against a whole-clip median of 0.94.
+
+**NO MATCHING SPIKE IS IN THE SIDE RECORDING AT ANY LAG.** The front's sharpest
+signature is a pair of spikes 0.175 s apart at 26.240 and 26.415 s; the side's
+only gap under half a second is 0.235 s, and no offset within six seconds places
+the pair anywhere in it. A randomly generated side track of 17 spikes matches
+the front's four as well as the real one does in 12 per cent of 2000 trials.
+Either the side microphone never registered the claps — its strongest event is
+x24 against the front's x44, several metres further away — or the two files do
+not contain the same instant. **Nothing here can separate those two readings.**
+
+What remains true of the ORIGINAL sentence: nobody slated the takes, and both
+claps were recorded as "gesture" repetitions in the ball-in-frame annotation
+rather than as sync marks. Refer to "The alignment ranked a sync clap above
+every real catch" in `docs/KNOWN_ISSUES.md`, and to section 18 below.
 
 Four audio methods were tried. All four failed, and the confidence measure is
-what says so:
+what says so. **THIS TABLE IS THE RECORD.** The file the numbers came from,
+`spikes/poc-output/video/clap-offsets.json`, is untracked output that exists in
+one worktree and carries no commit, script, sample rate or timestamp; it is not
+on main or on any branch. The transcription below is what survives, so treat it
+as the source. `spikes/video_sync.py` produced them and **it resamples both
+tracks to a common 48 kHz** through ffmpeg before correlating, so the two files'
+differing rates are not the reason the methods failed.
 
 | method | set 0.1 | set 0.2 |
 |---|---|---|
@@ -75,7 +98,7 @@ what speech defeats. It costs a sentence of silence.
 
 **A fourth reading of this offset landed at the EDGE of the documented band.**
 Added 2026-09-02. Cutting the coach clips, the side view was placed against the
-front using the documented 1.22 s offset with an uncertainty near 0.25 s, and
+front using a 1.22 s offset with an uncertainty near 0.25 s, and
 the effective offset that actually lined the two views up read **0.95 to
 1.00 s** — the very bottom of that band. That is a fourth instrument on the
 same quantity, and the four now spread wider than any one of them claims: four
@@ -83,6 +106,31 @@ audio methods with no peak at all, motion energy whose halves disagreed by
 three seconds, an eye on contact sheets at 1.0 to 1.27 s, and this.
 
 Nothing here narrows the offset and nothing should be read as narrowing it.
+
+**AND THE 1.22 s IN THAT PARAGRAPH WAS NEVER SOURCED.** Corrected 2026-09-04.
+What the artefacts actually apply is **1.0 s with a 0.15 s uncertainty**:
+`keypoints-side-0.1.json` carries `offsetSecondsToReference: 1.0`,
+`offsetUncertaintySeconds: 0.15`, method "two visual events matched by eye",
+worked example the first catch at side 8.25 s against front 9.25 s; and
+`lift-3d-0.1.json` applies the same 1.0. No file, script or commit in this
+repository contains 1.22 as an offset. The prose cited a figure 0.22 s outside
+the applied value's own band and gave it a wider band than the record does,
+and the strips then read 0.95 to 1.00 at the cut moments — which agrees with
+the applied 1.0 and not with the 1.22.
+
+**A fifth and sixth instrument, 2026-09-04.** The side camera's audio cannot
+sync anything: the front carries four sharp broadband spikes (x26 to x44 over
+their local floor) including a distinctive pair 0.175 s apart at 26.240 and
+26.415 s, and NO OFFSET places that pair anywhere in the side track, whose only
+gap under half a second is 0.235 s. A randomly generated side track matches the
+front's four spikes as well as the real one does in 12 per cent of trials, so
+the best alignment is not a reading. Separately, the athlete's wrist height
+scored against eight catch moments proved on frame strips peaks at **−0.967 s**,
+mean height 1.159 against a whole-clip mean of 0.650, with the recorded −1.000
+essentially at that peak. **The by-eye 1.0 s remains the only measured offset**,
+and the keypoint times it rests on are true container timestamps rather than a
+constant-rate multiply — checked against ffprobe to six decimals on the
+variable-rate side file.
 What it says is that **the ±0.25 s band is not conservative**, and that a
 number sitting at the edge of its own uncertainty is the shape of a bias rather
 than of noise. The clap is what settles it, which is why it is instruction 1.
@@ -428,7 +476,13 @@ condition, reads UNMEASURED until an annotation exists, and accepts one in
 
 **The engine does not drive the ball.** Its hands move **0.72 cm in the frame
 before release and 7.37 cm in the frame after** — a factor of 10.2 across one
-frame boundary. Nothing accelerates the ball at the moment it leaves. That is
+frame boundary. **Those are 60 fps frames, the engine's own rate**, so the two
+readings are 16.7 ms apart; every "frame" in this section says which rate it
+belongs to, because the whole argument turns on the two rates differing. The
+measurement and its provenance are recorded in `docs/WRIST_AND_PACE.md` and in
+"RESOLVED: a field called secondsPerFrame held the solver's cost" in
+`docs/KNOWN_ISSUES.md` — the entry that corrected these rates from computer
+time to track time. Nothing accelerates the ball at the moment it leaves. That is
 the mechanism behind what Marius saw when he said the wrist action was missing,
 and whether the carry should accelerate before release is decided by measuring
 a real athlete and by nothing else available.
@@ -451,8 +505,13 @@ frame pair that corresponds to the engine's claim at all.
 both halves of that are measured.** The landmark jitter is taken as each
 sample's departure from **a 5-point quadratic fitted through its own two
 neighbours on each side** — real motion is smooth across five frames at 30 fps
-and landmark jitter is not. Over both wrists, both image axes and 781 frame
-positions, that is **3122 residuals**: a median of **0.0494 cm** and a 90th
+and landmark jitter is not. Over both wrists and both image axes that is
+**1561 centre positions — 780 on the left wrist and 781 on the right — and so
+3122 residuals**. The left wrist loses one position because a five-frame window
+needs all five, and one of its frames past the 25.7 s usable end carries no
+visible wrist. An earlier version of this sentence said "781 frame positions",
+which does not multiply to 3122 and was a count of the right wrist alone. The
+readings are a median of **0.0494 cm** and a 90th
 percentile of **0.3596 cm** per axis, which is **0.246 and 1.791 pixels**.
 
 **The smoother has to be named, because the number depends on it.** Other
@@ -540,6 +599,43 @@ the reading two instruments rather than one.
 that its ball bounces, because the engine has no floor, so the gate cannot ask
 the question of a capture at all. The condition exists to say so out loud rather
 than to let the silence pass for a pass.
+
+### 18. One athlete, and a clap both cameras can see as well as hear
+
+Added 2026-09-04, after a morning spent failing to sync two files.
+
+**Instruction: the same athlete appears in both cameras, and it is checked on
+the day by opening the two files side by side.** This sounds like it cannot go
+wrong. It went wrong badly enough this morning that a lane spent hours on it and
+reached the wrong conclusion twice, so it is written down as a step rather than
+as an assumption.
+
+**Instruction: clap ONCE, sharply, IN FRAME FOR BOTH CAMERAS, at the start of
+every take — and then open both files and confirm that each one heard it and saw
+it.** The clap has three jobs and it only does them if both cameras get it:
+
+- HEARD, so the audio gives an offset good to a millisecond.
+- SEEN, so the offset can be checked against the frame the hands meet in, which
+  is what catches a camera that recorded the sound and not the moment.
+- CONFIRMED ON THE DAY, because a clap discovered to be missing a week later
+  cannot be repeated.
+
+**This is written from a failure, not from theory.** Session 1.0 has a clap. It
+is in the front recording twice — at 5.800 s and 17.835 s, each a broadband
+spike over x26 with the athlete's wrists closing to a quarter of a shoulder
+width — and it CANNOT BE FOUND IN THE SIDE RECORDING AT ALL. The front's most
+distinctive signature is a pair of spikes 0.175 s apart; no offset within six
+seconds places that pair anywhere in the side track. Whether the side microphone
+missed the claps or the two files do not share the instant, no instrument here
+can say, and the sync fell back to matching catches by eye at about 1.0 s.
+
+**And the clap must not be mistaken for the drill.** Both of session 1.0's claps
+were recorded in the ball-in-frame annotation as "gesture" repetitions, and one
+of them scored BEST OF TWELVE on the alignment — the elbow curve of a woman
+clapping fits the catch reference better than any real catch in the set. Refer
+to "The alignment ranked a sync clap above every real catch" in
+`docs/KNOWN_ISSUES.md`. The slate between repetitions asked for in section 14 is
+what separates them; without it a clap becomes a graded repetition.
 
 ## What was measured, and how well
 

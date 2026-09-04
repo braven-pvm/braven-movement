@@ -3119,3 +3119,62 @@ open question as the entry above, and the candidates listed there are the
 candidates here. **NOT PROPOSED: constraining the solve.** This entry adds an
 instrument and changes no engine behaviour.
 
+
+## The alignment ranked a sync clap above every real catch
+
+Found 2026-09-04 while looking for the clap Marius said Erin used to sync the
+two cameras. It is in the front recording, twice, and it has been in our own
+records since 2 September under the wrong name.
+
+**Repetitions 0 and 8 of `spikes/video-annotations/ball-in-frame-0.1.json`,
+annotated "gesture", ARE THE CLAPS.** Measured on the front view:
+
+| | hands together | front audio above 4 kHz |
+|---|---|---|
+| repetition 0 | **5.867 s**, wrists 0.249 shoulder widths apart | **x26.5** over its local floor, at 5.800 s |
+| repetition 8 | **17.900 s**, wrists 0.266 apart | **x29.1** over its local floor, at 17.835 s |
+
+The whole-clip median wrist separation is 0.94 shoulder widths, and only seven
+frames in 785 fall under 0.5. The five other minima carry audio spikes of x1.3
+to x2.9 — nothing. The two that carry a x26+ spike are the two the annotation
+had already singled out as containing no ball.
+
+### Why this matters more than the sync question
+
+**Repetition 0 scored 0.02369 on the whole-curve warp distance against 0.06093
+for the next best — BEST OF TWELVE — and rank 1 of 8 drills on both scorings.**
+
+The elbow curve of a woman clapping fits the catch reference better than any
+real catch in the set, and no scoring in the alignment can tell the difference.
+The informative scoring placed it fifth of twelve, which is luck rather than
+detection: it ranks the drill first either way.
+
+This is the blind spot the ball-in-frame condition was built for, and it now has
+a name. The gate asked eleven questions and none of them was "is this a catch".
+The condition refuses repetitions 0 and 8 already; what is new is knowing WHY
+the best-scoring repetition in the set is not a catch, which is a stronger
+statement than "a frame strip shows her gesturing".
+
+### What it does not settle
+
+**Nothing about the camera offset.** The clap is in the front and cannot be
+found in the side. The front's four broadband spikes include a distinctive pair
+0.175 s apart at 26.240 and 26.415 s, and no offset in ±6 s places that pair
+anywhere in the side track, whose only gap under half a second is 0.235 s. A
+randomly generated side track of 17 spikes matches the front's four as well as
+the real one does in **12 per cent** of 2000 trials, so the best alignment is
+not a reading.
+
+Either the side camera's microphone never registered the claps — its strongest
+event is x24 against the front's x44, and it may be several metres away — or the
+two files do not contain the same instant. **The audio cannot separate those two
+readings**, and until a person does, the by-eye 1.0 s stands as the only measured
+offset. Refer to "A fifth and sixth instrument" in
+`docs/VIDEO_CAPTURE_FINDINGS.md`.
+
+### The instruction it produced
+
+Section 18 of `docs/VIDEO_CAPTURE_FINDINGS.md`: the clap must be **in frame for
+both cameras**, not merely audible, and both files must be opened on the day to
+confirm that each one heard and saw it. A clap that only one camera records is
+worth nothing, and this session spent a morning proving that the hard way.
