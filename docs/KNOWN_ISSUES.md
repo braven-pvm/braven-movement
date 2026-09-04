@@ -2718,7 +2718,8 @@ counted:
 
 An earlier version of the table above gave the rendering rig's
 shoulder-above-pelvis as **0.8759** of this athlete's. That figure is
-withdrawn. It is **42.7689 / 48.8246** — the rendering rig's REST torso over
+withdrawn. It is **42.7689 / 48.8246 = 0.87597**, truncated — the rendering
+rig's REST torso over
 this athlete's POSED shoulder height at `chest_pass/ready`. Two rigs, one at
 rest and one posed, one measured in three axes and one vertical, under a single
 label. The rendering lane says it never produced that number and is right: its

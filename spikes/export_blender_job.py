@@ -262,8 +262,9 @@ def rest_torso(rest_points, index) -> float:
     on the other.
 
     AN EARLIER VERSION OF THIS DOCSTRING SAID "its shoulder-above-pelvis is
-    0.8759" AND THAT NUMBER IS WITHDRAWN. It is 42.7689 / 48.8246: the
-    rendering rig's REST torso over this athlete's POSED shoulder height. Two
+    0.8759" AND THAT NUMBER IS WITHDRAWN. It is 42.7689 / 48.8246 = 0.87597,
+    truncated: the rendering rig's REST torso over this athlete's POSED
+    shoulder height. Two
     rigs, one at rest and one posed, one measured in three axes and one
     vertical — a single label over two quantities, which is the fault this
     whole field exists to fix. The rendering lane does not recognise the

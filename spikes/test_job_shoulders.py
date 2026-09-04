@@ -25,9 +25,9 @@ was arrived at by a measurement that killed the previous attempt:
   `chest_pass/ready` resolves to 45.00 on a rig whose own rest torso is
   42.7689, which is 2.23 cm out against a 1 cm rule — on the very phase the
   field exists to protect. An earlier version of these lines wrote that second
-  ratio as 0.8759, WHICH IS WITHDRAWN: it is 42.7689 / 48.8246, a rest length
-  over a posed height, and the two rigs' rest torsos are what the sentence
-  claims to compare.
+  ratio as 0.8759, WHICH IS WITHDRAWN: it is 42.7689 / 48.8246 = 0.87597,
+  truncated — a rest length over a posed height, when the two rigs' rest torsos
+  are what the sentence claims to compare.
 - NOT a POSITION, even torso-normalised, which failed on all 48 graded phases
   by 1.1 to 5.8 cm INCLUDING the phases where both girdles are neutral and
   nothing is wrong. A divisor scales and cannot translate, and the two rigs
@@ -107,9 +107,13 @@ FIELD = "shoulderShiftFromRestInTorsos"
 # about 1.3 in the vertical. 0.5 is the only round value above the first and
 # below the other three.
 #
-# The twelfth drill did not move the maximum. `netball_one_hand_high_pass`
-# reaches 0.1435, which is the ninth-largest of the twelve, so the margin under
-# 0.5 is the turned drill's and not the library's average.
+# The twelfth drill did not move the maximum, and it is nonetheless the
+# SECOND-largest per-drill maximum of the twelve: `netball_one_hand_high_pass`
+# reaches 0.1435, against 0.3932 first and 0.1366 third. (An earlier version of
+# this line called it ninth-largest, which was a mis-sort.) So the margin under
+# 0.5 belongs to the turned drill alone. The other eleven sit between 0.1205
+# and 0.1435, a band 0.023 wide, and a new drill would have to reach 3.5 times
+# the second-largest shift in the library to trouble this guard.
 LOOKS_ABSOLUTE_TORSOS = 0.5
 
 # A FLOOR ON THE COVER, NOT A TOTAL, and it replaces a total that fired on the
@@ -364,6 +368,14 @@ class TheJobCarriesItsOwnAnchor(unittest.TestCase):
                 held = result["possession"].frames[frame]
                 sides = tuple(method.sides_at(held.phase)) if held.holding else ()
                 if sides:
+                    # Before the rebuild, or a DROPPED `grip` raises KeyError
+                    # here and the guard never gets to say what is wrong.
+                    self.assertIn(
+                        "grip",
+                        job,
+                        f"{movement_id} frame {frame} holds with "
+                        f"{len(sides)} hand(s) and carries no grip block",
+                    )
                     self.assertEqual(
                         job["grip"],
                         _grip(
