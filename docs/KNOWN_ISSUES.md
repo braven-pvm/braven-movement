@@ -8,6 +8,14 @@ grading. An entry belongs to whichever lane can fix it.
 
 ## The ball is anchored to a landmark the job does not transmit
 
+EVERY NUMBER IN THIS ENTRY was measured on 2026-09-04 against the `aa3f244`
+job export in `spikes/poc-output`, with the renderer at `2015424` and the rig
+from `load_reference_catch_config`. The engine's figures are the movement
+lane's, reported the same day from the solved pose. This attribution is here
+because `scripts/docs_number_audit.py` found the first version of this entry
+quoting 42.7681 and 0.2648 with NO BUILD NAMED, which is the fault the audit
+exists to find.
+
 `pose_phase` places the ball at `shoulders + fromShouldersInArms * arm`. Every
 term on that line comes from the job except `shoulders`, which this rig
 supplies itself. The ball's position error is therefore the shoulder midpoint's
