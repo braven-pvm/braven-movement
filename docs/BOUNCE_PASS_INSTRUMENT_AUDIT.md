@@ -120,7 +120,7 @@ Nine measures, eight of them angles.
 | 2b. "with wrist and hands pass the ball" | **YES.** `leftElbowFlexionDegrees`. `netball_overhead_pass` grades this exact cue. | gradeable |
 | 3. "Keep hand behind the ball" | **REPORT ONLY.** `spikes/hand_orientation.py` reports `thumbToBallDegrees`, `thumbUpDegrees` and `fingerUpDegrees` into every receipt and declares itself report-only. It is absent from `MEASURE_UNITS`, so no checkpoint can read it. | cannot grade |
 | 4. "Bounce ball approximately 1m in front of receiver" | **NONE, TWICE OVER.** There is no floor for the ball to strike, so the event does not exist; and there is no measure of a position on the court, so it could not be read if it did. | cannot grade, cannot represent |
-| 5. "Keep ball low" | **NONE.** The ball's height through its flight has no measure. This is the height row already open in `docs/KNOWN_ISSUES.md`, "No units-correct distance measures, and five cues already want them". | cannot grade |
+| 5. "Keep ball low" | **NONE.** The ball's height through its flight has no measure. This is the height row already open in `docs/KNOWN_ISSUES.md`, whose heading begins "No units-correct distance measures" (the cue count in that heading moves as drills land, so it is cited by its stable half). | cannot grade |
 
 **Two of eight cue parts are gradeable. One is report-only. Five have no
 instrument, and one of those five has no physics either.**

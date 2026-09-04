@@ -110,6 +110,7 @@ def minimal(**extra) -> dict:
 AUTHORS_A_LAUNCH = {
     "netball_bounce_pass.ball.json",
     "netball_chest_pass.ball.json",
+    "netball_one_hand_high_pass.ball.json",
     "netball_overhead_pass.ball.json",
 }
 
