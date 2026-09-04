@@ -311,7 +311,17 @@ its current pack, ruled the same day. When it exists, that drill's step 1 gets
 its checkpoint.
 
 **THE TALLY, LISTED SO THE NUMBER IN THE HEADING IS CHECKABLE.** Six cues, on
-four drills:
+four drills.
+
+**THIS IS A RE-COUNT AND NOT ONLY AN INCREMENT, so the heading moving from five
+to six is not one new cue.** The previous heading said five and **the row never
+listed which five**, which is exactly how a count drifts. Two things changed at
+once: this drill's height cue is genuinely new, and **the step length was never
+counted before** — the earlier row does not mention it anywhere, though the cue
+appears in every pass block in the section. The audit written before this drill
+was authored said it "adds two more", counting the height and the step
+separately against a row that had counted neither; the itemised list below is
+what the heading now means.
 
 | # | cue | drill | quantity |
 |---|---|---|---|
@@ -2675,25 +2685,54 @@ point and the next.
 |---|---|---|---|---|---|
 | **`netball_one_hand_high_pass`** | **right** | **4** | **21.87 cm** | **no** | **20.28 degrees** |
 | `netball_overhead_pass` | both | 1 | 7.50 cm | yes | 15.48 degrees |
-| `netball_bounce_pass` | both | 2 | 7.01 cm | nearly | 17.72 degrees |
-| `netball_chest_pass` | both | 1 | 5.21 cm | nearly | 9.95 degrees |
+| `netball_bounce_pass` | both | 2 | 7.01 cm | no | 17.72 degrees |
+| `netball_chest_pass` | both | 1 | 5.21 cm | no | 9.95 degrees |
 
 **Two to four times the jumps, and a largest jump three times the worst of the
-other three.** It is also the only one of the four whose measure is not
-monotone under the lever.
+other three.**
 
-**IT IS NOT CONFINED TO ONE LEVER.** The same drill's release carry `ahead`
-maps four basins between 0.90 and 0.70, separated by jumps of 19.85, 18.06 and
-18.67 cm, with stable regions between them as narrow as 0.03 torso lengths —
-about 1.6 cm of authoring space.
+**THE MONOTONE COLUMN IS COMPUTED, NOT JUDGED.** A first version of this table
+called the bounce and chest passes "nearly" monotone; both compute `False`. The
+distinction that matters is the SIZE of the reversal against the 5 degree
+threshold: the chest pass's largest is 0.48 degrees and the bounce pass's are
+0.36, 0.43, 0.47 and **5.92**. So the chest pass is progressive within the noise
+floor, the bounce pass has one real reversal, and the one-handed drill has a
+20.28 degree single-step change. "Nearly" hid all three of those apart.
+
+**IT IS NOT CONFINED TO ONE LEVER, AND IT IS NOT CONFINED TO ONE END OF ONE.**
+The same drill's release carry `ahead` maps four solutions between 0.90 and
+0.70, separated by jumps of 19.85, 18.06 and 18.67 cm, with continuous regions
+between them as narrow as 0.03 torso lengths — about 1.6 cm of authoring space.
+
+**And it alternates at the other end too.** Swept at 0.02 from 1.08 to 1.36,
+the values 1.14, 1.18, 1.28 and 1.30 read a different solution from their
+immediate neighbours — elbow 54.82, 54.49, 53.80, 53.72 with the shoulder near
+100, against roughly 64 and 120 either side — with `r_lowarm` moving 21.67 to
+22.19 cm between neighbours. **Six jumps over 5 cm in that range alone.** So the
+continuous region around the authored point is **0.80 to 1.12**, not the wider
+span a first version of this row claimed.
+
+**HOW THE FIRST VERSION GOT IT WRONG IS THE MORE USEFUL HALF.** It said the
+region ran unbroken from 0.80 to at least 1.34, read off a FOUR-POINT sweep at
+0.92 / 1.06 / 1.20 / 1.34. Every one of those four happened to land on the same
+solution, so the sampling stepped straight over the alternation. **A coarse
+sweep through an alternating region returns a smooth curve**, which is the same
+sampling trap this row exists to describe, made while describing it. Found by
+the reviewer of `00c370a` and reproduced on the same engine.
 
 **WHAT IT COST.** A first draft of that drill authored its release carry at
 `ahead` 0.78, inside one of those narrow basins. Three graded readings depended
-on which basin the solve reached: the release elbow 49.68 against 65.29, the
-release shoulder 112.01 against 133.58, and the follow-through shoulder 86.63
-against 102.47. The carry was moved to 0.96, deep inside a basin that runs
-unbroken from 0.80 to at least 1.34, and the shipped pose is stable: sweeping
-`ahead` from 0.90 to 1.02 moves the release elbow 0.49 degrees in total.
+on which solution the solve reached. **Stated against what SHIPPED**, since that
+is the comparison a reader wants: the shipped 0.96 reads release elbow 64.63,
+release shoulder 128.48 and follow-through shoulder 100.24, while the withdrawn
+0.78 read 49.68, 112.01 and 86.63. (The figures 65.29, 133.58 and 102.47 are
+0.80's, the point immediately beside the withdrawn one; they are what exposed
+the boundary, not what shipped.)
+
+The carry was moved to 0.96, **inside the continuous region 0.80 to 1.12** set
+out above, and the shipped pose is stable: sweeping `ahead` from 0.90 to 1.02
+moves the release elbow 0.49 degrees in total, and sweeping `up` from 1.24 to
+1.08 moves it 0.26.
 
 **AND IT COST A CHECKPOINT.** A follow-through shoulder checkpoint was authored
 and DELETED before shipping, because no stable lever could move it out of its
@@ -2707,9 +2746,11 @@ and it oscillated 100.24, 100.24, 85.44, 110.54, 128.44 with jumps of 19.97,
 **A HYPOTHESIS, AND EXPLICITLY NOT A DIAGNOSIS.** Nothing here tests it. Two
 hands on the ball constrain both arms and the trunk between them; one hand
 leaves the free arm and the trunk rotation with nothing asking anything of
-them, so the solve has more equally good answers. The free arm on that drill
-moves **0.00 degrees over all 96 frames**, which is consistent with the
-hypothesis and is not evidence for it.
+them, so the solve has more equally good answers. The free arm's ELBOW on that
+drill moves **0.00 degrees over all 96 frames** and its shoulder moves 4.38,
+which is consistent with the hypothesis and is not evidence for it. (A first
+version of this line said "the free arm moves 0.00 degrees", which is the elbow
+reading stated of the whole arm.)
 
 **HOW IT RELATES TO THE ROWS BELOW.** "The lower body has no stable solution"
 records the same shape below the hips, on every drill. This row says the UPPER

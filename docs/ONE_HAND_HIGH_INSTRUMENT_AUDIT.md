@@ -348,3 +348,42 @@ belongs to the movement lane.
 - **Every band PROVISIONAL**, and a coach must set them.
 
 **Nothing is authored until the orchestrator rules on the height question.**
+
+---
+
+## What authoring changed, added afterwards
+
+**The prediction above is left exactly as it was written**, because a
+prediction edited after the fact is worth nothing. Three things about it were
+wrong, and the drill's own files carry the corrected versions.
+
+**"All on the RIGHT arm" is wrong, and the list below it says so two bullets
+later.** The fourth bullet names `leftKneeFlexionDegrees`. The accurate
+statement is **four arm measures on the right plus one left-knee reading** —
+the stance reading every drill in the library carries. The contradiction sat
+inside a five-line list and survived until the review of `00c370a`.
+
+**"A ready phase, a lift phase and a release phase" for the elbow held, but the
+release phase needed a second checkpoint.** On this drill the arm is already
+straight at the top, so the elbow moves only 4.07° from lift to release —
+under the 5° threshold — and the release phase would not have been
+distinguishable on the elbow alone. `rightShoulderElevationDegrees` was added
+there, and it grades where the arm is when the ball leaves rather than how high
+the ball got.
+
+**A follow-through phase was expected and does not exist.** It was authored,
+could not be proven by any stable lever, and was deleted before shipping. The
+drill's `deletedCheckpointNote` holds the four levers that were tried.
+
+**One prediction held exactly.** The side trap: both existing one-handed drills
+grade `right*` while all three passes grade `left*`, so copying the nearest
+pass would have graded the arm that never moves. Writing it down here before
+authoring is what stopped it.
+
+**And one trap this audit did not anticipate.** `across` in a MOTION file is a
+half-separation — the left hand takes `+across` and the right `−across` —
+while `across` in a TECHNIQUE file is a signed lateral position. A first draft
+carried the technique's negative values into the motion file and crossed her
+arms; `test_motion_track.HandednessTest` caught it. This is the first drill in
+the library that wants the ball off the midline at all, so it is the first
+where the two meanings of one word diverge.

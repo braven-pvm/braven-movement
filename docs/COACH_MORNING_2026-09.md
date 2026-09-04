@@ -423,8 +423,9 @@ Added 2026-09-04 with `netball_one_hand_high_pass`, the library's twelfth drill,
 its fourth pass and **its first one-handed pass**.
 
 **What she can see.** The ball taken up on one arm to the top of its reach, a
-step, the release, and the arm coming through. Graded on five checkpoints, all
-on the RIGHT arm, because the right is the working arm.
+step, the release, and the arm coming through. Graded on five checkpoints: four
+on the RIGHT arm, because the right is the working arm, and the fifth the same
+left-knee stance reading every drill in the library carries.
 
 **THE CUE THE DRILL IS NAMED FOR IS NOT GRADED, and she should be told before
 she watches.** The manual's step 1 is *"Pull the ball up as high as arm can
@@ -452,7 +453,13 @@ is exported as `one-hand-high-pass`, which is **not** in that list, so no board
 can select it. **It was deliberately NOT filed under `shoulder-pass`**, the one
 unclaimed slot: this drill releases the ball **59.3 cm above the shoulder**,
 against 47.6 for the overhead pass and 9.6 for the chest pass, and a pass
-released nearly 60 cm over the shoulder is not a shoulder pass. **Does
+released nearly 60 cm over the shoulder is not a shoulder pass. (Those three
+are the ball centre at the release frame measured against the shoulder **as it
+stands at frame 0**. Against the shoulder at the release frame itself, which
+rises as the arm goes up, they are 51.9, 39.8 and 6.3. The ordering and the
+conclusion are the same either way; the inputs are stated because a height
+without its reference point is what this project keeps having to correct.)
+**Does
 `shoulder-pass` instead name the manual's 1 HAND LOW WIDE or 1 HAND WIDE
 block?** Neither is authored yet, so the slot can still be given to whichever
 she means.

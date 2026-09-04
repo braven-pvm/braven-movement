@@ -74,7 +74,13 @@ CLASSES = {
     # IT IS DELIBERATELY NOT MAPPED ONTO `shoulder-pass`, THE ONE UNCLAIMED
     # SLOT IN THAT VOCABULARY, and the reason is a measurement rather than
     # an opinion: this drill releases the ball 59.31 cm ABOVE the shoulder,
-    # against 47.55 for the overhead pass and 9.58 for the chest pass. A
+    # against 47.55 for the overhead pass and 9.58 for the chest pass. Those
+    # three are the BALL CENTRE AT FRAME 76 minus `r_uparm` AT FRAME 0, on
+    # each drill's own solve. Against the shoulder at frame 76, which rises
+    # with the arm, they are 51.88, 39.77 and 6.25; the ordering and the
+    # conclusion hold either way, and the inputs are named because a height
+    # without its reference point is the fault this repository keeps
+    # correcting. A
     # pass released nearly 60 cm over the shoulder is not a shoulder pass,
     # and quietly calling it one to fill a slot is the substitution this
     # library keeps refusing. Whether `shoulder-pass` should instead name
