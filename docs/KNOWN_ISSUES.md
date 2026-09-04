@@ -323,7 +323,7 @@ it.
 
 The bounce pass makes it concrete. Aimed at a floor point 4.00 m from her chest,
 which is 350.5 cm from a release at 111.7 cm, the ball reaches the court at
-**0.584 s**, which is **1.83 times** the flight the clip contains. A consumer
+**0.584 s**, which is **1.84 times** the flight the clip contains. A consumer
 playing that clip sees the throw and a ball that never lands.
 
 **The margin on the other two is thin rather than comfortable**, two frames and

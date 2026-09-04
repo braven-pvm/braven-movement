@@ -5,8 +5,17 @@ orchestrator's instruction. Nothing in `spikes/movements/` is touched by this
 document.
 
 Measured on `32663a9`, the tip after PR #60 merged, in the content-lane
-worktree, `pixi run --frozen`, `MKL_THREADING_LAYER=SEQUENTIAL`. The manual is
-the *Netball Skills and Conditioning Manual, Level 1, 3rd version*, by Niel du
+worktree, `pixi run --frozen`, `MKL_THREADING_LAYER=SEQUENTIAL`.
+
+**TWO BUILDS APPEAR IN THIS DOCUMENT AND THE SPLIT IS DELIBERATE.** The
+instrument survey below — which measures exist, which cue each can read — is
+from `32663a9` and is unchanged, because `MEASURE_UNITS` has not moved since.
+**Every FLIGHT figure was re-measured on the engine at `eaecbb2`** after a
+review found the first set had been computed over the wrong span. Where the two
+builds disagree the later one stands, and the flight section says so at its
+head.
+
+The manual is the *Netball Skills and Conditioning Manual, Level 1, 3rd version*, by Niel du
 Plessis and Erin Burger, read at `.assets/manual/202526 updated coaches
 manual.md`.
 
@@ -73,11 +82,11 @@ inherited it.
 | t (s) | ball height (cm) | ahead of her chest (cm) |
 |---|---|---|
 | 0.00 | 111.7 | 49.5 |
-| 0.20 | 111.1 | 169.5 |
-| 0.40 | 71.3 | 289.5 |
-| 0.50 | 36.7 | 349.5 |
+| 0.20 | 111.2 | 169.5 |
+| 0.40 | 71.4 | 289.5 |
+| 0.50 | 36.8 | 349.5 |
 | **0.60** | **−7.7** | 409.5 |
-| 1.00 | −283.5 | 649.5 |
+| 1.00 | −283.4 | 649.5 |
 | 1.50 | −848.9 | 949.5 |
 
 **The ball reaches the ground at 0.584 s, exactly 400.0 cm from her chest, and
@@ -86,7 +95,7 @@ stops the ball once it gets there, and nothing reports it.
 
 **And the clip is too short to hold the bounce.** This drill releases at phase
 0.80 of a 1.60 s clip, which leaves **0.32 s of flight**. The floor is reached
-at 0.584 s, **1.83 times longer than the clip has left, short by 0.264 s**. So
+at 0.584 s, **1.84 times longer than the clip has left, short by 0.268 s**. So
 even with a floor, the bounce would happen after the last frame, and the clip a
 board plays would show a ball still descending.
 

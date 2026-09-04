@@ -91,8 +91,8 @@ at the ball centre — 142.4 is the CHEST pass's — and the floor point is 4.00
 from her CHEST, which is **350.5 cm from the release**, not 400.0.
 
 Recomputed on the true geometry: at 600 cm/s the solved vertical is
-**+95.32 cm/s**, so the ball rises to 116.3 cm before it falls. A free fall from
-111.7 cm takes 0.477 s, so the throw is only downward above **734 cm/s**, and
+**+95.37 cm/s**, so the ball rises to 116.3 cm before it falls. A free fall from
+111.7 cm takes 0.477 s, so the throw is only downward above **735 cm/s**, and
 600 is **0.82** of that.
 
 **A bounce pass is driven at the floor, not lobbed at it.** This is the most

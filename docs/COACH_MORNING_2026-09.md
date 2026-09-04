@@ -394,7 +394,7 @@ checkpoints.
 
 **What is missing from it, and why she should be told before she watches.** The
 engine has no floor. The ball leaves her hands on a path aimed at the right spot
-on the court and then keeps going in a straight parabola; the clip ends 0.264 s
+on the court and then keeps going in a straight parabola; the clip ends 0.268 s
 before it would land. So **the drill shows a bounce pass with no bounce.**
 
 **What was deliberately NOT graded.** Two of the manual's five steps — the
@@ -410,8 +410,8 @@ more than it misleads.
 
 **One number for the same conversation.** The library throws every pass at
 600 cm/s, which has no source. On this drill that constant makes the ball travel
-UPWARD to reach the floor: it needs +95.32 cm/s of vertical, and the throw is
-only downward above 734 cm/s. **A bounce pass is driven at the floor, not lobbed
+UPWARD to reach the floor: it needs +95.37 cm/s of vertical, and the throw is
+only downward above 735 cm/s. **A bounce pass is driven at the floor, not lobbed
 at it.** The speed was left at 600 rather than invented afresh. (The figures are
 computed over the flight's true span, 350.5 cm from a release at 111.7 cm, which
 is the floor point 4.00 m from her chest less the 49.5 cm the ball is already
