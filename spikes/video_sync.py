@@ -1,8 +1,21 @@
 """Find the clap offset between the two cameras of a filmed set.
 
-THIS INSTRUMENT FAILED ON SESSION 1.0 AND IS KEPT ANYWAY. There is no clap in
-that material, and all four methods below returned peak-to-sidelobe between
-1.01 and 1.35 — no peak, so no measurement. Its numbers are cited in
+THIS INSTRUMENT FAILED ON SESSION 1.0 AND IS KEPT ANYWAY. All four methods
+below returned peak-to-sidelobe between 1.01 and 1.35 — no peak, so no
+measurement.
+
+CORRECTED 2026-09-04: THIS DOCSTRING USED TO SAY "there is no clap in that
+material". THERE IS. The front recording carries two, at 5.800 s and 17.835 s,
+each a broadband spike over x26 within 70 ms of the athlete's wrists closing.
+What is true is narrower and is what this module actually measured: NO OFFSET
+BETWEEN THE TWO TRACKS REPRODUCES. The front's sharpest signature is a pair of
+spikes 0.175 s apart; the side's only gap under half a second is 0.235 s, and
+no lag within six seconds places the pair anywhere in it. So the failure is
+real and its cause is not the one recorded here — either the side microphone
+never registered the claps or the two files do not contain the same instant,
+and nothing here separates those. Refer to `spikes/video_clap_evidence.py`, the
+committed detector, and to "The alignment ranked a sync clap above every real
+catch" in `docs/KNOWN_ISSUES.md`. Its numbers are cited in
 `docs/VIDEO_CAPTURE_FINDINGS.md` as the evidence for the clap instruction, and
 a report citing a measurement nobody can rerun is worse than a failed script in
 the tree. Nothing downstream reads its output.

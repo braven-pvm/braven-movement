@@ -321,8 +321,12 @@ file is the boundary, and its shape is settled in
   derivations agree. Over a 29 s clip that is 11 ms, one third of a frame, so
   drift is ignorable at this length and is NOT ignorable over a ten minute
   shoot, where the same ratio is 240 ms.
-- **There is no clap.** The audio route failed honestly. The first shared event
-  is her first ball catch, about 9.25 s on the front and 8.25 s on the side.
+- **There IS a clap, and the audio route still failed.** Corrected 2026-09-04;
+  this line used to read "there is no clap". The front recording carries two, at
+  5.800 s and 17.835 s. No offset between the two tracks reproduces, so the
+  offset in use is still the first ball catch matched by eye — about 9.25 s on
+  the front and 8.25 s on the side. Refer to "The alignment ranked a sync clap
+  above every real catch" in `docs/KNOWN_ISSUES.md`.
 - The sample is a **self-fed toss and catch** and matches none of the eight
   drills.
 - `front 0.1` degrades from **25.700 s**: sharpness is 87 percent of baseline

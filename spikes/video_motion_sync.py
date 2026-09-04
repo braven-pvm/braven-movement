@@ -13,9 +13,15 @@ the correlation has many near-equal peaks. That holds whatever the signal is,
 sound or pixels, which is why both automatic routes failed the same way. A
 unique event is not a convenience for this method — it is a requirement.
 
-The audio route failed on session 1.0 and `video_sync.py` records why: there is
-no clap in the material, and four correlation methods returned four different
-answers with no peak worth the name.
+The audio route failed on session 1.0 and `video_sync.py` records why: four
+correlation methods returned four different answers with no peak worth the name.
+
+CORRECTED 2026-09-04, and the correction matters to this module's premise: THE
+MATERIAL DOES CONTAIN A CLAP — two, in the front view, at 5.800 s and 17.835 s.
+An earlier version of this sentence said it did not. The audio route failed
+because no offset reproduces between the two tracks, not because there was
+nothing to find, so a second instrument reading pixels is still the right
+answer and its reason is now the correct one.
 
 This is the second instrument, and it fails differently on purpose. It reads
 pixels rather than sound, so gym reverb, two microphone responses and two

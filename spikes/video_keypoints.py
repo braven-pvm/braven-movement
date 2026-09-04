@@ -63,6 +63,27 @@ SYNC = {
             "referenceViewSeconds": 9.25},
 }
 SYNC_UNCERTAINTY_SECONDS = 0.15
+
+# HOW THE OFFSET WAS ARRIVED AT, as a field of its own rather than a phrase
+# inside a sentence — the same reason a threshold declares its kind separately.
+# A consumer deciding whether to trust a pairing needs the grade, and a grade it
+# has to parse out of prose is not a field.
+METHOD_KINDS = ("clap", "eye", "correlation", "unknown")
+
+# WHAT THIS BLOCK MUST NEVER SAY. Until 2026-09-04 the writer stamped
+# "two visual events matched by eye; no clap exists in this material" into every
+# file it wrote. A clap WAS later found in the front recording of set 0.1, at
+# 5.800 s and 17.835 s, so the writer had been stamping a false claim into new
+# artefacts. Nothing in this function measures whether a clap exists, so nothing
+# in this function may say. The block states WHAT WAS DONE, never what was ruled
+# out.
+SYNC_METHOD_NOTE = (
+    "This block states what was DONE to arrive at the offset, and makes no "
+    "claim about what else the recordings contain. An earlier version asserted "
+    "that no clap existed in this material; two claps were later found in the "
+    "front view of set 0.1, at 5.800 s and 17.835 s. Refer to 'The alignment "
+    "ranked a sync clap above every real catch' in docs/KNOWN_ISSUES.md."
+)
 # The camera is picked up after this, measured per frame by the rendering lane.
 USABLE_TO = {("front", "0.1"): 25.7}
 
@@ -220,6 +241,26 @@ def landmark_edges(vision_module, names: list[str]) -> list[list[str]]:
     return edges
 
 
+def _sync_inputs(view: str, set_id: str) -> tuple[bool, dict]:
+    """What SYNC says about this view of this set.
+
+    ONE DEFINITION, because there are now two callers — `extract`, which writes
+    a new file, and `restamp`, which corrects an existing one. A re-stamp that
+    derived the offset by its own reading of SYNC would be a second definition
+    of the same thing, and the two would drift the first time either changed.
+    """
+    # A set whose offset nobody has measured says so, rather than carrying
+    # nulls that would break the assertion the schema tells consumers to run.
+    measured = set_id in SYNC
+    sync = dict(SYNC.get(set_id, {}))
+    if view == REFERENCE_VIEW:
+        # The reference view's offset is zero by definition, measured or not.
+        sync["offsetSecondsToReference"] = 0.0
+        if measured:
+            sync["thisViewSeconds"] = sync.get("referenceViewSeconds")
+    return measured, sync
+
+
 def _sync_block(view: str, set_id: str, measured: bool, sync: dict) -> dict:
     """The sync block, or an honest statement that there is not one.
 
@@ -234,6 +275,7 @@ def _sync_block(view: str, set_id: str, measured: bool, sync: dict) -> dict:
         "offsetSecondsToReference": sync.get("offsetSecondsToReference"),
     }
     if not measured:
+        block["methodKind"] = "unknown"
         block["note"] = (
             f"No offset has been measured for set {set_id}. Only set 0.1 has "
             "two matched events. Do not pair these views on a clock until one "
@@ -242,7 +284,9 @@ def _sync_block(view: str, set_id: str, measured: bool, sync: dict) -> dict:
         )
         return block
     block["offsetUncertaintySeconds"] = SYNC_UNCERTAINTY_SECONDS
-    block["method"] = "two visual events matched by eye; no clap exists in this material"
+    block["method"] = "two visual events matched by eye"
+    block["methodKind"] = "eye"
+    block["methodNote"] = SYNC_METHOD_NOTE
     block["worked"] = {
         "event": "first catch, seen in both views",
         "thisViewSeconds": sync.get("thisViewSeconds"),
@@ -334,15 +378,7 @@ def extract(view: str, set_id: str, git_commit: str, tree_clean: bool) -> dict:
         record["degraded"] = bool(share < 0.5 or luma < 40.0)
 
     seconds = time.perf_counter() - started
-    # A set whose offset nobody has measured says so, rather than carrying
-    # nulls that would break the assertion the schema tells consumers to run.
-    measured = set_id in SYNC
-    sync = dict(SYNC.get(set_id, {}))
-    if view == REFERENCE_VIEW:
-        # The reference view's offset is zero by definition, measured or not.
-        sync["offsetSecondsToReference"] = 0.0
-        if measured:
-            sync["thisViewSeconds"] = sync.get("referenceViewSeconds")
+    measured, sync = _sync_inputs(view, set_id)
 
     return {
         "schemaVersion": "video-keypoints-1",
@@ -397,12 +433,50 @@ def git_state() -> tuple[str, bool]:
     return commit, not dirty
 
 
+def restamp(path: Path) -> dict:
+    """Rewrite one keypoint file's sync block, touching nothing else.
+
+    EXTRACTION IS EXPENSIVE AND THE SYNC BLOCK IS NOT. Re-running MediaPipe over
+    866 frames to correct a sentence would also re-derive every landmark, which
+    changes the artefact far more than the fault being fixed. This reads the
+    file, replaces the sync block from the same source the writer uses, and
+    leaves every other key exactly as it was.
+    """
+    document = json.loads(path.read_text(encoding="utf-8"))
+    source = document.get("source") or {}
+    view = source.get("view")
+    set_id = source.get("setId")
+    if view is None or set_id is None:
+        raise ValueError(f"{path.name} has no source.view / source.setId")
+    before = document.get("sync")
+    document["sync"] = _sync_block(view, set_id, *_sync_inputs(view, set_id))
+    path.write_text(json.dumps(document, indent=1) + "\n", encoding="utf-8")
+    return {"path": path, "before": before, "after": document["sync"]}
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--view", choices=("front", "side"))
     parser.add_argument("--set", dest="set_id")
     parser.add_argument("--all", action="store_true")
+    parser.add_argument(
+        "--restamp", action="store_true",
+        help="rewrite the sync block of every keypoint file already in "
+             "poc-output, leaving all other keys untouched, and extract nothing")
     arguments = parser.parse_args(argv[1:])
+
+    if arguments.restamp:
+        files = sorted(OUTPUT.glob("keypoints-*.json"))
+        if not files:
+            print(f"no keypoint files in {OUTPUT}")
+            return 0
+        for path in files:
+            found = restamp(path)
+            was = (found["before"] or {}).get("method", "(none)")
+            now = found["after"].get("method", "(none)")
+            print(f"{path.name}" + "\n" + f"    was: {was}" + "\n" + f"    now: {now}  "
+                  f"[{found['after'].get('methodKind')}]")
+        return 0
 
     wanted = (
         [(v, s) for s in ("0.1", "0.2") for v in ("front", "side")]

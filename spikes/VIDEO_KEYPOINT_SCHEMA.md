@@ -97,7 +97,9 @@ is worse than a missing frame.
       "thisViewSeconds": 8.25,
       "referenceViewSeconds": 9.25
     },
-    "method": "two visual events matched by eye; no clap exists in this material"
+    "method": "two visual events matched by eye",
+    "methodKind": "eye",
+    "methodNote": "This block states what was DONE to arrive at the offset, and makes no claim about what else the recordings contain. …"
   },
 
   "generatedFrom": {
