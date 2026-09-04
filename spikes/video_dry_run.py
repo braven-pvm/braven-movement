@@ -112,6 +112,15 @@ MINIMUM_SEPARATION_DEGREES = 45.0
 # VIDEO_SPIKE_NOTES.md. Used to turn a sync error into millimetres.
 FAST_HAND_METRES_PER_SECOND = 2.0
 
+# THE OPEN QUESTIONS. These are not grading conditions and they must never be
+# mixed with them: a capture can be perfectly gradeable and still be unable to
+# answer a question the engine has not settled. They are asked separately and
+# they carry their own verdict.
+RELEASE_RAMP_SECONDS = 0.067
+RELEASE_RAMP_SAMPLES = 5
+RELEASE_FRAME_RATE = 120.0
+ADDRESSABLE_KEYFRAME_SECONDS = 1.0
+
 
 def reading(
     value, uncertainty, units: str, instrument: str, note: str | None = None
@@ -303,8 +312,8 @@ def reference_curve(evidence: dict, movement: str, name: str) -> tuple[list | No
 def judge_capture(evidence: dict, movement: str) -> list[dict]:
     """The conditions that belong to the CAPTURE, not to any one measure.
 
-    Five of them. They are asked once, because a second camera and a clap are
-    not properties of an elbow.
+    Six of them. They are asked once, because a second camera, a clap and a
+    ball in the picture are not properties of an elbow.
     """
     found = []
 
@@ -420,6 +429,101 @@ def judge_capture(evidence: dict, movement: str) -> list[dict]:
         "THE INSTRUMENT THAT DOES NOT EXIST: no ball detector is built, and "
         "the only instrument that has ever answered this is a person reading "
         "frame strips. Write ball-in-frame-<set>.json and it is read.",
+    ))
+    return found
+
+
+def judge_open_questions(evidence: dict, movement: str) -> list[dict]:
+    """Can this capture answer what the ENGINE cannot yet author?
+
+    SEPARATE FROM THE GRADING CONDITIONS ON PURPOSE, and the separation is the
+    point. `judge_capture` and `judge_measure` decide whether a number may be
+    shown to a coach. These decide whether the footage can settle a question
+    the model has left open. A capture can pass every grading condition and
+    fail every one of these, and that is not a contradiction: grading reads
+    angles at named phases, and these read a rate of change over a few frames.
+    Folding them into one verdict would fail gradeable footage for missing a
+    measurement nobody was grading.
+    """
+    found = []
+
+    # BOTH VIEWS, and the worse of the two. A hand speed read in one image is a
+    # PROJECTION and therefore a lower bound, exactly as the wrist reading is,
+    # so the measurement needs the pair. Reading only the front would also have
+    # missed the very fault that put the keyframe condition here: the ten-second
+    # keyframe interval of session 1.0 is on the SIDE file, and the front's is
+    # one second.
+    def reading_of(field, pick):
+        values = []
+        for view in ("front", "side"):
+            value = ((evidence.get(view) or {}).get("source") or {}).get(field)
+            if value is None:
+                return None
+            values.append(value)
+        return pick(values)
+
+    rate = reading_of("framesPerSecondMeasured", min)
+    found.append(condition(
+        "the release is resolved",
+        "Are there enough frames in the release to see the hand accelerate?",
+        rate, "frames per second", RELEASE_FRAME_RATE, "derived",
+        "the athlete's own ramp, measured on this footage: her wrist goes from "
+        f"0.7 to 6.3 cm per frame in {RELEASE_RAMP_SECONDS * 1000:.0f} ms at "
+        f"the rep 7 toss. {RELEASE_RAMP_SAMPLES} samples inside that ramp is a "
+        f"CHOSEN minimum and needs "
+        f"{RELEASE_RAMP_SAMPLES / RELEASE_RAMP_SECONDS:.0f} fps, so the next "
+        "standard rate above it. The engine's own claim is a difference "
+        "between two ADJACENT frames of a 60 fps track, so below 60 fps there "
+        "is no frame pair that corresponds to it at all.",
+        None if rate is None else rate >= RELEASE_FRAME_RATE,
+        "The engine's hands move 0.72 cm in the frame before release and "
+        "7.37 cm in the frame after, a factor of 10.2, so NOTHING DRIVES THE "
+        "BALL at the moment it leaves. Whether the carry should accelerate "
+        "before release is decided by this measurement and by nothing else "
+        "available. At 30 fps one frame spans both of the engine's, so the two "
+        "are averaged together and the step cannot be seen even in principle.",
+        "framesPerSecondMeasured in BOTH keypoint files' source blocks, "
+        "the SLOWER of the two; unmeasured unless both record it",
+    ))
+
+    keyframes = reading_of("keyframeIntervalSecondsMeasured", max)
+    found.append(condition(
+        "the release moment is addressable",
+        "Can a reader ask for the release frame and receive that frame?",
+        keyframes, "seconds", ADDRESSABLE_KEYFRAME_SECONDS, "chosen",
+        "one second, because that is what the front camera of session 1.0 "
+        "actually did and nothing about it caused trouble",
+        None if keyframes is None else keyframes <= ADDRESSABLE_KEYFRAME_SECONDS,
+        "SEPARATE FROM THE FRAME RATE, and it has already cost this project a "
+        "reading. The side file of session 1.0 carries THREE keyframes, at "
+        "0.000, 9.996 and 19.992 seconds. Any keyframe-snapping reader asked "
+        "for 16.93 on it lands at 9.996, and 9.996 is where repetition 2's "
+        "catch lives, so repetition 2's catch appeared under a repetition 7 "
+        "label. A capture can run at 240 fps and still put the one frame that "
+        "matters out of reach.",
+        "keyframeIntervalSecondsMeasured in BOTH source blocks, the LONGER "
+        "of the two, because one unreachable view is enough to lose the "
+        "frame. No tool in this repository records it yet, so this reads "
+        "unmeasured on every set until video_keypoints.py writes it",
+    ))
+
+    found.append(condition(
+        "the floor is in view",
+        "If the ball touches the floor, do both cameras see the contact?",
+        None, "cameras seeing the contact", None, "unavailable",
+        "THERE IS NO BAR TO SET. The engine has no floor, so no drill in the "
+        "library can declare that its ball bounces, and the gate cannot ask "
+        "the question of a capture at all.",
+        None,
+        "A released ball is ONE UNBROKEN PARABOLA in this engine. A bounce "
+        "pass cannot be represented today, so it cannot be graded and it "
+        "cannot be authored either. If the floor is ruled in, the rebound "
+        "ratio must be MEASURED from footage and never typed: ball height "
+        "before the floor contact and after it, at a known distance, in both "
+        "cameras. A typed ratio would be a number with no instrument behind "
+        "it, which is the shape of every figure this lane has had to withdraw.",
+        f"MovementDefinition for {movement} has no floor and no bounce, so "
+        "nothing reads this",
     ))
     return found
 
@@ -748,6 +852,15 @@ def render(document: dict) -> str:
               "an elbow.", ""]
     lines += table(document["capture"]) + [""]
 
+    opened = document.get("openQuestions")
+    if opened:
+        lines += ["## The open questions", "",
+                  "**"
+                  + ("This capture can answer them." if opened["canAnswer"]
+                     else "This capture cannot answer them.")
+                  + "**", "", opened["note"], ""]
+        lines += table(opened["conditions"]) + [""]
+
     measures = document.get("measures") or {}
     lines += [f"## The {len(measures)} measures this drill grades", "",
               document.get("measuresNote", ""), "",
@@ -838,36 +951,31 @@ def provenance(evidence: dict) -> dict:
     return found
 
 
-def main(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--set", dest="set_id", default="0.1")
-    parser.add_argument("--movement", default="netball_two_hand_snatch_pull_in")
-    parser.add_argument("--out", default=None)
-    arguments = parser.parse_args(argv[1:])
+def assemble(evidence: dict, set_id: str, movement: str) -> dict:
+    """The whole document, as a function of the evidence.
 
-    evidence = gather(arguments.set_id)
-    missing = missing_artefacts(evidence)
-    if missing:
-        raise SystemExit(
-            f"these artefacts are missing for set {arguments.set_id}: "
-            f"{', '.join(missing)}. Run video_keypoints.py, video_lift_3d.py, "
-            "video_elbow_curve.py and video_phase_align.py first.")
-
-    capture = judge_capture(evidence, arguments.movement)
+    SEPARATED FROM main() SO THE SEPARATION CAN BE TESTED. The grading verdict
+    is built from the capture conditions and the measure conditions and from
+    NOTHING ELSE; the open questions travel in their own block with their own
+    answer. That is an invariant rather than a habit, and while this assembly
+    lived inside main() no test could reach it to say so.
+    """
+    capture = judge_capture(evidence, movement)
+    open_questions = judge_open_questions(evidence, movement)
     measures = {
-        name: judge_measure(evidence, arguments.movement, name)
-        for name in graded_measures(arguments.movement)
+        name: judge_measure(evidence, movement, name)
+        for name in graded_measures(movement)
     }
     # THE MOVEMENT'S VERDICT IS EVERY CONDITION AT ONCE, capture-wide and
     # per-measure together, because a coach grading a drill needs all of its
     # checkpoints and a drill is not gradeable on three of four. A per-measure
     # verdict travels beside it so a reader can see WHICH measure blocks rather
-    # than only that something did.
+    # than only that something did. THE OPEN QUESTIONS ARE NOT IN IT.
     everything = capture + [row for rows in measures.values() for row in rows]
     document = {
         "schemaVersion": SCHEMA_VERSION,
-        "set": arguments.set_id,
-        "movement": arguments.movement,
+        "set": set_id,
+        "movement": movement,
         "verdict": verdict(everything),
         "capture": capture,
         "measures": {
@@ -886,7 +994,20 @@ def main(argv: list[str]) -> int:
             "conditions, because no measure can be shown on a capture that "
             "cannot carry a number at all."
         ),
-        "shape": shape_section(evidence, arguments.movement),
+        "openQuestions": {
+            "canAnswer": all(row["passes"] is True for row in open_questions),
+            "conditions": open_questions,
+            "note": (
+                "THESE DO NOT GATE GRADING and they are not part of the "
+                "verdict above. They ask a different question: can this "
+                "footage settle something the ENGINE has not settled? A "
+                "capture can grade every checkpoint cleanly and answer none "
+                "of these. They are here because a shoot is the only chance "
+                "to record them, and a question that is only written in a "
+                "document is a question nobody measures."
+            ),
+        },
+        "shape": shape_section(evidence, movement),
         "provenance": provenance(evidence),
         "provenanceNote": (
             "MORE THAN ONE BUILD MEETS HERE, and that is a property of the "
@@ -897,6 +1018,28 @@ def main(argv: list[str]) -> int:
         ),
         "generatedFrom": generated_from(),
     }
+    return document
+
+
+def main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--set", dest="set_id", default="0.1")
+    parser.add_argument("--movement", default="netball_two_hand_snatch_pull_in")
+    parser.add_argument("--out", default=None)
+    arguments = parser.parse_args(argv[1:])
+
+    evidence = gather(arguments.set_id)
+    missing = missing_artefacts(evidence)
+    if missing:
+        raise SystemExit(
+            f"these artefacts are missing for set {arguments.set_id}: "
+            f"{', '.join(missing)}. Run video_keypoints.py, video_lift_3d.py, "
+            "video_elbow_curve.py and video_phase_align.py first.")
+
+    document = assemble(evidence, arguments.set_id, arguments.movement)
+    capture = document["capture"]
+    open_questions = document["openQuestions"]["conditions"]
+    measures = document["measures"]
 
     where = Path(arguments.out) if arguments.out else (
         OUTPUT / f"dry-run-{arguments.set_id}.json")
@@ -913,9 +1056,15 @@ def main(argv: list[str]) -> int:
         mark = {True: "pass      ", False: "FAIL      ", None: "UNMEASURED"}[row["passes"]]
         value = "not read" if row["reading"] is None else f"{row['reading']}"
         print(f"    {mark}  {row['name']:28s} {value}")
+    print("\n  THE OPEN QUESTIONS (these do not gate grading)")
+    for row in open_questions:
+        mark = {True: "pass      ", False: "FAIL      ", None: "UNMEASURED"}[row["passes"]]
+        value = "not read" if row["reading"] is None else f"{row['reading']}"
+        print(f"    {mark}  {row['name']:28s} {value}")
     print(f"\n  THE {len(measures)} MEASURES THIS DRILL GRADES")
-    for name, rows in measures.items():
-        blocked = [row["name"] for row in rows if row["passes"] is not True]
+    for name, block in measures.items():
+        blocked = [row["name"] for row in block["conditions"]
+                   if row["passes"] is not True]
         print(f"    {name:32s} {video_measure(name).unit:12s} "
               f"{'clear' if not blocked else ', '.join(blocked)}")
     print(f"\n  {found['reason']}")
