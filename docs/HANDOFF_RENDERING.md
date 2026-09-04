@@ -188,9 +188,14 @@ and licenses ±45.8 on a finger.
 possession model.** Before contact the arm decides where the hand goes, so use
 `arms`. After contact the ball decides, so place the ball first from
 `ball.fromShouldersInArms`, then put each wrist on it with `grip`. Deriving a
-grip from shoulder directions closed the hands from 19.0 cm apart to 12.1 on a
-narrower pair of shoulders, and put both hands in front of the ball instead of
-either side of it.
+grip from shoulder directions closed the hands and put both hands in front of
+the ball instead of either side of it.
+
+> The figures 19.0 cm and 12.1 cm stood here, quoted from `_grip`'s docstring.
+> The movement lane could NOT confirm them on 2026-09-04, so they are
+> unattributed and are not cited until someone re-measures them. The rule they
+> illustrate is unaffected: a narrower pair of shoulders needs the hands to
+> open further, not the same amount, which is why the ball is placed first.
 
 The hand frame is built with the same formula `hand_basis` uses in
 `blender_mpfb_reference_catch.py`. Keep it that way. Both sides then agree

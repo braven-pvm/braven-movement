@@ -67,7 +67,7 @@ Two corrections this lane made to its own numbers, both kept on the record:
 `unavailable` and never as agreement, because the whole defect was a missing
 field behaving like a satisfied one.
 
-### What the fix does NOT remove: a 2.5 cm rest-pose mismatch
+### What the fix does NOT remove: a 2.5 cm rest-pose difference
 
 **A figure can pass the acceptance test and still be up to 2.5 cm out
 fore-and-aft. These are two different claims and the pack must not merge them.**
@@ -75,29 +75,85 @@ fore-and-aft. These are two different claims and the pack must not merge them.**
 The acceptance guard compares this rig's RENDERED girdle displacement against
 the TRANSMITTED one, inside this body. It proves the renderer applied what the
 solve sent. It does not prove the resulting pose matches the solve's athlete,
-because the two rigs' rest poses are not the same posture.
+because the two rigs' rest poses are not the same body in the same pose.
 
-    MHR rest shoulders, ahead of the root    -0.0648 torso lengths
-    MPFB rest shoulders, ahead of the pelvis -0.0062 torso lengths
-    mismatch                                  0.0586 torso lengths
-    on this rig                               2.507 cm
+**IT IS NOT A LANDMARK CONVENTION, AND THAT IS PROVEN.** A rigid shift of the
+origin moves every landmark by the same vector. Comparing the two rest poses in
+torso lengths, the fore-and-aft differences are:
 
-That is the 2.386 cm constant this lane measured and could not attribute. It is
-a landmark and rest-pose convention difference, it is bounded, and it is
-separate from the 8.5 cm of girdle variation the fix removes.
+    shoulder    -0.0586        neck    +0.0551
+    clavicle    +0.1197        head    +0.0392
 
-Two consequences a reader must have:
+A spread of 0.1783 torso lengths, 7.6 cm on this rig, with opposite signs. No
+translation produces that. The argument needs no correspondence between the two
+skeletons, which is why it holds despite everything below.
+
+**WHETHER IT IS POSTURE OR BUILD IS NOT SETTLED, and the pack does not claim
+posture.** The vertical differences grow steadily with height:
+
+    shoulder    -0.0021    clavicle    -0.0737
+    neck        -0.1481    head        -0.2047
+
+A pose does not lengthen a neck. That pattern is a body PROPORTION difference,
+and a proportion difference cannot be posed away. Posture is the more hopeful of
+the two readings and this data does not support choosing it.
+
+The clavicle is the largest single difference and it has not been examined. From
+the sternal end to the shoulder, the engine's clavicle sweeps 0.1928 torso
+lengths backward and this rig's sweeps 0.0145. The two chests are not laid out
+the same way.
+
+Consequences a reader must have:
 
 - On the calibration phase this rig's girdle moves **4.893 cm forward**. That
   follows the solve and is correct, given the transmitted displacement.
 - A residual fore-and-aft uncertainty of about **2.5 cm at every phase**
   remains. That is 2.5 times the one-centimetre rule and 23 percent of the
   ball's radius.
+- No figure is described as accurate to better than 2.5 cm in that axis.
 
-The uncertainty closes only when someone compares the two landmarks directly.
-Neither lane can do it alone: this rig has no `root` bone and the movement lane
-has no MPFB rig. Until then the number is recorded, not fixed, and no figure
-should be described as accurate to better than 2.5 cm in that axis.
+### The spine bones do not correspond by name
+
+Pairing `spine_03` with `c_spine3` would report 0.3681 torso lengths of
+difference and read as an enormous posture finding. It is a naming coincidence.
+By height the correspondence is off by one:
+
+    spine_03  0.4866  ->  c_spine2  0.4834     apart 0.0032
+    spine_02  0.2765  ->  c_spine1  0.2631     apart 0.0134
+    spine_01  0.1174  ->  c_spine0  0.0407     apart 0.0767
+    (none)                c_spine3  0.8547     no counterpart on this rig
+
+Reproduce with `python scripts/landmark_comparison.py`.
+
+### Figures in this pack that only this lane can check
+
+The independent reviewer could not test the MPFB-side numbers, so their inputs
+are here beside them. Each is one division or one subtraction.
+
+    0.9215      48.547 / 52.680        arm chain here over the engine's arm.
+                                       Used only to show the ARM divisor was
+                                       wrong; it is not used to place anything.
+    0.861484    42.7689 / 49.6456      rest torso here over the engine's. This
+                                       is the resolution scale.
+    -0.0062     -0.2648 cm / 42.7689   this rig's rest shoulder, fore-and-aft,
+                                       in torso lengths.
+    ~6 cm       48.8246 - 42.7681      why shoulder positions in METRES would
+                                       raise this rig's ball on every frame.
+    0.65 cm     42.7689 - 42.1153      the neutral move under the withdrawn
+                                       POSITION form. 42.1153 is 48.8867 x
+                                       0.861484.
+    4.893 cm    0.11440 x 42.7689      the calibration-phase move under the
+                                       ruled DISPLACEMENT form. 0.11440 is
+                                       (2.4622 + 3.2170) / 49.6456.
+    1.1 to      Bruce's three-axis     every phase resolved onto this rig's
+    5.8 cm      table x 0.861484,      span (0, 42.7681, -0.2648). The evidence
+                minus this rig's span  that POSITIONS cannot cross bodies.
+
+`2.23 cm` is not this lane's figure. It came from the movement lane, as the
+reading `chest_pass/ready` would have taken under an arm-length divisor.
+
+`0.8759` is not a number this lane has produced. If it is attributed here,
+someone must say where it was used before it is relied on.
 
 ## 3. The sheets, by build
 
