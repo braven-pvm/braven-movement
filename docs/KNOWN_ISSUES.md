@@ -3176,8 +3176,17 @@ Either the side camera's microphone never registered the claps — its strongest
 event is x24 against the front's x44, and it may be several metres away — or the
 two files do not contain the same instant. **The audio cannot separate those two
 readings**, and until a person does, the by-eye 1.0 s stands as the only measured
-offset. Refer to "A fifth and sixth instrument" in
-`docs/VIDEO_CAPTURE_FINDINGS.md`.
+offset.
+
+**AND A CORROBORATOR THIS LANE OFFERED IS WITHDRAWN.** A wrist-height scan was
+reported as peaking at −0.967 s, agreeing with the recorded −1.000. Three of its
+eight input moments had no provenance — they were picked inside annotated
+windows where no catch time was ever read — and removing them moves the peak to
++2.4167 s, a swing of 3.383 s. The reading was carried by the unprovenanced
+points and is withdrawn. Refer to "A fifth instrument, and a sixth that is
+withdrawn" in
+`docs/VIDEO_CAPTURE_FINDINGS.md`, where all eight moments are now named with
+their provenance.
 
 ### The instruction it produced
 

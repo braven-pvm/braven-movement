@@ -127,19 +127,53 @@ the applied value's own band and gave it a wider band than the record does,
 and the strips then read 0.95 to 1.00 at the cut moments — which agrees with
 the applied 1.0 and not with the 1.22.
 
-**A fifth and sixth instrument, 2026-09-04.** The side camera's audio cannot
+**A fifth instrument, and a sixth that is withdrawn, 2026-09-04.** The side camera's audio cannot
 sync anything: the front carries four sharp broadband spikes (x26 to x44 over
 their local floor) including a distinctive pair 0.175 s apart at 26.240 and
 26.415 s, and NO OFFSET places that pair anywhere in the side track, whose only
 gap under half a second is 0.235 s. A randomly generated side track matches the
 front's four spikes as well as the real one does in 12 per cent of trials, so
-the best alignment is not a reading. Separately, the athlete's wrist height
-scored against eight catch moments proved on frame strips peaks at **−0.967 s**,
-mean height 1.159 against a whole-clip mean of 0.650, with the recorded −1.000
-essentially at that peak. **The by-eye 1.0 s remains the only measured offset**,
-and the keypoint times it rests on are true container timestamps rather than a
-constant-rate multiply — checked against ffprobe to six decimals on the
-variable-rate side file.
+the best alignment is not a reading.
+
+**A SIXTH INSTRUMENT WAS TRIED AND IS WITHDRAWN, 2026-09-04.** It scored the
+athlete's wrist height in the side view at front catch moments plus an offset,
+and it reported a peak at −0.967 s that agreed with the recorded −1.000. **That
+agreement was an artefact of which moments went into it**, and the eight are
+named here so nobody has to take the list on trust:
+
+| moment | provenance |
+|---|---|
+| 9.175 s | rep01 catch, read by eye against the cut clip |
+| 11.200 s | rep 2 catch, annotation FRESH LOOK |
+| 16.900 s | rep 7 catch, annotation FRESH LOOK, 16.800–17.000 |
+| 20.000 s | rep09 release arrival, pace work |
+| 22.030 s | rep09 hold arrival, pace work |
+| 12.500 s | **NONE — a pick inside rep 3's window** |
+| 13.400 s | **NONE — a pick inside rep 4's window** |
+| 15.200 s | **NONE — a pick inside rep 6's window** |
+
+The last three were chosen by this lane inside annotated windows where no catch
+time was ever read, and an earlier version of this paragraph called all eight
+"proved on frame strips". Removing the three moves the answer:
+
+| moments | peak | mean side height |
+|---|---|---|
+| all eight | −0.9667 s | 1.159 |
+| **the five with provenance** | **+2.4167 s** | 1.215 |
+
+**A 3.383 s swing from three unprovenanced points is not a measurement**, so the
+reading is withdrawn rather than re-quoted on the five. On those five the
+recorded −1.000 scores 1.110 against the winner's 1.215.
+
+**One observation that is not a claim.** Three event-position readings now sit
+together: hands-together sequences at +2.442, wrist-height peak sequences at
++2.350, and this +2.417. All three locate events on a near-periodic signal and
+can therefore alias together, and the by-eye 1.0 s and the 0.95–1.00 strip
+readings point elsewhere. It is worth attention and it is not an offset.
+
+**The by-eye 1.0 s remains the only measured offset**, and the keypoint times it
+rests on are true container timestamps rather than a constant-rate multiply —
+checked against ffprobe to six decimals on the variable-rate side file.
 What it says is that **the ±0.25 s band is not conservative**, and that a
 number sitting at the edge of its own uncertainty is the shape of a bias rather
 than of noise. The clap is what settles it, which is why it is instruction 1.
