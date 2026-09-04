@@ -67,9 +67,18 @@ what says so. **THIS TABLE IS THE RECORD.** The file the numbers came from,
 `spikes/poc-output/video/clap-offsets.json`, is untracked output that exists in
 one worktree and carries no commit, script, sample rate or timestamp; it is not
 on main or on any branch. The transcription below is what survives, so treat it
-as the source. `spikes/video_sync.py` produced them and **it resamples both
-tracks to a common 48 kHz** through ffmpeg before correlating, so the two files'
-differing rates are not the reason the methods failed.
+as the source.
+
+**WHICH COMMIT IS THE RECORD: `e6a8148`**, "docs: what the proper shoot must do
+differently", which first transcribed these eight numbers. Confirm it with
+
+```bash
+git log -S"17962" --oneline -- docs/VIDEO_CAPTURE_FINDINGS.md
+```
+
+`spikes/video_sync.py` produced the numbers and **it resamples both tracks to a
+common 48 kHz** through ffmpeg before correlating, so the two files' differing
+rates are not the reason the methods failed.
 
 | method | set 0.1 | set 0.2 |
 |---|---|---|

@@ -3165,6 +3165,13 @@ randomly generated side track of 17 spikes matches the front's four as well as
 the real one does in **12 per cent** of 2000 trials, so the best alignment is
 not a reading.
 
+**THE NULL IS REPRODUCIBLE.** Python `random.seed(0)`, 2000 trials; each trial
+draws 17 times uniformly from 0 to 28 s as a fake side track, scans offsets from
+−6 to +6 s in 0.02 s steps, and counts a front spike as matched when it lands
+within 50 ms of a fake spike. The real side track scores 3 of 4; 12 per cent of
+the fake ones score 3 or more. The front's four spikes are 5.800, 17.835, 26.240
+and 26.415 s.
+
 Either the side camera's microphone never registered the claps — its strongest
 event is x24 against the front's x44, and it may be several metres away — or the
 two files do not contain the same instant. **The audio cannot separate those two
