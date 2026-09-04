@@ -8,38 +8,52 @@ grading. An entry belongs to whichever lane can fix it.
 
 ## The ball is anchored to a landmark the job does not transmit
 
-`pose_phase` places the ball at `shoulders + fromShouldersInArms * arm`, where
-`shoulders` is the midpoint of this rig's two upper-arm heads. Every other term
-on that line comes from the job. The shoulder positions do not. The ball's
-position error is therefore the shoulder midpoint's error, one for one, with
-nothing to attenuate it.
+`pose_phase` places the ball at `shoulders + fromShouldersInArms * arm`. Every
+term on that line comes from the job except `shoulders`, which this rig
+supplies itself. The ball's position error is therefore the shoulder midpoint's
+error, one for one, with nothing to attenuate it.
 
 The movement renderer never poses a clavicle. Measured on 2026-09-04, this rig
-holds its shoulder midpoint 42.7681 cm above the pelvis on all 18 graded phases
-of four drills, with a range of 0.0000 cm. The engine's midpoint travels 7.40 cm
-inside the overhead pass alone, 4.22 cm inside `hooks_jump_pull_in`, 3.81 cm
-inside `deflect_high` and 1.96 cm inside the chest pass.
+holds its shoulder midpoint 42.7681 cm above the pelvis on all 43 graded phases
+of all 10 drills, with a range of 0.0000 cm. The engine's midpoint moves on
+every drill. Against a one-centimetre rule, 15 of the 43 figures pass and 28
+fail. 19 of the failures are HELD phases, where the ball is in her hands and a
+coach reads a cue from it. Every one of the 10 drills has at least one failing
+phase. The worst is `overhead_pass/lift` at 8.451 cm, which is 77 percent of
+the ball's radius.
 
-Against a one-centimetre rule, 3 of those 18 figures pass. The three that pass
-are the three neutral-girdle phases. That is the evidence that this rig is
-calibrated to the engine's rest pose, because a wrong calibration point would
-put the passes somewhere else. The worst held phase is `overhead_pass/lift` at
-7.41 cm, which is 67 percent of the ball's radius.
+MEASURE ALL THREE AXES. The first version of this entry reported 7.41 cm at
+`overhead_pass/lift` from a vertical-only column and understated the error by a
+whole tolerance. The true figure is 8.451 cm, because the midpoint also travels
+4.08 cm fore-and-aft. `bounce_pass` is the sharper case: its vertical barely
+changes, so a vertical-only column would have called it the cleanest drill in
+the library, and it is not.
 
-A width instrument cannot find this defect. A symmetric change of shoulder width
-does not move the midpoint at all. The engine's width range on the overhead pass
-is 5.63 cm while its vertical travel is 7.40 cm, in a different axis. Six drills
-are still unmeasured for this reason. They were set aside on a width range, so
-they are not yet known to be clean.
+A width instrument is worse still. A symmetric change of shoulder width does
+not move the midpoint at all, and `hooks_outside_hand` is the only drill with a
+real across-body component, 1.776 cm at `facing_away`, because she is turned.
 
-The published numbers are a LOWER BOUND. The engine's column is vertical only. A
-fore-and-aft shift of the midpoint moves the ball just as far and no instrument
-here reads it.
+The three phases that pass exactly are the neutral-girdle phases. That is the
+evidence that this rig is calibrated to the engine's rest pose, because a wrong
+calibration point would put the passes somewhere else.
 
-The fix is a contract change. The job will carry both shoulder positions per
-frame. `girdle_agreement.py` holds the consumer guard, and it refuses a frame
-whose transmitted positions are absent, because a frame nobody can check must
-not read the same as a frame that passed.
+`bounce_pass` has five graded phases in the engine and NO JOB FILE in
+`spikes/poc-output`. This lane cannot render it. A drill the renderer never
+sees is not a passing drill.
+
+THE FIX MUST BE TRANSMITTED IN THE JOB'S OWN UNITS. `arms.reachFraction`,
+`ball.fromShouldersInArms` and `grip.wristFromSurfaceInArms` are all in arm
+lengths, and `ball.radiusM` is the only absolute length in the file, because a
+real netball is one physical size on every body. A shoulder position has the
+opposite property. Shoulder positions sent in metres would place this rig's
+ball about 6 cm too high on every frame, including the 15 that pass today.
+Send them relative to the pelvis, in arm lengths.
+
+`girdle_agreement.py` holds the consumer guard. It refuses a frame whose
+transmitted positions are absent, because a frame nobody can check must not
+read the same as a frame that passed. On this rig the clavicle tail and the
+upper-arm bone head are the same point to 0.000000 mm, so the bone head is this
+rig's own shoulder joint rather than an offset from it.
 
 Do not add a scapula motion to the renderer to close this. A pose that no solve
 produced must not reach a figure.
