@@ -34,6 +34,32 @@ AGREES = "agrees"
 DISAGREES = "disagrees"
 
 
+# THIS RIG'S REST TORSO, the divisor for a transmitted offset. It is the
+# MAGNITUDE |rest shoulder midpoint - rest pelvis|, 42.7689 cm. The number this
+# lane published first, 42.7681, is the VERTICAL COMPONENT of the same span.
+# They agree to 0.0008 cm here only because this torso is almost purely
+# vertical at rest. On another body they need not, so the divisor is the
+# magnitude and never the component.
+REST_TORSO_M = 0.427689
+
+
+def resolve(offset, pelvis, rest_torso: float = REST_TORSO_M):
+    """Put a transmitted, torso-normalised offset onto THIS body.
+
+    The job sends the shoulders relative to the pelvis in TORSO LENGTHS, so a
+    consumer multiplies by its own rest torso. Arm lengths were proposed first
+    and refuted by measurement: a shoulder-above-pelvis distance is a torso
+    quantity, and the two rigs' arm-to-torso ratios differ by about 5 percent,
+    which would have failed the rule at the neutral phase the fix exists to
+    protect.
+
+    Metres would be worse still. Every length in the job is normalised except
+    `ball.radiusM`, which is absolute because a real netball is one physical
+    size on every body. A shoulder position is the opposite.
+    """
+    return tuple(p + o * rest_torso for p, o in zip(pelvis, offset))
+
+
 def midpoint(left, right):
     """The point the ball is placed from."""
     return tuple((a + b) / 2.0 for a, b in zip(left, right))
@@ -41,6 +67,11 @@ def midpoint(left, right):
 
 def agreement(rendered, transmitted, tolerance: float = TOLERANCE_M) -> dict:
     """Compare a rendered midpoint against the transmitted one.
+
+    BOTH POINTS MUST BE ON THE SAME BODY. Pass the transmitted offset through
+    `resolve` first. Comparing this rig's midpoint against another body's
+    absolute position can never read zero, because the bodies differ, and a
+    guard that can never pass is a guard that gets switched off.
 
     `transmitted` of None means the job did not carry it. That is reported as
     UNAVAILABLE and never as agreement: a frame nobody could check must not

@@ -131,3 +131,65 @@ class ToleranceTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ResolveTest(unittest.TestCase):
+    """The transmitted offset is in TORSO lengths, and lands on this body."""
+
+    PELVIS = (0.0, -0.0202, 0.914878)
+    ENGINE_REST_TORSO = 0.496456
+
+    def test_a_transmitted_offset_lands_on_this_body(self):
+        """The worked example from the ruling: 48.8867 on him is 42.114 here.
+
+        His neutral girdle sits 1.53 percent compressed from his own rest, and
+        reproducing that compression on this body is the entire point.
+        """
+        from girdle_agreement import REST_TORSO_M, resolve
+
+        engine_neutral = 0.488867
+        offset = (0.0, 0.0, engine_neutral / self.ENGINE_REST_TORSO)
+
+        landed = resolve(offset, (0.0, 0.0, 0.0), REST_TORSO_M)
+
+        # 11 microns from the ruling's quoted 42.114 cm. That residue is the
+        # rounding of the QUOTED inputs, which carry six significant figures,
+        # and it is LARGER than this guard's 1e-5 m tolerance. So the guard
+        # must run against the transmitted values themselves and never against
+        # numbers re-derived from a quoted table.
+        self.assertLess(abs(landed[2] - 0.42114), 2e-5)
+
+    def test_an_ARM_divisor_gives_a_different_answer(self):
+        """Arm lengths were proposed by this lane and refuted by measurement.
+
+        The test keeps the refutation, because the wrong divisor is a silent
+        error: it returns a number, and the number is wrong by centimetres.
+        """
+        from girdle_agreement import REST_TORSO_M, resolve
+
+        offset = (0.0, 0.0, 0.488867 / self.ENGINE_REST_TORSO)
+
+        by_torso = resolve(offset, (0.0, 0.0, 0.0), REST_TORSO_M)
+        by_arm = resolve(offset, (0.0, 0.0, 0.0), 0.48547)
+
+        self.assertGreater(abs(by_arm[2] - by_torso[2]), 0.02)
+
+    def test_resolving_then_comparing_reads_agreement(self):
+        """The round trip the acceptance test runs, and it must reach zero."""
+        from girdle_agreement import REST_TORSO_M, agreement, resolve
+
+        offset = (0.01, -0.02, 0.98)
+        landed = resolve(offset, self.PELVIS, REST_TORSO_M)
+
+        self.assertEqual(AGREES, agreement(landed, landed)["verdict"])
+
+    def test_the_divisor_is_the_MAGNITUDE_and_not_the_vertical(self):
+        """42.7689 is the span. 42.7681 is its vertical component.
+
+        This lane published the component first. They agree to 8 microns on
+        this rig only because its rest torso is almost purely vertical.
+        """
+        from girdle_agreement import REST_TORSO_M
+
+        self.assertAlmostEqual(0.427689, REST_TORSO_M, places=6)
+        self.assertNotAlmostEqual(0.427681, REST_TORSO_M, places=6)
