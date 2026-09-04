@@ -101,10 +101,15 @@ FIELD = "shoulderShiftFromRestInTorsos"
 # this guard PASSED it and the swap and side guards caught it instead — a guard
 # whose own docstring cites a number it cannot fail on.
 #
-# Measured, all four: the largest TRUE shift across the library is 0.3932 torso
-# lengths, on the turned drill. World-relative reads 0.6239, a torso-normalised
-# POSITION about 0.98, and metres about 1.3 in the vertical. 0.5 is the only
-# round value above the first and below the other three.
+# Measured, all four, on the twelve-drill library: the largest TRUE shift is
+# 0.3932 torso lengths, on `hooks_outside_hand`, the turned drill. World-
+# relative reads 0.6239, a torso-normalised POSITION about 0.98, and metres
+# about 1.3 in the vertical. 0.5 is the only round value above the first and
+# below the other three.
+#
+# The twelfth drill did not move the maximum. `netball_one_hand_high_pass`
+# reaches 0.1435, which is the ninth-largest of the twelve, so the margin under
+# 0.5 is the turned drill's and not the library's average.
 LOOKS_ABSOLUTE_TORSOS = 0.5
 
 # A FLOOR ON THE COVER, NOT A TOTAL, and it replaces a total that fired on the

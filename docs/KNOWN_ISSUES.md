@@ -2757,6 +2757,41 @@ wrists to 12.1 and put both hands in front of the ball. The fix was to place the
 ball first and the hands on it. **So the hands became anchored to the ball, and
 the ball stayed anchored to shoulders nobody sent.**
 
+### Two guards of this field were measured on eleven drills and spent on twelve
+
+Both were found on 2026-09-04, when `netball_one_hand_high_pass` merged and the
+suite was run on the merged tree. Neither is a defect in that drill, and the
+field itself was untouched by both.
+
+**A COVERAGE GUARD THAT COUNTED INSTEAD OF COVERING.** The anchor check ended
+with `assertEqual(checked, 1084)`, written to prove it reads the whole library
+rather than a sample. It read `1180 != 1084` the moment a 96-frame drill
+arrived — a red suite caused by a correct new drill and by the guard. **Any new
+drill would have fired it**, so it was a tripwire on library growth wearing a
+coverage guard's name. It now takes its population from `library()` and each
+drill's span from its own clip, and holds a FLOOR rather than a total: the
+drills covered must equal the library's list, each drill's frames must be
+exactly `range(0, its clip length)`, and the cover must not shrink below what
+the field was proved on. A drill's author satisfies it by adding the drill.
+
+**A ROUNDING BOUND WITH LESS MARGIN THAN IT LOOKED.** The end-to-end ball check
+first shipped against one unit in the last place, 1e-6 torso lengths, and
+passed at 9.2583e-07 — 8 per cent to spare. On twelve drills it reads
+**9.3398e-07**. One drill consumed a tenth of the remaining margin, so the
+library sat a few drills from a red suite with nothing wrong in it.
+
+The correct bound is not one unit and never was. That check composes **two
+roundings in two different units** — the girdle shift in torso lengths and
+`fromShouldersInArms` in arm lengths — so its exact per-coordinate maximum is
+`0.5e-6 x (1 + arm / torso) = 1.031e-6` torsos on this athlete. The measured
+worst passed one unit by alignment, not by margin. The guard now holds 2e-6 as
+a stated ceiling above that derivation.
+
+**Both are the same shape as the rest of this ledger**: a quantity measured in
+one regime and spent in another. Here the regime is the library itself — a
+count and a bound both measured on eleven drills and spent on every drill that
+would ever be added.
+
 ### A residual this does NOT fix, bounded and left open
 
 The two rigs' rest poses are not quite the same posture. MHR's rest shoulders
