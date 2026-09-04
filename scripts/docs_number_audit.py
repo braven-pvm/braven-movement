@@ -29,6 +29,14 @@ HEADING = re.compile(r"^#{1,6}\s+(.*)")
 # A bare `1.0` inside a version string or a schema number is not a measurement.
 NOISE = re.compile(r"schemaVersion|version|python|blender|\bv\d")
 
+# NOR IS A NUMBER INSIDE A FILE NAME. `elbow-curve-0.1.json` was reported as
+# an unattributed measurement of 0.1 and would have been sent to a lane to
+# refresh. A number in an inline code span carrying a path separator or a file
+# extension is an identifier, so the span is removed before the numbers are
+# read. The rule is narrow on purpose: a plain number in backticks is still a
+# measurement and is still reported.
+CODE_PATH = re.compile(r"`[^`]*[/\][^`]*`|`[^`]*\.[A-Za-z]{2,5}`")
+
 # THE ONLY ROWS WORTH LISTING ARE THE ONES A RECEIPT CAN ANSWER. Extracting
 # every number in the docs yields 1104 lines, which is not an instrument. These
 # are the quantities the render receipts actually carry, so a row matching one
@@ -125,7 +133,7 @@ def rows_for(path: Path):
             build = found[0]
         if NOISE.search(line):
             continue
-        numbers = NUMBER.findall(line)
+        numbers = NUMBER.findall(CODE_PATH.sub("`identifier`", line))
         if not numbers:
             continue
         lowered = line.lower()
@@ -187,6 +195,12 @@ def main() -> None:
           f"build, {total - attributed} with no build named.")
     print(f"{lower} touch the lower body and must not be refreshed into a "
           f"graded value.")
+    print()
+    print("THE RECEIPT FIELD NAMES A QUANTITY, NOT A POSE. `DESIGN.md:254` quotes the")
+    print("elbows 27.3 cm apart, and that is the REFERENCE CATCH measured against")
+    print("photographs, not a drill phase. The movement receipts hold the same quantity")
+    print("from a different instrument, and refreshing one with the other would replace a")
+    print("reference-pose number with a drill-phase number and call it an update.")
     print()
     print("A row with NO BUILD NAMED is the worse case. The number cannot be "
           "checked against")
