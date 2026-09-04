@@ -205,7 +205,7 @@ and it leads with the verdict rather than burying it under evidence.
 }
 ```
 
-### The twelve conditions, in two groups
+### The twelve grading conditions, in two groups
 
 **Six belong to the CAPTURE**, asked once. A second camera, a clap and a ball
 in the picture are not properties of an elbow.
@@ -245,6 +245,57 @@ three checkpoints of four.
 **Blockers are deduplicated and counted.** The same condition is now asked of
 every measure, so `blockedBy` reads `the units agree (x4)` rather than naming
 it four times in the one sentence a reader is most likely to read.
+
+### The three open questions, in a group of their own
+
+**THEY DO NOT GATE GRADING, and the separation is the point.** The twelve above
+decide whether a number may be put in front of a coach. These decide whether
+the footage can settle something the ENGINE has not settled. A capture can grade
+every checkpoint cleanly and answer none of these, and that is not a
+contradiction: grading reads angles at named phases, and these read a rate of
+change across a few frames. Folding them into one verdict would fail gradeable
+footage for missing a measurement nobody was grading.
+
+They carry their own answer in `openQuestions.canAnswer`. `assemble()` exists so
+that a test can prove the grading verdict is built from the capture conditions
+and the measure conditions and from nothing else.
+
+| condition | bar | kind | on session 1.0 |
+|---|---|---|---|
+| the release is resolved | 120 fps | derived | **FAILS**, it is 30 |
+| the release moment is addressable | 1 second | chosen | UNMEASURED, nothing writes it |
+| the floor is in view | none | unavailable | CANNOT BE ASKED, the engine has no floor |
+
+`openQuestions.canAnswer` counts only the rows that CAN be asked. A row whose
+threshold kind is `unavailable` has no bar and can never pass, so counting it
+made the field a constant false and the report told a perfect 240 fps capture
+that it could answer nothing. Those rows are named in
+`openQuestions.cannotBeAsked` instead, so they are separated from a capture's
+failure rather than dropped.
+
+**BOTH VIEWS, and the worse of the two.** The frame rate takes the SLOWER
+camera, because a hand speed read in one image is a projection and therefore a
+lower bound, so the measurement needs the pair. The keyframe interval takes the
+LONGER, because one unreachable view is enough to lose the frame. Session 1.0 is
+exactly a case where they differ: the front keyframes every second and the side
+every ten, and the fault was on the side, so a condition reading only the front
+would have missed the reading it exists for. If either view fails to record the
+field, the condition is UNMEASURED rather than judged on one camera.
+
+**Where the 120 comes from.** Measured on session 1.0: at the rep 7 toss the
+athlete's hands go from 0.74 to 6.34 cm per frame across 67 ms. That pair is the
+MEAN OF THE TWO WRISTS and neither wrist alone reads it — the left runs 1.09 to
+7.75 and the right 0.38 to 4.94. Five samples
+inside that ramp is a CHOSEN minimum and needs 75 fps, so the next standard rate
+above it. The engine's own claim — 0.72 cm in the frame before release against
+7.37 cm in the frame after — is a difference between two ADJACENT frames of a
+60 fps track, so below 60 fps no frame pair corresponds to it at all.
+
+**Why `the floor is in view` has no bar.** The engine has no floor. A released
+ball is one unbroken parabola, so no drill can declare that its ball bounces and
+the gate cannot ask the question of a capture. The threshold kind `unavailable`
+says that out loud rather than letting silence pass for a pass. If the floor is
+ruled in, the rebound ratio must be MEASURED from footage and never typed.
 
 ### What a consumer may and may not assume
 
