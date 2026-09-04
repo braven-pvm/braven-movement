@@ -352,9 +352,12 @@ about all three passes, recorded so it is not rediscovered per drill. **No drill
 is retimed for it**: whether a release clip must contain the full flight is a
 contract question, not a movement one.
 
-**The numbers.** All three passes release at phase 0.80 of a 1.60 s clip, which
-leaves **0.32 s of flight** in the last 19 frames. Measured: the frame at which
-each ball first reaches its own launch target, against a last frame of 95.
+**The numbers.** All three passes release at **frame 76 of 96**, phase 0.80 in
+the definition and `hit` 0.7920 in the exported clip, which leaves **19
+intervals at 60 frames per second, frame 76 to frame 95 = 0.3167 s of flight**.
+An earlier version of this line said 0.32 s "in the last 19 frames", which
+states one convention and counts in another. Measured: the frame at which each
+ball first reaches its own launch target, against a last frame of 95.
 
 | drill | reaches its target | verdict |
 |---|---|---|
