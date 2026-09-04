@@ -84,12 +84,16 @@ Court (5-7m)", so **the same number is a flat pass at the near end of the stated
 range and a lob at the far end**, with nothing in any file saying so. Measured
 with `ball_track.solve_launch`. Refer to `docs/LOB_AUTHORING_BRIEF.md`.
 
-**On a bounce pass it throws the ball UPWARD at the floor.** Measured on
-`32663a9` while authoring `netball_bounce_pass`: release height 142.4 cm at the
-ball centre, floor point 4.00 m ahead, which is 1 m short of a receiver at the
-manual's 5 m lower bound. At 600 cm/s the solved vertical is **+159.5 cm/s** —
-the ball rises before it falls. A free fall from that release takes 0.477 s, so
-the throw is only downward above **838 cm/s**, and 600 is 0.72 of that.
+**On a bounce pass it throws the ball UPWARD at the floor.** Measured while
+authoring `netball_bounce_pass`, and CORRECTED: a first version of this entry
+used the wrong release height and the wrong span. The release is at **111.7 cm**
+at the ball centre — 142.4 is the CHEST pass's — and the floor point is 4.00 m
+from her CHEST, which is **350.5 cm from the release**, not 400.0.
+
+Recomputed on the true geometry: at 600 cm/s the solved vertical is
+**+95.32 cm/s**, so the ball rises to 116.3 cm before it falls. A free fall from
+111.7 cm takes 0.477 s, so the throw is only downward above **734 cm/s**, and
+600 is **0.82** of that.
 
 **A bounce pass is driven at the floor, not lobbed at it.** This is the most
 concrete of the constant's faces so far: the other two are arguable readings of

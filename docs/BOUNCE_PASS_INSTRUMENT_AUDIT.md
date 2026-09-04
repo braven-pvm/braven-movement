@@ -57,28 +57,38 @@ ground, bounce, rebound and restitution; the only hits are a horizontal
 projection in `incoming_speed_cm` and the foot-height code, neither of which
 touches the ball.
 
-**Measured.** A launch aimed at a floor point 4.00 m ahead of a release at
-142.4 cm, at the library's 600 cm/s, solved by `ball_track.solve_launch` and
-integrated with the engine's own formula:
+**THE ORIGIN OF EVERY SPAN BELOW, stated once because a first draft of this
+document got it wrong.** The ball file aims its floor point **4.00 m from her
+CHEST**, which is where the stance frame is anchored and where the drill's own
+geometry is measured from: a receiver 5 m from the passer, the bounce 1 m short
+of her. The ball does not leave from her chest. It leaves 49.5 cm in front of
+it, so **the flight's own span is 350.5 cm, not 400.0**. Every figure here is
+computed on 350.5. A first draft used 400.0 and every flight number in this pack
+inherited it.
 
-| t (s) | ball height (cm) | ahead (cm) |
+**Measured.** A launch aimed at that floor point, released at 111.7 cm and
+49.5 cm ahead of her chest, at the library's 600 cm/s, solved by
+`ball_track.solve_launch` and integrated with the engine's own formula:
+
+| t (s) | ball height (cm) | ahead of her chest (cm) |
 |---|---|---|
-| 0.00 | 142.4 | 46.3 |
-| 0.30 | 132.3 | 226.3 |
-| 0.50 | 76.5 | 346.3 |
-| 0.60 | 33.9 | 406.3 |
-| **0.70** | **−18.6** | 466.3 |
-| 1.00 | −234.7 | 646.3 |
-| 1.50 | −791.1 | 946.3 |
+| 0.00 | 111.7 | 49.5 |
+| 0.20 | 111.1 | 169.5 |
+| 0.40 | 71.3 | 289.5 |
+| 0.50 | 36.7 | 349.5 |
+| **0.60** | **−7.7** | 409.5 |
+| 1.00 | −283.5 | 649.5 |
+| 1.50 | −848.9 | 949.5 |
 
-**The ball reaches the ground at about 0.67 s and keeps falling. By 1.5 s it is
-7.9 m below the court.** Nothing stops it and nothing reports it.
+**The ball reaches the ground at 0.584 s, exactly 400.0 cm from her chest, and
+keeps falling. By 1.5 s it is 8.5 m below the court.** The aim is right; nothing
+stops the ball once it gets there, and nothing reports it.
 
-**And the clip is too short to hold the bounce anyway.** On the two passes
-already authored the release is at phase 0.80 of a 1.60 s clip, which leaves
-**0.32 s of flight**. The ball reaches the floor at 0.67 s, **2.1 times longer
-than the clip has left**. So even with a floor, the bounce would happen after
-the last frame, and the clip a board plays would show a ball still descending.
+**And the clip is too short to hold the bounce.** This drill releases at phase
+0.80 of a 1.60 s clip, which leaves **0.32 s of flight**. The floor is reached
+at 0.584 s, **1.83 times longer than the clip has left, short by 0.264 s**. So
+even with a floor, the bounce would happen after the last frame, and the clip a
+board plays would show a ball still descending.
 
 **A bounce pass therefore needs two things this engine does not have**: a floor
 the ball reacts to, and a longer clip or an earlier release. Both are engine and
@@ -101,7 +111,7 @@ Nine measures, eight of them angles.
 | 2b. "with wrist and hands pass the ball" | **YES.** `leftElbowFlexionDegrees`. `netball_overhead_pass` grades this exact cue. | gradeable |
 | 3. "Keep hand behind the ball" | **REPORT ONLY.** `spikes/hand_orientation.py` reports `thumbToBallDegrees`, `thumbUpDegrees` and `fingerUpDegrees` into every receipt and declares itself report-only. It is absent from `MEASURE_UNITS`, so no checkpoint can read it. | cannot grade |
 | 4. "Bounce ball approximately 1m in front of receiver" | **NONE, TWICE OVER.** There is no floor for the ball to strike, so the event does not exist; and there is no measure of a position on the court, so it could not be read if it did. | cannot grade, cannot represent |
-| 5. "Keep ball low" | **NONE.** The ball's height through its flight has no measure. This is the height row already open in `docs/KNOWN_ISSUES.md`, "No units-correct distance measures, and three cues already want them". | cannot grade |
+| 5. "Keep ball low" | **NONE.** The ball's height through its flight has no measure. This is the height row already open in `docs/KNOWN_ISSUES.md`, "No units-correct distance measures, and five cues already want them". | cannot grade |
 
 **Two of eight cue parts are gradeable. One is report-only. Five have no
 instrument, and one of those five has no physics either.**
