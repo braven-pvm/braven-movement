@@ -27,9 +27,9 @@ torso MAGNITUDE, |rest shoulder midpoint - rest pelvis| = 42.7689 cm.
 import sys
 from pathlib import Path
 
-REPO = Path(
-    "F:/Repositories/braven-movement/.claude/worktrees/zealous-tereshkova-c7f926"
-)
+# THE REPOSITORY THIS FILE IS IN, not a path typed from one session.
+# This was hard-coded to a worktree that may be at any commit or gone.
+REPO = Path(__file__).resolve().parents[1]
 for extra in (REPO, REPO / "spikes"):
     if str(extra) not in sys.path:
         sys.path.insert(0, str(extra))

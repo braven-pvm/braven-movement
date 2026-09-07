@@ -50,6 +50,13 @@ the other body's geometry enters.
     worst remaining      hooks_outside_hand/facing_away   20.45 mm
     the other failure    hooks_outside_hand/contact       11.60 mm
 
+NO PRE-FIX RECEIPTS EXIST, so the BEFORE row is DERIVED from the shipped ones
+and not measured from a run. With the girdle at rest the midpoint sat at its
+rest position, so the error was the mean transmitted shift resolved on this
+body: `|mean(shift.l, shift.r)| * restTorsoM`, both of which every phase
+carries. It runs from 33.19 mm at `bounce_pass/release` to 64.05 mm at
+`deflect_high/ready`, so none of the 48 was inside the rule.
+
 Both failures are the ONE drill where she is turned, which is the library's only
 drill with a real across-body girdle component. On a symmetric drill the two
 shoulders miss outward along their own clavicles and those errors cancel in the
@@ -62,11 +69,17 @@ Reproduce from the receipts: every phase carries `girdle.ballAnchorErrorMm`.
 **A shoulder-width reading on these figures is a reading of THE RIG, not of the
 solve.** A coach's mark on width lands on the athlete model.
 
-    girdle width the solve asks   290 to 339 mm
-    girdle width rendered         277 to 291 mm
+    girdle width the solve asks   290.4 to 339.4 mm
+    girdle width rendered         277.4 to 295.8 mm
     narrower by, median            43.98 mm
     narrower by, worst             62.01 mm   hooks_outside_hand/facing_away
-    wider by, on two phases         1.06 mm   overhead_pass/lift
+    wider by, two phases            1.06 mm   overhead_pass/lift
+                                    0.16 mm   overhead_pass/step
+
+An earlier draft of this table said the rendered width ran "277 to 291 mm". It
+does not: 25 of the 48 phases exceed 291, the widest being
+`bounce_pass/release` at 295.84. The range above is measured from the archived
+receipts.
 
 The ball can be right while the girdle is narrow because the two errors cancel
 in the midpoint and do not cancel in the width. At `bounce_pass/ready` the left
@@ -78,7 +91,9 @@ Every phase carries `girdle.wantedWidthMm` and `girdle.renderedWidthMm`.
 ### Why: the clavicle, with its inputs
 
 A clavicle rotates about its sternal end and does not stretch, so the shoulder
-lands on a sphere. 97 of 102 transmitted targets sit outside this rig's sphere.
+lands on a sphere. Of 102 transmitted targets, 97 sit outside this rig's
+sphere and 5 sit inside it. NONE LIES ON IT, so all 102 are out of reach; the
+shipped library's 96 read 96 of 96.
 
     the engine   17.6505 cm / 49.6456 cm = 0.35553 torso lengths
                  `scripts/engine_clavicle.py`: the exporter's own
@@ -105,7 +120,9 @@ reachable displacement scales with CLAVICLE length and the field normalises by
 TORSO length. A clavicle divisor was measured, not proposed: it reduces the
 worst residual from 52.09 mm to 31.03 mm and does NOT remove it, because the two
 clavicles differ in rest ORIENTATION as well as in length. So neither divisor is
-the whole answer.
+the whole answer. The instrument is `scripts/clavicle_divisor_probe.py`, which
+takes the engine's rest clavicle from `scripts/engine_clavicle.py` and reposes
+every phase under both divisors.
 
 ## 4. Numbers that are not instruments
 
@@ -117,6 +134,17 @@ change that clamps the rotation or moves the pivot, not a check that has passed.
 This lane mutation-tested `classify` in isolation and never asked whether its
 call site could reach the failing branch. The number that says whether the
 FIGURE is right is `ballAnchorErrorMm`, which is not an identity and does fail.
+
+**Every mutation is enumerated, not counted.** An earlier summary said "nine
+mutations" and listed none, so the claim could not be checked. The nineteen
+pure-python mutations are listed in `tests/test_girdle_agreement.py`'s module
+docstring with the guard each one tripped. The renderer's WIRING of those rules
+is guarded separately in `tests/test_blender_sources.py`, because an independent
+review mutated the call path five ways and left the whole suite green: deleting
+the refusal, re-inlining the resolution, dropping `ballAnchorErrorMm`, returning
+AGREES for a missing field, and passing the torso where the clavicle's length
+belongs. All five now fail, as does a sixth that reintroduces a bare verdict
+string.
 
 **The clavicle is turned up to 68.33 degrees** to follow the transmitted girdle,
 recorded per side as `girdle.sides.*.clavicleTurnedDegrees`. NOTHING IN THIS
@@ -131,9 +159,16 @@ cannot be posed:
     FLEXION_AXIS: r index is set to flex about axis 0, which carries only 0.44
     of the turn: x=18.5 y=-7.2 z=42.2 degrees.
 
-**It is not caused by the girdle change.** Posing that phase with the field
-removed, which is exactly the old behaviour, raises the identical error with
-identical numbers. Its other two phases, `lift` and `release`, pose and pass.
+**It is not caused by the girdle change.** Posing that phase with the shift
+ZEROED raises the identical error with identical numbers, and a zero shift
+leaves this rig exactly at its own rest girdle, which is the old behaviour by
+this pack's own zero-shift proof. Its other two phases, `lift` and `release`,
+pose and pass.
+
+Do not try this by REMOVING the field: at this tip a missing field is refused
+by `refuse_unrenderable_girdle` before the hands are posed, so the run stops
+with the refusal instead of the flexion error. That refusal is newer than the
+first proof.
 
 A first attempt at that proof passed the config's anatomy limits and `None` for
 the knuckle limits, where the renderer passes the JOB's own, and reported a

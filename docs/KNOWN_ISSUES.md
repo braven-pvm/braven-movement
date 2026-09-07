@@ -15,8 +15,9 @@ ten-millimetre rule to 46 of 48. The two failures are `hooks_outside_hand`, at
 only drill where she is turned.
 
 WHAT REMAINS IS THE WIDTH. A clavicle rotates about its sternal end and does not
-stretch, so a shoulder lands on a sphere, and 97 of 102 transmitted targets sit
-outside this rig's sphere. The rendered girdle is a MEDIAN 43.98 mm narrower
+stretch, so a shoulder lands on a sphere. Of 102 transmitted targets 97 sit
+outside this rig's sphere and 5 sit inside it, and none lies on it, so all 102
+are out of reach; the shipped library's 96 read 96 of 96. The rendered girdle is a MEDIAN 43.98 mm narrower
 than the solve asks and 62.01 mm narrower at worst. A shoulder-width reading on
 a rendered figure is a reading of THE RIG and not of the solve.
 
@@ -53,12 +54,25 @@ The right index knuckle turns 42.2 degrees about z while the limits are applied
 to x. The drill is therefore ABSENT from the `2413f9d` library; its `lift` and
 `release` phases pose and pass.
 
-It is not caused by the girdle change. Posing the phase with
-`shoulderShiftFromRestInTorsos` removed, which is exactly the old behaviour,
-raises the identical error with identical numbers.
+It is not caused by the girdle change. Posing the phase with the shift ZEROED
+raises the identical error with identical numbers, and a zero shift leaves this
+rig at its own rest girdle. Do NOT try it by removing the field: a missing field
+is refused before the hands are posed, so the run stops with the refusal
+instead.
 
-One failing phase currently aborts the whole library render, so eleven good
-drills are lost to one bad one. That is worth changing and is not changed here.
+## One failing phase aborts the whole library render
+
+**Status: queued. Owner: the rendering lane.**
+
+`render_job` raises out of the whole run when any one phase raises, so eleven
+good drills were lost to one bad one on 2026-09-07 and the library cost a second
+full render. A phase that cannot be posed should be recorded and skipped, and
+the run should end by naming what it could not render, so that one bad phase
+costs one figure rather than a library.
+
+It is filed here rather than under the drill that triggered it, because it is a
+defect in the renderer's loop and a reader searching for renderer defects must
+find it under its own heading.
 
 
 ## The ball is anchored to a landmark the job does not transmit

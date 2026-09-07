@@ -64,8 +64,23 @@ LOWER_BODY = re.compile(
     r"knee|ankle|foot|feet|hip|thigh|calf|stance|shin|toe", re.IGNORECASE)
 
 
-ARCHIVE = Path("F:/Repositories/braven-movement/.assets/archives/"
-               "coach-figures-aa3f244")
+def _archives() -> Path:
+    """Find `.assets/archives`, from a worktree or from the main checkout.
+
+    The archives sit beside the main checkout, and this file may be running
+    from either. Counting parents works from one and walks off the top of the
+    drive from the other, so the directory is SEARCHED for rather than
+    computed. This was a hard-coded absolute path typed from one session.
+    """
+    for base in [Path(__file__).resolve()] + list(Path(__file__).resolve().parents):
+        candidate = base / ".assets" / "archives"
+        if candidate.is_dir():
+            return candidate
+    return Path(__file__).resolve().parents[1] / ".assets" / "archives"
+
+
+ARCHIVES = _archives()
+DEFAULT_ARCHIVE = "coach-figures-2413f9d"
 
 
 def elbow_degrees(arm: dict) -> float:
@@ -80,7 +95,7 @@ def elbow_degrees(arm: dict) -> float:
     return math.degrees(math.acos(max(-1.0, min(1.0, dot / sizes))))
 
 
-def current_build() -> None:
+def current_build(label: str = DEFAULT_ARCHIVE) -> None:
     """The same quantities on the archived build, for the list to compare to.
 
     This reads the ARCHIVED receipts rather than `out/`, because `out/` is not
@@ -88,9 +103,10 @@ def current_build() -> None:
     """
     import json
 
-    receipts = sorted(ARCHIVE.glob("*.render.json"))
+    archive = ARCHIVES / label
+    receipts = sorted(archive.glob("*.render.json"))
     if not receipts:
-        print(f"NO RECEIPTS at {ARCHIVE}. Nothing can be compared.")
+        print(f"NO RECEIPTS at {archive}. Nothing can be compared.")
         return
     stamps = set()
     print(f"{'drill / phase':<38}{'elbow L':>9}{'elbow R':>9}{'bend L':>8}"
@@ -159,10 +175,13 @@ def main() -> None:
                         help="only rows a render receipt can re-measure")
     parser.add_argument("--current", action="store_true",
                         help="the same quantities on the archived build")
+    parser.add_argument("--archive", default=DEFAULT_ARCHIVE,
+                        help="which archive label under .assets/archives to "
+                             "read for --current")
     arguments = parser.parse_args()
 
     if arguments.current:
-        current_build()
+        current_build(arguments.archive)
         return
 
     paths = sorted(DOCS.glob("*.md"))

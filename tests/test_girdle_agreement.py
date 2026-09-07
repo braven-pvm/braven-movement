@@ -1,12 +1,45 @@
 """Guards for the check that the renderer USED the transmitted shoulders.
 
 The ball is placed from the shoulder midpoint. Before 2026-09-04 the job did
-not carry one, so this rig supplied its own: one girdle pose for all 18 graded
-phases of four drills, against an engine girdle that travelled 7.40 cm inside
-the overhead pass alone. Three figures of 18 passed a 1 cm rule.
+not carry one, so this rig supplied its own: one girdle pose for every graded
+phase, against an engine girdle that travelled 8.45 cm inside the overhead pass
+alone.
 
-Every guard here was seen to FAIL with its rule reverted, in the same session
-it was written.
+EVERY MUTATION BELOW WAS SEEN TO FAIL, with the guard that caught it. The pack
+said "nine mutations" and enumerated none, so the count could not be checked.
+These are the distinct ones, run with `python -B` because a same-length
+constant rewrite inside one second reuses the previous mutation's bytecode.
+
+  the tolerance                                     caught by
+   1 a missing field reads as agreement             a_missing_field_is_UNAVAILABLE
+   2 the tolerance is widened to 1 cm               the_SMALLEST_error
+   3 only the magnitude is reported, not the axes   a_fore_and_aft_error_is_visible
+   4 an unverifiable frame is let through           a_MISSING_field_stops_the_frame
+   5 the midpoint becomes the left shoulder         the_midpoint_is_the_point
+
+  the divisor
+   6 the divisor becomes the vertical component     the_divisor_is_the_MAGNITUDE
+   7 the divisor becomes an arm length              an_ARM_divisor_gives_a_different_answer
+   8 the offset is added without scaling            a_transmitted_displacement_lands
+   9 the displacement is ignored, rest returned     a_transmitted_displacement_lands
+  10 the displacement is applied unscaled           an_ARM_divisor / the_real_defect
+
+  the reach
+  11 a bad aim is excused as anatomy                a_miss_BEYOND_the_anatomy
+  12 the reachable miss loses its absolute value    a_target_INSIDE_the_sphere
+  13 the reach tolerance is widened to a centimetre the_reach_tolerance_sits_far_under
+  14 out of reach is reported as agreement          a_miss_that_matches_the_anatomy
+  15 the bone length is ignored                     a_target_beyond_the_sphere
+
+  the refusal
+  16 a missing girdle is waved through              a_MISSING_girdle_STOPS_the_frame
+  17 an unknown verdict fails OPEN                  an_unknown_verdict_is_refused
+  18 a reach limit is refused, so nothing renders   a_reach_limit_is_ALLOWED_through
+  19 a failed aim is waved through                  an_aim_that_FAILED_stops_the_frame
+
+THESE ARE THE PURE-PYTHON RULES ONLY. The renderer's WIRING of them is guarded
+in tests/test_blender_sources.py, because five mutations of the call path left
+this file's suite entirely green.
 """
 
 import sys
@@ -264,9 +297,10 @@ class ReachTest(unittest.TestCase):
     """A bone that cannot stretch is not a defect in the aim.
 
     The engine's clavicle is 20.4 percent longer relative to its torso than
-    this rig's, so 97 of 102 transmitted shoulder targets sit outside this
-    rig's reach. Merging that with a bad aim under one word would either hide a
-    real defect or report anatomy as one.
+    this rig's. Of 102 transmitted shoulder targets 97 sit outside this rig's
+    sphere and 5 sit inside it, and none lies on it, so all 102 are out of
+    reach. Merging that with a bad aim under one word would either hide a real
+    defect or report anatomy as one.
     """
 
     PIVOT = (0.0, 0.0, 0.0)
@@ -331,7 +365,7 @@ class RefuseUnrenderableTest(unittest.TestCase):
     """
 
     def test_a_reach_limit_is_ALLOWED_through(self):
-        """97 of 102 targets are out of reach. Refusing them renders nothing.
+        """All 102 targets are out of reach. Refusing them renders nothing.
 
         A bone that cannot stretch is a fact about the body, not a defect in
         the render, and it must not stop a figure.

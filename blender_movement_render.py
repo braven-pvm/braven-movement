@@ -42,6 +42,7 @@ from build_stamp import generated_from  # noqa: E402
 # The girdle rule lives apart from Blender so it can be tested without it.
 from girdle_agreement import (  # noqa: E402
     AGREES,
+    DISAGREES,
     OUT_OF_REACH,
     UNAVAILABLE,
     agreement,
@@ -427,7 +428,10 @@ def pose_girdle(rig, phase: dict, rest: dict) -> dict:
         # anatomy, not a defect in the resolution, and it must not read as one.
         verdict = OUT_OF_REACH
     else:
-        verdict = "disagrees"
+        # THE CONSTANT, NOT THE LITERAL. `refuse_unrenderable_girdle` compares
+        # against the imported name, so a rename here would leave a string the
+        # refusal no longer recognises. That fails closed, but by accident.
+        verdict = DISAGREES
     return {
         "verdict": verdict,
         "restTorsoM": round(rest["torso"], 6),

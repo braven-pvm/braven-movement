@@ -6,16 +6,16 @@ message on 2026-09-04. A number that cannot be re-measured from the repository
 is a quotation, so this measures it with the engine's own code and its own
 skeleton.
 
-    pixi run --frozen python measure_engine_clavicle.py
+    pixi run --frozen python engine_clavicle.py
 """
 
 import sys
 from pathlib import Path
 
-SPIKES = Path(
-    "F:/Repositories/braven-movement/.claude/worktrees/"
-    "mystifying-ardinghelli-401eac/spikes"
-)
+# THE REPOSITORY THIS FILE IS IN. It was hard-coded to one worktree, so
+# the script that says it measures "from the repository" measured a
+# different tree.
+SPIKES = Path(__file__).resolve().parents[1] / "spikes"
 if str(SPIKES) not in sys.path:
     sys.path.insert(0, str(SPIKES))
 

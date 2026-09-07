@@ -171,9 +171,12 @@ def reachable_miss_mm(target, pivot, bone_length: float) -> float:
     This exists so a receipt can separate two things one number would merge: an
     aim this lane got wrong, and a reach this rig does not have. The engine's
     clavicle is 20.4 percent longer relative to its torso than this rig's
-    (0.35553 against 0.29530 torso lengths), so 97 of 102 transmitted shoulder
-    targets sit OUTSIDE this rig's reach. That is anatomy, and posing it away
-    would mean stretching a bone to hit a number.
+    (0.35553 against 0.29530 torso lengths). Of 102 transmitted shoulder
+    targets, 97 sit OUTSIDE this rig's sphere and 5 sit INSIDE it. NONE LIES ON
+    IT, so all 102 are out of reach, and the shipped library's 96 read 96 of
+    96. A bone cannot shorten either, which is why the miss is an absolute
+    value. That is anatomy, and posing it away would mean stretching a bone to
+    hit a number.
     """
     reach = sum((t - p) ** 2 for t, p in zip(target, pivot)) ** 0.5
     return abs(reach - bone_length) * 1000.0
@@ -200,9 +203,9 @@ def refuse_unrenderable_girdle(report: dict, label: str) -> None:
     """Stop a frame whose girdle cannot be trusted. OUT_OF_REACH is allowed.
 
     A miss the anatomy explains is not a reason to refuse a figure: this rig's
-    clavicle is shorter relative to its torso than the engine's and cannot
-    reach 97 of 102 targets, which is a fact about the body and not about the
-    render. UNAVAILABLE and DISAGREES are different. A job with no girdle field
+    clavicle is shorter relative to its torso than the engine's and reaches
+    NONE of the 102 targets exactly, 97 falling outside its sphere and 5 inside
+    it, which is a fact about the body and not about the render. UNAVAILABLE and DISAGREES are different. A job with no girdle field
     renders the PRE-FIX figure, with the whole 5 to 6 cm error back in the
     ball, and without this it would print PASS and write a receipt like any
     other. A frame nobody can check must not reach a coach.
