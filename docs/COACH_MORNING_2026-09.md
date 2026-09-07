@@ -16,8 +16,8 @@ The questions are for Erin and Marius. They are written to be answerable by a
 coach watching the athlete, not by reading a number. Where the engine has an
 opinion it is stated as a measurement and never as a recommendation.
 
-**Fifteen numbered items.** One, item 7, is STRUCK, because it was raised on a
-measurement the solver read from a second solution for that drill. **Twelve
+**Sixteen numbered items.** One, item 7, is STRUCK, because it was raised on a
+measurement the solver read from a second solution for that drill. **Thirteen
 carry engine measurements. Items 8 and 10 do not**, and neither claims to: item
 8 names the constant that follows from item 2's answer, and item 10 compares two
 written vocabularies. Three further items at the end carry no evidence either,
@@ -27,6 +27,8 @@ and say so.
 part of this agenda: the vocabulary mismatch, a band floor, **an item for two of
 the four passes** — the bounce and the 1 hand high, the two with something a
 coach must rule on — and two items about the family rather than any one drill.
+**Item 16 is the first that is not about a pass**: it comes from the landing
+drill and from the movement lane's ledger rather than from authoring.
 
 **One section of item 2 is withdrawn, and the withdrawal is written out rather
 than tidied away.** The elbow-width question is unchanged; what was wrong was a
@@ -609,6 +611,69 @@ release. A board showing a play may need the ball to arrive.
 **Nothing is being proposed.** The engine can make the clip longer or move the
 release earlier; both change what every pass clip contains, so the choice is
 hers and Marius's rather than the content lane's.
+
+## 16. The landing's own cue may be graded by an instrument that cannot see it
+
+Added 2026-09-07 from the movement lane's ledger row, which was measured on
+`b214bc4` and reached main in `ad7e65d`. **The cue is real. The instrument
+cannot see it yet.** That is the whole item, and she should know it before she
+watches that drill.
+
+**What the drill grades.** `netball_double_foot_landing` is the only drill in
+the library with a checkpoint measured in CENTIMETRES rather than degrees. It
+reads `footHeightGapCm` — how far apart the two feet are in height — at three
+phases, against bands of 0 to 14 cm, 0 to 6 and 0 to 6.
+
+**What the engine actually sees.** Over all 110 frames of that drill the gap
+spans **0.00 to 1.22 cm**. The three graded readings are **0.00, 0.00 and
+0.01 cm**. The bands are six to fourteen centimetres wide and the readings are
+hundredths of one.
+
+**And the whole observed range sits below the measure's own noise.** The
+movement lane's noise study propagates **1.45 cm** of error into this measure
+from the landmarks it is built on. The drill never produces a gap that large.
+
+Two consequences, and the ledger is careful that they are different:
+
+- **On the solved skeleton** the number is exact and the bands are never
+  approached. All three read `within`, at every phase, every time.
+- **On a filmed athlete** the same column would be **indistinguishable from
+  noise**, because the range the movement produces is smaller than the error the
+  measurement carries.
+
+**What is NOT claimed, and the ledger says so in capitals.** Nobody has run a
+sweep to find out whether those three checkpoints CAN fail under any lever. The
+row records that the question has never been asked of the library's only length
+checkpoints, and that the reading above is the reason to ask it. **Owner: the
+movement lane**, queued behind the height measure item 13 waits on.
+
+**The question for her.** Landing is the skill whose coaching is most about what
+the feet and knees do, and this drill grades more below-the-hips checkpoints
+than any other. **Is a foot-height gap the thing she would look at**, or is she
+watching something the engine has no measure for at all — the timing of the two
+feet, the width of the base, where the weight goes? If the cue is right and only
+the instrument is weak, that is engine work. If the cue is not what she watches,
+the checkpoint is measuring the wrong thing well.
+
+**TWO THINGS WERE WRONG UNTIL THIS WEEK, AND THEY ARE DIFFERENT THINGS.** Both
+were fixed in `ad7e65d`, both were real in the code, and **neither was ever
+printed for this drill** — but for two separate reasons, which is why they are
+listed apart rather than as one.
+
+- **The feedback a coach reads named every figure in degrees**, whatever its
+  unit. On this drill it would have said *"Needs less: 17 degrees against a
+  target of 0 to 14"* about a distance between two feet in centimetres. **It
+  never fired here because it only speaks when a reading falls OUTSIDE its
+  band, and all three of these read within, always.**
+- **The warning that a band is too narrow to mean anything used a degrees
+  threshold on centimetre bands.** **It never fired here because it only speaks
+  for a band narrower than the floor, and these three are 14, 6 and 6 cm wide
+  against a floor of 2 cm.**
+
+So one was silenced by the readings and the other by the bands, and a drill that
+differed in either respect would have shown a coach a length wearing an angle's
+unit. **That substitution is the fault the ledger row above exists to track**,
+which is why both are recorded here rather than left as fixed code.
 
 ## Three items with no engine evidence
 
