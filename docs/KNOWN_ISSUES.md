@@ -388,6 +388,123 @@ same-length value is exposed.** The rule is `python -B`, or clear
 in how packs are verified, which is worse, because it silently returns the
 previous answer.
 
+## A height measure exists now: `ballHeightCm`, above the court
+
+Added 2026-09-07 by the movement lane. The row below records why there was
+none, and stands as the history; this records what shipped and the four things
+measuring it settled.
+
+### The zero is the COURT, and that was a measurement, not a convention
+
+`netball_one_hand_high_pass`'s own note says the drill puts the ball at
+**199.95 cm**. The engine reads **192.56 cm** at the same frame. The 7.39 cm
+is neither a build drift nor an error:
+
+| zero | at the lift frame | what it is |
+|---|---|---|
+| world y = 0 | **199.95 cm** | the court, stated independently in `netball_bounce_pass.ball.json` |
+| the rest `l_foot` | 192.56 cm | the ANKLE joint, which sits **7.3886 cm** above the court |
+
+`leftFootHeightCm` and its two siblings measure from the rest ankle. **That is
+right for a foot** — it reads how far the foot has lifted from where it rests,
+and it is zero at rest. **It is wrong for a ball.** A coach saying "pull the
+ball up as high as arm can go" means above the floor, and the drill's own note
+already quotes the floor figure.
+
+Two measures called a height in centimetres, measured above different zeros, is
+exactly the fault `MEASURE_UNITS` exists to prevent, so both zeros are named in
+the table and in the writer rather than left to a reader to find by
+subtracting.
+
+### There is no wrist height, and the reason is a measurement
+
+The ball's height above the holding wrist, over the frames where she holds it:
+
+| drill | ball above the wrist | spread |
+|---|---|---|
+| `netball_one_hand_high_pass` | 3.37 (frame 0) to 15.96 (frame 51) | **12.59 cm** |
+| `netball_overhead_pass` | 3.63 (frame 0) to 12.78 (frame 33) | **9.15 cm** |
+| `netball_chest_pass` | 3.62 (frame 32) to 5.35 (frame 75) | 1.74 cm |
+
+A wrist height plus a stated offset would be wrong by up to 12.59 cm **within
+one drill**, and the spread is largest on exactly the two drills whose cue is a
+height and smallest on the pass whose cue is not. The hand rotates around the
+ball as the arm extends, so the offset varies with the very quantity being
+graded. That is not an offset with inputs; it is a different quantity.
+
+### It is written only while she holds the ball
+
+After release the column measures a projectile. On `netball_overhead_pass` the
+`follow_through` phase reads the ball **33.42 cm BELOW** the working wrist,
+still falling. On `netball_one_hand_high_pass` the `release` phase at frame 76
+already has no hand on the ball. So the key is absent on those frames rather
+than misleading, the way `grip` is absent when no hand is on the ball.
+
+### The ball and the wrist peak three frames apart
+
+On `netball_one_hand_high_pass` the ball tops out at frame 34 and the working
+wrist at frame 31. **A drill grading "as high as arm can go" at a fixed phase
+must say which quantity that phase was chosen for.** That belongs with the
+checkpoint decision, which is gate 4 and Marius's.
+
+### The sweep, and a basin the measure does not see
+
+`sweep_ball_height.py` is committed with these numbers and re-runs them. Lever:
+the lift carry's `up` on `netball_one_hand_high_pass`, the key the drill's
+defining cue is about, read at the graded lift frame 33.
+
+**Coarse, 7 points at 0.12 torso lengths:** 199.95, 193.64, 187.32, 181.04,
+174.78, 168.55, 162.35 — steps of −6.31, −6.32, −6.28, −6.26, −6.23, −6.20.
+**37.60 cm of travel, monotone, the steps agreeing to 0.12 cm**, so a
+checkpoint on this measure can fail.
+
+**But one body joint step was four times the others and it sat at the SHIPPED
+value**, so the coarse sweep alone would have published a basin. Fine, 10
+points at 0.02, locates it between `up` 1.42 and 1.40:
+
+| `up` | `ballHeightCm` | step | lift shoulder | body joint step |
+|---|---|---|---|---|
+| 1.44 | 200.98 | −1.04 | 160.44 | 4.55 |
+| **1.42** | **199.95** | −1.03 | 159.60 | 4.78 (shipped) |
+| 1.40 | 198.91 | −1.04 | **139.26** | **19.03** `r_lowarm` |
+| 1.38 | 197.88 | −1.03 | 135.52 | 1.88 |
+
+**THE MEASURE DOES NOT SEE THE BASIN AND THE SUBSTITUTE DOES.** `ballHeightCm`
+steps −1.04 across the boundary, the same as every other step.
+`rightShoulderElevationDegrees` — the substitute this drill's note names — falls
+**20.34 degrees** there, against 0.84 to 3.74 elsewhere, and the elbow reverses
+sign. The ball goes where it is told whatever configuration the arm finds to
+hold it; an arm measure does not.
+
+That is a stronger statement than the impurity already recorded below. The
+substitute is not merely least pure at this height: at this drill's shipped
+pose it is **discontinuous**, 0.02 torso lengths from a boundary.
+
+**NOTHING SHIPPED FAILS BECAUSE OF IT**, and this row does not claim otherwise.
+The lift's graded elbow reads 60.56 and 54.07 across the boundary, both inside
+its 20 to 85 band. The release checkpoints do not move at all under this lever:
+128.48 and 64.63 at every one of the ten points.
+
+### Two sentences in a gate-4 file are now false, and one of them is mine
+
+`netball_one_hand_high_pass`'s `heightGapNote` says:
+
+- **"Nothing in `segment_measures.MEASURE_UNITS` reads a height except
+  `footHeightGapCm`."** False since 2026-09-07. The pack before this one
+  declared `leftFootHeightCm` and `rightFootHeightCm`, which were written by
+  both solvers and declared by neither. **The sentence was true when written
+  and this lane's own merge broke it.**
+- **"This drill puts the ball at 199.95 cm."** True of the court zero and not
+  of the convention the existing heights use, which reads 192.56. The note does
+  not say which zero it means, and the row above now does.
+
+Both are in `spikes/movements/`, which is **gate 4**: a change there is a key
+retune whose proposal goes to Marius with its evidence first. **Nothing under
+that directory has been edited.** Two questions are with him: whether a prose
+note may be corrected when no number a checkpoint reads changes, and the step-1
+checkpoint itself. The measure ships without either; the drill's checkpoint
+follows the ruling.
+
 ## No units-correct distance measures, and six cues already want them
 
 Raised 2026-09-02 by the content lane while authoring `netball_overhead_pass`.
