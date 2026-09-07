@@ -124,7 +124,8 @@ untracked output, like `clap-offsets.json` — records
 `sideOffsetSecondsUsed: 1.22` from "a wrist-height cross-correlation", and the
 clips were cut with it. So it has a source and a method; what it does not have
 is a tracked one or a result that reproduces.
-What the artefacts actually apply is **1.0 s with a 0.15 s uncertainty**:
+What the artefacts USED TO apply, before both offsets were withdrawn on
+2026-09-07, was **1.0 s with a 0.15 s uncertainty**:
 `keypoints-side-0.1.json` carries `offsetSecondsToReference: 1.0`,
 `offsetUncertaintySeconds: 0.15`, method "two visual events matched by eye",
 worked example the first catch at side 8.25 s against front 9.25 s; and
@@ -180,33 +181,64 @@ together: hands-together sequences at +2.442, wrist-height peak sequences at
 can therefore alias together, and the by-eye 1.0 s and the 0.95–1.00 strip
 readings point elsewhere. It is worth attention and it is not an offset.
 
-**SOLVED 2026-09-07, AND THE 1.0 s WAS WRONG RATHER THAN LOOSE.** The offset is
-measured on a SHARED PHYSICAL EVENT — the frame in which the ball first meets
-her hands on the first catch, read in both views by container timestamp:
+**NOT SOLVED, AND THE SET IS NOT A SYNCHRONOUS PAIR.** Two offsets have been
+published for set 0.1 and both are withdrawn.
 
-| set | front contact | side contact | offsetSecondsToReference (side) |
-|---|---|---|---|
-| 0.1 | **9.1333 s** | **9.8628 s** | **−0.7295** |
-| 0.2 | **10.8000 s** | **8.9298 s** | **+1.8702** |
+| offset | grade it claimed | withdrawn |
+|---|---|---|
+| **+1.0 s** | two visual events matched by eye | 2026-09-07 |
+| **−0.7295 s** | shared event, one frame | 2026-09-07 |
 
-Each satisfies the arithmetic the schema tells a consumer to assert:
-9.8628 − 0.7295 = 9.1333 exactly. Uncertainty is ONE FRAME, 0.0333 s — the
-error is which frame each view's contact was called in, and there is no drift
-to add: 30.000 fps against 30.010, no dropped frames, no gaps.
+**The second was mine and it was worse than the first.** It named the frame the
+ball first meets her hands on "the first catch", read in both views — and the
+two frames are DIFFERENT CATCHES. The side's at 9.8628 catches a ball SHE
+released upward at 8.497, after a fed catch at 8.263. The front's at 9.1333
+catches a ball arriving from off-frame into hands empty at her hips since
+6.25 s. Under −0.7295 the side's release maps to front 7.77, where she stands
+with her arms at her sides. I checked that pairing myself and it is dead.
 
-**The old 1.0 s had the SIGN backwards and paired the wrong moments.** Its
-worked example put the first catch at side 8.25 against front 9.25; at side
-8.25 she is HOLDING a ball at chest height, not catching one. I read all four
-frames to check rather than take the correction on trust, and set 0.1's
-sequence settles it: the front's first contact frame is 9.1333 and the side's
-is 9.8628, with the ball plainly in the air above open hands one frame earlier
-in each.
+**And the first offset was NOT wrong in the way I said it was.** I wrote that it
+"paired a hold with a catch and had the sign backwards". It paired the first FED
+catch in each view, two and four frames after contact — corresponding moments.
+That sentence is withdrawn with the rest.
 
-**WHY EVERY CORRELATION FAILED, INCLUDING SEVEN OF MINE.** Her toss cycle runs
-about two seconds, so the signal is periodic and its peaks alias: −1.29 and
-+0.73 are one cycle apart and score alike. A unique shared event beats a
-periodic one. That is also why the hands-together and peak-sequence readings
-clustered near +2.4 — one cycle from the truth.
+**WHY BOTH SURVIVED THEIR OWN CHECKS.** Her toss cycle is **1.90 s** — the mean gap between the side ledger's ten catches, 8.26 s to 25.06 s — so the
+movement is periodic and a wrong offset lands on a catch exactly as a right one
+does. My confirmation — "both views show a catch 15 s later" — matched a POSTURE
+inside that period. A single moment that looks alike in two views is not
+evidence, whatever its frame precision.
+
+**WHAT THE LEDGER SAYS.** Every catch, release and clap in each view of set 0.1
+was read from contact sheets built at every eighth frame, selected by index and
+never by seeking, and recorded in
+`spikes/video-annotations/event-ledger-0.1.json`. No constant offset maps one
+sequence onto the other better than chance:
+
+| tolerance | best offset | events matched | chance ceiling | fits |
+|---|---|---|---|---|
+| one frame | +0.2583 s | 3 of 10 | 4 | no |
+| 0.100 s | +0.2583 s | 3 | 5 | no |
+| 0.200 s | −1.0083 s | 4 | 6 | no |
+| 0.267 s | +0.5250 s | 6 | 6 | no |
+| 0.400 s | +0.6583 s | 8 | 7 | marginal |
+
+The chance ceiling is the 99th percentile of 500 trials against a randomly
+generated side ledger of the same shape. Only at 0.400 s — twelve frame periods,
+far looser than any sync claim — does the real data reach one event above
+chance.
+
+**AND THE ARITHMETIC IS NOT THE EVIDENCE. THE SEQUENCE IS.** The front stands
+EMPTY-HANDED from 17.3 to 20.0 s and claps at 17.87. The side handles a ball
+CONTINUOUSLY from 17.06 to 19.73. No offset reconciles a 2.7 second pause with
+continuous play. The front has 8 catches between 9.1 and 24.3 s; the side has 10
+between 8.3 and 25.1 s, and their intervals do not correspond.
+
+**Whether the two files are one take with a discontinuity, two takes, or a
+mislabelled pair, nothing in the tree separates.** Set 0.1 is marked UNUSABLE
+FOR TWO-VIEW WORK until that is settled. Set 0.2's ledger is NOT READ: its front
+camera stands far enough back that a held ball cannot be told from a caught one
+at any sampling this lane could afford, which is itself a requirement for the
+next shoot.
 
 The keypoint times this rests on are true container timestamps rather than a
 constant-rate multiply, checked against ffprobe to six decimals on the

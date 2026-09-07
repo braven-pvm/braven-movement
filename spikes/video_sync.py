@@ -86,8 +86,9 @@ class Offset:
 
     THE SIGN, WORKED, BECAUSE PROSE ABOUT DIRECTION HAS FAILED TWICE HERE.
 
-    Take the first catch of set 0.1: it is at 9.25 s in the front file and
-    8.25 s in the side file. `correlate(front, side)` returns **+1000 ms**,
+    Take the first catch of set 0.1: it WAS RECORDED at 9.25 s in the front
+    file and 8.25 s in the side file. THOSE TIMES ARE WITHDRAWN (2026-09-07)
+    and the worked example below is kept for its SIGN CONVENTION alone. `correlate(front, side)` returns **+1000 ms**,
     verified against synthetic impulses at exactly those times.
 
         side 8.25 + 1.000 = 9.25 front      correct

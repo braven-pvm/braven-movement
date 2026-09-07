@@ -3344,8 +3344,12 @@ and 26.415 s.
 Either the side camera's microphone never registered the claps — its strongest
 event is x24 against the front's x44, and it may be several metres away — or the
 two files do not contain the same instant. **The audio cannot separate those two
-readings**, and until a person does, the by-eye 1.0 s stands as the only measured
-offset.
+readings**, and until a person does, no offset stands at all. **CORRECTED
+2026-09-07: an earlier version of this line said "the by-eye 1.0 s stands as the
+only measured offset". It does not.** That offset and a later −0.7295 s are both
+withdrawn, and an event ledger over the whole clip finds no constant offset that
+beats chance — refer to `spikes/video-annotations/event-ledger-0.1.json`. Set
+0.1 is not a synchronous pair and is unusable for two-view work.
 
 **AND A CORROBORATOR THIS LANE OFFERED IS WITHDRAWN.** A wrist-height scan was
 reported as peaking at −0.967 s, agreeing with the recorded −1.000. Three of its

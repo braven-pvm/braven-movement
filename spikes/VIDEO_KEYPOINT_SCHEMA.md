@@ -142,13 +142,33 @@ is worse than a missing frame.
 
 ## The sync block, and the assertion that guards it
 
+**`methodKind` DECLARES THE GRADE, and its vocabulary is closed.** A consumer
+deciding whether to trust a pairing needs the grade, and a grade it has to parse
+out of a sentence is not a field. `METHOD_KINDS` in `spikes/video_keypoints.py`
+holds the list:
+
+| kind | what it means |
+|---|---|
+| `clap` | a sharp shared sound, located in both tracks |
+| `shared-event` | one physical event, read in both views — and it must be UNIQUE in the clip, which a catch is not |
+| `eye` | two moments judged to correspond by a person |
+| `correlation` | a signal correlation with a stated confidence |
+| `unknown` | nothing has measured it |
+
+**Session 0.1 is `unknown`.** Two offsets have been withdrawn from it, the
+second graded `shared-event` on a catch — and a catch recurs every 1.90 s, so it
+was not unique and the pairing was one cycle out. Refer to
+`spikes/video-annotations/event-ledger-0.1.json`.
+
 `offsetSecondsToReference` is the number a consumer ADDS to a timestamp in
 THIS file to reach the reference view's clock. On load, assert:
 
     thisViewSeconds + offsetSecondsToReference == referenceViewSeconds
 
 with the values from `worked`. On this material that is
-`8.25 + 1.0 == 9.25`, and it fails loudly if the sign is ever inverted again.
+`8.25 + 1.0 == 9.25`. **THOSE NUMBERS ARE WITHDRAWN (2026-09-07) and are kept
+only to show the shape of the assertion**, which is unchanged and still fails
+loudly if a sign is inverted. No offset is measured for set 0.1.
 
 ### Mapping to the rendering lane's `--offset`
 
@@ -161,7 +181,8 @@ a REFERENCE time.
     offsetSecondsToReference = -(the rendering lane's --offset)
 
     This material: --offset -1.0 and offsetSecondsToReference +1.0 both place
-    the front at 9.25 s and the side at 8.25 s.
+    the front at 9.25 s and the side at 8.25 s. **WITHDRAWN 2026-09-07: the
+    mapping is right and the numbers are not. No offset is measured.**
 
 Neither is wrong, and either alone is unambiguous. Together and unwritten they
 are a sign error waiting for whoever reads both, which is why the mapping is

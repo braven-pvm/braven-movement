@@ -324,9 +324,13 @@ file is the boundary, and its shape is settled in
 - **There IS a clap, and the audio route still failed.** Corrected 2026-09-04;
   this line used to read "there is no clap". The front recording carries two, at
   5.800 s and 17.835 s. No offset between the two tracks reproduces, so the
-  offset in use is still the first ball catch matched by eye — about 9.25 s on
-  the front and 8.25 s on the side. Refer to "The alignment ranked a sync clap
-  above every real catch" in `docs/KNOWN_ISSUES.md`.
+  **THERE IS NO OFFSET IN USE.** Corrected 2026-09-07: this bullet named the
+  first ball catch matched by eye, about 9.25 s front against 8.25 s side. That
+  and a later -0.7295 s are both withdrawn, and an event ledger over the whole
+  clip finds NO constant offset that beats chance — the front stands
+  empty-handed from 17.3 to 20.0 s while the side handles a ball throughout.
+  Refer to `spikes/video-annotations/event-ledger-0.1.json`. **Set 0.1 is not
+  usable for two-view work.**
 - The sample is a **self-fed toss and catch** and matches none of the eight
   drills.
 - `front 0.1` degrades from **25.700 s**: sharpness is 87 percent of baseline
@@ -345,7 +349,9 @@ which is exactly where a consumer trips.
 
     For the non-reference view, offsetSecondsToReference = -(--offset).
     This material: --offset -1.0 and offsetSecondsToReference +1.0 both put
-    the front at 9.25 s and the side at 8.25 s.
+    the front at 9.25 s and the side at 8.25 s. **THAT EXAMPLE IS WITHDRAWN
+    (2026-09-07) and is kept only to show the SIGN CONVENTION, which is
+    unchanged. No offset is measured for set 0.1.**
 
 Neither is wrong and either alone is unambiguous. `keypoint_overlay.py`
 asserts the direction against the file's own worked example on load, so a sign

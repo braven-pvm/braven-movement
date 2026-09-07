@@ -58,39 +58,44 @@ OUTPUT = SPIKE_DIR / "poc-output" / "video"
 # THIS file to reach the reference view's clock. Refer to the schema: the
 # direction is carried as a worked example because prose about it failed once.
 REFERENCE_VIEW = "front"
-# THE OFFSET BETWEEN THE TWO VIEWS, measured frame-exactly on a SHARED
-# PHYSICAL EVENT: the frame in which the ball first meets her hands on the
-# first catch, read in both views.
+# THE OFFSET BETWEEN THE TWO VIEWS — NOT MEASURED FOR EITHER SET.
 #
-# `offsetSecondsToReference` is ADDED TO A TIME IN THIS FILE to reach the
-# reference view's clock, and each worked example below satisfies that
-# arithmetic exactly — the schema tells a consumer to assert it on load, so
-# both numbers are real container timestamps and neither is a midpoint.
+# TWO OFFSETS HAVE BEEN WITHDRAWN AND NEITHER IS REPLACED.
 #
-# CORRECTED 2026-09-07, AND THE OLD VALUE WAS WRONG RATHER THAN MERELY LOOSE.
-# Set 0.1 carried +1.0 s with the worked example "side 8.25 against front
-# 9.25". At side 8.25 she is HOLDING a ball at chest height, not catching one;
-# the example paired a hold with a catch, and it had the SIGN backwards as
-# well. Every two-view result built on it is void, the 15 mm lift residual
-# included.
+# 1. +1.0 s, worked example side 8.25 against front 9.25, "two visual events
+#    matched by eye". Withdrawn 2026-09-07 with the rest, but NOT for the
+#    reason a previous version of this file gave: it did pair corresponding
+#    moments — two and four frames after the first FED catch in each view.
 #
-# WHY CORRELATION COULD NOT FIND THIS. Her toss cycle runs about two seconds,
-# so the signal is periodic and its correlation peaks alias: -1.29 and +0.73
-# are one cycle apart and score alike. A unique shared event beats a periodic
-# one, which is why this is measured on a catch frame and not on a curve.
-SYNC = {
-    # side 9.8628 + (-0.7295) = front 9.1333
-    "0.1": {"offsetSecondsToReference": -0.7295, "thisViewSeconds": 9.8628,
-            "referenceViewSeconds": 9.1333},
-    # side 8.9298 + (+1.8702) = front 10.8000
-    "0.2": {"offsetSecondsToReference": 1.8702, "thisViewSeconds": 8.9298,
-            "referenceViewSeconds": 10.8000},
-}
+# 2. -0.7295 s, graded `shared-event` on "the frame the ball first meets her
+#    hands on the first catch". WITHDRAWN 2026-09-07. Both named frames are
+#    catches and THEY ARE NOT THE SAME CATCH. Side 0.1 at 9.8628 catches a
+#    ball SHE released upward at 8.497, after a fed catch at 8.163. Front 0.1
+#    at 9.1333 catches a ball arriving from off-frame into hands that had been
+#    empty at her hips since 6.25 s. Under -0.7295 the side's release at 8.497
+#    maps to front 7.77, where she stands with her arms at her sides.
+#
+# THE PAIRING WAS ONE TOSS CYCLE OFF, which is the aliasing this repository's
+# own prose warned about, and the check that passed it — "both views show a
+# catch 15 s later" — matched a POSTURE inside a periodic movement rather than
+# a unique event.
+#
+# AND NO CONSTANT OFFSET IS KNOWN TO FIT SET 0.1 AT ALL. Fed catch to fed
+# catch gives +0.94; her release of that same ball gives +1.20; the front's
+# second clap sits inside 2.8 s of empty-handed standing that the side does
+# not contain anywhere nearby. Whether the two files are one take with a
+# discontinuity, two takes, or a mislabelled pair is not established.
+#
+# WHAT HAS TO HAPPEN BEFORE ANY OFFSET IS WRITTEN HERE: an event ledger per
+# view over the whole clip, and one constant offset that maps the front's
+# ledger onto the side's within one frame at TWO anchors at least ten seconds
+# apart. Refer to `spikes/video_event_ledger.py` and to
+# `spikes/video-annotations/event-ledger-<set>.json`.
+SYNC: dict[str, dict] = {}
 
-# ONE FRAME, and no better. Both offsets are the difference between two frame
-# timestamps, so the error is which frame each view's contact was called in.
-# 30.000 fps on the front against 30.010 on the side, no dropped frames and no
-# gaps, so there is no drift to add over a 29 s clip.
+# UNUSED WHILE SYNC IS EMPTY, and kept so the shape of a future block is
+# visible. One frame is the floor a frame-paired offset could reach; it is not
+# a claim that anything has reached it.
 SYNC_UNCERTAINTY_SECONDS = 0.0333
 
 # HOW THE OFFSET WAS ARRIVED AT, as a field of its own rather than a phrase
@@ -311,10 +316,13 @@ def _sync_block(view: str, set_id: str, measured: bool, sync: dict) -> dict:
     if not measured:
         block["methodKind"] = "unknown"
         block["note"] = (
-            f"No offset has been measured for set {set_id}. Only set 0.1 has "
-            "two matched events. Do not pair these views on a clock until one "
-            "is measured; the reference view's own zero is a definition, not a "
-            "measurement of this pair."
+            f"No offset has been measured for set {set_id}, and none is "
+            "measured for any set. Two were published for set 0.1 and both are "
+            "withdrawn: an event ledger over the whole clip finds no constant "
+            "offset that beats chance, so the two files are not a synchronous "
+            "pair. Do not pair these views on a clock. The reference view's "
+            "own zero is a definition, not a measurement of this pair. Refer "
+            "to spikes/video-annotations/event-ledger-<set>.json."
         )
         return block
     block["offsetUncertaintySeconds"] = SYNC_UNCERTAINTY_SECONDS

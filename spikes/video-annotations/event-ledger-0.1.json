@@ -1,0 +1,204 @@
+{
+ "schemaVersion": "video-event-ledger-1",
+ "set": "0.1",
+ "readBy": "the video-readiness lane, 2026-09-07, from contact sheets built by video_event_ledger.py",
+ "readUtc": "2026-09-07",
+ "resolutionSeconds": 0.267,
+ "method": "Every 8th frame of each view, selected BY INDEX from the container's pts list and never by seeking, tiled into contact sheets and read by eye. An event's time is therefore the sampled frame nearest it, so each is accurate to about one sample, 0.267 s. THAT IS COARSE ON PURPOSE AND IT IS ENOUGH: the question is whether ONE constant offset maps one view's sequence onto the other's, and the disagreement below is many times the resolution. If a fit had been found at this resolution it would then have needed refining to frame-exactness.",
+ "views": {
+  "front": {
+   "file": "front 0.1.mp4",
+   "frames": 866,
+   "usableToSeconds": 25.7,
+   "note": "Hands EMPTY at her hips from 0.0 to 8.5 s, then a first catch of a ball arriving from off-frame. A second empty stretch runs 17.3 to 20.0 s and holds the second clap. The camera is picked up at 26.1 s and the frame goes dark.",
+   "events": [
+    {
+     "frameIndex": 176,
+     "seconds": 5.8667,
+     "kind": "clap"
+    },
+    {
+     "frameIndex": 274,
+     "seconds": 9.1333,
+     "kind": "catch"
+    },
+    {
+     "frameIndex": 344,
+     "seconds": 11.4667,
+     "kind": "catch"
+    },
+    {
+     "frameIndex": 408,
+     "seconds": 13.6,
+     "kind": "catch"
+    },
+    {
+     "frameIndex": 456,
+     "seconds": 15.2,
+     "kind": "catch"
+    },
+    {
+     "frameIndex": 504,
+     "seconds": 16.8,
+     "kind": "catch"
+    },
+    {
+     "frameIndex": 536,
+     "seconds": 17.8667,
+     "kind": "clap"
+    },
+    {
+     "frameIndex": 608,
+     "seconds": 20.2667,
+     "kind": "catch"
+    },
+    {
+     "frameIndex": 664,
+     "seconds": 22.1333,
+     "kind": "catch"
+    },
+    {
+     "frameIndex": 728,
+     "seconds": 24.2667,
+     "kind": "catch"
+    }
+   ]
+  },
+  "side": {
+   "file": "side 0.1.mp4",
+   "frames": 863,
+   "usableToSeconds": 26.4,
+   "note": "A first catch at 8.26 of a ball fed from the front camera's side, held, then RELEASED UPWARD at 8.53 and caught again at 9.86. She handles a ball continuously from 17.06 to 19.73, which is inside the front's empty stretch. She walks off at 26.4 s.",
+   "events": [
+    {
+     "frameIndex": 248,
+     "seconds": 8.2634,
+     "kind": "catch"
+    },
+    {
+     "frameIndex": 256,
+     "seconds": 8.53,
+     "kind": "release"
+    },
+    {
+     "frameIndex": 296,
+     "seconds": 9.8628,
+     "kind": "catch"
+    },
+    {
+     "frameIndex": 352,
+     "seconds": 11.7287,
+     "kind": "catch"
+    },
+    {
+     "frameIndex": 416,
+     "seconds": 13.8611,
+     "kind": "catch"
+    },
+    {
+     "frameIndex": 472,
+     "seconds": 15.7271,
+     "kind": "catch"
+    },
+    {
+     "frameIndex": 512,
+     "seconds": 17.0599,
+     "kind": "catch"
+    },
+    {
+     "frameIndex": 560,
+     "seconds": 18.6592,
+     "kind": "catch"
+    },
+    {
+     "frameIndex": 640,
+     "seconds": 21.3248,
+     "kind": "catch"
+    },
+    {
+     "frameIndex": 696,
+     "seconds": 23.1908,
+     "kind": "catch"
+    },
+    {
+     "frameIndex": 752,
+     "seconds": 25.0567,
+     "kind": "catch"
+    }
+   ]
+  }
+ },
+ "fit": {
+  "fits": false,
+  "bestOffsetSeconds": 0.2583,
+  "matchedEvents": 3,
+  "spanSeconds": 5.333,
+  "nullPercentileMatches": 4,
+  "nullTrials": 500,
+  "anchors": [
+   {
+    "kind": "catch",
+    "frontSeconds": 11.4667,
+    "sideSeconds": 11.7287,
+    "errorSeconds": -0.0037
+   },
+   {
+    "kind": "catch",
+    "frontSeconds": 13.6,
+    "sideSeconds": 13.8611,
+    "errorSeconds": -0.0028
+   },
+   {
+    "kind": "catch",
+    "frontSeconds": 16.8,
+    "sideSeconds": 17.0599,
+    "errorSeconds": -0.0016
+   }
+  ],
+  "why": "a sync needs two anchors at least 10.0 s apart and the best offset spans 5.333 s; a RANDOM side ledger of the same shape explains 4 events at the 99th percentile, so 3 is not better than chance"
+ },
+ "verdict": "NOT A SYNCHRONOUS PAIR",
+ "fitSweep": [
+  {
+   "toleranceSeconds": 0.0333,
+   "bestOffsetSeconds": 0.2583,
+   "matchedEvents": 3,
+   "chanceCeiling": 4,
+   "spanSeconds": 5.333,
+   "fits": false
+  },
+  {
+   "toleranceSeconds": 0.1,
+   "bestOffsetSeconds": 0.2583,
+   "matchedEvents": 3,
+   "chanceCeiling": 5,
+   "spanSeconds": 5.333,
+   "fits": false
+  },
+  {
+   "toleranceSeconds": 0.2,
+   "bestOffsetSeconds": -1.0083,
+   "matchedEvents": 4,
+   "chanceCeiling": 6,
+   "spanSeconds": 15.133,
+   "fits": false
+  },
+  {
+   "toleranceSeconds": 0.267,
+   "bestOffsetSeconds": 0.525,
+   "matchedEvents": 6,
+   "chanceCeiling": 6,
+   "spanSeconds": 15.133,
+   "fits": false
+  },
+  {
+   "toleranceSeconds": 0.4,
+   "bestOffsetSeconds": 0.6583,
+   "matchedEvents": 8,
+   "chanceCeiling": 7,
+   "spanSeconds": 15.133,
+   "fits": true
+  }
+ ],
+ "why": "No constant offset maps the front's event sequence onto the side's better than chance at any tolerance a sync could be written on. At one frame the best offset explains 3 of 10 events against a chance ceiling of 4. Only at 0.400 s \u2014 twelve frame periods, and far looser than any sync claim \u2014 does the real data reach 8 against a ceiling of 7, one event above chance. THE DECISIVE READING IS NOT THE ARITHMETIC BUT THE SEQUENCE: the front stands empty-handed from 17.3 to 20.0 s and claps at 17.87, while the side handles a ball continuously from 17.06 to 19.73. No offset reconciles a 2.7 s pause with continuous play. Whether the two files are one take with a discontinuity, two takes, or a mislabelled pair is NOT established here."
+}

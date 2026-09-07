@@ -15,6 +15,7 @@ say what was ruled out.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import tempfile
 import unittest
@@ -37,7 +38,27 @@ def block(view: str = "front", set_id: str = "0.1") -> dict:
     return _sync_block(view, set_id, *_sync_inputs(view, set_id))
 
 
+@contextlib.contextmanager
+def measured(set_id="0.9", offset=-0.7295, this=9.8628, reference=9.1333):
+    """A measured set, injected for the duration of one test.
+
+    THE TESTS BELOW USED TO READ SYNC DIRECTLY, and every one of them broke the
+    day both real offsets were withdrawn and SYNC went empty. A test of the
+    WRITER should not depend on what has been measured: the writer's job is to
+    render whatever it is given, and what has been measured is data.
+    """
+    import video_keypoints as module
+    module.SYNC[set_id] = {"offsetSecondsToReference": offset,
+                           "thisViewSeconds": this,
+                           "referenceViewSeconds": reference}
+    try:
+        yield set_id
+    finally:
+        del module.SYNC[set_id]
+
+
 def keypoint_file(sync: dict, view: str = "front", set_id: str = "0.1") -> Path:
+    """A minimal keypoint document for the re-stamp to work on."""
     document = {
         "schemaVersion": "video-keypoints-1",
         "source": {"view": view, "setId": set_id, "videoFile": f"{view} {set_id}.mp4",
@@ -68,22 +89,26 @@ class TheBlockSaysWhatWasDoneAndNotWhatWasRuledOut(unittest.TestCase):
         `methodNote` is exempt and separately required to mention it: that field
         is the withdrawal, and a withdrawal that cannot name what it withdraws
         leaves the next reader to guess."""
-        found = block()
+        with measured() as sid:
+            found = block("side", sid)
 
         for field in ("method", "note", "referenceView"):
             self.assertNotIn("clap", str(found.get(field, "")), field)
         self.assertNotIn(self.STALE, json.dumps(found))
 
     def test_the_method_states_only_the_method(self):
+        with measured() as sid:
+            found = block("side", sid)
         self.assertEqual(
-            block()["method"],
+            found["method"],
             "the frame the ball first meets her hands on the first catch, "
             "read in both views by container timestamp")
 
     def test_the_grade_is_a_field_of_its_own(self):
         """A consumer deciding whether to trust a pairing needs the grade, and a
         grade it has to parse out of a sentence is not a field."""
-        found = block()
+        with measured() as sid:
+            found = block("side", sid)
 
         self.assertEqual(found["methodKind"], "shared-event")
         self.assertIn(found["methodKind"], METHOD_KINDS)
@@ -111,7 +136,8 @@ class TheBlockSaysWhatWasDoneAndNotWhatWasRuledOut(unittest.TestCase):
     def test_the_note_names_what_was_withdrawn(self):
         """A withdrawal that does not quote what it withdraws leaves the next
         reader to wonder what changed."""
-        note = block()["methodNote"]
+        with measured() as sid:
+            note = block("side", sid)["methodNote"]
 
         self.assertIn("no clap existed", note)
         self.assertIn("5.800", note)
@@ -125,22 +151,41 @@ class TheBlockSaysWhatWasDoneAndNotWhatWasRuledOut(unittest.TestCase):
         An earlier version quoted midpoints between frames, which cannot
         satisfy the assertion and which no reader could reproduce from the
         file."""
+        with measured() as injected:
+            for set_id in list(SYNC) + [injected]:
+                for view in ("front", "side"):
+                    with self.subTest(view=view, set_id=set_id):
+                        found = block(view, set_id)
+                        worked = found["worked"]
+                        self.assertAlmostEqual(
+                            worked["thisViewSeconds"]
+                            + found["offsetSecondsToReference"],
+                            worked["referenceViewSeconds"], places=6)
+
+    def test_no_set_carries_a_measured_offset(self):
+        """BOTH OFFSETS FOR SET 0.1 ARE WITHDRAWN (2026-09-07) and neither is
+        replaced: the event ledger finds no constant offset that beats chance,
+        so the two files are not a synchronous pair. Set 0.2's ledger is not
+        read. An empty SYNC is the honest state and this pins it, so that a
+        number cannot creep back without a ledger behind it."""
+        self.assertEqual(SYNC, {})
         for set_id in ("0.1", "0.2"):
             for view in ("front", "side"):
                 with self.subTest(view=view, set_id=set_id):
                     found = block(view, set_id)
-                    worked = found["worked"]
-                    self.assertAlmostEqual(
-                        worked["thisViewSeconds"]
-                        + found["offsetSecondsToReference"],
-                        worked["referenceViewSeconds"], places=6)
+                    self.assertFalse(found["measured"])
+                    self.assertEqual(found["methodKind"], "unknown")
+                    self.assertNotIn("worked", found)
 
-    def test_the_offset_has_the_sign_the_measurement_gave_it(self):
-        """The sign was BACKWARDS before 2026-09-07, not merely imprecise. Set
-        0.1's side view runs LATER than the front, so reaching the front's
-        clock subtracts."""
-        self.assertLess(block("side", "0.1")["offsetSecondsToReference"], 0)
-        self.assertGreater(block("side", "0.2")["offsetSecondsToReference"], 0)
+    def test_the_withdrawal_of_both_offsets_is_recorded_beside_SYNC(self):
+        """A withdrawal that does not name what it withdraws leaves the next
+        reader to rediscover it. Both numbers and the reason are in the source."""
+        import inspect, video_keypoints as module
+        text = inspect.getsource(module)
+
+        self.assertIn("-0.7295", text)
+        self.assertIn("+1.0 s", text)
+        self.assertIn("THEY ARE NOT THE SAME CATCH", text)
 
     def test_every_kind_the_writer_can_emit_is_in_the_vocabulary(self):
         for set_id in ("0.1", "0.2", "0.3"):
@@ -152,21 +197,25 @@ class TheBlockSaysWhatWasDoneAndNotWhatWasRuledOut(unittest.TestCase):
 class TheReferenceViewsZeroIsADefinition(unittest.TestCase):
 
     def test_the_reference_view_offset_is_zero(self):
-        self.assertEqual(block(REFERENCE_VIEW)["offsetSecondsToReference"], 0.0)
+        with measured() as sid:
+            self.assertEqual(
+                block(REFERENCE_VIEW, sid)["offsetSecondsToReference"], 0.0)
 
     def test_the_other_view_carries_the_measured_offset(self):
         other = "side" if REFERENCE_VIEW == "front" else "front"
 
-        self.assertEqual(block(other)["offsetSecondsToReference"],
-                         SYNC["0.1"]["offsetSecondsToReference"])
+        with measured(offset=-0.7295) as sid:
+            self.assertEqual(block(other, sid)["offsetSecondsToReference"],
+                             -0.7295)
 
     def test_one_definition_serves_both_callers(self):
         """`extract` and `restamp` must derive the block the same way. A
         re-stamp with its own reading of SYNC would drift from the writer the
         first time either changed."""
-        path = keypoint_file({"method": "anything at all"})
+        with measured() as sid:
+            path = keypoint_file({"method": "anything at all"}, set_id=sid)
 
-        self.assertEqual(restamp(path)["after"], block())
+            self.assertEqual(restamp(path)["after"], block("front", sid))
 
 
 class TheRestampTouchesTheSyncBlockAndNothingElse(unittest.TestCase):
@@ -186,24 +235,53 @@ class TheRestampTouchesTheSyncBlockAndNothingElse(unittest.TestCase):
 
     def test_the_claim_is_gone_from_the_file(self):
         stale = "two visual events matched by eye; no clap exists in this material"
-        path = keypoint_file({"method": stale})
-        restamp(path)
-        text = path.read_text(encoding="utf-8")
+        with measured() as sid:
+            path = keypoint_file({"method": stale}, set_id=sid)
+            restamp(path)
+            text = path.read_text(encoding="utf-8")
 
         self.assertNotIn("no clap exists in this material", text)
         self.assertIn("no claim about what else the recordings contain", text)
 
+    def test_an_unmeasured_block_carries_no_claim_either(self):
+        """The note on an unmeasured set says only that nothing was measured
+        and why. An earlier version told every reader "Only set 0.1 has two
+        matched events", which stopped being true the moment 0.2 was added and
+        stayed in the file through two more offsets."""
+        path = keypoint_file({"method": "stale"})
+        restamp(path)
+        text = path.read_text(encoding="utf-8")
+
+        self.assertNotIn("Only set 0.1 has two matched events", text)
+        self.assertIn("not a synchronous pair", text)
+
     def test_the_offset_and_the_worked_example_come_from_SYNC(self):
         """Not "are preserved" — the re-stamp REPLACES them from SYNC, which is
-        the point of running it after a re-measurement. An earlier version of
-        this test asserted the stale 9.25 survived, which would have made the
-        re-stamp useless for the job it was next asked to do."""
-        path = keypoint_file({"method": "stale", "worked":
-                              {"referenceViewSeconds": 9.25}})
+        the point of running it after a re-measurement OR a withdrawal."""
+        with measured() as sid:
+            path = keypoint_file({"method": "stale", "worked":
+                                  {"referenceViewSeconds": 9.25}}, set_id=sid)
+            after = restamp(path)["after"]
+
+            self.assertEqual(after["offsetSecondsToReference"], 0.0)
+            self.assertEqual(after["worked"]["referenceViewSeconds"], 9.1333)
+
+    def test_a_withdrawal_strips_the_offset_from_an_existing_file(self):
+        """THE RE-STAMP'S NEW JOB. When a measurement is withdrawn, every
+        artefact carrying it has to lose it — and this is how the four keypoint
+        files stopped claiming -0.7295 s without being re-extracted."""
+        path = keypoint_file({"measured": True,
+                              "offsetSecondsToReference": -0.7295,
+                              "offsetUncertaintySeconds": 0.0333,
+                              "method": "shared event",
+                              "worked": {"thisViewSeconds": 9.8628,
+                                         "referenceViewSeconds": 9.1333}})
         after = restamp(path)["after"]
 
-        self.assertEqual(after["offsetSecondsToReference"], 0.0)
-        self.assertEqual(after["worked"]["referenceViewSeconds"], 9.1333)
+        self.assertFalse(after["measured"])
+        self.assertEqual(after["methodKind"], "unknown")
+        self.assertNotIn("worked", after)
+        self.assertNotIn("-0.7295", path.read_text(encoding="utf-8"))
 
     def test_running_it_twice_changes_nothing_the_second_time(self):
         path = keypoint_file({"method": "stale"})
@@ -256,7 +334,8 @@ class NoProseInTheSyncBlockCanMoveAVerdict(unittest.TestCase):
                            "no clap exists in this material",
                  "worked": {"event": "first catch, seen in both views",
                             "thisViewSeconds": 8.25, "referenceViewSeconds": 9.25}}
-        fresh = block("side")
+        with measured() as sid:
+            fresh = block("side", sid)
         bridged = {**stale,
                    "offsetUncertaintySeconds": fresh["offsetUncertaintySeconds"]}
 
@@ -266,7 +345,8 @@ class NoProseInTheSyncBlockCanMoveAVerdict(unittest.TestCase):
                          verdict(judge_capture(self.evidence(fresh), MOVEMENT)))
 
     def test_mutating_every_prose_field_moves_nothing(self):
-        fresh = block("side")
+        with measured() as sid:
+            fresh = block("side", sid)
         mutated = dict(fresh)
         for field in ("method", "methodKind", "methodNote", "note",
                       "referenceView"):
@@ -287,7 +367,8 @@ class NoProseInTheSyncBlockCanMoveAVerdict(unittest.TestCase):
         only tightening discriminated. The measured 0.0333 s now PASSES, so
         only loosening does. The direction that discriminates is a property of
         the current reading, not of the test."""
-        fresh = block("side")
+        with measured() as sid:
+            fresh = block("side", sid)
         loosened = {**fresh, "offsetUncertaintySeconds": 5.0}
 
         self.assertNotEqual(

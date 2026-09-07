@@ -372,7 +372,8 @@ def judge_capture(evidence: dict, movement: str) -> list[dict]:
         "looser bar is used because a sub-frame claim cannot be verified here "
         "at all, and a bar nothing can check is not a bar.",
         None if uncertainty is None else uncertainty <= step,
-        "A hand at 2 m/s is displaced 30 cm between the views at 150 ms, so "
+        "A hand at 2 m/s is displaced 30 cm between the views at 150 ms — the "
+        "uncertainty the withdrawn offsets carried — so "
         "every two-view figure in a fast phase inherits that.",
         "the sync block in the keypoint file",
     ))

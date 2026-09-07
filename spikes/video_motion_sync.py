@@ -221,8 +221,10 @@ def main(argv: list[str]) -> int:
     print(
         "\nADD this offset to a side-file timestamp to reach the front file's\n"
         "clock, the same convention as the schema's offsetSecondsToReference.\n"
-        "Worked on set 0.1: the first catch is at 8.25 s in the side file and\n"
-        "9.25 in the front, and 8.25 + 1.000 = 9.25.\n"
+        "Worked on set 0.1, WITHDRAWN 2026-09-07 and kept for the sign\n"
+        "convention alone: the first catch was recorded at 8.25 s in the side\n"
+        "file and 9.25 in the front, and 8.25 + 1.000 = 9.25. No offset is\n"
+        "measured for set 0.1; the two files are not a synchronous pair.\n"
         "\nA peak/sidelobe near 1 means there is no peak and the number is not\n"
         "a measurement, whatever it says. Every row above is such a number."
     )
