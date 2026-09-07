@@ -24,8 +24,98 @@ from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
 
+from segment_measures import CENTIMETRES, DEGREES, unit_of
+
 
 MINIMUM_MEANINGFUL_BAND_DEGREES = 5.0
+
+# THE SAME RULE FOR A LENGTH, DERIVED AND NOT SCALED FROM THE ONE ABOVE.
+#
+# The 5.0 above has TWO justifications that happen to agree, and only one of
+# them survives the trip to centimetres:
+#
+#   - clinical practice calls an angle difference under 5 degrees meaningless.
+#     That is an external figure about ANGLES. There is no clinical figure for
+#     a length difference in this repository or in the manual.
+#   - the landmark noise study (`opensim_crosscheck.run_noise_study`, tabulated
+#     in README.md) perturbs every landmark with per-axis Gaussian noise and
+#     reports the angle error: at 5 mm the mean is 1.53 degrees and the 95th
+#     percentile 3.89. The floor sits above that percentile.
+#
+# SO THE LENGTH FLOOR IS DERIVED FROM THE SECOND ONLY, by propagating the SAME
+# 5 mm through a length instead of an angle, with the same 400 samples and the
+# same seed. Every length this engine writes is a difference of TWO landmark
+# coordinates -- a height is `joint - ground`, and the foot gap is
+# `|(L - g) - (R - g)| = |L - R|` -- so two independent perturbations enter it.
+# MEASURED: mean 6.00 mm, 95th percentile 14.53 mm.
+#
+# THE FLOOR IS 2.0 cm, AND IT CARRIES THE SAME SAFETY MARGIN THE DEGREES FLOOR
+# HAS. Two readings of that margin, taken from different statistics of the one
+# study, land 0.93 mm apart and round to the same centimetre:
+#
+#     over the 95th percentile   5.0 / 3.89 = 1.285   x 14.53 mm = 18.68 mm
+#     over the propagated mean   5.0 / 1.53 = 3.268   x  6.00 mm = 19.61 mm
+#
+# They share no numerator and no denominator, so the agreement is evidence and
+# not arithmetic. THEY AGREE AT THE CENTIMETRE AND NOT MORE CLOSELY: 19.61
+# against 18.68 is a 0.93 mm spread, about 5 per cent of either, and both round
+# to 2.0. An earlier version of this comment said "within a tenth of a
+# millimetre", which overstated two readings that differ by nine times that. A floor exists to keep noise out of coaching, so the wide
+# side is the safe side, and both shipped centimetre bands (6.0 and 14.0) clear
+# it either way, which keeps this a fix rather than a retune.
+#
+# BOTH RATIOS ARE POST-HOC AND THE IMPORT IS DELIBERATE. 5.0 was a CLINICAL
+# figure first; nobody derived it from 3.89 or from 1.53, and it was found to
+# clear them afterwards. So 1.285 and 3.268 describe the margin the degrees
+# floor turned out to have rather than a rule anyone applied. The length floor
+# imports that margin knowingly, because the clinical half of the degrees
+# floor's justification has no length counterpart to import.
+#
+# TWO WRONG ROUTES, BOTH TRIED AND BOTH NAMED SO NOBODY RE-DERIVES THEM.
+# Each takes a ratio from an OUTPUT and spends it on an INPUT: the 5 mm is the
+# landmark noise that ENTERS the study, and 1.53 and 3.89 are what LEAVES it.
+#
+#     3.268 x 5.00 mm = 16.34 mm     the ratio spent on the input noise
+#     3.3   x 5.00 mm = 16.50 mm     the same ratio rounded first
+#                       16.5  mm     was then WRITTEN as "1.6 cm", which is a
+#                                    third number and is guarded as one
+#
+# That is this project's recurring fault class, appearing in the derivation of
+# the threshold meant to prevent it. `segment_measures` calls it the
+# units-across-a-boundary fault and counts six; `docs/KNOWN_ISSUES.md` names
+# instances up to a sixth. An earlier version of this comment said "twelve
+# times", which is a count from a lane's own notes and not from anything in
+# this repository -- a number without its inputs, in the comment that exists to
+# insist on them. Tests assert the shipped constant is none of the three.
+#
+# WHAT IS MISSING IS NAMED RATHER THAN INVENTED: there is no coach's figure for
+# a meaningful height difference. This floor therefore protects against noise
+# only, and a coach's figure replaces it the way 5 degrees does for angles.
+MINIMUM_MEANINGFUL_BAND_CENTIMETRES = 2.0
+
+MINIMUM_MEANINGFUL_BAND: dict[str, float] = {
+    DEGREES: MINIMUM_MEANINGFUL_BAND_DEGREES,
+    CENTIMETRES: MINIMUM_MEANINGFUL_BAND_CENTIMETRES,
+}
+
+
+def minimum_meaningful_band(measure: str) -> tuple[float, str | None]:
+    """Return the narrowest honest band for a measure, and its unit.
+
+    An UNDECLARED measure gets the STRICTEST floor of any unit and a unit of
+    `None`. It does not get degrees. A default of degrees is how the next
+    length becomes an angle, which is the whole reason `unit_of` refuses to
+    guess; and a default of the loosest floor would let an unknown measure
+    carry a band no declared measure could.
+
+    `None` travels with it so a caller can decline to name a unit it does not
+    know, rather than printing one.
+    """
+    try:
+        unit = unit_of(measure)
+    except KeyError:
+        return max(MINIMUM_MEANINGFUL_BAND.values()), None
+    return MINIMUM_MEANINGFUL_BAND[unit], unit
 
 
 class MovementDefinitionError(ValueError):
@@ -48,11 +138,13 @@ class Checkpoint:
                 f"{self.measure}: the maximum must exceed the minimum"
             )
         width = self.maximum_degrees - self.minimum_degrees
-        if width < MINIMUM_MEANINGFUL_BAND_DEGREES:
+        floor, unit = minimum_meaningful_band(self.measure)
+        if width < floor:
+            named = unit or "unknown-unit"
             raise MovementDefinitionError(
-                f"{self.measure}: a band of {width:.1f} degrees is narrower than "
-                f"the {MINIMUM_MEANINGFUL_BAND_DEGREES:.0f} degree measurement "
-                "threshold, so it would report noise as coaching"
+                f"{self.measure}: a band of {width:.1f} is narrower than the "
+                f"{floor:.1f} {named} measurement threshold, so it would "
+                "report noise as coaching"
             )
         if not self.cue.strip():
             raise MovementDefinitionError(f"{self.measure}: a coaching cue is required")
@@ -78,7 +170,15 @@ class CheckpointResult:
         return self.verdict == "within"
 
     def feedback(self) -> str:
-        """Return what a coach would say, not what a solver would print."""
+        """Return what a coach would say, not what a solver would print.
+
+        IT SAID "degrees" FOR EVERY MEASURE, INCLUDING THE ONES THAT ARE NOT
+        ANGLES. `netball_double_foot_landing` grades `footHeightGapCm` at three
+        phases, and this sentence told the coach "Needs less: 17 degrees
+        against a target of 0 to 14" about a distance in centimetres. The
+        measure names its own unit now, and a measure with no declared unit
+        gets no unit word rather than a wrong one.
+        """
         if self.correct:
             return f"{self.checkpoint.cue} Good."
         if self.verdict == "below":
@@ -87,9 +187,11 @@ class CheckpointResult:
         else:
             gap = self.measured - self.checkpoint.maximum_degrees
             direction = "less"
+        _, unit = minimum_meaningful_band(self.checkpoint.measure)
+        named = f" {unit}" if unit else ""
         return (
             f"{self.checkpoint.cue} Needs {direction}: "
-            f"{self.measured:.0f} degrees against a target of "
+            f"{self.measured:.0f}{named} against a target of "
             f"{self.checkpoint.minimum_degrees:.0f} to "
             f"{self.checkpoint.maximum_degrees:.0f}, off by {gap:.0f}."
         )
@@ -182,7 +284,24 @@ class MovementDefinition:
         previous: Mapping[str, float] | None = None
         for phase in self.phases:
             frame = measurements_by_phase[round(phase.at_phase * last)]
-            widest, measure = None, None
+            # THE WINNER IS CHOSEN IN UNITS OF EACH MEASURE'S OWN FLOOR,
+            # because `max` over raw values compares centimetres with degrees.
+            # A phase grading a length and an angle together would pick
+            # whichever number is larger, which is not a question with an
+            # answer. Dividing each movement by the floor its own unit carries
+            # makes the comparison unit-free and asks the question that
+            # matters: how many meaningful steps did this checkpoint move?
+            #
+            # INERT IN TODAY'S LIBRARY AND REAL IN THE CODE, measured ON
+            # THE POSSESSION PATH, which is the one `build_library` uses for
+            # this drill. The only mixed phases are `netball_double_foot_
+            # landing`'s, graded at frames 54, 89 and 109 of 110. Across those
+            # three transitions `footHeightGapCm` moves 0.01, 0.00 and 0.01 cm
+            # while the angles move 1.92, 0.13 and 25.07, so the raw maximum
+            # happens to pick the angle every time. The gap's largest value
+            # anywhere in the clip is 1.22 cm, at frame 30, which no phase
+            # grades.
+            widest, measure, scale = None, None, None
             if previous is not None:
                 for checkpoint in phase.checkpoints:
                     if checkpoint.measure not in frame:
@@ -191,8 +310,10 @@ class MovementDefinition:
                         float(frame[checkpoint.measure])
                         - float(previous[checkpoint.measure])
                     )
-                    if widest is None or moved > widest:
+                    floor, _ = minimum_meaningful_band(checkpoint.measure)
+                    if scale is None or moved / floor > scale:
                         widest, measure = moved, checkpoint.measure
+                        scale = moved / floor
             report.append(
                 PhaseSeparation(
                     phase=phase.name,
@@ -249,12 +370,20 @@ class PhaseSeparation:
 
     @property
     def distinguishable(self) -> bool:
-        """A first phase has nothing to differ from, so it always counts."""
+        """A first phase has nothing to differ from, so it always counts.
+
+        The floor is the one this measure's own unit carries. Held against
+        the degrees floor, a centimetre movement was asked to clear 5.0 when
+        its own propagated noise is 1.45 cm and its floor 2.0, so a length had
+        to move two and a half times as far as its own rule requires before a
+        phase counted as distinct.
+        """
         if self.first:
             return True
-        if self.moved is None:
+        if self.moved is None or self.measure is None:
             return False
-        return self.moved >= MINIMUM_MEANINGFUL_BAND_DEGREES
+        floor, _ = minimum_meaningful_band(self.measure)
+        return self.moved >= floor
 
     def why(self) -> str:
         if self.first:
