@@ -360,7 +360,9 @@ any board. That is a fact about the consumer, and not about the clip.
 
 - The engine **has no floor**. There is no floor term, no bounce and no
   restitution in `possession.py`, `ball_track.py` or `possession_solve.py`.
-- "The ball reaches the ground at **0.584 s**, exactly 400.0 cm from her chest."
+- "The ball reaches the ground at **0.584 s**, exactly 400.0 cm from her chest,
+  and keeps falling." The clause is kept because it is the point: nothing stops
+  the ball at the court, which is what "has no floor" means in practice.
 - The release sits at **frame 76 of 96**, which is phase 0.80 in the definition,
   and the flight the clip contains is **19 intervals at 60 frames per second,
   frame 76 to frame 95 = 0.3167 s**.
