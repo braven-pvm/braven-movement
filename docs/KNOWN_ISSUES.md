@@ -3362,6 +3362,34 @@ one regime and spent in another. Here the regime is the library itself — a
 count and a bound both measured on eleven drills and spent on every drill that
 would ever be added.
 
+### The field sends a POSITION for a joint that has none
+
+Raised by the rendering lane on 2026-09-07: its rendered girdle sits about
+25 mm per shoulder narrower than the solve asks. **An open question with a
+decision paper, not a defect and not a change.** Refer to
+`docs/CLAVICLE_QUESTION.md`, which carries the measurement from both ends and
+the three options with what each would do.
+
+The short of it. A clavicle rotates about its sternal end and does not stretch,
+so a shoulder's reachable positions form a SPHERE SURFACE — two degrees of
+freedom — and this field transmits a THREE-VECTOR POSITION. **All 102 of the
+transmitted shoulder targets lie off the consumer's sphere**, worst 52.09 mm.
+
+**No divisor can fix that**, and the probe shows why in one pair of numbers: a
+clavicle divisor takes the worst residual to 31.03 mm, so the length difference
+explains 21.06 mm and the rest ORIENTATION difference explains the other 31.03.
+Scaling a vector changes its length and not its direction.
+
+**THE SENDER IS EXACT, WHICH IS WHAT DECIDES IT.** Measured over every frame of
+every drill, the engine's clavicle changes length by **0.0001 mm** — it is
+rigid in the solve, so the shoulder's displacement IS a rotation of a rigid
+bone about a pivot that travels up to 6.25 cm. A rotation is therefore not an
+approximation of the engine's meaning; the current field is.
+
+The recommendation to Marius is to transmit a rotation, with the consumer
+projecting onto its own sphere as a stated interim. **Nothing is changed and
+the field is unchanged on `main`.**
+
 ### A residual this does NOT fix, bounded and left open
 
 The two rigs' rest poses are not quite the same posture. MHR's rest shoulders
