@@ -102,14 +102,68 @@ class TheReceiptCarriesItsUnits(unittest.TestCase):
         self.assertIn(DEGREES, seen)
 
 
+class TheVariantFilterUsesEachMeasuresOwnFloor(unittest.TestCase):
+    """`build_library`'s "what the ball changes" filter, driven directly.
+
+    IT WAS INLINE IN `main`, which needs a solver and a built library, so
+    reverting its floor lookup failed no test — and a first fix WAS inert,
+    because `readings` is keyed "{phase}/{measure}" and the whole key went to
+    the lookup, which cannot resolve it and answers with the strictest floor
+    and no unit. Every reading stayed at 5 degrees under a heading claiming
+    each was held to its own.
+    """
+
+    def rows(self, name: str, low: float, high: float) -> list[dict]:
+        from build_library import what_the_ball_changes
+
+        varied = {
+            "probe": [
+                {"variant": "a", "readings": {name: low}},
+                {"variant": "b", "readings": {name: high}},
+            ]
+        }
+        return what_the_ball_changes(varied).get("probe", [])
+
+    def test_a_three_centimetre_spread_survives(self) -> None:
+        """3.0 cm clears the 2.0 length floor and not the 5.0 degrees one."""
+        found = self.rows(f"land/{A_LENGTH}", 0.0, 3.0)
+        self.assertEqual(len(found), 1, "a 3 cm spread was filtered out")
+        self.assertEqual(found[0]["unit"], CENTIMETRES)
+        self.assertEqual(found[0]["spread"], 3.0)
+
+    def test_a_three_degree_spread_does_not(self) -> None:
+        """The same number, the other unit, the other side of its floor."""
+        self.assertEqual(self.rows(f"ready/{AN_ANGLE}", 0.0, 3.0), [])
+
+    def test_the_phase_prefix_is_split_off_before_the_lookup(self) -> None:
+        """The blocking defect, stated as the case that failed.
+
+        A bare measure name resolved and a phase-prefixed one did not, so the
+        filter worked in a unit test of the helper and not in the program.
+        """
+        self.assertEqual(len(self.rows(A_LENGTH, 0.0, 3.0)), 1)
+        self.assertEqual(len(self.rows(f"anyPhaseAtAll/{A_LENGTH}", 0.0, 3.0)), 1)
+
+    def test_an_unresolvable_name_keeps_the_strictest_floor(self) -> None:
+        """No unit, and the tightest rule, rather than a guess."""
+        self.assertEqual(self.rows("nothing/likeAMeasure", 0.0, 3.0), [])
+        found = self.rows("nothing/likeAMeasure", 0.0, 9.0)
+        self.assertEqual(len(found), 1)
+        self.assertIsNone(found[0]["unit"])
+
+
 class TheSeparationThresholdIsPerUnit(unittest.TestCase):
     """`build_library` wrote one `thresholdDegrees` into every receipt.
 
     The verdict beside it is taken against each measure's own floor, so a
     centimetre winner judged at 2.0 was described by a receipt saying the
-    threshold was 5 degrees. The rows below are what `build_library` writes;
-    the module itself needs a solver, so the values it derives are checked
-    here and the wiring is covered by the suite's own build test.
+    threshold was 5 degrees.
+
+    THE VALUES ARE CHECKED HERE AND THE WIRING IS CHECKED IN
+    `test_build_library`. An earlier version of this docstring said the wiring
+    was "covered by the suite's own build test", which was not true of any test
+    then in the suite: nothing read `phaseSeparation` at all, and reverting the
+    receipt's per-row threshold passed every one of these.
     """
 
     def test_every_declared_unit_has_a_floor_to_publish(self) -> None:

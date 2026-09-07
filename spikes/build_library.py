@@ -274,6 +274,59 @@ def build_one(character, movement_id: str, variant: str | None = None) -> dict:
     return receipt
 
 
+def what_the_ball_changes(varied: dict) -> dict[str, list[dict]]:
+    """Readings that move more than THEIR OWN measure's floor across variants.
+
+    EXTRACTED SO A TEST CAN DRIVE IT. It was inline in `main`, which needs a
+    solver and a built library, so reverting its floor lookup failed no test at
+    all -- and a first fix of that lookup was inert for a week's worth of
+    reading because the key it receives is "{phase}/{measure}" and the measure
+    had to be split out of it first.
+
+    A reading whose measure cannot be resolved keeps the strictest floor and
+    reports no unit, which is what `minimum_meaningful_band` answers for
+    anything it does not know.
+    """
+    moved: dict[str, list[dict]] = {}
+    for mid, rows in varied.items():
+        for name in sorted({n for row in rows for n in row["readings"]}):
+            values = [row["readings"].get(name) for row in rows]
+            if any(value is None for value in values):
+                continue
+            # EACH MEASURE AGAINST ITS OWN FLOOR, AND THE KEY MUST BE
+            # SPLIT FIRST. `readings` is keyed "{phase}/{measure}" (built
+            # above), so a first fix passed "landing/footHeightGapCm" to the
+            # lookup, which cannot resolve it and returns the UNDECLARED
+            # answer -- the strictest floor, 5.0, and no unit. Every reading
+            # was therefore still held to 5 degrees while the heading claimed
+            # each was held to its own, which is a worse statement than the
+            # "in degrees" it replaced.
+            #
+            # THE FALLBACK IS WHAT MADE IT SILENT. `unit_of` RAISES for an
+            # undeclared measure, by design; `minimum_meaningful_band` catches
+            # that and answers, so a caller passing a key that is not a
+            # measure gets a plausible number instead of an error. That
+            # tolerance exists for hand-built test checkpoints with abstract
+            # names, and here it swallowed a real defect. The guard in
+            # `test_receipt_units` now drives the filter itself rather than
+            # the helper.
+            measure = name.partition("/")[2] or name
+            floor, unit = minimum_meaningful_band(measure)
+            if max(values) - min(values) < floor:
+                continue
+            moved.setdefault(mid, []).append(
+                {
+                    "checkpoint": name,
+                    "unit": unit,
+                    "byVariant": {
+                        str(row["variant"]): row["readings"][name] for row in rows
+                    },
+                    "spread": round(max(values) - min(values), 2),
+                }
+            )
+    return moved
+
+
 def main() -> int:
     movements = library()
     if not movements:
@@ -357,17 +410,21 @@ def main() -> int:
             for item in receipt["phaseSeparation"]["phases"]:
                 if item["distinguishable"]:
                     continue
-                named = (
-                    "" if item["unit"] is None else f" {item['unit']}"
-                )
-                threshold = (
-                    MINIMUM_MEANINGFUL_BAND_DEGREES
-                    if item["threshold"] is None else item["threshold"]
-                )
+                # A PHASE WITH NO CHECKPOINTS HAS NO MEASURE, no unit and
+                # no threshold, and printing "move None ... under the 5
+                # threshold" invents all three. `PhaseSeparation.why` already
+                # has the sentence for that case.
+                if item["measure"] is None:
+                    print(
+                        f"     [{item['phase']}] cannot fail: no checkpoints, "
+                        "so nothing is graded here"
+                    )
+                    continue
+                named = f" {item['unit']}" if item["unit"] else ""
                 print(
                     f"     [{item['phase']}] cannot fail: its checkpoints move "
                     f"{item['movedFromPrevious']}{named} from the phase "
-                    f"before, under the {threshold:g}{named} threshold"
+                    f"before, under the {item['threshold']:g}{named} threshold"
                 )
         if met != checks:
             for phase, rows in coaching["phases"].items():
@@ -386,37 +443,17 @@ def main() -> int:
     # the threshold this project calls meaningful are shown, which leaves
     # exactly what a variant exists to change.
     varied = {mid: rows for mid, rows in contact_rows.items() if len(rows) > 1}
-    moved: dict[str, list[dict]] = {}
-    for mid, rows in varied.items():
-        for name in sorted({n for row in rows for n in row["readings"]}):
-            values = [row["readings"].get(name) for row in rows]
-            if any(value is None for value in values):
-                continue
-            # EACH MEASURE AGAINST ITS OWN FLOOR. This filter held every
-            # spread to 5 degrees, so a centimetre spread had to be five
-            # times its own threshold to be shown, and the heading below
-            # called it degrees. Latent while no variant drill grades a
-            # length, and wrong the moment one does.
-            floor, _ = minimum_meaningful_band(name)
-            if max(values) - min(values) < floor:
-                continue
-            moved.setdefault(mid, []).append(
-                {
-                    "checkpoint": name,
-                    "byVariant": {
-                        str(row["variant"]): row["readings"][name] for row in rows
-                    },
-                    "spread": round(max(values) - min(values), 2),
-                }
-            )
+    moved = what_the_ball_changes(varied)
     for mid, rows in moved.items():
         labels = [str(row["variant"]) for row in varied[mid]]
         print(f"\nwhat the ball changes on {mid}, each in its own unit:")
         print("  " + f"{'checkpoint':44s} " + " ".join(f"{n:>8s}" for n in labels))
         for row in rows:
+            unit = f" {row['unit']}" if row["unit"] else ""
             print(
                 f"  {row['checkpoint']:44s} "
                 + " ".join(f"{row['byVariant'][n]:8.2f}" for n in labels)
+                + unit
             )
         rest = len(varied[mid][0]["readings"]) - len(rows)
         floors = ", ".join(
