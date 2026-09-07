@@ -26,6 +26,7 @@ from movement_definition import (
     definition_files,
     load,
     minimum_meaningful_band,
+    what_the_ball_changes,
 )
 from segment_measures import CENTIMETRES, DEGREES, unit_of
 
@@ -114,8 +115,6 @@ class TheVariantFilterUsesEachMeasuresOwnFloor(unittest.TestCase):
     """
 
     def rows(self, name: str, low: float, high: float) -> list[dict]:
-        from build_library import what_the_ball_changes
-
         varied = {
             "probe": [
                 {"variant": "a", "readings": {name: low}},
