@@ -3367,28 +3367,44 @@ would ever be added.
 Raised by the rendering lane on 2026-09-07: its rendered girdle sits about
 25 mm per shoulder narrower than the solve asks. **An open question with a
 decision paper, not a defect and not a change.** Refer to
-`docs/CLAVICLE_QUESTION.md`, which carries the measurement from both ends and
-the three options with what each would do.
+`docs/CLAVICLE_QUESTION.md`, rebuilt the same day after an independent review
+refuted the first draft's argument.
 
-The short of it. A clavicle rotates about its sternal end and does not stretch,
-so a shoulder's reachable positions form a SPHERE SURFACE — two degrees of
-freedom — and this field transmits a THREE-VECTOR POSITION. **All 102 of the
-transmitted shoulder targets lie off the consumer's sphere**, worst 52.09 mm.
+**THE CENTRAL NUMBER, WHICH THE FIRST DRAFT NEVER STATED: the two rigs' rest
+clavicles point 32.72 degrees apart**, a chord of 7.11 cm. That is a LARGER
+rest difference than the ~2.5 cm posture gap recorded below, and it was
+recorded nowhere.
 
-**No divisor can fix that**, and the probe shows why in one pair of numbers: a
-clavicle divisor takes the worst residual to 31.03 mm, so the length difference
-explains 21.06 mm and the rest ORIENTATION difference explains the other 31.03.
-Scaling a vector changes its length and not its direction.
+A clavicle rotates about its sternal end and does not stretch, so a shoulder's
+reachable positions form a SPHERE SURFACE — two degrees of freedom — while the
+field transmits a THREE-VECTOR POSITION. **All 102 transmitted targets lie off
+the consumer's sphere**, worst 52.09 mm; a clavicle divisor takes that to
+31.03 and none of them onto it.
 
-**THE SENDER IS EXACT, WHICH IS WHAT DECIDES IT.** Measured over every frame of
-every drill, the engine's clavicle changes length by **0.0001 mm** — it is
-rigid in the solve, so the shoulder's displacement IS a rotation of a rigid
-bone about a pivot that travels up to 6.25 cm. A rotation is therefore not an
-approximation of the engine's meaning; the current field is.
+**The 21.06 / 31.03 decomposition the first draft offered is WITHDRAWN.** At
+that same target the clavicle-divisor residual with the sternal travel removed
+is 54.72 mm, larger than the 31.05 it was meant to decompose. The two do not
+add, and the split was arithmetic dressed as a mechanism.
 
-The recommendation to Marius is to transmit a rotation, with the consumer
-projecting onto its own sphere as a stated interim. **Nothing is changed and
-the field is unchanged on `main`.**
+**Four options, and the paper recommends none yet**: a rotation from rest,
+which is TWO fields and carries the 32.72 degrees into every frame; a clavicle
+divisor, which buys 40 per cent and keeps the shape; consumer-side projection,
+which is the status quo written down; and a transmitted clavicle DIRECTION plus
+the sternal end's position, which is what the handoff's own precedent points at
+(`arms.direction`) and which the first draft did not contain.
+
+**Three faults of this lane's own reasoning are recorded in the paper** rather
+than quietly replaced: a measurement that was a tautology (`l_uparm`'s parent
+IS `l_clavicle`, so a fixed bone length decides nothing); a statistic compared
+against a single reading, which invented a disagreement that did not exist; and
+a frame invented where `trunkTurnDegrees` already existed.
+
+**Instruments**: `scripts/engine_clavicle.py` for the sender's figures, which
+reports a drill it cannot solve rather than skipping it, prints the 1180 frames
+it visited, and names the population of every median; and
+`scripts/clavicle_divisor_probe.py` for the consumer's, by the rendering lane.
+
+**Nothing is changed and the field is unchanged on `main`.**
 
 ### A residual this does NOT fix, bounded and left open
 
