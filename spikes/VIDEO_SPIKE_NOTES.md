@@ -1,5 +1,45 @@
 # Video spike, session 1.0
 
+> **THE SOURCE FILES WERE RENAMED ON 2026-09-07, AND MUCH OF THIS DOCUMENT WAS
+> WRITTEN BEFORE THAT.** Marius swapped the two SIDE files' names at source, so
+> the labels now describe the contents. Nothing in any recording changed and no
+> measurement changed. Read every older sentence through this table, which is
+> by sha256 and is the only identity that has never moved:
+>
+> | sha256 (first 12) | frames | called before | called now |
+> |---|---|---|---|
+> | `f7faf38b5d42` | 866 | `front 0.1.mp4` | `front 0.1.mp4` |
+> | `2bdf00a3fc45` | 946 | `front 0.2.mp4` | `front 0.2.mp4` |
+> | `6e8f9fb2fe03` | 990 | **`side 0.2.mp4`** | **`side 0.1.mp4`** |
+> | `253fa551605e` | 863 | **`side 0.1.mp4`** | **`side 0.2.mp4`** |
+>
+> **BOTH PAIRS ARE NOW ESTABLISHED (2026-09-07), and nothing here is PAIRING
+> UNKNOWN any more:**
+>
+> | pair | frame offset | anchors, read at a step of |
+> |---|---|---|
+> | `front 0.1.mp4` + `side 0.1.mp4` | **-5** | 1 frame, 11.03 s apart |
+> | `front 0.2.mp4` + `side 0.2.mp4` | **-78** | 1 frame, 10.37 s apart |
+>
+> Before the rename the first pair's two contents were written
+> `front 0.1 + side 0.2`. Its anchors, their indices and their timestamps are
+> unchanged, because the content is unchanged.
+>
+> **The second pair was nearly recorded as a failure.** Read against a side
+> ledger sampled at every EIGHTH frame, the best of all correspondences spread
+> by 10.8 frames and no offset fitted. Re-read at a step of one frame the same
+> events give -78 three times. Refer to "A ledger without its reading step
+> nearly cost a real pairing" in `docs/KNOWN_ISSUES.md`.
+>
+> A file name is not an identity. Every artefact carries `source.videoSha256`,
+> and `source_matches()` in `spikes/video_keypoints.py` compares it with the
+> file on disk. **That field was written into every artefact from the first one
+> and nothing read it: the rename happened and 50 tests stayed green**, because
+> the only other identity check compares a frame index against a timestamp, and
+> the two side files carry identical timestamps at every shared index.
+
+
+
 What phone video can and cannot give the engine. Working notes, written as the
 work happens rather than after it, so the failures stay in.
 
@@ -81,10 +121,18 @@ sound or pixels — which is why both routes failed the same way.
 
 Two catches, located by reading frame contact sheets:
 
+> **VOID 2026-09-07 — THE TWO FILES IN THIS TABLE ARE NOT A PAIR.** The events
+> below were read between `front 0.1.mp4` and `side 0.1.mp4`, and those two are
+> not the same run. `front 0.1.mp4` pairs with `side 0.2.mp4` at a constant
+> FRAME offset of −5, measured on two ball-into-hands anchors 11.03 s apart.
+> The rows are kept because the READING METHOD below them is sound and the
+> disagreement they record is real; the offsets are not. Refer to PAIRS in
+> `spikes/video_keypoints.py`.
+
 | event | front | side | offset |
 |---|---|---|---|
-| A, first catch | 9.133 s | 8.133 s | **−1.000 s** |
-| B, a catch 15 s later | 24.067 s | 22.800 s | **−1.267 s** |
+| A, first catch | 9.133 s | 8.133 s | **−1.000 s** (void) |
+| B, a catch 15 s later | 24.067 s | 22.800 s | **−1.267 s** (void) |
 
 The two disagree by **267 ms**, which is eight frames. That is how precisely a
 catch can be located by eye on a small tile, and nothing more.
@@ -95,8 +143,10 @@ apart the events are. Event B's role is a gross-error check on the offset — it
 confirms there is no whole-cycle mismatch — and it is not a drift measurement.
 The drift number comes from the frame timestamps, below.
 
-So the honest answer for this material is an offset of about **−1.1 s with an
-uncertainty near ±150 ms**. For a feasibility spike that is enough to pair
+So the honest answer for this material WAS an offset of about **−1.1 s with an
+uncertainty near ±150 ms**. **THAT IS VOID**: the two files are not a pair, and
+the disagreement of 267 ms this section treats as reading error was the two
+recordings being of different runs. For a feasibility spike that is enough to pair
 frames for a look. For reading joint angles off two views it is not.
 
 **What ±150 ms costs downstream.** A hand travelling at 2 m/s is displaced
@@ -212,25 +262,40 @@ anthropometry at all.
     front   2.0176 mm per pixel   (median shoulder span 138.8 px)
     side    3.1817 mm per pixel   (median torso 163.5 px, torso 0.520 m)
 
-### The residual, on 735 frame pairs and 5088 landmark readings
+### The residual, on 767 frame pairs and 5622 landmark readings
 
-| | median | 90th | worst |
-|---|---|---|---|
-| all landmarks | **15.0 mm** | 146.4 mm | 535.7 mm |
+**VOID BELOW THE RULE, AND REPLACED. The table that stood here (735 pairs,
+5088 readings, median 15.0 mm) was measured on `front 0.1.mp4` against
+`side 0.1.mp4`, and those two files are not a pair.** Refer to the mislabel
+finding in `docs/VIDEO_CAPTURE_FINDINGS.md`. Re-measured on
+`front 0.1.mp4` + `side 0.2.mp4`, mapped by frame index at -5:
+
+| | median | mean | 90th | worst |
+|---|---|---|---|---|
+| all landmarks | **20.0 mm** | 29.4 mm | 64.0 mm | 209.2 mm |
+| *the void pairing* | *15.0* | *49.8* | *146.4* | *535.7* |
 
 | landmark | readings | median | 90th |
 |---|---|---|---|
-| left shoulder | 735 | 14.2 | 39.8 |
-| right shoulder | 735 | 17.3 | 46.0 |
-| left knee | 442 | 13.4 | 27.2 |
-| left elbow | 734 | 65.8 | 193.7 |
-| left ankle | 199 | 90.2 | 125.5 |
-| left wrist | 731 | 140.9 | 336.4 |
-| left hip, right hip | 735 | 3.7 | 8.5 |
+| left shoulder | 767 | 16.3 | 34.4 |
+| right shoulder | 767 | 22.3 | 50.3 |
+| left elbow | 766 | 41.5 | 73.6 |
+| left wrist | 764 | 42.3 | 74.5 |
+| right wrist | 16 | 35.0 | 68.6 |
+| left knee | 677 | 27.6 | 40.9 |
+| left ankle | 234 | 126.5 | 196.3 |
+| right ankle | 97 | 47.9 | 146.9 |
+| left hip, right hip | 767 | 4.4 | 9.8 |
 
-**The hips are the vertical origin of both views, so their 3.7 mm is nearly
-circular and is not a measure of accuracy.** The shoulders and the knees are
-the honest readings: **13 to 17 mm**.
+**THE MEDIAN GOT WORSE AND EVERY OTHER FIGURE GOT MUCH BETTER, and that is the
+lesson.** The median was never measuring the pairing: most of the clip is the
+athlete standing still, where any pairing agrees, so it reports how much of the
+clip is static. The TAIL was the instrument, and it sat unread in the same JSON
+the whole time.
+
+**The hips are the vertical origin of both views, so their 4.4 mm is nearly
+circular and is not a measure of accuracy.** The shoulders and the knees are the
+honest readings: **16 to 28 mm**.
 
 The right-side landmarks barely appear — 28 readings for the right wrist, 14
 for the right ankle — because the side camera sees her in profile and the far

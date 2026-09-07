@@ -1,8 +1,21 @@
 """Find the clap offset between the two cameras of a filmed set.
 
-THIS INSTRUMENT FAILED ON SESSION 1.0 AND IS KEPT ANYWAY. There is no clap in
-that material, and all four methods below returned peak-to-sidelobe between
-1.01 and 1.35 — no peak, so no measurement. Its numbers are cited in
+THIS INSTRUMENT FAILED ON SESSION 1.0 AND IS KEPT ANYWAY. All four methods
+below returned peak-to-sidelobe between 1.01 and 1.35 — no peak, so no
+measurement.
+
+CORRECTED 2026-09-04: THIS DOCSTRING USED TO SAY "there is no clap in that
+material". THERE IS. The front recording carries two, at 5.800 s and 17.835 s,
+each a broadband spike over x26 within 70 ms of the athlete's wrists closing.
+What is true is narrower and is what this module actually measured: NO OFFSET
+BETWEEN THE TWO TRACKS REPRODUCES. The front's sharpest signature is a pair of
+spikes 0.175 s apart; the side's only gap under half a second is 0.235 s, and
+no lag within six seconds places the pair anywhere in it. So the failure is
+real and its cause is not the one recorded here — either the side microphone
+never registered the claps or the two files do not contain the same instant,
+and nothing here separates those. Refer to `spikes/video_clap_evidence.py`, the
+committed detector, and to "The alignment ranked a sync clap above every real
+catch" in `docs/KNOWN_ISSUES.md`. Its numbers are cited in
 `docs/VIDEO_CAPTURE_FINDINGS.md` as the evidence for the clap instruction, and
 a report citing a measurement nobody can rerun is worse than a failed script in
 the tree. Nothing downstream reads its output.
@@ -73,17 +86,21 @@ class Offset:
 
     THE SIGN, WORKED, BECAUSE PROSE ABOUT DIRECTION HAS FAILED TWICE HERE.
 
-    Take the first catch of set 0.1: it is at 9.25 s in the front file and
-    8.25 s in the side file. `correlate(front, side)` returns **+1000 ms**,
+    Take the first catch of set 0.1: it WAS RECORDED at 9.25 s in the front
+    file and 8.25 s in the side file. THOSE TIMES ARE WITHDRAWN (2026-09-07)
+    and the worked example below is kept for its SIGN CONVENTION alone. `correlate(front, side)` returns **+1000 ms**,
     verified against synthetic impulses at exactly those times.
 
         side 8.25 + 1.000 = 9.25 front      correct
         side 8.25 - 1.000 = 7.25            wrong by twice the offset
 
     So ADD this number to a timestamp in the SECOND file to reach the first
-    file's clock. It is therefore identical to the schema's
-    `offsetSecondsToReference` for the second view, in seconds rather than
-    milliseconds, with the first file as the reference.
+    file's clock. That is the sign convention the schema's former
+    `offsetSecondsToReference` used, with the first file as the reference.
+    **THE FIELD NO LONGER EXISTS** (removed 2026-09-07: two offsets in seconds
+    were published from this material and both were withdrawn). The schema's
+    sync is a FRAME offset, `frameOffsetToReference`, added to a frame INDEX.
+    The sign convention here is unchanged and is all that is being compared.
 
     An earlier version of this docstring said the opposite — subtract, and
     positive means later in the second file. Both halves were wrong, and
@@ -247,9 +264,11 @@ def main(argv: list[str]) -> int:
 
     print(
         "\nADD this offset to a side-file timestamp to reach the front file's\n"
-        "clock. Worked on set 0.1: the first catch is at 8.25 s in the side\n"
-        "file and 9.25 in the front, and 8.25 + 1.000 = 9.25. It is the\n"
-        "schema's offsetSecondsToReference for the side view, in milliseconds.\n"
+        "clock. THE WORKED EXAMPLE THIS USED TO PRINT IS WITHDRAWN (2026-09-07):\n"
+        "it read 'the first catch is at 8.25 s in the side file and 9.25 in the\n"
+        "front'. The file names are wrong -- front 0.1 pairs with side 0.2 -- and\n"
+        "the sync is now a FRAME offset, not a number of seconds. Refer to PAIRS\n"
+        "in video_keypoints.py. Nothing downstream reads this script's output.\n"
         "\nEVERY ROW ABOVE FAILED on this material: peak-to-sidelobe near 1.0\n"
         "means the best match is no better than the next-best, so there is no\n"
         "peak and the milliseconds beside it are not a measurement."

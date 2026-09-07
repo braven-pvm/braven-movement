@@ -3995,8 +3995,15 @@ and 26.415 s.
 Either the side camera's microphone never registered the claps — its strongest
 event is x24 against the front's x44, and it may be several metres away — or the
 two files do not contain the same instant. **The audio cannot separate those two
-readings**, and until a person does, the by-eye 1.0 s stands as the only measured
-offset.
+readings**, and until a person does, no offset stands at all. **CORRECTED
+2026-09-07: an earlier version of this line said "the by-eye 1.0 s stands as the
+only measured offset". It does not.** That offset and a later −0.7295 s are both
+withdrawn, and an event ledger over the whole clip finds no constant offset that
+beats chance AT ANY TOLERANCE A SYNC COULD USE (at 0.400 s, twelve frames, one
+does: 8 matched against a ceiling of 7, and at that width a match spans most of
+the 1.866 s toss cycle) — refer to
+`spikes/video-annotations/event-ledger-0.1.json`. Set
+0.1 is not a synchronous pair and is unusable for two-view work.
 
 **AND A CORROBORATOR THIS LANE OFFERED IS WITHDRAWN.** A wrist-height scan was
 reported as peaking at −0.967 s, agreeing with the recorded −1.000. Three of its
@@ -4054,3 +4061,347 @@ Section 18 of `docs/VIDEO_CAPTURE_FINDINGS.md`: the clap must be **in frame for
 both cameras**, not merely audible, and both files must be opened on the day to
 confirm that each one heard and saw it. A clap that only one camera records is
 worth nothing, and this session spent a morning proving that the hard way.
+
+
+## A consumer nothing executes is a consumer nobody has checked
+
+Found 2026-09-07, in a tip that had already been pushed and sent to review.
+
+`offsetSecondsToReference` was removed from the sync block, because the
+measurement is a frame count and two offsets in seconds had been withdrawn from
+the same material. **The field was removed and its two readers were left
+behind.** `spikes/video_lift_3d.py:116` and `spikes/video_elbow_curve.py:89`
+both still subscripted it.
+
+```
+$ python video_lift_3d.py --set 0.2
+    offset = float(side["sync"]["offsetSecondsToReference"])
+KeyError: 'offsetSecondsToReference'
+```
+
+**THE SPIKES SUITE WAS 786 TESTS AND GREEN.** Not one of them executed either
+consumer: every test builds a sync block as a dictionary literal and asserts on
+that dictionary. A mocked block has whatever fields the mock was given, so
+removing a field from the real writer changed nothing any test could see.
+
+### Why it did not show even when the consumers were tried
+
+Both are guarded by `if not side["sync"].get("measured")`, and both load
+`keypoints-<view>-<SET>.json` — the same set for both views.
+
+- **Set 0.1**: `side 0.1.mp4` is unmeasured, so the guard fired and the script
+  exited 1 with a clear message. That is the case that was tested, and it looked
+  right.
+- **Set 0.2**: **`side 0.2.mp4` IS measured** — it is half of the real pair,
+  with `front 0.1.mp4`. The guard passed, and the next line read the removed
+  field.
+
+The set that was tested was the one the author had been thinking about. The set
+that broke was the one the change itself created, because the pairing crosses
+sets and every consumer built on "both views of a set" rests on an assumption
+the mislabel finding had already destroyed.
+
+### And the first repair had the same shape as the fault it fixed
+
+Asking `if not side["sync"]["measured"]` is not the question. `side 0.2.mp4` has
+a sync, so `--set 0.2` loaded `front 0.2.mp4` against `side 0.2.mp4`, passed,
+and **wrote a plausible lift from two files that are not a pair**. A wrong
+artefact is worse than a crash: the crash was found in a minute and the lift
+would have been read. The guard now asks whether these two files ARE the pair.
+
+### What was done
+
+- Both consumers resolve through `PAIRS` and take the mapping BY FRAME INDEX,
+  so a wrong offset lands on executing code. `--pair` names two files; `--set`
+  survives only so the refusal can name the real pairing.
+- `spikes/test_video_sync_consumers.py` RUNS both entry points as subprocesses
+  and reads their exit codes — including the reachable pass, the lift on the
+  established pair, because a refusal-only test proves nothing a syntax error
+  would not also prove.
+- ~~Mutating the frame offset to −4 or −6 now fails the anchor assertion inside
+  the consumer, by event name.~~ **THAT WAS NOT TRUE, and it is corrected
+  below.** Each consumer read the offset out of a WRITTEN artefact, so changing
+  the offset in `PAIRS` reached neither of them: both ran to exit 0 under both
+  mutations. The assertion existed twice, once in each consumer, and no
+  mutation could fail either copy. It now lives once, in `frame_offset_of()`
+  beside the writer, and it RAISES rather than asserting, because `assert`
+  disappears under `python -O` and this is a check on data. Four mutations fail
+  it: the offset one frame out either way, a held-back check row moved by one
+  frame, the offset in `PAIRS` changed, and the loop emptied.
+
+**The rule, beside "commit the instrument with its numbers": a consumer nothing
+executes is a consumer nobody has checked.** A green suite over mocks says the
+mocks agree with each other.
+
+### Writing the test found two more, and neither came from the change
+
+The first version of the test file asserted only that a refusal exits non-zero.
+**A crash is also non-zero.** Both of these passed it.
+
+**The elbow curve compared a variable it had not loaded yet.** The guard read
+`front["source"]["videoFile"]` on a line two above the line that loads `front`.
+Every call raised `UnboundLocalError`. It survived because the test read the
+exit code and not the reason, and because the shell pipeline it was tried in
+reported the exit code of `tail`.
+
+**AND IT WAS MINE, hours old, not six days.** The pack first recorded this
+among the faults that "did not come from the change", and the independent
+review checked the commits: it is not at 9455a8c, and the first repair
+7f2a99e introduced it. So the repair for one fault created another of the same
+family in the same file, and the test written to hold the first was too weak to
+catch the second. Two of the four faults in this entry are mine, not one.
+
+**The engine's reference curves changed shape and TWO readers did not.**
+`reference-curves.json` is at schema version 2, where a curve is
+`{"unit": ..., "values": [...]}` rather than a bare list, so that
+`footHeightGapCm` can declare centimetres in a file that announces itself as
+angles. The widening landed on 1 September. `video_dry_run.py` was widened with
+it, deliberately and in writing. Two others were not:
+
+- `video_elbow_curve.py` iterated the curve, collected the dictionary's KEYS,
+  and raised a numpy type error on the strings `"unit"` and `"values"`.
+- `video_phase_align.py` did the same in TWO places, and the worse of the two
+  defeats a guard. `rank_against_library` skips a curve with fewer than two
+  points. The mapping has two keys, so it PASSED that guard and carried the two
+  words into the ranking across the whole library, which the module's own
+  docstring calls the guard on the whole method.
+
+  **THE GUARD PASSED SILENTLY; THE CALL THEN CRASHED.** This entry said the
+  fault "is SILENT", and that overstates it: three lines past the guard the
+  warp raises, so no ranking was ever produced with the words in it. What is
+  silent is the guard, and that is the part worth remembering, because a guard
+  that accepts two strings as two data points is a guard that would also accept
+  them if the arithmetic below it happened to tolerate strings.
+
+Proven by reading the exported file:
+
+```
+LINE 531 SHAPE:
+  what it collects: ['unit', 'values']  len 2  passes len<2 guard: True
+  then rank_against_library raised, from inside the warp three lines later:
+      ValueError: could not convert string to float: np.str_('unit')
+LINE 568 SHAPE:
+   ValueError: could not convert string to float: 'unit'
+```
+
+`test_video_phase_align.py` is 34 tests and was green throughout, because its
+fixture builds the reference as a bare list: **the mock had drifted from its
+producer, so it tested nothing but itself.**
+
+That is the sharper form of the rule. Two of these four are mine and hours old,
+and two are not mine and were six days old, and every suite in the repository
+had run over those two while they were broken. **Count the list before writing
+the sentence above it**: the first version of this paragraph said one was mine
+and three were not, and the review counted.
+
+The shape now lives in `spikes/reference_curves.py` with no heavy imports.
+`export_reference_curves.py` takes its version number from there, and all three
+readers read through `curve_values` or `curve_length`. `curve_length` counts
+values and returns 0 for a bare list, so the shape that passed a length guard
+now fails it. The phase-align fixture is at version 2, and
+`test_reference_curves.py` reads the REAL exported artefact when it is present.
+That last test is the only one here that can catch the next widening.
+
+### And a claim in the commit before this one was wrong
+
+That commit said mutating the frame offset to −4 or −6 fails the consumers'
+anchor assertion by event name. **It does not.** Each consumer read the offset
+out of a written keypoint artefact, so changing the offset in `PAIRS` reached
+neither of them: both ran to exit 0 under both mutations. The assertion existed
+twice, in two files, and no mutation could fail either copy.
+
+The check now lives once, in `frame_offset_of()` beside the writer, and it
+RAISES rather than asserting, because `assert` disappears under `python -O` and
+this is a check on data. Four mutations fail it: the offset one frame out in
+either direction, a held-back check row moved by one frame, the offset in
+`PAIRS` changed, and the loop emptied.
+
+### What a hosted runner can hold of this
+
+`spikes/poc-output/` is in `.gitignore`, so the keypoint artefacts exist only
+on a machine that has processed the footage. The tests that need them skip on
+the runner and say so. The tests that need no footage — every refusal that is
+decided before a file is opened, the engine-curve schema guard, and the anchor
+check — run everywhere. That split is deliberate: the runner holds that both
+consumers still import, still parse and still refuse, and the machine with the
+footage holds that they still produce.
+
+
+## A ledger without its reading step nearly cost a real pairing
+
+Found 2026-09-07, establishing the second camera pair.
+
+`front 0.2.mp4` and `side 0.2.mp4` ARE a pair, at a constant frame offset of
+**-78**, on three anchors read at a step of one frame, two of them 10.37 s
+apart. **The first answer was the opposite, and it was wrong.**
+
+### What the wrong answer looked like
+
+Three frame-exact front catches were tested against the committed side ledger.
+Every possible in-order correspondence was tried. The best spread by
+**0.3603 s = 10.8 frames**, against 0.13 frames for the pair already
+established. On that reading no constant offset fits, and the honest-failure
+report was ready to write.
+
+### Why it was wrong
+
+Every event in that side ledger sits at a frame index divisible by eight:
+
+```
+248, 256, 296, 352, 416, 472, 512, 560, 640, 696, 752
+```
+
+**It was read at every eighth frame**, so each time carries 0.267 s of
+quantisation. Worse than the quantisation, the reader recorded the frame where
+the ball was clearly HELD rather than the frame where it met the hands, so the
+times run LATE by up to ten frames. The ledger's 13.8611 s is not a catch at
+all: the catch is at index 406, and by 416 she has the ball overhead and is
+bringing it down.
+
+Re-read at a step of one frame, the same three events give -78, -78, -78, and
+the derived seconds drift -0.0042 s across 10.37 s — the same signature the
+other pair shows, which is the two cameras' 11 microsecond period difference.
+
+**The ledger carried no field recording its reading step.** Nothing in it said
+that its times were eighth-frame samples, so they read as measurements. Every
+row of the new pair table carries `readAtFrameStep`.
+
+### And the unrecorded attempt was one frame from the answer
+
+The previous pack recorded this pairing as UNKNOWN after an attempt that "gave
+frame differences of 77 and 75", and the four frames it read were never written
+down. The answer is 78. **That attempt was not wrong by much; it was
+unrecorded, which is worse** — had its four indices been written down, the next
+reader would have started one frame from the answer instead of starting again.
+A number without its inputs cannot be corrected, only discarded.
+
+### Two instruments failed on the way, and both are recorded
+
+**The contact sheet could show frames from a different part of the clip.**
+`contact_sheet` globbed its scratch directory and never emptied it, so a call
+selecting 12 frames after a call that selected 18 produced a sheet of 18 tiles
+whose last six were the PREVIOUS sheet's frames. The label had a fallback of
+`-1`, and `times[-1]` is a real timestamp, so those tiles were captioned with
+the last frame of the whole file: a real moment from elsewhere under a
+plausible caption. A ledger read from that sheet would record events that are
+not there. It now empties the scratch first and REFUSES when the file count and
+the requested count disagree.
+
+**One observation of mine was withdrawn mid-way.** I had noted that front 0.2's
+ball looked like a tan medicine ball while side 0.2's was a cream netball, and
+was ready to call them different drills on that. At full resolution `front
+0.1.mp4` shows the same netball, sharp; front 0.2's only looks olive because it
+is motion-blurred and she stands further from the camera. Same ball, same room,
+same session. The colour was lighting and blur, and it was nearly evidence.
+
+**A keypoint-based candidate detector does not work here, and is not proposed.**
+Calibrated on the view whose ledger is known, local maxima of wrist height
+above the hips recovered 4 of 10 events with 15 false candidates. In a self-toss
+the hands go high to RELEASE as well as to catch, so height cannot separate
+them. The frames have to be read.
+
+### What corroborates the pairing, independently of the anchors
+
+Both consumers run on it. The two views agree on the left elbow angle to a
+median of **4.8 degrees** with a correlation of **+0.937**, on 782 frames; the
+lift pairs 809 frames with a median residual of 16.9 mm. Under the mislabelled
+pairing the same elbow comparison gave 21.2 degrees. A wrong pairing does not
+produce agreement like that.
+
+**The rule: a ledger records the step it was read at, on every row. A time
+sampled every eighth frame is not a measurement of when something happened, and
+without the step recorded nobody can tell the difference.**
+
+
+## Two pairings, and neither could be re-derived from the tree
+
+Found by review on 2026-09-07, in the pack that established both.
+
+Both camera pairings were recorded as hand-typed anchors in `PAIRS`, and
+nothing committed could reproduce either.
+
+**Pair 1 was worse than pair 2.** `git grep 6e8f9fb2` — the sha256 of
+`side 0.1.mp4` — found that hash only in prose, in the pair table and in one
+test string. **No committed ledger held that recording's events at all.** The
+8-of-8 fit that established the pairing had run on rows that were never
+committed. "Commit the instrument with its numbers", and the instrument was
+missing.
+
+Pair 2 could not be re-derived either: its side rows live in
+`event-ledger-0.1.json` at a reading step of eight, so `usable_for_a_fit`
+refuses every one of them and the fit returns `None`.
+
+### What was done
+
+`event-ledger-pair1.json` holds `side 0.1.mp4`'s events, read from the frames
+at a step of three over 5.0 to 25.3 s, with the two anchors re-read at a step
+of one. They were read WITHOUT taking the offset off the pair table first: a
+catch found where an offset predicted a catch is not evidence in a clip of
+catches, which is how -0.7295 s was published. The two refined anchors came out
+at side 269 against front 274 and side 600 against front 605 — **-5 twice,
+11.03 s apart** — and the front view's overhead catch was refined from its
+coarse 608 to 605 to match.
+
+Two tests now load the COMMITTED ledgers and run the fit:
+
+| pair | fits | best offset | expected | events | span |
+|---|---|---|---|---|---|
+| front 0.1 + side 0.1 | yes | -0.1750 s | -5 frames = -0.1666 | 2 | 11.03 s |
+| front 0.2 + side 0.2 | yes | -2.6083 s | -78 frames = -2.5991 | 4 | 16.43 s |
+
+Each is within one frame period of the table's frame offset. A third test
+asserts that every pair in the table has a ledger named here, so the next
+hand-typed pairing fails by name.
+
+### One convention for a refined row, because there were two
+
+`event-ledger-front-0.2.json` put the refined index in `frameIndex` with the
+coarse one beside it. `event-ledger-0.1.json` did the opposite: coarse in
+`frameIndex`, refined beside it. **Two ledgers of one project disagreed about
+which field held the measurement**, so a reader taking `frameIndex` got the
+fine value from one and the coarse value from the other. Now, everywhere:
+`frameIndex` and `seconds` hold the FINEST reading, `readAtFrameStep` is its
+step, and a coarser earlier reading keeps `coarseFrameIndex`, `coarseSeconds`,
+`coarseAtFrameStep` and `framesFromRefined`.
+
+### A ledger that described a file which does not exist
+
+`event-ledger-0.2.json`'s side block carried `videoSha256: 253fa551605e` with
+`frames: 990`. That hash names an 863-frame file; 990 is `6e8f9fb2fe03`'s
+count. **A name was re-keyed to the new content's hash while its numbers stayed
+with the old content** — the fault class of the day, committed by the person
+writing the fix for it. It also still said the pair was "still to be
+established" after it had been established at -78, and it held no events. It is
+deleted; its one real finding, why run 2's front camera is hard to read, moved
+into the ledger that supersedes it.
+
+### Correcting a ledger moved six published figures, and that is the point
+
+Refining four rows of `event-ledger-0.1.json` changed every number computed
+from it:
+
+| figure | was | is |
+|---|---|---|
+| pairing drift, shift 0 | -16.0 % | -15.6 % |
+| pairing drift, shift 1 | -13.7 % | -13.2 % |
+| pairing drift, shift 2 | -12.6 % | -13.2 % |
+| null rate at one frame | 43.2 % | 46.8 % |
+| null rate at a quarter second | 83.2 % | 85.2 % |
+| the 0.267 s fit | 6 matched against a ceiling of 6 | 5 against 6 |
+
+**A figure that does not move when its ledger is corrected was never computed
+from that ledger.** The null-rate pair has now moved twice, and the two moves
+are different in kind: 48/88 and 43/85 were wrong because nothing committed
+produced them; 43.2/83.2 to 46.8/85.2 is the instrument working.
+
+The last row cost a test. `test_a_count_EQUAL_to_the_chance_ceiling_does_not_fit`
+used the real ledger because it happened to sit exactly on the ceiling, and
+after refinement it does not. It builds its own fixture now, so the case cannot
+disappear when data improves.
+
+### And the writer was still telling readers the second pair had failed
+
+`_sync_block`'s unmeasured note hard-coded one pair and then asserted that "the
+remaining two files were tried and FAILED, two targeted anchors gave 77 and
+75". Both halves went stale the moment pair 2 was established at -78 — those
+ARE the two files. The note read the established pairs out of the table now.
