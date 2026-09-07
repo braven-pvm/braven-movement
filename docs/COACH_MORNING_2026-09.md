@@ -421,7 +421,7 @@ checkpoints.
 
 **What is missing from it, and why she should be told before she watches.** The
 engine has no floor. The ball leaves her hands on a path aimed at the right spot
-on the court and then keeps going in a straight parabola; the clip ends 0.268 s
+on the court and then keeps going in a straight parabola; the clip ends 0.267 s
 before it would land. (That is 19 frame intervals of flight at 60 frames a
 second, from the release frame to the last frame. Refer to item 15, which is
 about the whole pass family rather than this drill.) So **the drill shows a bounce pass with no bounce.**
@@ -439,12 +439,17 @@ more than it misleads.
 
 **One number for the same conversation.** The library throws every pass at
 600 cm/s, which has no source. On this drill that constant makes the ball travel
-UPWARD to reach the floor: it needs +95.37 cm/s of vertical, and the throw is
-only downward above 735 cm/s. **A bounce pass is driven at the floor, not lobbed
-at it.** The speed was left at 600 rather than invented afresh. (The figures are
-computed over the flight's true span, 350.5 cm from a release at 111.7 cm, which
-is the floor point 4.00 m from her chest less the 49.5 cm the ball is already
-ahead of it.)
+UPWARD to reach the floor: it needs **+95.15 cm/s** of vertical, and the throw
+is only downward above **734 cm/s**. **A bounce pass is driven at the floor, not
+lobbed at it.** The speed was left at 600 rather than invented afresh.
+
+(The figures are computed over the flight's span, **350.3 cm**, from a release
+at 111.7 cm to the point the engine itself aims at. **They were +95.37, 735 and
+350.5 until 2026-09-07**, and those came from a floor point reconstructed by
+hand as "the chest at frame 0 plus the authored offset" rather than read from
+the engine. The engine's own aim point is 0.27 cm away from that
+reconstruction, which is enough to move all three. Refer to the correction
+under item 15.)
 
 ## 13. The one hand high pass, and the cue it does not grade
 
@@ -564,13 +569,26 @@ bounce pass it never does.** Measured against a last frame of 95:
 | 1 hand high | frame 91 | 90.94 | 4 frames |
 | chest | frame 93 | 92.09 | 2 frames |
 | overhead | frame 94 | 93.67 | **1 frame** |
-| **bounce** | **never** | — | **0.268 s short of the court** |
+| **bounce** | **never** | — | **0.267 s short of the court** |
 
-**That 0.268 s with its inputs, because a time without them is what this
-document keeps having to correct.** The ball leaves at frame 76 with 350.5 cm
-still to travel to its floor point, and at the library's 600 cm/s that takes
-0.5842 s. The clip holds 0.3167 s. The difference is **0.2676 s**, which the
-table rounds to 0.268.
+**That 0.267 s with its inputs, because a time without them is what this
+document keeps having to correct.** The ball leaves at frame 76 with **350.3 cm**
+still to travel, and at the library's 600 cm/s that takes **0.5838 s**. The clip
+holds 0.3167 s. The difference is **0.2671 s**.
+
+**AND THE INPUT ITSELF WAS WRONG UNTIL 2026-09-07, WHICH IS THE POINT OF WRITING
+INPUTS DOWN.** This document said 350.5 cm and 0.268 s. Both came from a floor
+point I reconstructed by hand — the chest joint at frame 0 plus the authored
+offset — instead of the point the engine actually aims at. **The engine's own
+aim point sits 0.27 cm from that reconstruction**, and it is the one the ball
+flies to. Read from the engine, the span is 350.3 cm and the shortfall 0.2671 s.
+
+The reconstruction was never checked against the engine because it looked like
+arithmetic rather than a measurement. **It was a measurement**, and a
+hand-rebuilt one. The figures above are now read from
+`possession._launch_toward`, which is where the engine states its own target.
+Nothing a coach is asked changes: the clip still ends a quarter of a second
+before the ball arrives.
 
 **"Reaches its target" means the first WHOLE FRAME at or past it**, because a
 clip plays frames and not fractions. The middle column is where the ball
