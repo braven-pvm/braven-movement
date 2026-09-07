@@ -151,45 +151,87 @@ PAIRS = {
             "two cameras' frame periods differ by 11 microseconds. The "
             "measurement is the frame offset, which does not drift."),
     },
+    "front 0.2 + side 0.2": {
+        "referenceFile": "front 0.2.mp4",
+        "referenceSha256": "2bdf00a3fc45",
+        "otherFile": "side 0.2.mp4",
+        "otherSha256": "253fa551605e",
+        # side index = front index + frameOffsetToReference
+        "frameOffsetToReference": -78,
+        "methodKind": "shared-event",
+        "framePeriodSeconds": {"front 0.2.mp4": 0.033333,
+                               "side 0.2.mp4": 0.033322},
+        # ESTABLISHED 2026-09-07, AND IT WAS NEARLY RECORDED AS A FAILURE.
+        # Read against the committed side ledger, whose events are quantised to
+        # every EIGHTH frame, the best of ALL correspondences between three
+        # frame-exact front anchors and the side events spread by 0.3603 s =
+        # 10.8 frames, and no offset fitted. Every event in that ledger sits at
+        # an index divisible by 8, and the reader took the frame where the ball
+        # was clearly HELD rather than the frame it met the hands, so the times
+        # run late by up to ten frames. Its 13.8611 s is not a catch at all:
+        # the catch is at index 406, and by 416 she has the ball overhead and
+        # is bringing it down.
+        #
+        # Re-read at a step of ONE frame, the same events give -78 three times.
+        # A LEDGER THAT DOES NOT RECORD ITS READING STEP IS A LEDGER NOBODY CAN
+        # USE, and that one carried no such field. Every row below carries it.
+        "anchors": [
+            {"event": "first catch, ball into hands",
+             "referenceIndex": 324, "referenceSeconds": 10.8000,
+             "otherIndex": 246, "otherSeconds": 8.1968,
+             "derivedSecondsOffset": -2.6032, "readAtFrameStep": 1},
+            {"event": "catch, ball into hands",
+             "referenceIndex": 635, "referenceSeconds": 21.1667,
+             "otherIndex": 557, "otherSeconds": 18.5593,
+             "derivedSecondsOffset": -2.6074, "readAtFrameStep": 1},
+        ],
+        "checks": [
+            {"event": "catch, ball into hands",
+             "referenceIndex": 484, "referenceSeconds": 16.1333,
+             "otherIndex": 406, "otherSeconds": 13.5279,
+             "derivedSecondsOffset": -2.6054, "readAtFrameStep": 1},
+        ],
+        "setAside": [
+            {"event": "one-handed catch, ball onto the hand",
+             "referenceIndex": 817, "referenceSeconds": 27.2333,
+             "otherIndex": 739, "otherSeconds": 24.6235,
+             "frameDifference": -78, "readAtFrameStep": 1,
+             "why": ("A ONE-HANDED CATCH IS SOFT. In the side view her "
+                     "fingertips meet the ball at 739 and it is unambiguously "
+                     "on the hand at 740; in the front view the same two "
+                     "readings are 816 and 817. So this event gives -78 or "
+                     "-77 depending on which frame is called contact, and "
+                     "calling it -78 because the other three do would be "
+                     "choosing the frame that makes the arithmetic agree. It "
+                     "is recorded and not used, exactly as the first clap of "
+                     "the other pair is.")},
+        ],
+        "derivedNote": (
+            "The seconds above are DERIVED from each file's own pts and are "
+            "not the measurement. They drift by 4.2 ms across the 10.37 s "
+            "between the two anchors, because the two cameras' frame periods "
+            "differ by 11 microseconds. The measurement is the frame offset, "
+            "which does not drift."),
+    },
 }
 
-# FILES WHOSE PARTNER IS NOT ESTABLISHED. Not "unpaired" — nothing here shows
-# they lack a partner, only that none is measured.
+# NO FILE IS WITHOUT AN ESTABLISHED PARTNER ANY MORE, as of 2026-09-07.
+# Both pairs are measured, so this tuple is EMPTY rather than deleted: the
+# consumers ask it whether a file is unpaired, and a name that disappears takes
+# its refusal path with it.
 #
-# `front 0.2.mp4` and `side 0.1.mp4` were tried against each other with the
-# same rule and FAILED IT. Two targeted anchors gave frame differences of 77
-# and 75, and the events do not match in kind: at the first, the side's ball
-# arrives horizontally from the left as a fed pass while the front's descends
-# from the top as a self toss; at the second, the side catches two-handed and
-# the front one-handed.
+# WHAT USED TO BE HERE, and why it was wrong. `front 0.2.mp4` and the file now
+# called `side 0.2.mp4` were recorded as PAIRING UNKNOWN after an attempt that
+# "gave frame differences of 77 and 75" — a reading whose four frames were
+# never written down, so nobody could re-do it, including me. The real answer
+# is -78, and 77 is one frame from it.
 #
-# **THAT ATTEMPT CANNOT BE RE-READ, AND SO IT IS NOT EVIDENCE.** No frame index
-# and no timestamp of any of the four frames tried was written down, here or
-# anywhere else in the tree. "77 and 75" therefore cannot be checked, corrected
-# or reproduced by anyone, including me: it is a recollection of a reading, not
-# a reading. It is kept above because it is what was done, and it is labelled
-# here because a number without its inputs must not be quoted as a result.
-#
-# It changes nothing about the conclusion, which does not rest on it: the
-# pairing of these two files is UNKNOWN, and it would still be unknown if the
-# attempt had never happened. What replaces the attempt is the fine event
-# ledger of `front 0.2.mp4`, which is a queued unit and is NOT done; refer to
-# `spikes/video-annotations/event-ledger-0.2.json`, which records NOT READ with
-# its reason.
-#
-# THE SECOND ANCHOR WAS FOUND BY LOOKING WHERE THE FIRST PREDICTED ONE, and a
-# catch found where an offset predicted a catch is not evidence in a clip of
-# catches. That is how -0.7295 was published.
-#
-# NO ELIMINATION ARGUMENT IS MADE. "There are four files, so the other two must
-# pair" is a guess until a ledger says so, and how many files each camera
-# produced is not recorded anywhere in this tree.
-# AFTER THE RENAME these are `front 0.2.mp4` (2bdf00a3fc45) and
-# `side 0.2.mp4` (253fa551605e). The second was called `side 0.1.mp4` before
-# 2026-09-07; its content is unchanged and the pairing is still unknown.
-PAIRING_UNKNOWN = ("front 0.2.mp4", "side 0.2.mp4")
-PAIRING_UNKNOWN_SHA256 = {"front 0.2.mp4": "2bdf00a3fc45",
-                          "side 0.2.mp4": "253fa551605e"}
+# THE ATTEMPT WAS NOT WRONG BY MUCH; IT WAS UNRECORDED, which is worse. Had its
+# four frame indices been written down, the next reader would have started one
+# frame away from the answer instead of starting again. A number without its
+# inputs cannot be corrected, only discarded.
+PAIRING_UNKNOWN: tuple[str, ...] = ()
+PAIRING_UNKNOWN_SHA256: dict[str, str] = {}
 
 
 def pair_for(view: str, set_id: str) -> tuple[str, dict] | tuple[None, None]:
@@ -351,12 +393,20 @@ def refuse_by_set(set_id: str) -> str:
     """What to tell a caller whose set is not a pair."""
     established = ", ".join(f"{p['referenceFile']} + {p['otherFile']}"
                             for p in PAIRS.values())
-    return (f"set {set_id} is not an established pair. The only established "
-            f"pairing is {established}, at a constant FRAME offset. "
-            f"{PAIRING_UNKNOWN[0]} and {PAIRING_UNKNOWN[1]} have no established "
-            "partner, and that is not a claim that they lack one. Prefer "
-            "--pair, which names two files and cannot be made wrong by a "
-            "rename; refer to PAIRS in video_keypoints.py.")
+    # PAIRING_UNKNOWN IS EMPTY NOW AND THIS LINE SUBSCRIPTED IT. Both pairs
+    # were established on 2026-09-07, the tuple emptied, and the refusal path
+    # raised IndexError instead of refusing: the same fault as the removed
+    # field whose readers were left behind, one directory along. A test that
+    # runs the refusal caught it.
+    if PAIRING_UNKNOWN:
+        unpaired = (" ".join(PAIRING_UNKNOWN) + " have no established partner, "
+                    "and that is not a claim that they lack one. ")
+    else:
+        unpaired = "Every recording has an established partner. "
+    return (f"set {set_id} is not an established pair. The established "
+            f"pairings are {established}, each at a constant FRAME offset. "
+            f"{unpaired}Prefer --pair, which names two files and cannot be "
+            "made wrong by a rename; refer to PAIRS in video_keypoints.py.")
 
 
 # THE FLOOR A FRAME-PAIRED OFFSET REACHES, kept for consumers that need an

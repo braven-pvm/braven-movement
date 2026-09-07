@@ -4200,3 +4200,89 @@ decided before a file is opened, the engine-curve schema guard, and the anchor
 check — run everywhere. That split is deliberate: the runner holds that both
 consumers still import, still parse and still refuse, and the machine with the
 footage holds that they still produce.
+
+
+## A ledger without its reading step nearly cost a real pairing
+
+Found 2026-09-07, establishing the second camera pair.
+
+`front 0.2.mp4` and `side 0.2.mp4` ARE a pair, at a constant frame offset of
+**-78**, on three anchors read at a step of one frame, two of them 10.37 s
+apart. **The first answer was the opposite, and it was wrong.**
+
+### What the wrong answer looked like
+
+Three frame-exact front catches were tested against the committed side ledger.
+Every possible in-order correspondence was tried. The best spread by
+**0.3603 s = 10.8 frames**, against 0.13 frames for the pair already
+established. On that reading no constant offset fits, and the honest-failure
+report was ready to write.
+
+### Why it was wrong
+
+Every event in that side ledger sits at a frame index divisible by eight:
+
+```
+248, 256, 296, 352, 416, 472, 512, 560, 640, 696, 752
+```
+
+**It was read at every eighth frame**, so each time carries 0.267 s of
+quantisation. Worse than the quantisation, the reader recorded the frame where
+the ball was clearly HELD rather than the frame where it met the hands, so the
+times run LATE by up to ten frames. The ledger's 13.8611 s is not a catch at
+all: the catch is at index 406, and by 416 she has the ball overhead and is
+bringing it down.
+
+Re-read at a step of one frame, the same three events give -78, -78, -78, and
+the derived seconds drift -0.0042 s across 10.37 s — the same signature the
+other pair shows, which is the two cameras' 11 microsecond period difference.
+
+**The ledger carried no field recording its reading step.** Nothing in it said
+that its times were eighth-frame samples, so they read as measurements. Every
+row of the new pair table carries `readAtFrameStep`.
+
+### And the unrecorded attempt was one frame from the answer
+
+The previous pack recorded this pairing as UNKNOWN after an attempt that "gave
+frame differences of 77 and 75", and the four frames it read were never written
+down. The answer is 78. **That attempt was not wrong by much; it was
+unrecorded, which is worse** — had its four indices been written down, the next
+reader would have started one frame from the answer instead of starting again.
+A number without its inputs cannot be corrected, only discarded.
+
+### Two instruments failed on the way, and both are recorded
+
+**The contact sheet could show frames from a different part of the clip.**
+`contact_sheet` globbed its scratch directory and never emptied it, so a call
+selecting 12 frames after a call that selected 18 produced a sheet of 18 tiles
+whose last six were the PREVIOUS sheet's frames. The label had a fallback of
+`-1`, and `times[-1]` is a real timestamp, so those tiles were captioned with
+the last frame of the whole file: a real moment from elsewhere under a
+plausible caption. A ledger read from that sheet would record events that are
+not there. It now empties the scratch first and REFUSES when the file count and
+the requested count disagree.
+
+**One observation of mine was withdrawn mid-way.** I had noted that front 0.2's
+ball looked like a tan medicine ball while side 0.2's was a cream netball, and
+was ready to call them different drills on that. At full resolution `front
+0.1.mp4` shows the same netball, sharp; front 0.2's only looks olive because it
+is motion-blurred and she stands further from the camera. Same ball, same room,
+same session. The colour was lighting and blur, and it was nearly evidence.
+
+**A keypoint-based candidate detector does not work here, and is not proposed.**
+Calibrated on the view whose ledger is known, local maxima of wrist height
+above the hips recovered 4 of 10 events with 15 false candidates. In a self-toss
+the hands go high to RELEASE as well as to catch, so height cannot separate
+them. The frames have to be read.
+
+### What corroborates the pairing, independently of the anchors
+
+Both consumers run on it. The two views agree on the left elbow angle to a
+median of **4.8 degrees** with a correlation of **+0.937**, on 782 frames; the
+lift pairs 809 frames with a median residual of 16.9 mm. Under the mislabelled
+pairing the same elbow comparison gave 21.2 degrees. A wrong pairing does not
+produce agreement like that.
+
+**The rule: a ledger records the step it was read at, on every row. A time
+sampled every eighth frame is not a measurement of when something happened, and
+without the step recorded nobody can tell the difference.**

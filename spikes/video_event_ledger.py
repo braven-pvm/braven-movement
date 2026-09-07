@@ -123,6 +123,16 @@ def contact_sheet(view: str, set_id: str, first: int, last: int, step: int,
     out_dir.mkdir(parents=True, exist_ok=True)
     raw = out_dir / "raw"
     raw.mkdir(exist_ok=True)
+    # THE SCRATCH DIRECTORY IS EMPTIED FIRST, and this is not tidiness.
+    # `files` below is a glob of this directory, so frames left by an EARLIER
+    # call were picked up by a later one: a call selecting 12 frames after a
+    # call that selected 18 built a sheet of 18 tiles, the last six of which
+    # were the previous sheet's frames. They were labelled `-1` and the
+    # timestamp of the LAST frame of the file, so the sheet showed a real
+    # moment from a different part of the clip under a plausible caption. A
+    # ledger read from that sheet would record events that are not there.
+    for stale in raw.glob("f-*.png"):
+        stale.unlink()
     picks = "+".join(f"eq(n\\,{i})" for i in wanted)
     subprocess.run(
         ["ffmpeg", "-v", "error", "-y", "-i", str(SAMPLES / f"{view} {set_id}.mp4"),
@@ -131,6 +141,11 @@ def contact_sheet(view: str, set_id: str, first: int, last: int, step: int,
     files = sorted(raw.glob("f-*.png"))
     if not files:
         raise RuntimeError(f"no frames selected for {view} {set_id}")
+    if len(files) != len(wanted):
+        raise RuntimeError(
+            f"asked for {len(wanted)} frames and ffmpeg wrote {len(files)}. "
+            "A sheet whose tiles and labels can disagree is worse than no "
+            "sheet: refuse rather than caption a frame with a guess.")
     tile = Image.open(files[0])
     rows = (len(files) + columns - 1) // columns
     sheet = Image.new("RGB", (columns * tile.width,
@@ -140,7 +155,12 @@ def contact_sheet(view: str, set_id: str, first: int, last: int, step: int,
         x = (n % columns) * tile.width
         y = (n // columns) * (tile.height + 14)
         sheet.paste(Image.open(path), (x, y + 14))
-        index = wanted[n] if n < len(wanted) else -1
+        # NO FALLBACK INDEX. This read `wanted[n] if n < len(wanted) else -1`,
+        # and `times[-1]` is a real timestamp, so an extra tile was captioned
+        # with the last frame of the whole file. The count is checked above, so
+        # this subscript cannot be out of range; if it ever is, the crash is
+        # the correct outcome.
+        index = wanted[n]
         pen.text((x + 2, y + 2), f"{index} {times[index]:.3f}", fill="black")
     where = out_dir / f"{view.replace(' ', '')}-{first}-{last}.png"
     sheet.save(where)
@@ -254,6 +274,52 @@ def pairing_drift(front: list[dict], side: list[dict],
             "ratePerCent": round(slope * 100.0, 1)}
 
 
+ANCHOR_FRAME_STEP = 1
+
+
+def usable_for_a_fit(rows: list[dict], tolerance: float = TOLERANCE_SECONDS,
+                     period: float = 1.0 / 30.0) -> tuple[list[dict], list[str]]:
+    """The rows a fit may anchor on, and why each of the others cannot.
+
+    THE RULE THIS ENFORCES, AND WHY IT IS CODE AND NOT PROSE. On 2026-09-07 the
+    second camera pair was nearly recorded as UNPAIRED. Three frame-exact front
+    anchors were tested against a side ledger whose events were sampled at
+    every EIGHTH frame, and the best of all correspondences spread by 10.8
+    frames: no fit. Re-read at a step of one frame the same events gave -78
+    three times.
+
+    Nothing in that ledger said its times were eighth-frame samples. They read
+    as measurements, so a fit consumed them as measurements, and the answer was
+    wrong in the direction that loses a real pairing.
+
+    A ROW WHOSE READING STEP IS COARSER THAN THE FIT'S OWN TOLERANCE CANNOT
+    ANCHOR THAT FIT. Its time is known to +/- the step, and a tolerance finer
+    than that is a claim the row cannot support. A row with NO recorded step is
+    refused too: an unrecorded step is not evidence of a fine one, and that is
+    exactly the ledger that caused this.
+    """
+    keep, refused = [], []
+    for row in rows:
+        step = row.get("readAtFrameStep")
+        where = f"{row.get('kind', 'event')} at {row.get('seconds')}"
+        if step is None:
+            refused.append(
+                f"{where}: no readAtFrameStep. An unrecorded reading step is "
+                "not evidence of a fine one; the ledger that cost a day of "
+                "this project had none.")
+            continue
+        if step * period > tolerance:
+            refused.append(
+                f"{where}: read at every {step} frames, which is "
+                f"{step * period:.4f} s, coarser than the tolerance of "
+                f"{tolerance:.4f} s. Its time cannot support a match this "
+                "fine. Re-read it frame by frame or widen the tolerance and "
+                "say so.")
+            continue
+        keep.append(row)
+    return keep, refused
+
+
 def anchor_rule_null_rate(front: list[dict], side: list[dict],
                           tolerance: float = TOLERANCE_SECONDS,
                           anchor_gap: float = ANCHOR_GAP_SECONDS,
@@ -298,7 +364,8 @@ def fits_one_offset(front: list[dict], side: list[dict],
                     tolerance: float = TOLERANCE_SECONDS,
                     anchor_gap: float = ANCHOR_GAP_SECONDS,
                     trials: int = NULL_TRIALS,
-                    resolution: float | None = None) -> dict:
+                    resolution: float | None = None,
+                    require_frame_step: bool = True) -> dict:
     """Does ONE constant offset map the front's events onto the side's?
 
     Returns the best offset and how much of the front's ledger it explains, and
@@ -313,6 +380,25 @@ def fits_one_offset(front: list[dict], side: list[dict],
     if not front or not side:
         return {"fits": False, "why": "one of the ledgers has no events",
                 "bestOffsetSeconds": None, "anchors": []}
+
+    # EVERY ROW MUST DECLARE A READING STEP FINE ENOUGH FOR THIS TOLERANCE.
+    # Refer to `usable_for_a_fit`: a ledger sampled every eighth frame, with no
+    # field saying so, produced a confident NO FIT for a pair that is real.
+    refused_rows: list[str] = []
+    if require_frame_step:
+        front, front_refused = usable_for_a_fit(front, tolerance)
+        side, side_refused = usable_for_a_fit(side, tolerance)
+        refused_rows = front_refused + side_refused
+        if not front or not side:
+            return {
+                "fits": None,
+                "why": ("NOT MEASURABLE at this tolerance, which is not the "
+                        "same as NO FIT. Every row of at least one ledger was "
+                        "refused: " + " | ".join(refused_rows)),
+                "bestOffsetSeconds": None, "anchors": [],
+                "refusedRows": refused_rows,
+            }
+
     best = _best_match(front, side, tolerance)
     if best is None:
         return {"fits": False,

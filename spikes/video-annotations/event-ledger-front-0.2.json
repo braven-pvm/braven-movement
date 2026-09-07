@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "video-event-ledger-2",
+  "pair": "front 0.2 + side 0.2",
+  "views": {
+    "front": {
+      "videoFile": "front 0.2.mp4",
+      "videoSha256": "2bdf00a3fc45",
+      "frames": 946,
+      "readAtFrameStep": 3,
+      "readingStepNote": "READ AT A STEP OF THREE FRAMES over 8.0 to 29.5 s, the stretch in which she handles a ball at all; before 8.0 s she stands still and after 29.5 s she walks to the camera holding it. FOUR ROWS WERE THEN RE-READ AT A STEP OF ONE and carry `readAtFrameStep: 1`; those four are the only rows a fit at a one-frame tolerance may anchor on, and `usable_for_a_fit` in video_event_ledger.py refuses the rest by name.\n\n`framesFromRefined` is SIGNED and is a measured quantity, not a bound: the step-three readings sit +2, +1 and -1 frames from the refined ones. A coarse read can land either side of the event, because it picks the nearest sample and the event falls between samples. The side view's rows in event-ledger-0.1.json are late by 2, 10, 3 and 13 frames, which a step of eight does not explain: there the reader also took the frame where the ball was clearly HELD rather than the frame it met the hands.",
+      "events": [
+        {
+          "kind": "catch",
+          "what": "ball into hands",
+          "frameIndex": 324,
+          "seconds": 10.8,
+          "readAtFrameStep": 1
+        },
+        {
+          "kind": "catch",
+          "what": "ball into hands",
+          "frameIndex": 375,
+          "seconds": 12.5,
+          "readAtFrameStep": 3
+        },
+        {
+          "kind": "catch",
+          "what": "ball into hands",
+          "frameIndex": 429,
+          "seconds": 14.3,
+          "readAtFrameStep": 3
+        },
+        {
+          "kind": "catch",
+          "what": "ball into hands",
+          "frameIndex": 484,
+          "seconds": 16.1333,
+          "readAtFrameStep": 1,
+          "coarseFrameIndex": 486,
+          "framesFromRefined": 2
+        },
+        {
+          "kind": "catch",
+          "what": "ball into hands",
+          "frameIndex": 540,
+          "seconds": 18.0,
+          "readAtFrameStep": 3
+        },
+        {
+          "kind": "catch",
+          "what": "ball into hands",
+          "frameIndex": 591,
+          "seconds": 19.7,
+          "readAtFrameStep": 3
+        },
+        {
+          "kind": "catch",
+          "what": "ball into hands",
+          "frameIndex": 635,
+          "seconds": 21.1667,
+          "readAtFrameStep": 1,
+          "coarseFrameIndex": 636,
+          "framesFromRefined": 1
+        },
+        {
+          "kind": "catch",
+          "what": "ball into hands",
+          "frameIndex": 711,
+          "seconds": 23.7,
+          "readAtFrameStep": 3
+        },
+        {
+          "kind": "catch",
+          "what": "ball into hands",
+          "frameIndex": 762,
+          "seconds": 25.4,
+          "readAtFrameStep": 3
+        },
+        {
+          "kind": "catch",
+          "what": "ball into hands",
+          "frameIndex": 817,
+          "seconds": 27.2333,
+          "readAtFrameStep": 1,
+          "coarseFrameIndex": 816,
+          "framesFromRefined": -1
+        }
+      ]
+    },
+    "side": {
+      "videoFile": "side 0.2.mp4",
+      "videoSha256": "253fa551605e",
+      "namedBeforeTheRename": "side 0.1.mp4",
+      "readAtFrameStep": 8,
+      "readingStepNote": "THIS VIEW'S EVENTS LIVE IN event-ledger-0.1.json, under its `side` view, because they were read before the two side files' names were swapped at source. Read the sha256, not the file name: 253fa551605e is the same recording. Those rows were read at every EIGHTH frame and four of them have since been re-read frame by frame; they are late by 2, 10, 3 and 13 frames. Refer to that file.",
+      "events": []
+    }
+  },
+  "why": "THE PAIR IS ESTABLISHED AT A FRAME OFFSET OF -78: side index = front index - 78. Two anchors 10.37 s apart, both read frame by frame, plus a check between them; refer to PAIRS in spikes/video_keypoints.py for the indices, the timestamps and the set-aside fourth event.\n\nIT WAS NEARLY RECORDED AS A FAILURE. Read against the side rows as they stood, sampled every eighth frame and late by up to thirteen, the best of ALL correspondences spread by 10.8 frames and no offset fitted. Re-read at a step of one frame the same events give -78 three times. That is why every row here carries its reading step.",
+  "identityNote": "Both files are named by sha256. The two side files' names were swapped at source on 2026-09-07; the hash is the identity and the name is a label that has already moved once."
+}

@@ -13,11 +13,23 @@
 > | `6e8f9fb2fe03` | 990 | **`side 0.2.mp4`** | **`side 0.1.mp4`** |
 > | `253fa551605e` | 863 | **`side 0.1.mp4`** | **`side 0.2.mp4`** |
 >
-> **The established pair is `front 0.1.mp4` + `side 0.1.mp4` at a constant
-> FRAME offset of -5**, and before the rename those same two contents were
-> written `front 0.1 + side 0.2`. The unestablished pair is now
-> `front 0.2.mp4` + `side 0.2.mp4`. The three anchors, their indices and their
-> timestamps are unchanged, because the content is unchanged.
+> **BOTH PAIRS ARE NOW ESTABLISHED (2026-09-07), and nothing here is PAIRING
+> UNKNOWN any more:**
+>
+> | pair | frame offset | anchors, read at a step of |
+> |---|---|---|
+> | `front 0.1.mp4` + `side 0.1.mp4` | **-5** | 1 frame, 11.03 s apart |
+> | `front 0.2.mp4` + `side 0.2.mp4` | **-78** | 1 frame, 10.37 s apart |
+>
+> Before the rename the first pair's two contents were written
+> `front 0.1 + side 0.2`. Its anchors, their indices and their timestamps are
+> unchanged, because the content is unchanged.
+>
+> **The second pair was nearly recorded as a failure.** Read against a side
+> ledger sampled at every EIGHTH frame, the best of all correspondences spread
+> by 10.8 frames and no offset fitted. Re-read at a step of one frame the same
+> events give -78 three times. Refer to "A ledger without its reading step
+> nearly cost a real pairing" in `docs/KNOWN_ISSUES.md`.
 >
 > A file name is not an identity. Every artefact carries `source.videoSha256`,
 > and `source_matches()` in `spikes/video_keypoints.py` compares it with the

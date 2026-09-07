@@ -261,15 +261,21 @@ class TheWrittenArtefactsStillAgreeWithTheTable(unittest.TestCase):
 
 
 class ASetIsRefusedONLYWhenItIsNotAPair(unittest.TestCase, RefusalMixin):
-    """THIS CLASS USED TO ASSERT THAT EVERY --set REFUSES, and that was right
-    until 2026-09-07. Marius then swapped the two side files' names at source,
-    so `front 0.1.mp4` and `side 0.1.mp4` ARE now the established pair and set
-    0.1 addresses it correctly. A blanket refusal would refuse the one thing
-    that works.
+    """THIS CLASS HAS BEEN WRONG TWICE, IN OPPOSITE DIRECTIONS, and each time
+    because it asserted a fact about the data rather than about the rule.
 
-    So the question is not "is it a set" but "do these two files pair", which
-    is the same question the guard inside each consumer asks. The set that is
-    a pair runs; the set that is not refuses.
+    It first asserted that EVERY --set refuses. That was true while the two
+    side files' names were swapped and no set's two same-named files were one
+    take. Marius renamed them on 2026-09-07 and set 0.1 became the established
+    pair, so the blanket refusal would have refused the one thing that worked.
+
+    It was then rewritten to assert that EXACTLY ONE set is a pair. Later the
+    same day the second pairing was established at -78, and both sets became
+    pairs, so that assertion failed too.
+
+    The rule does not change: a set is answered THROUGH THE PAIR TABLE. What
+    changes is what the table holds. So the tests below read the table and
+    assert the behaviour, and none of them counts pairs.
     """
 
     def setUp(self):
@@ -278,31 +284,26 @@ class ASetIsRefusedONLYWhenItIsNotAPair(unittest.TestCase, RefusalMixin):
         self.paired = [s for s in ("0.1", "0.2") if pair_key_of_set(s)]
         self.unpaired = [s for s in ("0.1", "0.2") if not pair_key_of_set(s)]
 
-    def test_exactly_one_set_is_a_pair(self):
-        """If this changes, the two lists below stop meaning anything."""
-        self.assertEqual(len(self.paired), 1)
-        self.assertEqual(len(self.unpaired), 1)
-
-    def test_the_set_that_is_not_a_pair_is_refused_by_both_consumers(self):
+    def test_a_set_that_names_no_pair_is_refused_by_both_consumers(self):
+        """`--set 9.9` names two files that do not exist, so it can never be a
+        pair whatever the table holds. It is the refusal path's reachable case
+        now that both real sets resolve."""
         for script in CONSUMERS:
-            for set_id in self.unpaired:
-                with self.subTest(script=script, set_id=set_id):
-                    said = self.refused(run(script, "--set", set_id))
+            with self.subTest(script=script):
+                said = self.refused(run(script, "--set", "9.9"))
 
-                    self.assertIn("not an established pair", said)
-                    self.assertIn(PAIRS[THE_PAIR]["referenceFile"], said)
-                    self.assertIn(PAIRS[THE_PAIR]["otherFile"], said)
+                self.assertIn("not an established pair", said)
+                for pair in PAIRS.values():
+                    self.assertIn(pair["referenceFile"], said)
 
     def test_the_refusal_no_longer_says_the_file_names_are_wrong(self):
         """They were, and Marius corrected them. A refusal that repeats a
         withdrawn diagnosis sends the reader to fix something already fixed."""
-        for set_id in self.unpaired:
-            with self.subTest(set_id=set_id):
-                said = self.refused(run("video_lift_3d.py", "--set", set_id))
+        said = self.refused(run("video_lift_3d.py", "--set", "9.9"))
 
-                self.assertNotIn("FILE NAMES ARE WRONG", said)
+        self.assertNotIn("FILE NAMES ARE WRONG", said)
 
-    def test_the_set_that_IS_a_pair_runs_and_is_named_for_the_pair(self):
+    def test_every_set_the_table_calls_a_pair_runs_and_is_named_for_it(self):
         """It resolves to the PAIR KEY, so --set and --pair write one artefact
         under one name rather than two under two."""
         for set_id in self.paired:
@@ -311,7 +312,13 @@ class ASetIsRefusedONLYWhenItIsNotAPair(unittest.TestCase, RefusalMixin):
 
                 self.assertEqual(found.returncode, 0,
                                  found.stdout + found.stderr)
-                self.assertIn(THE_PAIR, found.stdout)
+                self.assertIn(pair_key_of_set(set_id), found.stdout)
+
+    def test_every_set_the_table_does_not_call_a_pair_refuses(self):
+        for script in CONSUMERS:
+            for set_id in self.unpaired:
+                with self.subTest(script=script, set_id=set_id):
+                    self.refused(run(script, "--set", set_id))
 
     def test_an_artefact_whose_hash_does_not_match_its_file_stops_the_run(self):
         """THE CHECK THAT WAS MISSING WHEN THE RENAME HAPPENED. Every artefact
@@ -341,76 +348,92 @@ class ASetIsRefusedONLYWhenItIsNotAPair(unittest.TestCase, RefusalMixin):
         self.assertIn("not on this machine", why)
 
 
-class TheRealPairRunsAndItsAnchorsAreAsserted(unittest.TestCase):
-    """The reachable pass, for BOTH consumers. Without it every refusal above
-    proves only that a script can exit 1, which a syntax error also achieves.
-    The elbow curve proves the point: it had no passing path at all, and two
-    crashes lived behind its refusals until this class ran it.
+
+
+class EveryPairRunsAndItsAnchorsAreAsserted(unittest.TestCase):
+    """The reachable pass, for BOTH consumers and now for BOTH pairs. Without
+    it every refusal above proves only that a script can exit 1, which a syntax
+    error also achieves. The elbow curve proves the point: it had no passing
+    path at all, and two crashes lived behind its refusals until this class ran
+    it.
 
     THE ORDER MATTERS AND THAT IS WHY THE RUNS ARE IN setUpClass. unittest runs
-    a class's methods in alphabetical order, and the elbow curve READS the lift's
-    artefact. With one method per run, `test_the_elbow_curve_runs` and
-    `test_both_artefacts` sorted BEFORE `test_the_lift_runs`, so on a poc-output
-    holding only the keypoint files this class failed three tests on the first
-    run, one on the second, and passed only on the third. It was green here only
-    because both artefacts already existed from earlier runs by hand: the class
-    was reading its own leftovers. That is exactly "the run owns the working
-    tree", turned on the test itself.
+    a class's methods in alphabetical order, and the elbow curve READS the
+    lift's artefact. With one method per run, the elbow test and the name test
+    sorted BEFORE the lift test, so on a poc-output holding only the keypoint
+    files this class failed three tests on the first run, one on the second,
+    and passed only on the third. It was green then only because both artefacts
+    already existed from earlier runs by hand: the class was reading its own
+    leftovers.
 
-    So the pair-named artefacts are DELETED first, then the lift and the elbow
-    curve are run once each, in order, and the three tests read those two
+    So every pair-named artefact is DELETED first, then the lift and the elbow
+    curve are run once each per pair, in order, and the tests read those
     results. The pass is proven from a clean state rather than from a survivor.
     """
 
-    lift = None
-    elbow = None
+    runs: dict = {}
 
     @classmethod
     def setUpClass(cls):
         if not keypoints_present():
             return
-        slug = pair_slug(THE_PAIR)
         for stem in ("lift-3d", "elbow-curve"):
-            (OUTPUT / f"{stem}-{slug}.json").unlink(missing_ok=True)
-        cls.lift = run("video_lift_3d.py", "--pair", THE_PAIR)
-        cls.elbow = run("video_elbow_curve.py", "--pair", THE_PAIR)
+            for path in OUTPUT.glob(f"{stem}-*.json"):
+                path.unlink()
+        cls.runs = {}
+        for key in PAIRS:
+            cls.runs[key] = {
+                "lift": run("video_lift_3d.py", "--pair", key),
+                "elbow": run("video_elbow_curve.py", "--pair", key),
+            }
 
     def setUp(self):
         if not keypoints_present():
             self.skipTest("the keypoint artefacts are not present")
 
-    def test_the_lift_runs_on_the_established_pair(self):
-        found = type(self).lift
+    def test_the_lift_runs_on_every_established_pair(self):
+        for key in PAIRS:
+            with self.subTest(pair=key):
+                found = type(self).runs[key]["lift"]
 
-        self.assertEqual(found.returncode, 0, found.stdout + found.stderr)
-        self.assertIn("usable frame pairs", found.stdout)
+                self.assertEqual(found.returncode, 0,
+                                 found.stdout + found.stderr)
+                self.assertIn("usable frame pairs", found.stdout)
 
-    def test_the_elbow_curve_runs_on_the_established_pair(self):
-        """It ran AFTER the lift, from a state where no lift artefact existed
-        until the lift wrote one. A pass here is a pass on the pair, not on a
-        file left behind by an earlier run."""
-        found = type(self).elbow
+    def test_the_elbow_curve_runs_on_every_established_pair(self):
+        """Each ran AFTER its lift, from a state where no lift artefact
+        existed until that lift wrote one. A pass here is a pass on the pair,
+        not on a file left behind by an earlier run."""
+        for key in PAIRS:
+            with self.subTest(pair=key):
+                found = type(self).runs[key]["elbow"]
 
-        self.assertEqual(found.returncode, 0, found.stdout + found.stderr)
-        self.assertIn("LEFT elbow", found.stdout)
+                self.assertEqual(found.returncode, 0,
+                                 found.stdout + found.stderr)
+                self.assertIn("LEFT elbow", found.stdout)
 
-    def test_no_artefact_is_named_for_a_SET_rather_than_for_the_pair(self):
+    def test_no_artefact_is_named_for_anything_but_a_pair(self):
         """A set-named artefact is a claim about a pairing that is not true.
 
-        THIS ASSERTION USED TO BE INERT. It named `lift-3d-0.2.json`, and no
-        code path writes that: a `--set 0.2` label slugs to `set_0.2`, so the
-        mutant that lifted two unpaired files wrote `lift-3d-set_0.2.json` and
-        sailed past the check. The glob names nothing, so nothing can be missed.
-        """
-        wanted = f"-{pair_slug(THE_PAIR)}.json"
-        for stem in ("lift-3d", "elbow-curve"):
-            with self.subTest(stem=stem):
-                self.assertTrue((OUTPUT / f"{stem}{wanted}").exists())
+        THIS ASSERTION USED TO BE INERT, then it was too strict. It first
+        named `lift-3d-0.2.json`, which no code path writes, so the mutant that
+        lifted two unpaired files wrote `lift-3d-set_0.2.json` and sailed past.
+        The glob that replaced it then forbade every name but ONE pair's, and
+        failed the moment a second pair was established. It allows exactly the
+        names the table can produce, and nothing else."""
+        allowed = {f"{stem}-{pair_slug(key)}.json"
+                   for key in PAIRS for stem in ("lift-3d", "elbow-curve")}
+        for key in PAIRS:
+            with self.subTest(pair=key):
+                for stem in ("lift-3d", "elbow-curve"):
+                    self.assertTrue(
+                        (OUTPUT / f"{stem}-{pair_slug(key)}.json").exists())
 
-                stray = [p.name for p in OUTPUT.glob(f"{stem}-*.json")
-                         if not p.name.endswith(wanted)]
-                self.assertEqual(stray, [],
-                                 "an artefact not named for the pair exists")
+        found = {p.name for stem in ("lift-3d", "elbow-curve")
+                 for p in OUTPUT.glob(f"{stem}-*.json")}
+
+        self.assertEqual(found - allowed, set(),
+                         "an artefact is named for something that is not a pair")
 
 
 if __name__ == "__main__":

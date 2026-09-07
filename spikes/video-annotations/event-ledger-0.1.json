@@ -15,56 +15,67 @@
         {
           "frameIndex": 176,
           "seconds": 5.8667,
-          "kind": "clap"
+          "kind": "clap",
+          "readAtFrameStep": 8
         },
         {
           "frameIndex": 274,
           "seconds": 9.1333,
-          "kind": "catch"
+          "kind": "catch",
+          "readAtFrameStep": 1
         },
         {
           "frameIndex": 344,
           "seconds": 11.4667,
-          "kind": "catch"
+          "kind": "catch",
+          "readAtFrameStep": 8
         },
         {
           "frameIndex": 408,
           "seconds": 13.6,
-          "kind": "catch"
+          "kind": "catch",
+          "readAtFrameStep": 8
         },
         {
           "frameIndex": 456,
           "seconds": 15.2,
-          "kind": "catch"
+          "kind": "catch",
+          "readAtFrameStep": 8
         },
         {
           "frameIndex": 504,
           "seconds": 16.8,
-          "kind": "catch"
+          "kind": "catch",
+          "readAtFrameStep": 8
         },
         {
           "frameIndex": 536,
           "seconds": 17.8667,
-          "kind": "clap"
+          "kind": "clap",
+          "readAtFrameStep": 8
         },
         {
           "frameIndex": 608,
           "seconds": 20.2667,
-          "kind": "catch"
+          "kind": "catch",
+          "readAtFrameStep": 8
         },
         {
           "frameIndex": 664,
           "seconds": 22.1333,
-          "kind": "catch"
+          "kind": "catch",
+          "readAtFrameStep": 8
         },
         {
           "frameIndex": 728,
           "seconds": 24.2667,
-          "kind": "catch"
+          "kind": "catch",
+          "readAtFrameStep": 8
         }
       ],
       "videoFile": "front 0.1.mp4",
-      "videoSha256": "f7faf38b5d42"
+      "videoSha256": "f7faf38b5d42",
+      "readingStepNote": "READ AT EVERY EIGHTH FRAME, except the first catch at index 274, which was refined frame by frame when pair 1 was pinned. Nine of the ten indices are multiples of 8; 274 is not, and that is the refined one."
     },
     "side": {
       "file": "side 0.1.mp4",
@@ -75,62 +86,90 @@
         {
           "frameIndex": 248,
           "seconds": 8.2634,
-          "kind": "catch"
+          "kind": "catch",
+          "readAtFrameStep": 8,
+          "refinedFrameIndex": 246,
+          "refinedSeconds": 8.1968,
+          "refinedAtFrameStep": 1,
+          "framesLate": 2
         },
         {
           "frameIndex": 256,
           "seconds": 8.53,
-          "kind": "release"
+          "kind": "release",
+          "readAtFrameStep": 8
         },
         {
           "frameIndex": 296,
           "seconds": 9.8628,
-          "kind": "catch"
+          "kind": "catch",
+          "readAtFrameStep": 8
         },
         {
           "frameIndex": 352,
           "seconds": 11.7287,
-          "kind": "catch"
+          "kind": "catch",
+          "readAtFrameStep": 8
         },
         {
           "frameIndex": 416,
           "seconds": 13.8611,
-          "kind": "catch"
+          "kind": "catch",
+          "readAtFrameStep": 8,
+          "refinedFrameIndex": 406,
+          "refinedSeconds": 13.5279,
+          "refinedAtFrameStep": 1,
+          "framesLate": 10
         },
         {
           "frameIndex": 472,
           "seconds": 15.7271,
-          "kind": "catch"
+          "kind": "catch",
+          "readAtFrameStep": 8
         },
         {
           "frameIndex": 512,
           "seconds": 17.0599,
-          "kind": "catch"
+          "kind": "catch",
+          "readAtFrameStep": 8
         },
         {
           "frameIndex": 560,
           "seconds": 18.6592,
-          "kind": "catch"
+          "kind": "catch",
+          "readAtFrameStep": 8,
+          "refinedFrameIndex": 557,
+          "refinedSeconds": 18.5593,
+          "refinedAtFrameStep": 1,
+          "framesLate": 3
         },
         {
           "frameIndex": 640,
           "seconds": 21.3248,
-          "kind": "catch"
+          "kind": "catch",
+          "readAtFrameStep": 8
         },
         {
           "frameIndex": 696,
           "seconds": 23.1908,
-          "kind": "catch"
+          "kind": "catch",
+          "readAtFrameStep": 8
         },
         {
           "frameIndex": 752,
           "seconds": 25.0567,
-          "kind": "catch"
+          "kind": "catch",
+          "readAtFrameStep": 8,
+          "refinedFrameIndex": 739,
+          "refinedSeconds": 24.6235,
+          "refinedAtFrameStep": 1,
+          "framesLate": 13
         }
       ],
       "videoFile": "side 0.2.mp4",
       "videoSha256": "253fa551605e",
-      "namedBeforeTheRename": "side 0.1.mp4"
+      "namedBeforeTheRename": "side 0.1.mp4",
+      "readingStepNote": "READ AT EVERY EIGHTH FRAME, and that was not recorded until 2026-09-07. Every index here is a multiple of 8. A time sampled every eighth frame is not a measurement of when something happened, and a fit that consumes it as one gets a confident wrong answer: this ledger produced a NO FIT for `front 0.2.mp4` against this very file, which is a real pair at -78.\n\nAND THE ERROR IS NOT BOUNDED BY THE STEP. The four rows re-read frame by frame are late by 2, 10, 3 and 13 frames. The step explains at most 8. The reader recorded the frame where the ball was clearly HELD rather than the frame it met the hands, and sometimes took the sample after that, so `framesLate` is a measured quantity here and not a bound.\n\n`usable_for_a_fit` in video_event_ledger.py now refuses every row of this ledger at a one-frame tolerance, and says why."
     }
   },
   "fit": {

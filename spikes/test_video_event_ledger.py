@@ -36,7 +36,14 @@ from video_event_ledger import (
 
 def ledger(front, side, set_id="test"):
     def rows(pairs):
-        return [{"frameIndex": int(t * 30), "seconds": t, "kind": k}
+        # EVERY FIXTURE ROW DECLARES `readAtFrameStep: 1`, because every fixture
+        # row here stands for an event read frame by frame. Without it the fit
+        # now refuses these rows and returns "not measurable", which is correct
+        # behaviour and would make every test below assert on a refusal instead
+        # of on the arithmetic it is testing. A fixture that omits a field the
+        # real files carry is a fixture drifting from its producer.
+        return [{"frameIndex": int(t * 30), "seconds": t, "kind": k,
+                 "readAtFrameStep": 1}
                 for t, k in pairs]
     return {"schemaVersion": SCHEMA_VERSION, "set": set_id,
             "views": {"front": {"events": rows(front)},

@@ -52,7 +52,11 @@ THE_PAIR = next(iter(PAIRS))
 PAIR = PAIRS[THE_PAIR]
 REFERENCE_SET = PAIR["referenceFile"].split(" ", 1)[1].removesuffix(".mp4")
 OTHER_SET = PAIR["otherFile"].split(" ", 1)[1].removesuffix(".mp4")
-UNPAIRED_SET = PAIRING_UNKNOWN[1].split(" ", 1)[1].removesuffix(".mp4")
+# EMPTY SINCE 2026-09-07: both pairs are established. The tests that need an
+# unpaired file skip rather than assert, because "nothing is unpaired" is a
+# RESULT and a test that requires one would have to be deleted to record it.
+UNPAIRED_SET = (PAIRING_UNKNOWN[1].split(" ", 1)[1].removesuffix(".mp4")
+                if PAIRING_UNKNOWN else None)
 
 
 def block(view: str = "front", set_id: str = "0.1") -> dict:
@@ -216,6 +220,8 @@ class TheDisagreementIsRecordedRatherThanResolved(unittest.TestCase):
 class WhatIsNotEstablishedSaysSo(unittest.TestCase):
 
     def test_the_other_two_files_carry_no_offset_and_no_partner(self):
+        if not PAIRING_UNKNOWN:
+            self.skipTest("every file has an established partner")
         unpaired = [(n.split(" ", 1)[0], n.split(" ", 1)[1].removesuffix(".mp4"))
                     for n in PAIRING_UNKNOWN]
         for view, set_id in unpaired:
@@ -227,41 +233,36 @@ class WhatIsNotEstablishedSaysSo(unittest.TestCase):
                 self.assertIsNone(found["frameOffsetToReference"])
                 self.assertEqual(found["methodKind"], "unknown")
 
-    def test_they_are_named_as_unknown_rather_than_unpaired(self):
-        self.assertEqual(len(set(PAIRING_UNKNOWN)), 2)
-        for name in PAIRING_UNKNOWN:
-            with self.subTest(file=name):
-                self.assertNotIn(name, (PAIR["referenceFile"],
-                                        PAIR["otherFile"]))
+    def test_no_file_is_both_paired_and_unpaired(self):
+        """PAIRING_UNKNOWN is empty now, and the invariant still has to hold:
+        a file cannot appear in the pair table AND in the unpaired list."""
+        paired = {f for p in PAIRS.values()
+                  for f in (p["referenceFile"], p["otherFile"])}
 
-    def test_the_note_says_the_names_are_wrong_and_not_that_a_partner_is_absent(self):
-        note = block("front", "0.2")["note"]
+        self.assertEqual(paired & set(PAIRING_UNKNOWN), set())
 
-        self.assertIn("NO PARTNER IS ESTABLISHED", note)
-        self.assertIn("not a claim that it has none", note)
-        # NOT "the file names are wrong" any more. They were, and Marius
-        # corrected them at source on 2026-09-07. What must survive is that
-        # the note says a partner is NOT ESTABLISHED rather than absent, and
-        # names the pair that IS established so nobody is left hunting.
-        self.assertIn("no partner is established", note.lower())
-        self.assertIn("not a claim that it has none", note.lower())
-        self.assertIn(PAIR["referenceFile"], note)
-        self.assertIn(PAIR["otherFile"], note)
+    def test_every_recording_appears_in_exactly_one_pair(self):
+        """The result of 2026-09-07: all four files are accounted for."""
+        seen = [f for p in PAIRS.values()
+                for f in (p["referenceFile"], p["otherFile"])]
 
-    def test_no_elimination_argument_is_made_anywhere(self):
-        """"There are four files, so the other two must pair" is a guess."""
+        self.assertEqual(len(seen), len(set(seen)), "a file is in two pairs")
+        self.assertEqual(set(seen) | set(PAIRING_UNKNOWN), {
+            "front 0.1.mp4", "front 0.2.mp4", "side 0.1.mp4", "side 0.2.mp4"})
+
+    def test_an_unmeasured_file_would_still_say_so_honestly(self):
+        """THE NOTE THIS REPLACES IS UNREACHABLE NOW, and the guard it held is
+        still wanted. Every file has an established partner since 2026-09-07,
+        so `_sync_block` no longer emits the unmeasured note for any real file.
+        The wording is checked on the writer's own text instead, so the honest
+        form survives for the next file that has no partner yet: it must say a
+        partner is NOT ESTABLISHED rather than that it has none, and it must
+        name what IS established rather than leave the reader hunting."""
         import inspect, video_keypoints as module
         text = inspect.getsource(module)
 
-        self.assertIn("NO ELIMINATION ARGUMENT IS MADE", text)
-
-    def test_the_failed_attempt_is_recorded_with_its_readings(self):
-        import inspect, video_keypoints as module
-        text = inspect.getsource(module)
-
-        self.assertIn("77 and 75", text)
-        self.assertIn("two-handed", text)
-        self.assertIn("is not evidence in a clip of", text)
+        self.assertIn("NO PARTNER IS ESTABLISHED", text)
+        self.assertIn("claim that it has none", text)
 
 
 class TheBlockSaysWhatWasDoneAndNotWhatWasRuledOut(unittest.TestCase):
@@ -297,8 +298,8 @@ class TheBlockSaysWhatWasDoneAndNotWhatWasRuledOut(unittest.TestCase):
         key, pair = pair_for("side", OTHER_SET)
 
         self.assertEqual(key, THE_PAIR)
-        unpaired = PAIRING_UNKNOWN[1].split(" ", 1)[1].removesuffix(".mp4")
-        self.assertEqual(pair_for("side", unpaired), (None, None))
+        # A set id that names no file at all still resolves to nothing.
+        self.assertEqual(pair_for("side", "9.9"), (None, None))
 
 
 class TheRestampTouchesTheSyncBlockAndNothingElse(unittest.TestCase):
@@ -314,6 +315,8 @@ class TheRestampTouchesTheSyncBlockAndNothingElse(unittest.TestCase):
 
     def test_a_withdrawn_offset_is_stripped_from_an_existing_file(self):
         """How the artefacts stopped claiming -0.7295 without re-extraction."""
+        if UNPAIRED_SET is None:
+            self.skipTest("every file has an established partner")
         path = keypoint_file({"measured": True,
                               "offsetSecondsToReference": -0.7295,
                               "worked": {"thisViewSeconds": 9.8628}},
