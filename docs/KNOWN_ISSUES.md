@@ -80,6 +80,25 @@ prevent. `render_outcome` gained a third outcome, `SOME PHASES FAILED`, which
 outranks both PASS and NOTHING RENDERED, and `main` raises AFTER every drill so
 the exit code costs no later drill.
 
+AND THE FIX CREATED A PATH ITS READERS HAD NEVER SEEN. Before it, a failing
+drill produced NO receipt: the run died and the stale one had already been
+unlinked, so no reader could be misled. Writing a receipt for a partly-drawn
+drill made one possible, and `export_manual_page.py` took it: run on the
+partial receipt it built a two-figure page for a three-phase drill, exited 0 and
+said nothing. `archive_receipts.py` had the same gap by reading, because a
+partial receipt carries the same build stamp as a whole one and the stamp check
+cannot see the hole.
+
+Both now refuse a receipt with a non-empty `failedPhases` unless
+`--allow-partial` is passed, through one shared rule in `render_receipt.py`.
+With the flag the page gives each undrawn phase a VISIBLE slot naming its
+reason, because permitting an omission is not the same as hiding it.
+
+THE ANIMATION BRANCH ANSWERS THE OPPOSITE WAY. A still with a hole is one
+missing figure; an animation with a hole plays over the gap and says nothing,
+because the frames either side close across it. A failed frame is recorded and
+the EXPORT IS REFUSED, and the receipt is still written.
+
 
 ## The ball is anchored to a landmark the job does not transmit
 

@@ -76,3 +76,60 @@ def render_outcome(phase_count: int, animation: object | None,
 # So a caller that wants to know whether anything was measured must still read
 # the receipt's `phases`, or match this word on the console. Reading the exit
 # code alone is how eight empty runs looked like eight clean ones.
+
+
+def undrawn_phases(receipt: dict) -> list[dict]:
+    """The phases a run could not draw, from its receipt.
+
+    `failedPhases` is newer than every reader of these receipts. A reader that
+    predates it sees a SHORT `phases` list and nothing else, which is a partial
+    drill wearing the shape of a complete one.
+    """
+    return list(receipt.get("failedPhases") or [])
+
+
+def undrawn_complaint(movement_id: str, undrawn: list[dict]) -> str:
+    """One sentence naming what could not be drawn, and why.
+
+    The reason is carried, not just the name. A reader told only that `ready`
+    is missing has to go and find the run's console to learn that a knuckle
+    turned about the wrong axis.
+    """
+    named = ", ".join(
+        f"{entry.get('name', '?')} ({entry.get('error', 'no reason recorded')})"
+        for entry in undrawn
+    )
+    return f"{movement_id} could not draw {len(undrawn)} phase(s): {named}."
+
+
+# The reason for refusing, added only when the caller IS refusing. It was once
+# part of the sentence above, so a run that had passed --allow-partial printed
+# "Refusing ... Pass --allow-partial" after being allowed.
+WHY_REFUSED = (
+    " A page or an archive built from this receipt would show fewer figures "
+    "than the drill has and say nothing about it. Pass --allow-partial to "
+    "proceed deliberately."
+)
+
+
+def refuse_partial_receipt(movement_id: str, receipt: dict,
+                           allow_partial: bool = False) -> list[dict]:
+    """Raise unless the run drew every phase. Returns what it could not draw.
+
+    THIS IS THE HALF THE RENDER LOOP DID NOT FIX. The loop now records a
+    failure and carries on, which is right, but it also CREATED a receipt for a
+    drill that could not be fully drawn. Before that, a failing drill produced
+    no receipt at all and no reader could be fooled. The producer widened its
+    shape and its readers stayed on the old assumption, so a three-phase drill
+    became a two-figure page that exited 0 and said nothing.
+
+    `allow_partial` is deliberate and explicit. It does not silence the
+    finding: a caller that passes it must still show the reader what is
+    missing.
+    """
+    undrawn = undrawn_phases(receipt)
+    if undrawn and not allow_partial:
+        raise SystemExit(
+            undrawn_complaint(movement_id, undrawn) + WHY_REFUSED
+        )
+    return undrawn

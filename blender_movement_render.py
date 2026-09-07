@@ -747,7 +747,8 @@ def render_job(studio: Studio, job: dict, job_path: Path, args,
         rendered.append(receipt)
         print(
             f"[movement-render] {phase['name']} frame {phase['frame']} "
-            f"-> {len(images)} views"
+            f"-> {len(images)} views",
+            flush=True,
         )
 
     animation = None
@@ -785,68 +786,102 @@ def render_job(studio: Studio, job: dict, job_path: Path, args,
         bpy.context.scene.render.fps = fps
         # Set the frame before posing. Once keys exist, changing the frame
         # evaluates them and would replace whatever was posed first.
+        # THE SAME RULE AS THE PHASE LOOP, WITH THE OPPOSITE ANSWER. A still
+        # with a hole in it is one missing figure; an ANIMATION with a hole in
+        # it is a movement that plays wrongly and says nothing, because the
+        # frames either side close over the gap. So a failed frame is recorded
+        # and the EXPORT IS REFUSED, while the receipt is still written: the
+        # old behaviour raised out of `render_job` and left no receipt at all,
+        # with the stale one already unlinked.
         for number, frame in enumerate(frames, start=1):
             scene.frame_set(number)
-            centre, _ = pose_phase(
-                rig, frame, job["anatomyLimitsDegrees"], basis, foot_baseline,
-                config.finger_curl_degrees, job.get("knuckleLimitsDegrees"),
-            )
+            try:
+                centre, _ = pose_phase(
+                    rig, frame, job["anatomyLimitsDegrees"], basis,
+                    foot_baseline, config.finger_curl_degrees,
+                    job.get("knuckleLimitsDegrees"),
+                )
+            except Exception as error:
+                failed.append({
+                    "name": f"frame {number}",
+                    "frame": number,
+                    "failed": True,
+                    "error": f"{type(error).__name__}: {error}",
+                })
+                print(
+                    f"[movement-render] FAILED animation frame {number}: "
+                    f"{type(error).__name__}: {error}",
+                    flush=True,
+                )
+                continue
             ball.location = centre
             keyframe(rig, ball, number)
         scene.frame_set(1)
 
-        bake_action(rig, 1, len(frames))
-        # With the masks applied the skin's texture alpha has nothing left to
-        # hide, and all it does is dither: angular patches over the legs, arms
-        # and face wherever it is neither one nor zero. Hair, lashes and brows
-        # keep theirs, because they are cut-out cards. So do the eyes, whose
-        # cornea is transparent over the iris: opaque gives her blank white
-        # discs and no pupil.
-        solid = [human] + [a for a in assets if "casualsuit" in a.name]
-        print(f"[movement-render] alpha: {', '.join(set_alpha(solid, 'OPAQUE'))}")
-        glb = output / f"{job['movementId']}.glb"
-        baked = bake_shape_keys([human, *assets])
-        if baked:
-            print(f"[movement-render] baked shape keys: {', '.join(baked)}")
-        select_only([rig, human, *assets, ball, *ball_seams])
-        bpy.ops.export_scene.gltf(
-            filepath=str(glb),
-            export_format="GLB",
-            use_selection=True,
-            export_animations=True,
-            export_frame_range=True,
-            # MPFB hides the fitting helpers and the body under the clothes
-            # with two mask modifiers. The exporter ignores modifiers unless
-            # it is asked, so both masks were dropped and the athlete arrived
-            # wearing a skirt of helper geometry with her chest through her
-            # shirt. This is what applies them. It also disables shape key
-            # export, which is why they are baked first.
-            export_apply=True,
-        )
-        movie = output / f"{job['movementId']}.mp4"
-        view = job["views"]["quarter"]
-        movie = render_movie(
-            camera,
-            path=movie,
-            resolution=tuple(view["resolutionPx"]),
-            location=Vector(view["locationM"]),
-            target=Vector(view["targetM"]),
-            lens=view["lensMm"],
-            sensor_width=view["sensorWidthMm"],
-            fps=fps,
-        )
-        animation = {
-            "frames": len(frames),
-            "framesPerSecond": fps,
-            "glb": {"path": str(glb), "bytes": glb.stat().st_size,
-                    "sha256": sha256(glb)},
-            "movie": {"path": str(movie),
-                      "bytes": movie.stat().st_size if movie.is_file() else 0},
-        }
-        print(
-            f"[movement-render] animated {len(frames)} frames at {fps} fps "
-            f"-> {glb.name} ({glb.stat().st_size // 1024} KB), {movie.name}"
-        )
+        if failed:
+            print(
+                f"[movement-render] REFUSING the animation export: "
+                f"{len(failed)} frame(s) could not be posed, and an animation "
+                f"with a hole in it plays over the gap without saying so. The "
+                f"receipt is still written.",
+                flush=True,
+            )
+
+        if failed:
+            animation = None
+        else:
+            bake_action(rig, 1, len(frames))
+            # With the masks applied the skin's texture alpha has nothing left to
+            # hide, and all it does is dither: angular patches over the legs, arms
+            # and face wherever it is neither one nor zero. Hair, lashes and brows
+            # keep theirs, because they are cut-out cards. So do the eyes, whose
+            # cornea is transparent over the iris: opaque gives her blank white
+            # discs and no pupil.
+            solid = [human] + [a for a in assets if "casualsuit" in a.name]
+            print(f"[movement-render] alpha: {', '.join(set_alpha(solid, 'OPAQUE'))}")
+            glb = output / f"{job['movementId']}.glb"
+            baked = bake_shape_keys([human, *assets])
+            if baked:
+                print(f"[movement-render] baked shape keys: {', '.join(baked)}")
+            select_only([rig, human, *assets, ball, *ball_seams])
+            bpy.ops.export_scene.gltf(
+                filepath=str(glb),
+                export_format="GLB",
+                use_selection=True,
+                export_animations=True,
+                export_frame_range=True,
+                # MPFB hides the fitting helpers and the body under the clothes
+                # with two mask modifiers. The exporter ignores modifiers unless
+                # it is asked, so both masks were dropped and the athlete arrived
+                # wearing a skirt of helper geometry with her chest through her
+                # shirt. This is what applies them. It also disables shape key
+                # export, which is why they are baked first.
+                export_apply=True,
+            )
+            movie = output / f"{job['movementId']}.mp4"
+            view = job["views"]["quarter"]
+            movie = render_movie(
+                camera,
+                path=movie,
+                resolution=tuple(view["resolutionPx"]),
+                location=Vector(view["locationM"]),
+                target=Vector(view["targetM"]),
+                lens=view["lensMm"],
+                sensor_width=view["sensorWidthMm"],
+                fps=fps,
+            )
+            animation = {
+                "frames": len(frames),
+                "framesPerSecond": fps,
+                "glb": {"path": str(glb), "bytes": glb.stat().st_size,
+                        "sha256": sha256(glb)},
+                "movie": {"path": str(movie),
+                          "bytes": movie.stat().st_size if movie.is_file() else 0},
+            }
+            print(
+                f"[movement-render] animated {len(frames)} frames at {fps} fps "
+                f"-> {glb.name} ({glb.stat().st_size // 1024} KB), {movie.name}"
+            )
 
     receipt_path = output / f"{job['movementId']}.render.json"
     # WHICH BUILD DREW THIS: the session's, fixed when the athlete was built.
@@ -898,6 +933,14 @@ def render_job(studio: Studio, job: dict, job_path: Path, args,
 
 
 def main() -> None:
+    # BLOCK-BUFFERED UNDER REDIRECTION. Blender's stdout is buffered when it is
+    # not a terminal and its stderr is not, so a saved log showed the run's
+    # final SystemExit six lines ABOVE the first drill it described. Nothing
+    # was wrong and the log read as though the raise came first.
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+    except (AttributeError, ValueError):  # pragma: no cover - older streams
+        pass
     args = parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
