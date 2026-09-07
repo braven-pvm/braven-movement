@@ -81,7 +81,9 @@ def good(**overrides) -> dict:
     bundle = {
         "front": {"source": {"usableToSeconds": None}},
         "side": {"sync": {
-            "offsetSecondsToReference": 1.0,
+            # The field the real blocks no longer carry. Kept here only so the
+            # fixture exercises the ONE key the gate reads, below.
+            "frameOffsetToReference": -5,
             "offsetUncertaintySeconds": 0.004,
             "measured": True,
         }},

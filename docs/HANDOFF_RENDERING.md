@@ -348,6 +348,8 @@ which is exactly where a consumer trips.
                                                    to reach the reference clock
 
     For the non-reference view, offsetSecondsToReference = -(--offset).
+    WITHDRAWN 2026-09-07 — offsetSecondsToReference no longer exists and the
+    sync is a FRAME offset. Kept only for the sign convention:
     This material: --offset -1.0 and offsetSecondsToReference +1.0 both put
     the front at 9.25 s and the side at 8.25 s. **THAT EXAMPLE IS WITHDRAWN
     (2026-09-07) and is kept only to show the SIGN CONVENTION, which is

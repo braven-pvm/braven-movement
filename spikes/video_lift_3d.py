@@ -26,11 +26,15 @@ needs no anthropometry at all: it is one length, seen twice.
 What this cannot do
 -------------------
 
-The sync is good to about 150 ms, so a hand moving at 2 m/s is displaced about
-30 cm between the views. The lift therefore certifies that the pipeline runs.
-It yields usable numbers only where the athlete is nearly still, and in fast
-phases it is illustrative and never a measurement. The residual reported here
-is dominated by that, not by the camera geometry.
+THE 150 ms SYNC THIS PARAGRAPH ASSUMED IS WITHDRAWN (2026-09-07). The file
+names are wrong: `front 0.1.mp4` pairs with `side 0.2.mp4` at a constant FRAME
+offset of -5, and the remaining two files have no established partner. A lift
+runs only for a pair whose sync block carries a frame offset.
+
+AND THE RESIDUAL IS NOT DOMINATED BY THE SYNC, which this paragraph also used to
+say. Sweeping the offset from -5.0 to +3.0 s moves the median residual only 14.8
+to 16.0 mm, so it never measured sync quality and cannot bound it. What it does
+measure is not established.
 
     pixi run python video_lift_3d.py --set 0.1
 """

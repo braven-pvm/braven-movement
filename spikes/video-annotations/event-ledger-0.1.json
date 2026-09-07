@@ -68,7 +68,7 @@
    "file": "side 0.1.mp4",
    "frames": 863,
    "usableToSeconds": 26.4,
-   "note": "A first catch at 8.26 of a ball fed from the front camera's side, held, then RELEASED UPWARD at 8.53 and caught again at 9.86. She handles a ball continuously from 17.06 to 19.73, which is inside the front's empty stretch. She walks off at 26.4 s.",
+   "note": "A first catch at 8.26 of a ball fed from the front camera's side, held, then RELEASED UPWARD at 8.53 and caught again at 9.86. SHE IS NOT HANDLING A BALL WITHOUT PAUSE THROUGH 17.06-19.73 \u2014 an earlier version of this note said so and the contact sheet refutes it: she releases at about 17.5 and her hands are empty from 17.59 to 18.39 before catching at 18.53. What survives, and what matters, is that NO EMPTY STRETCH IN THIS VIEW AFTER 8.26 s LASTS MUCH OVER A SECOND, while the front stands empty for 2.7 s. She walks off at 26.4 s.",
    "events": [
     {
      "frameIndex": 248,
@@ -157,7 +157,7 @@
   ],
   "why": "a sync needs two anchors at least 10.0 s apart and the best offset spans 5.333 s; a RANDOM side ledger of the same shape explains 4 events at the 99th percentile, so 3 is not better than chance"
  },
- "verdict": "NOT A SYNCHRONOUS PAIR",
+ "verdict": "NOT A SYNCHRONOUS PAIR \u2014 AND NOW EXPLAINED",
  "fitSweep": [
   {
    "toleranceSeconds": 0.0333,
@@ -200,5 +200,6 @@
    "fits": true
   }
  ],
- "why": "No constant offset maps the front's event sequence onto the side's better than chance at any tolerance a sync could be written on. At one frame the best offset explains 3 of 10 events against a chance ceiling of 4. Only at 0.400 s \u2014 twelve frame periods, and far looser than any sync claim \u2014 does the real data reach 8 against a ceiling of 7, one event above chance. THE DECISIVE READING IS NOT THE ARITHMETIC BUT THE SEQUENCE: the front stands empty-handed from 17.3 to 20.0 s and claps at 17.87, while the side handles a ball continuously from 17.06 to 19.73. No offset reconciles a 2.7 s pause with continuous play. Whether the two files are one take with a discontinuity, two takes, or a mislabelled pair is NOT established here."
+ "why": "The two files NAMED 0.1 are not a pair, and the reason is not a discontinuity or a drop: THE FILE NAMES ARE WRONG. `front 0.1.mp4` pairs with `side 0.2.mp4` at a constant frame offset of -5, established on two ball-into-hands anchors 11.03 s apart and checked on a third event. That is why no offset fits the labelled pair at any tolerance a sync could use: at one frame the best explains 3 of 10 events against a chance ceiling of 4.\n\nTHE SEQUENCE SAID SO BEFORE THE ARITHMETIC DID. The front stands empty-handed from 17.3 to 20.0 s and claps at 17.87 while the side handles a ball continuously from 17.06 to 19.73. No offset reconciles a pause with continuous play \u2014 and `side 0.2.mp4` DOES contain that pause, at 17.33 to 19.73, which is what identified it.\n\nRefer to PAIRS in spikes/video_keypoints.py.",
+ "resolutionNote": "Events are read on a grid of every eighth frame, so their times are multiples of 8 frames \u2014 EXCEPT the front's first catch at index 274, which is not. That one was pinned to its contact frame afterwards, when it became an anchor, and it is left at its true index rather than pushed back onto the grid: an anchor's value is that it is exact. The other rows are grid samples and are accurate to about one sample, 0.267 s."
 }

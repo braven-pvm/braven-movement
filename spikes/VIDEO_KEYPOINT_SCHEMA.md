@@ -90,16 +90,29 @@ is worse than a missing frame.
 
   "sync": {
     "referenceView": "front",
-    "offsetSecondsToReference": -0.7295,
-    "offsetUncertaintySeconds": 0.0333,
-    "worked": {
-      "event": "first catch, the frame the ball meets the hands, both views",
-      "thisViewSeconds": 9.8628,
-      "referenceViewSeconds": 9.1333
-    },
-    "method": "the frame the ball first meets her hands on the first catch, read in both views by container timestamp",
+    "file": "side 0.2.mp4",
+    "measured": true,
+    "pairedWith": "front 0.1.mp4",
+    "pairKey": "front 0.1 + side 0.2",
+    "frameOffsetToReference": -5,
+    "framePeriodSeconds": 0.033322,
     "methodKind": "shared-event",
-    "methodNote": "This block states what was DONE to arrive at the offset, and makes no claim about what else the recordings contain. …"
+    "method": "the frame in which a ball first meets her hands, read in both files by index from the container's own timestamp list",
+    "anchors": [
+      {"event": "first catch, ball into hands",
+       "referenceIndex": 274, "referenceSeconds": 9.1333,
+       "otherIndex": 269, "otherSeconds": 8.9630,
+       "derivedSecondsOffset": -0.1704},
+      {"event": "overhead catch, ball into hands",
+       "referenceIndex": 605, "referenceSeconds": 20.1667,
+       "otherIndex": 600, "otherSeconds": 19.9920,
+       "derivedSecondsOffset": -0.1746}
+    ],
+    "checks": [{"event": "second clap, hands meet", "referenceIndex": 534, "otherIndex": 529, "…": "…"}],
+    "setAside": [{"event": "first clap, hands meet", "frameDifference": 4, "why": "a clasp is soft; …"}],
+    "offsetUncertaintySeconds": 0.0333,
+    "derivedNote": "The seconds above are DERIVED from each file's own pts and are not the measurement. …",
+    "methodNote": "…"
   },
 
   "generatedFrom": {
@@ -142,6 +155,52 @@ is worse than a missing frame.
 
 ## The sync block, and the assertion that guards it
 
+## The sync block: a FRAME COUNT between two named FILES
+
+**THE PAIRING IS BETWEEN FILES, NOT BETWEEN SETS, AND THE FILE NAMES ARE
+WRONG.** `front 0.1.mp4` and `side 0.2.mp4` are the same run, established
+2026-09-07. `front 0.2.mp4` and `side 0.1.mp4` are not shown to be a pair by
+anything measured. The source files are NOT renamed — they are Marius's assets
+and every path in the tree points at them — so `sync.pairedWith` carries the
+mapping and every consumer reads that rather than a name.
+
+**THE MEASUREMENT IS `frameOffsetToReference`.** It is added to a frame INDEX in
+this file to reach the reference file's index, and the consumer assertion is an
+index one:
+
+```
+other_pts[reference_index + frameOffsetToReference]   is the other view's time
+```
+
+**SECONDS ARE DERIVED AND NEVER STORED AS THE MEASUREMENT.** The two cameras'
+frame periods differ — 33.3330 ms on the front against 33.3220 ms on the side —
+so a constant frame offset shows as a time offset that DRIFTS, from −0.1704 s at
+the first anchor to −0.1746 s eleven seconds later. That is an eighth of a frame
+and it is real. Two offsets in seconds have been published from this material
+and both were withdrawn; the field that carried them, `offsetSecondsToReference`,
+is gone so that nothing reads one by habit.
+
+| field | what it is |
+|---|---|
+| `pairedWith` | the other file's name, or `null` |
+| `frameOffsetToReference` | the measurement; `0` in the reference file |
+| `framePeriodSeconds` | this file's own median interval, for deriving seconds |
+| `anchors` | two ball-into-hands events, at least ten seconds apart |
+| `checks` | events that agree but add no span |
+| `setAside` | events that DISAGREE, with the reason |
+| `offsetUncertaintySeconds` | one frame — which frame the contact was called in |
+
+**AN ANCHOR IS A BALL MEETING HANDS. A CLAP IS A CHECK.** A ball arriving is a
+one-frame transition with no judgement in it; a clasp is soft, and "nearly
+together" against "together" is a frame either way. The first clap of the run
+gives a frame difference of **4** where everything else gives 5, and it is
+recorded in `setAside` rather than resolved by picking the frame that agrees.
+
+**TWO ANCHORS, AT LEAST TEN SECONDS APART, OR NO SYNC IS WRITTEN.** One anchor
+is always satisfiable. The athlete's toss cycle is 1.90 s, so a wrong offset
+lands on a catch exactly as a right one does — which is how −0.7295 s survived
+its own check for three days.
+
 **`methodKind` DECLARES THE GRADE, and its vocabulary is closed.** A consumer
 deciding whether to trust a pairing needs the grade, and a grade it has to parse
 out of a sentence is not a field. `METHOD_KINDS` in `spikes/video_keypoints.py`
@@ -156,19 +215,22 @@ holds the list:
 | `unknown` | nothing has measured it |
 
 **Session 0.1 is `unknown`.** Two offsets have been withdrawn from it, the
-second graded `shared-event` on a catch — and a catch recurs every 1.90 s, so it
-was not unique and the pairing was one cycle out. Refer to
+second graded `shared-event` on a catch — and a catch recurs every 1.866 s, so
+it was not unique and the pairing was one cycle out. Refer to
 `spikes/video-annotations/event-ledger-0.1.json`.
 
-`offsetSecondsToReference` is the number a consumer ADDS to a timestamp in
-THIS file to reach the reference view's clock. On load, assert:
+**`offsetSecondsToReference` NO LONGER EXISTS.** It carried two offsets that
+were both withdrawn, and it is removed so that nothing reads one by habit.
 
-    thisViewSeconds + offsetSecondsToReference == referenceViewSeconds
+`frameOffsetToReference` replaces it and is added to a frame INDEX in this file
+to reach the paired file's index. On load, assert on the indices:
 
-with the values from `worked`. On this material that is
-`8.25 + 1.0 == 9.25`. **THOSE NUMBERS ARE WITHDRAWN (2026-09-07) and are kept
-only to show the shape of the assertion**, which is unchanged and still fails
-loudly if a sign is inverted. No offset is measured for set 0.1.
+    other_pts[referenceIndex + frameOffsetToReference] == otherSeconds
+
+for every row of `anchors` and `checks`. On this material that is
+`side_pts[274 - 5] == 8.9630` and `side_pts[605 - 5] == 19.9920`. **The
+assertion is on integers and cannot drift**, which is the point of moving it off
+seconds.
 
 ### Mapping to the rendering lane's `--offset`
 
@@ -177,12 +239,17 @@ they are defined in opposite directions. The rendering lane's tool converts a
 REFERENCE time into a THIS-VIEW time; this field converts a THIS-VIEW time into
 a REFERENCE time.
 
-    For the non-reference view:
-    offsetSecondsToReference = -(the rendering lane's --offset)
+    For the non-reference view, a consumer that still needs seconds derives
+    them AT ITS OWN FRAME rather than from a stored constant:
 
-    This material: --offset -1.0 and offsetSecondsToReference +1.0 both place
-    the front at 9.25 s and the side at 8.25 s. **WITHDRAWN 2026-09-07: the
-    mapping is right and the numbers are not. No offset is measured.**
+        seconds = other_pts[reference_index + frameOffsetToReference]
+        the rendering lane's --offset = -(seconds - reference_pts[reference_index])
+
+    **The derived number is not constant across the clip** — it moves about
+    4 ms across the 11 s between the two anchors, because the cameras' frame
+    periods differ by 11 microseconds. A consumer that caches one and reuses it
+    at the other end of the clip is out by an eighth of a frame; a consumer that
+    stores one as THE offset repeats the fault this schema was rewritten for.
 
 Neither is wrong, and either alone is unambiguous. Together and unwritten they
 are a sign error waiting for whoever reads both, which is why the mapping is
@@ -219,12 +286,12 @@ multiplies by the container size instead.
 - That `frames` are evenly spaced. On a variable-rate view they are not.
 - That a missing landmark is at the origin. An undetected frame carries
   `"detected": false` and no landmarks at all rather than zeros.
-- **That `offsetSecondsToReference` is constant across the clip.** It is
-  constant to 11 ms over 29 s on this material, a third of a frame, which is
-  ignorable. That is a measured property of these two cameras and not a
-  guarantee: the side clock runs 0.0398 percent faster than the front's by four
-  derivations, and over a ten minute shoot the same ratio is 240 ms, seven
-  frames.
+- **That a sync offset in SECONDS is constant across the clip.** It is not, and
+  that is why the measurement is a frame count. The two cameras' frame periods
+  differ by 11 microseconds — 33.3330 ms against 33.3220 — so the derived
+  offset moves about 4 ms across the 11 s between the anchors and would move
+  240 ms, seven frames, over a ten minute shoot. **The FRAME offset does not
+  drift.** Derive seconds at the frame you need them for.
 
 - **That `detected` means the frame is usable.** It does not. `detected`
   answers "did the model find a body"; `usableToSeconds` and `degraded` answer
@@ -240,7 +307,7 @@ either.
 
 ## Open, and deliberately so
 
-- `offsetUncertaintySeconds` is ±150 ms on this material, which is larger than
+- `offsetUncertaintySeconds` is ONE FRAME, 0.0333 s, on the one established pair; it was ±150 ms while the sync was matched by eye between two files that are not a pair. That older figure is larger than
   most consumers will expect. A file whose sync came from a real clap should
   carry a much smaller number; the field is the same either way.
 - `usableToSeconds` is null unless the clip has a known bad tail. For

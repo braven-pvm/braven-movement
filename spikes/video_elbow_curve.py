@@ -75,8 +75,10 @@ def main(argv: list[str]) -> int:
     if not side["sync"].get("measured"):
         raise SystemExit(
             f"set {arguments.set_id} has no measured sync offset, so its two "
-            "views cannot be placed on one clock. Only set 0.1 has two matched "
-            "events. Refer to the sync block in its keypoint file."
+            "views cannot be placed on one clock. THE FILE NAMES ARE WRONG: "
+            "`front 0.1.mp4` pairs with `side 0.2.mp4`, and the remaining two "
+            "files have no established partner. Refer to the sync block in the "
+            "keypoint file and to PAIRS in video_keypoints.py."
         )
     lift = json.loads((OUTPUT / f"lift-3d-{arguments.set_id}.json").read_text(encoding="utf-8"))
     front = json.loads((OUTPUT / f"keypoints-front-{arguments.set_id}.json").read_text(encoding="utf-8"))

@@ -81,10 +81,18 @@ sound or pixels — which is why both routes failed the same way.
 
 Two catches, located by reading frame contact sheets:
 
+> **VOID 2026-09-07 — THE TWO FILES IN THIS TABLE ARE NOT A PAIR.** The events
+> below were read between `front 0.1.mp4` and `side 0.1.mp4`, and those two are
+> not the same run. `front 0.1.mp4` pairs with `side 0.2.mp4` at a constant
+> FRAME offset of −5, measured on two ball-into-hands anchors 11.03 s apart.
+> The rows are kept because the READING METHOD below them is sound and the
+> disagreement they record is real; the offsets are not. Refer to PAIRS in
+> `spikes/video_keypoints.py`.
+
 | event | front | side | offset |
 |---|---|---|---|
-| A, first catch | 9.133 s | 8.133 s | **−1.000 s** |
-| B, a catch 15 s later | 24.067 s | 22.800 s | **−1.267 s** |
+| A, first catch | 9.133 s | 8.133 s | **−1.000 s** (void) |
+| B, a catch 15 s later | 24.067 s | 22.800 s | **−1.267 s** (void) |
 
 The two disagree by **267 ms**, which is eight frames. That is how precisely a
 catch can be located by eye on a small tile, and nothing more.
@@ -95,8 +103,10 @@ apart the events are. Event B's role is a gross-error check on the offset — it
 confirms there is no whole-cycle mismatch — and it is not a drift measurement.
 The drift number comes from the frame timestamps, below.
 
-So the honest answer for this material is an offset of about **−1.1 s with an
-uncertainty near ±150 ms**. For a feasibility spike that is enough to pair
+So the honest answer for this material WAS an offset of about **−1.1 s with an
+uncertainty near ±150 ms**. **THAT IS VOID**: the two files are not a pair, and
+the disagreement of 267 ms this section treats as reading error was the two
+recordings being of different runs. For a feasibility spike that is enough to pair
 frames for a look. For reading joint angles off two views it is not.
 
 **What ±150 ms costs downstream.** A hand travelling at 2 m/s is displaced

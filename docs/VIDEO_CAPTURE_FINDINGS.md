@@ -91,7 +91,7 @@ Peak-to-sidelobe near 1.0 means the best match is no better than the next best:
 there is no peak, so the milliseconds beside it are not a measurement. Four
 readings, four different answers.
 
-Matching catches by eye instead gives an offset good to about **±150 ms**, which
+Matching catches by eye gave an offset once claimed good to about ±150 ms — **withdrawn 2026-09-07 with everything built on it**, because the two files matched were not a pair. The sync that survives is a FRAME offset between `front 0.1.mp4` and `side 0.2.mp4`, good to one frame. The old figure, which
 is four to five frames.
 
 **Instruction: after both cameras are rolling and before anyone speaks, clap
@@ -126,7 +126,7 @@ clips were cut with it. So it has a source and a method; what it does not have
 is a tracked one or a result that reproduces.
 What the artefacts USED TO apply, before both offsets were withdrawn on
 2026-09-07, was **1.0 s with a 0.15 s uncertainty**:
-`keypoints-side-0.1.json` carries `offsetSecondsToReference: 1.0`,
+`keypoints-side-0.1.json` carried `offsetSecondsToReference: 1.0` — a field that no longer exists —
 `offsetUncertaintySeconds: 0.15`, method "two visual events matched by eye",
 worked example the first catch at side 8.25 s against front 9.25 s; and
 `lift-3d-0.1.json` applies the same 1.0. No file, script or commit in this
@@ -181,8 +181,60 @@ together: hands-together sequences at +2.442, wrist-height peak sequences at
 can therefore alias together, and the by-eye 1.0 s and the 0.95–1.00 strip
 readings point elsewhere. It is worth attention and it is not an offset.
 
-**NOT SOLVED, AND THE SET IS NOT A SYNCHRONOUS PAIR.** Two offsets have been
-published for set 0.1 and both are withdrawn.
+**THE FILE NAMES ARE WRONG, AND THAT IS WHY NOTHING FITTED.** `front 0.1.mp4`
+pairs with **`side 0.2.mp4`**, established 2026-09-07 at a constant frame offset
+of **−5** (side index = front index − 5) on two ball-into-hands anchors 11.03 s
+apart. Nobody was measuring a bad offset; everybody was measuring between two
+files that are not a pair.
+
+| anchor | front 0.1 idx / s | side 0.2 idx / s | Δframe |
+|---|---|---|---|
+| first catch | 274 / 9.1333 | 269 / 8.9630 | **5** |
+| overhead catch | 605 / 20.1667 | 600 / 19.9920 | **5** |
+| second clap (a check) | 534 / 17.8000 | 529 / 17.6264 | **5** |
+
+**What identified it was the pause.** Front 0.1 stands empty-handed from 17.3 to
+20.0 s; `side 0.1.mp4` handles a ball continuously there, and **`side 0.2.mp4`
+has the pause**, at 17.33 to 19.73.
+
+**The source files are NOT renamed.** They are Marius's assets, every path in
+the tree points at them, and the renaming is his decision. The mapping is
+recorded in `PAIRS` in `spikes/video_keypoints.py` and consumers read that.
+
+**`front 0.2.mp4` and `side 0.1.mp4` are PAIRING UNKNOWN.** Two targeted anchors
+gave frame differences of 77 and 75, and the events do not match in kind — a fed
+pass against a self toss, two-handed against one-handed. The second was found by
+looking where the first predicted one, and **a catch found where an offset
+predicted a catch is not evidence in a clip of catches**. No elimination
+argument is made: "there are four files so the other two must pair" is a guess.
+
+**Two offsets were published for set 0.1 as labelled and both are withdrawn**,
+and so is **+1.8702 s**, which was written for set 0.2 as labelled on the same
+day and by the same reasoning. No offset in seconds survives anywhere.
+
+### What each file is, and what is known about it
+
+| file | frames | video span (pts) | audio duration | partner | frame offset |
+|---|---|---|---|---|---|
+| `front 0.1.mp4` | 866 | 28.8667 | 28.8000 | **`side 0.2.mp4`** | 0 (reference) |
+| `side 0.2.mp4` | 990 | 32.9867 | 32.9238 | **`front 0.1.mp4`** | **−5** |
+| `front 0.2.mp4` | 946 | 31.5333 | 31.4833 | none established | — |
+| `side 0.1.mp4` | 863 | 28.7552 | 28.6995 | none established | — |
+
+**No file has a pts gap over 1.5 frame periods, and in every one the audio is
+SHORTER than the video span** — by 50 to 67 ms, an ordinary tail. That rules out
+one thing only: video frames dropped and renumbered, which would leave the audio
+longer. **It does not rule out much else, and it did not need to** — the
+mislabel explains what the durations were being asked about.
+
+### What was not done
+
+**Windowed audio correlation as a function of time was never run.** It was
+proposed after the whole-clip correlations failed, and it was not spent: the
+side microphone's strongest event reaches ×24 against the front's ×44, four
+separate methods had already returned peak-to-sidelobe near 1.0, and the
+mislabel then explained the failures without it. It is recorded here as
+deliberately not done rather than quietly skipped.
 
 | offset | grade it claimed | withdrawn |
 |---|---|---|
@@ -202,7 +254,7 @@ with her arms at her sides. I checked that pairing myself and it is dead.
 catch in each view, two and four frames after contact — corresponding moments.
 That sentence is withdrawn with the rest.
 
-**WHY BOTH SURVIVED THEIR OWN CHECKS.** Her toss cycle is **1.90 s** — the mean gap between the side ledger's ten catches, 8.26 s to 25.06 s — so the
+**WHY BOTH SURVIVED THEIR OWN CHECKS.** Her toss cycle is **1.866 s** — the mean gap between the ten catches of `side 0.1.mp4` from 8.26 s to 25.06 s, which is (25.06 − 8.26) ÷ 9 — so the
 movement is periodic and a wrong offset lands on a catch exactly as a right one
 does. My confirmation — "both views show a catch 15 s later" — matched a POSTURE
 inside that period. A single moment that looks alike in two views is not

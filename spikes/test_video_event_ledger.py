@@ -104,6 +104,38 @@ class TwoAnchorsAreNotEnoughOnTheirOwn(unittest.TestCase):
         self.assertIn("nullPercentileMatches", found)
         self.assertIn("nullTrials", found)
 
+    def test_a_count_EQUAL_to_the_chance_ceiling_does_not_fit(self):
+        """`count > bar` MUST NOT BECOME `count >= bar`, and until this test
+        existed the change passed all sixteen. Session 0.1 at a quarter second
+        is the case: it explains SIX events against a ceiling of SIX. Reading
+        that as a fit accepts a pairing of two files that are not a pair."""
+        found = load("0.1")
+        if found is None:
+            self.skipTest("event-ledger-0.1.json is not present")
+
+        r = fits_one_offset(events(found, "front"), events(found, "side"),
+                            tolerance=0.267)
+
+        self.assertEqual(r["matchedEvents"], r["nullPercentileMatches"],
+                         "the fixture must sit exactly ON the ceiling")
+        self.assertFalse(r["fits"], "equal to chance is not better than chance")
+
+    def test_events_crowded_into_a_few_seconds_do_not_fit(self):
+        """THE ANCHOR RULE MUST NOT BE REMOVED, and until this test existed
+        removing it passed all sixteen. Eight events matching perfectly inside
+        4 s beat chance easily and say nothing: a wrong offset only has to
+        survive one stretch of a periodic movement to look like this."""
+        beats = [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5]
+        front = [(t, "catch") for t in beats]
+        side = [(t + 0.8, "catch") for t in beats]
+
+        found = fits_one_offset(*(events(ledger(front, side), v)
+                                  for v in ("front", "side")))
+
+        self.assertGreater(found["matchedEvents"], found["nullPercentileMatches"])
+        self.assertLess(found["spanSeconds"], ANCHOR_GAP_SECONDS)
+        self.assertFalse(found["fits"], "beating chance inside 4 s is not a sync")
+
     def test_the_null_grows_as_the_tolerance_is_relaxed(self):
         # The reason a loose tolerance cannot rescue a bad ledger: chance
         # rises with it, so the bar rises too.
@@ -158,8 +190,19 @@ class TheCommittedLedgers(unittest.TestCase):
         if found is None:
             self.skipTest("event-ledger-0.1.json is not present")
 
-        self.assertEqual(found["verdict"], "NOT A SYNCHRONOUS PAIR")
+        self.assertIn("NOT A SYNCHRONOUS PAIR", found["verdict"])
         self.assertIs(judge(found)[0], False)
+
+    def test_set_one_records_WHY_it_is_not_a_pair(self):
+        """The ledger found the negative; the frames found the cause. A ledger
+        that says "no offset fits" without saying that the FILE NAMES ARE WRONG
+        leaves the next reader to rediscover it."""
+        found = load("0.1")
+        if found is None:
+            self.skipTest("event-ledger-0.1.json is not present")
+
+        self.assertIn("FILE NAMES ARE WRONG", found["why"])
+        self.assertIn("side 0.2.mp4", found["why"])
 
     def test_set_one_records_the_sequence_that_settles_it(self):
         """The arithmetic is not the evidence. The front stands empty-handed
@@ -170,7 +213,13 @@ class TheCommittedLedgers(unittest.TestCase):
             self.skipTest("event-ledger-0.1.json is not present")
 
         self.assertIn("17.3", found["why"])
-        self.assertIn("continuously", found["views"]["side"]["note"])
+        # NOT "continuously" — that word was in an earlier version of the note
+        # and the contact sheet refutes it: she releases about 17.5 and her
+        # hands are empty 17.59 to 18.39. What settles it is the LENGTH of the
+        # longest empty stretch in each view, which is what the note now says.
+        self.assertIn("NO EMPTY STRETCH IN THIS VIEW",
+                      found["views"]["side"]["note"])
+        self.assertIn("2.7 s", found["views"]["side"]["note"])
 
     def test_set_one_carries_the_fit_sweep_and_its_chance_ceiling(self):
         found = load("0.1")

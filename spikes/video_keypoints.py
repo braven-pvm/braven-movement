@@ -58,44 +58,113 @@ OUTPUT = SPIKE_DIR / "poc-output" / "video"
 # THIS file to reach the reference view's clock. Refer to the schema: the
 # direction is carried as a worked example because prose about it failed once.
 REFERENCE_VIEW = "front"
-# THE OFFSET BETWEEN THE TWO VIEWS — NOT MEASURED FOR EITHER SET.
+# THE PAIRING IS BETWEEN FILES, NOT BETWEEN SETS, AND THE FILE NAMES ARE WRONG.
 #
-# TWO OFFSETS HAVE BEEN WITHDRAWN AND NEITHER IS REPLACED.
+# `front 0.1.mp4` and `side 0.2.mp4` ARE THE SAME RUN. `front 0.2.mp4` and
+# `side 0.1.mp4` are not shown to be a pair by anything measured here. The four
+# files were named as two sets and at least one of those names is wrong.
 #
-# 1. +1.0 s, worked example side 8.25 against front 9.25, "two visual events
-#    matched by eye". Withdrawn 2026-09-07 with the rest, but NOT for the
-#    reason a previous version of this file gave: it did pair corresponding
-#    moments — two and four frames after the first FED catch in each view.
+# THE SOURCE FILES ARE NOT RENAMED. They are Marius's assets, every path in the
+# tree points at them, and renaming is his decision. The mapping is recorded
+# here instead, and every consumer reads the mapping rather than the name.
 #
-# 2. -0.7295 s, graded `shared-event` on "the frame the ball first meets her
-#    hands on the first catch". WITHDRAWN 2026-09-07. Both named frames are
-#    catches and THEY ARE NOT THE SAME CATCH. Side 0.1 at 9.8628 catches a
-#    ball SHE released upward at 8.497, after a fed catch at 8.163. Front 0.1
-#    at 9.1333 catches a ball arriving from off-frame into hands that had been
-#    empty at her hips since 6.25 s. Under -0.7295 the side's release at 8.497
-#    maps to front 7.77, where she stands with her arms at her sides.
+# WHY THE MEASUREMENT IS A FRAME COUNT AND NOT A NUMBER OF SECONDS. The two
+# cameras do not run at the same rate — 33.3330 ms per frame on the front,
+# 33.3220 ms on the side — so a constant FRAME offset appears as a time offset
+# that drifts, from -0.1704 s at the first anchor to -0.1763 s fifteen seconds
+# later. That is a fifth of a frame and it is real. Seconds are DERIVED here,
+# never stored as the measurement, and a consumer that wants one takes it from
+# the mapping at its own frame:
 #
-# THE PAIRING WAS ONE TOSS CYCLE OFF, which is the aliasing this repository's
-# own prose warned about, and the check that passed it — "both views show a
-# catch 15 s later" — matched a POSTURE inside a periodic movement rather than
-# a unique event.
+#     side_pts[front_index - 5]  is the side time for front frame front_index
 #
-# AND NO CONSTANT OFFSET IS KNOWN TO FIT SET 0.1 AT ALL. Fed catch to fed
-# catch gives +0.94; her release of that same ball gives +1.20; the front's
-# second clap sits inside 2.8 s of empty-handed standing that the side does
-# not contain anywhere nearby. Whether the two files are one take with a
-# discontinuity, two takes, or a mislabelled pair is not established.
-#
-# WHAT HAS TO HAPPEN BEFORE ANY OFFSET IS WRITTEN HERE: an event ledger per
-# view over the whole clip, and one constant offset that maps the front's
-# ledger onto the side's within one frame at TWO anchors at least ten seconds
-# apart. Refer to `spikes/video_event_ledger.py` and to
-# `spikes/video-annotations/event-ledger-<set>.json`.
-SYNC: dict[str, dict] = {}
+# TWO OFFSETS WERE WITHDRAWN BEFORE THIS ONE, both on set 0.1 as labelled:
+# +1.0 s (which did pair corresponding moments, contrary to what a version of
+# this file said) and -0.7295 s, which paired two DIFFERENT catches one toss
+# cycle apart. Refer to docs/KNOWN_ISSUES.md.
+PAIRS = {
+    "front 0.1 + side 0.2": {
+        "referenceFile": "front 0.1.mp4",
+        "otherFile": "side 0.2.mp4",
+        # side index = front index + frameOffsetToReference
+        "frameOffsetToReference": -5,
+        "methodKind": "shared-event",
+        "framePeriodSeconds": {"front 0.1.mp4": 0.033333, "side 0.2.mp4": 0.033322},
+        # TWO ANCHORS, both a ball meeting hands — a transition of one frame,
+        # with no judgement in it — and 11.03 s apart.
+        "anchors": [
+            {"event": "first catch, ball into hands",
+             "referenceIndex": 274, "referenceSeconds": 9.1333,
+             "otherIndex": 269, "otherSeconds": 8.9630,
+             "derivedSecondsOffset": -0.1704},
+            {"event": "overhead catch, ball into hands",
+             "referenceIndex": 605, "referenceSeconds": 20.1667,
+             "otherIndex": 600, "otherSeconds": 19.9920,
+             "derivedSecondsOffset": -0.1746},
+        ],
+        # A CHECK, NOT AN ANCHOR: it sits between the two and adds no span.
+        "checks": [
+            {"event": "second clap, hands meet",
+             "referenceIndex": 534, "referenceSeconds": 17.8000,
+             "otherIndex": 529, "otherSeconds": 17.6264,
+             "derivedSecondsOffset": -0.1736},
+        ],
+        # REPORTED AND SET ASIDE, because a withheld disagreement is a lie by
+        # omission. The FIRST clap gives a frame difference of 4, not 5.
+        "setAside": [
+            {"event": "first clap, hands meet",
+             "referenceIndex": 175, "referenceSeconds": 5.8333,
+             "otherIndex": 171, "otherSeconds": 5.6977,
+             "frameDifference": 4,
+             "why": ("A CLASP IS SOFT. 'Nearly together' and 'together' are one "
+                     "frame apart and the call is a judgement, in both views; "
+                     "calling the side one frame earlier gives 5 and agrees "
+                     "with everything else. A ball meeting hands has no such "
+                     "ambiguity, which is why the two catches are the anchors "
+                     "and every clap is only a check. The disagreement is "
+                     "recorded rather than resolved by picking the frame that "
+                     "suits the answer.")},
+        ],
+        "derivedNote": (
+            "The seconds above are DERIVED from each file's own pts and are not "
+            "the measurement. They drift by about 6 ms across 15 s because the "
+            "two cameras' frame periods differ by 11 microseconds. The "
+            "measurement is the frame offset, which does not drift."),
+    },
+}
 
-# UNUSED WHILE SYNC IS EMPTY, and kept so the shape of a future block is
-# visible. One frame is the floor a frame-paired offset could reach; it is not
-# a claim that anything has reached it.
+# FILES WHOSE PARTNER IS NOT ESTABLISHED. Not "unpaired" — nothing here shows
+# they lack a partner, only that none is measured.
+#
+# `front 0.2.mp4` and `side 0.1.mp4` were tried against each other with the
+# same rule and FAILED IT. Two targeted anchors gave frame differences of 77
+# and 75, and the events do not match in kind: at the first, the side's ball
+# arrives horizontally from the left as a fed pass while the front's descends
+# from the top as a self toss; at the second, the side catches two-handed and
+# the front one-handed.
+#
+# THE SECOND ANCHOR WAS FOUND BY LOOKING WHERE THE FIRST PREDICTED ONE, and a
+# catch found where an offset predicted a catch is not evidence in a clip of
+# catches. That is how -0.7295 was published.
+#
+# NO ELIMINATION ARGUMENT IS MADE. "There are four files, so the other two must
+# pair" is a guess until a ledger says so, and how many files each camera
+# produced is not recorded anywhere in this tree.
+PAIRING_UNKNOWN = ("front 0.2.mp4", "side 0.1.mp4")
+
+
+def pair_for(view: str, set_id: str) -> tuple[str, dict] | tuple[None, None]:
+    """The pair this file belongs to, and its role — or nothing."""
+    name = f"{view} {set_id}.mp4"
+    for key, pair in PAIRS.items():
+        if name in (pair["referenceFile"], pair["otherFile"]):
+            return key, pair
+    return None, None
+
+
+# THE FLOOR A FRAME-PAIRED OFFSET REACHES, kept for consumers that need an
+# uncertainty in seconds. One frame, because the measurement is which frame
+# each view's contact falls in.
 SYNC_UNCERTAINTY_SECONDS = 0.0333
 
 # HOW THE OFFSET WAS ARRIVED AT, as a field of its own rather than a phrase
@@ -112,16 +181,22 @@ METHOD_KINDS = ("clap", "shared-event", "eye", "correlation", "unknown")
 # in this function may say. The block states WHAT WAS DONE, never what was ruled
 # out.
 SYNC_METHOD_NOTE = (
-    "This block states what was DONE to arrive at the offset, and makes no "
-    "claim about what else the recordings contain. TWO EARLIER CLAIMS ARE "
-    "WITHDRAWN. First, this block asserted that no clap existed in this "
-    "material; two claps were later found in the front view of set 0.1, at "
-    "5.800 s and 17.835 s. Second, and worse, set 0.1 carried an offset of "
-    "+1.0 s whose worked example paired side 8.25 with front 9.25 — at side "
-    "8.25 she is holding a ball at chest height and not catching one, and the "
-    "sign was backwards. THAT OFFSET WAS WRONG, NOT MERELY LOOSE, and every "
-    "two-view result built on it is void. Refer to 'The alignment ranked a "
-    "sync clap above every real catch' in docs/KNOWN_ISSUES.md."
+    "WHAT THIS BLOCK CARRIES. For `front 0.1.mp4` and `side 0.2.mp4`: a "
+    "constant FRAME offset of -5, side index = front index - 5, measured on "
+    "two ball-into-hands anchors 11.03 s apart and checked on a third event. "
+    "For `front 0.2.mp4` and `side 0.1.mp4`: NO PARTNER IS ESTABLISHED, and "
+    "that is not a claim that they lack one. Seconds are derived here and are "
+    "never the measurement.\n\n"
+    "WHAT IS WITHDRAWN, and why every one of them failed the same way. This "
+    "block once asserted that no clap existed in this material; two were later "
+    "found in `front 0.1.mp4`, at 5.800 s and 17.835 s. It then carried +1.0 s "
+    "for set 0.1 as labelled, and then -0.7295 s graded 'shared event' — which "
+    "named a frame in each view where a ball meets hands and they were "
+    "DIFFERENT CATCHES, one toss cycle apart. THE CAUSE OF ALL THREE WAS THE "
+    "SAME: the file names are wrong, so nobody was measuring a bad offset; "
+    "everybody was measuring between two files that are not a pair. Refer to "
+    "'The alignment ranked a sync clap above every real catch' in "
+    "docs/KNOWN_ISSUES.md."
 )
 # The camera is picked up after this, measured per frame by the rendering lane.
 USABLE_TO = {("front", "0.1"): 25.7}
@@ -281,61 +356,79 @@ def landmark_edges(vision_module, names: list[str]) -> list[list[str]]:
 
 
 def _sync_inputs(view: str, set_id: str) -> tuple[bool, dict]:
-    """What SYNC says about this view of this set.
+    """What the pair table says about this file.
 
-    ONE DEFINITION, because there are now two callers — `extract`, which writes
-    a new file, and `restamp`, which corrects an existing one. A re-stamp that
-    derived the offset by its own reading of SYNC would be a second definition
-    of the same thing, and the two would drift the first time either changed.
+    ONE DEFINITION, because there are two callers — `extract`, which writes a
+    new file, and `restamp`, which corrects an existing one. A re-stamp that
+    read the table its own way would be a second definition of the same thing,
+    and the two would drift the first time either changed.
     """
-    # A set whose offset nobody has measured says so, rather than carrying
-    # nulls that would break the assertion the schema tells consumers to run.
-    measured = set_id in SYNC
-    sync = dict(SYNC.get(set_id, {}))
-    if view == REFERENCE_VIEW:
-        # The reference view's offset is zero by definition, measured or not.
-        sync["offsetSecondsToReference"] = 0.0
-        if measured:
-            sync["thisViewSeconds"] = sync.get("referenceViewSeconds")
-    return measured, sync
+    key, pair = pair_for(view, set_id)
+    if pair is None:
+        return False, {}
+    name = f"{view} {set_id}.mp4"
+    is_reference = name == pair["referenceFile"]
+    return True, {"key": key, "pair": pair, "isReference": is_reference,
+                  "file": name}
 
 
 def _sync_block(view: str, set_id: str, measured: bool, sync: dict) -> dict:
-    """The sync block, or an honest statement that there is not one.
+    """What is known about placing this file on the other view's clock.
 
-    A set nobody has measured must NOT carry a null offset beside a `worked`
-    example of nulls. The schema tells a consumer to assert
-    `thisViewSeconds + offsetSecondsToReference == referenceViewSeconds` on
-    load, and that assertion on None is a crash rather than a check.
+    THE MEASUREMENT IS A FRAME COUNT. `frameOffsetToReference` is added to a
+    frame INDEX in this file to reach the reference file's index, and the
+    consumer assertion is an index one:
+
+        other_pts[reference_index + frameOffsetToReference]
+
+    Seconds appear only as DERIVED values beside their anchors. They are not
+    the measurement and they drift: the two cameras' frame periods differ by
+    11 microseconds, so a constant frame offset shows as a time offset moving
+    about 6 ms across 15 s. Two offsets in seconds have already been published
+    from this material and withdrawn.
     """
     block = {
         "referenceView": REFERENCE_VIEW,
         "measured": measured,
-        "offsetSecondsToReference": sync.get("offsetSecondsToReference"),
+        "file": f"{view} {set_id}.mp4",
     }
     if not measured:
+        block["pairedWith"] = None
+        block["frameOffsetToReference"] = None
         block["methodKind"] = "unknown"
         block["note"] = (
-            f"No offset has been measured for set {set_id}, and none is "
-            "measured for any set. Two were published for set 0.1 and both are "
-            "withdrawn: an event ledger over the whole clip finds no constant "
-            "offset that beats chance, so the two files are not a synchronous "
-            "pair. Do not pair these views on a clock. The reference view's "
-            "own zero is a definition, not a measurement of this pair. Refer "
-            "to spikes/video-annotations/event-ledger-<set>.json."
+            f"NO PARTNER IS ESTABLISHED for {block['file']}. This is not a "
+            "claim that it has none. THE FILE NAMES ARE WRONG: "
+            "`front 0.1.mp4` pairs with `side 0.2.mp4`, measured at a constant "
+            "frame offset. The remaining two files were tried against each "
+            "other under the same rule and failed it — two targeted anchors "
+            "gave frame differences of 77 and 75, and the events did not match "
+            "in kind. Do not pair this file with anything on a clock. Refer to "
+            "PAIRING_UNKNOWN in video_keypoints.py and to "
+            "spikes/video-annotations/event-ledger-<set>.json."
         )
         return block
-    block["offsetUncertaintySeconds"] = SYNC_UNCERTAINTY_SECONDS
+
+    pair, is_reference = sync["pair"], sync["isReference"]
+    other = pair["referenceFile"] if not is_reference else pair["otherFile"]
+    block["pairedWith"] = other
+    block["pairKey"] = sync["key"]
+    # ZERO FOR THE REFERENCE FILE BY DEFINITION, and the measured count for the
+    # other. The sign is the one in the table: other index = reference index +
+    # frameOffsetToReference.
+    block["frameOffsetToReference"] = (
+        0 if is_reference else pair["frameOffsetToReference"])
+    block["framePeriodSeconds"] = pair["framePeriodSeconds"][block["file"]]
+    block["methodKind"] = pair["methodKind"]
     block["method"] = (
-        "the frame the ball first meets her hands on the first catch, read in "
-        "both views by container timestamp")
-    block["methodKind"] = "shared-event"
+        "the frame in which a ball first meets her hands, read in both files "
+        "by index from the container's own timestamp list")
+    block["anchors"] = pair["anchors"]
+    block["checks"] = pair["checks"]
+    block["setAside"] = pair["setAside"]
+    block["derivedNote"] = pair["derivedNote"]
+    block["offsetUncertaintySeconds"] = SYNC_UNCERTAINTY_SECONDS
     block["methodNote"] = SYNC_METHOD_NOTE
-    block["worked"] = {
-        "event": "first catch, the frame the ball meets the hands, both views",
-        "thisViewSeconds": sync.get("thisViewSeconds"),
-        "referenceViewSeconds": sync.get("referenceViewSeconds"),
-    }
     return block
 
 

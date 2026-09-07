@@ -261,9 +261,11 @@ def main(argv: list[str]) -> int:
 
     print(
         "\nADD this offset to a side-file timestamp to reach the front file's\n"
-        "clock. Worked on set 0.1: the first catch is at 8.25 s in the side\n"
-        "file and 9.25 in the front, and 8.25 + 1.000 = 9.25. It is the\n"
-        "schema's offsetSecondsToReference for the side view, in milliseconds.\n"
+        "clock. THE WORKED EXAMPLE THIS USED TO PRINT IS WITHDRAWN (2026-09-07):\n"
+        "it read 'the first catch is at 8.25 s in the side file and 9.25 in the\n"
+        "front'. The file names are wrong -- front 0.1 pairs with side 0.2 -- and\n"
+        "the sync is now a FRAME offset, not a number of seconds. Refer to PAIRS\n"
+        "in video_keypoints.py. Nothing downstream reads this script's output.\n"
         "\nEVERY ROW ABOVE FAILED on this material: peak-to-sidelobe near 1.0\n"
         "means the best match is no better than the next-best, so there is no\n"
         "peak and the milliseconds beside it are not a measurement."

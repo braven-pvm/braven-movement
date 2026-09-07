@@ -223,8 +223,10 @@ def main(argv: list[str]) -> int:
         "clock, the same convention as the schema's offsetSecondsToReference.\n"
         "Worked on set 0.1, WITHDRAWN 2026-09-07 and kept for the sign\n"
         "convention alone: the first catch was recorded at 8.25 s in the side\n"
-        "file and 9.25 in the front, and 8.25 + 1.000 = 9.25. No offset is\n"
-        "measured for set 0.1; the two files are not a synchronous pair.\n"
+        "file and 9.25 in the front, and 8.25 + 1.000 = 9.25. THE FILE NAMES\n"
+        "ARE WRONG: front 0.1 pairs with side 0.2, and the sync is a FRAME\n"
+        "offset of -5, not a number of seconds. Refer to PAIRS in\n"
+        "video_keypoints.py.\n"
         "\nA peak/sidelobe near 1 means there is no peak and the number is not\n"
         "a measurement, whatever it says. Every row above is such a number."
     )

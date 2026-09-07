@@ -50,15 +50,19 @@ KINDS = ("catch", "release", "clap")
 TOLERANCE_SECONDS = 1.0 / 30.0
 
 # How far apart two anchors must be before they count as independent evidence.
-# CHOSEN at ten seconds because her toss cycle is about 1.9 s: anchors closer
+# CHOSEN at ten seconds because her toss cycle is 1.866 s — the mean gap
+# between the ten catches of side 0.1 between 8.26 and 25.06 s: anchors closer
 # than several cycles can both be satisfied by an offset that is a whole number
 # of cycles wrong, which is exactly how -0.7295 survived its own check.
 ANCHOR_GAP_SECONDS = 10.0
 
-# AND THE ANCHOR RULE IS NOT ENOUGH ON ITS OWN. Measured on session 0.1: a
-# RANDOMLY GENERATED side ledger of the same size satisfies "two anchors ten
-# seconds apart" 48 per cent of the time at one-frame tolerance and 88 per cent
-# at a quarter second. With ten events in each view and a search over twelve
+# AND THE ANCHOR RULE IS NOT ENOUGH ON ITS OWN. Measured with THIS module on
+# the committed ledger of session 0.1, 500 trials at seed 0: a randomly
+# generated side ledger of the same size satisfies "two anchors ten seconds
+# apart" 43 per cent of the time at one-frame tolerance and 85 per cent at a
+# quarter second. (An earlier comment said 48 and 88, from a scratch version
+# that no longer exists; these come from `null_matches` and `_best_match` as
+# they stand and can be re-run.) With ten events in each view and a search over twelve
 # seconds of offsets, coincidence is the normal case rather than the exception.
 #
 # So a fit must also BEAT ITS OWN NULL. The side ledger is randomised inside the
@@ -168,11 +172,16 @@ def _best_match(front: list[dict], side: list[dict], tolerance: float):
                                     (row["seconds"] + offset) - nearest["seconds"], 4)})
         if matched:
             span = matched[-1]["frontSeconds"] - matched[0]["frontSeconds"]
-            # THE THIRD TERM IS THE CENTRE OF THE PLATEAU. Every offset within
-            # a tolerance of the true one matches the same events, so the count
-            # alone leaves a plateau and taking its first member biases the
-            # answer to the low edge by up to a whole tolerance. Breaking the
-            # tie on the smallest total error returns the best-centred offset.
+            # THE THIRD TERM PICKS THE L1 MEDIAN OF THE PLATEAU, not its
+            # midpoint. Every offset within a tolerance of the true one matches
+            # the same events, so the count alone leaves a plateau, and taking
+            # its first member biased the answer to the low edge by up to a
+            # whole tolerance. Minimising the SUM OF ABSOLUTE ERRORS is a
+            # median rather than a mean: on errors of 0.80 / 0.82 / 0.82 it
+            # returns 0.8167 where the midpoint is 0.8100. That is the right
+            # choice for a reading with outliers and it is NOT the centre; the
+            # name matters because a reader comparing two of these needs to
+            # know which statistic they are comparing.
             error = sum(abs(m["errorSeconds"]) for m in matched)
             score = (len(matched), span, -error)
             if best is None or score > best[0]:
@@ -200,7 +209,8 @@ def null_matches(front: list[dict], side: list[dict], tolerance: float,
 def fits_one_offset(front: list[dict], side: list[dict],
                     tolerance: float = TOLERANCE_SECONDS,
                     anchor_gap: float = ANCHOR_GAP_SECONDS,
-                    trials: int = NULL_TRIALS) -> dict:
+                    trials: int = NULL_TRIALS,
+                    resolution: float | None = None) -> dict:
     """Does ONE constant offset map the front's events onto the side's?
 
     Returns the best offset and how much of the front's ledger it explains, and
@@ -235,6 +245,12 @@ def fits_one_offset(front: list[dict], side: list[dict],
         reason.append(f"a RANDOM side ledger of the same shape explains {bar} "
                       f"events at the {NULL_PERCENTILE}th percentile, so {count} "
                       "is not better than chance")
+    # THE ERRORS CANNOT BE FINER THAN THE LEDGER THEY CAME FROM. A ledger read
+    # on an 8-frame grid quantises every event to 0.267 s, so a match reported
+    # with a 7 ms error is reporting the lattice and not the recording: a
+    # genuine +0.94 s offset read on such a grid comes back as +1.0583 with
+    # sub-7 ms errors and no hint that it is 0.12 s out. `resolutionSeconds`
+    # says what the reading can support, and it travels with the answer.
     return {
         "fits": fits,
         "bestOffsetSeconds": offset,
@@ -242,6 +258,8 @@ def fits_one_offset(front: list[dict], side: list[dict],
         "spanSeconds": round(span, 3),
         "nullPercentileMatches": bar,
         "nullTrials": trials,
+        "resolutionSeconds": resolution,
+        "errorsAreNoFinerThan": resolution,
         "anchors": matched,
         "why": (f"{count} events match at {offset:+.4f} s across {span:.3f} s, "
                 f"against a chance ceiling of {bar}"
