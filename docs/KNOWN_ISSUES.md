@@ -6,6 +6,61 @@ grading. An entry belongs to whichever lane can fix it.
 
 # Rendering and modelling
 
+## This rig cannot reach the girdle the solve asks for
+
+The job now sends `shoulderShiftFromRestInTorsos` and the renderer poses the
+clavicles from it. The ball's anchor error fell from 0 of 48 phases inside a
+ten-millimetre rule to 46 of 48. The two failures are `hooks_outside_hand`, at
+20.45 mm on `facing_away` and 11.60 mm on `contact`, and that is the library's
+only drill where she is turned.
+
+WHAT REMAINS IS THE WIDTH. A clavicle rotates about its sternal end and does not
+stretch, so a shoulder lands on a sphere, and 97 of 102 transmitted targets sit
+outside this rig's sphere. The rendered girdle is a MEDIAN 43.98 mm narrower
+than the solve asks and 62.01 mm narrower at worst. A shoulder-width reading on
+a rendered figure is a reading of THE RIG and not of the solve.
+
+The ball can be right while the girdle is narrow because each shoulder falls
+short outward along its own clavicle, and those errors cancel in the midpoint
+and do not cancel in the width. At `bounce_pass/ready` the left shoulder misses
+by 25.473 mm of which 24.084 mm is the across axis.
+
+THE MECHANISM IS A BUILD DIFFERENCE. The engine's clavicle is 0.35553 torso
+lengths against this rig's 0.29530, which is 20.4 percent longer relative to its
+torso, so a torso-normalised displacement asks a shorter bone to reach further
+than it can. Measured by `scripts/engine_clavicle.py` and by
+`blender_movement_render.rest_girdle`. A clavicle divisor was measured rather
+than proposed: it cuts the worst residual from 52.09 mm to 31.03 mm and does not
+remove it, because the two clavicles differ in rest orientation as well as
+length. The normalisation is the movement lane's field.
+
+`out of reach` IS NOT A CHECK THAT PASSED. `rotate_bone_toward` lands on the
+radial projection by construction, so `beyondReachableMm` is zero on every
+target and the `disagrees` branch is unreachable from that caller. It is a
+tripwire for a later change that clamps the rotation or moves the pivot. The
+number that says whether a FIGURE is right is `ballAnchorErrorMm`.
+
+The clavicle is turned up to 68.33 degrees to follow the girdle. Nothing in this
+lane bounds that angle, and a real clavicle's elevation and protraction are
+limited. That is a missing instrument.
+
+## `netball_one_hand_high_pass` cannot be posed at its ready phase
+
+    FLEXION_AXIS: r index is set to flex about axis 0, which carries only 0.44
+    of the turn: x=18.5 y=-7.2 z=42.2 degrees.
+
+The right index knuckle turns 42.2 degrees about z while the limits are applied
+to x. The drill is therefore ABSENT from the `2413f9d` library; its `lift` and
+`release` phases pose and pass.
+
+It is not caused by the girdle change. Posing the phase with
+`shoulderShiftFromRestInTorsos` removed, which is exactly the old behaviour,
+raises the identical error with identical numbers.
+
+One failing phase currently aborts the whole library render, so eleven good
+drills are lost to one bad one. That is worth changing and is not changed here.
+
+
 ## The ball is anchored to a landmark the job does not transmit
 
 EVERY NUMBER IN THIS ENTRY was measured on 2026-09-04 against the `aa3f244`
