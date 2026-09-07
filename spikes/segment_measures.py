@@ -141,7 +141,32 @@ MEASURE_UNITS: dict[str, str] = {
     "leftFootHeightCm": CENTIMETRES,
     "rightFootHeightCm": CENTIMETRES,
     "footHeightGapCm": CENTIMETRES,
+    # THE BALL CENTRE ABOVE THE COURT, y = 0, AND NOT ABOVE THE REST ANKLE.
+    #
+    # The three foot heights above measure from the REST LEFT FOOT, which is
+    # the `l_foot` ANKLE joint and sits 7.3886 cm above the court. That zero is
+    # right for a foot: it reads how far the foot has lifted from where it
+    # rests, and it is zero at rest. IT IS WRONG FOR A BALL. A coach saying
+    # "pull the ball up as high as arm can go" means above the floor, and
+    # `netball_one_hand_high_pass` already quotes 199.95 cm, which is the world
+    # figure; the same frame reads 192.56 above the rest ankle.
+    #
+    # Two measures called a height in centimetres, measured above different
+    # zeros, is the fault this table exists to prevent, so the two zeros are
+    # named here rather than left to a reader to discover by subtracting.
+    "ballHeightCm": CENTIMETRES,
 }
+
+# MEASURES ONLY ONE SOLVER CAN WRITE, AND WHY THAT IS NOT A DEFECT.
+#
+# `possession_solve` has a ball and `movement_engine.solve` does not, so a ball
+# measure exists on one path and not the other. That is a real asymmetry and it
+# is named here rather than hidden, because the guard over written keys asks
+# whether the two writers agree and would otherwise read this as a fault.
+#
+# A drill without a ball cannot grade one of these. That is the correct
+# outcome: the alternative is a fiction with no inputs.
+POSSESSION_ONLY: frozenset[str] = frozenset({"ballHeightCm"})
 
 
 # WHAT A MEASUREMENT ROW CARRIES THAT IS NOT A MEASURE.

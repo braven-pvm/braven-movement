@@ -540,7 +540,190 @@ same-length value is exposed.** The rule is `python -B`, or clear
 in how packs are verified, which is worse, because it silently returns the
 previous answer.
 
+## A height measure exists now: `ballHeightCm`, above the court
+
+Added 2026-09-07 by the movement lane. The row below records why there was
+none, and stands as the history; this records what shipped and the four things
+measuring it settled.
+
+### The zero is the COURT, and that was a measurement, not a convention
+
+`netball_one_hand_high_pass`'s own note says the drill puts the ball at
+**199.95 cm**. The engine reads **192.56 cm** at the same frame. The 7.39 cm
+is neither a build drift nor an error:
+
+| zero | at the lift frame | what it is |
+|---|---|---|
+| world y = 0 | **199.95 cm** | the court, stated independently in `netball_bounce_pass.ball.json` |
+| the rest `l_foot` | 192.56 cm | the ANKLE joint, which sits **7.3886 cm** above the court |
+
+`leftFootHeightCm` and its two siblings measure from the rest ankle. **That is
+right for a foot** — it reads how far the foot has lifted from where it rests,
+and it is zero at rest. **It is wrong for a ball.** A coach saying "pull the
+ball up as high as arm can go" means above the floor, and the drill's own note
+already quotes the floor figure.
+
+Two measures called a height in centimetres, measured above different zeros, is
+exactly the fault `MEASURE_UNITS` exists to prevent, so both zeros are named in
+the table and in the writer rather than left to a reader to find by
+subtracting.
+
+### There is no wrist height, and the reason is a measurement
+
+The ball's height above the holding wrist, over the frames where she holds it:
+
+| drill | ball above the wrist | spread |
+|---|---|---|
+| `netball_one_hand_high_pass` | 3.37 (frame 0) to 15.96 (frame 51) | **12.59 cm** |
+| `netball_overhead_pass` | 3.63 (frame 0) to 12.78 (frame 33) | **9.15 cm** |
+| `netball_chest_pass` | 3.62 (frame 32) to 5.35 (frame 75) | 1.74 cm |
+
+`sweep_ball_height.py --wrist` prints this table, the peaks below and the
+follow-through pair. They were figures without an instrument until the review
+asked for one.
+
+A wrist height plus a stated offset would be wrong by up to 12.59 cm **within
+one drill**, and the spread is largest on exactly the two drills whose cue is a
+height and smallest on the pass whose cue is not. The hand rotates around the
+ball as the arm extends, so the offset varies with the very quantity being
+graded. That is not an offset with inputs; it is a different quantity.
+
+### It is written only while she holds the ball
+
+After release the column measures a projectile. On `netball_overhead_pass` the
+`follow_through` phase, frame 95, reads the ball at **118.76 cm** and the
+working wrist at **152.18** — the ball **33.42 cm BELOW** the hand, still
+falling. On `netball_one_hand_high_pass` the `release` phase at frame 76
+already has no hand on the ball. So the key is absent on those frames rather
+than misleading, the way `grip` is absent when no hand is on the ball.
+
+**BOTH FIGURES ARE ABOVE THE COURT.** An earlier version of this row gave them
+as 111.38 and 144.80, which are the same two points measured from the rest
+ANKLE — the pack's own headline fault, inside the pack's own example. The
+difference, 33.42, is the same either way, which is exactly why it survived a
+reading: a difference cancels the zero and only the absolutes betray it.
+
+### The ball and the wrist peak three frames apart
+
+On `netball_one_hand_high_pass` the ball tops out at **199.95 cm at frame 34**
+and the working wrist at **185.27 at frame 31**, both above the court. (The
+ball's frame 33 and 34 differ only in the fourth decimal, so the peak frame
+itself is a near tie; the three-frame gap to the wrist is not.) **A drill grading "as high as arm can go" at a fixed phase
+must say which quantity that phase was chosen for.** That belongs with the
+checkpoint decision, which is gate 4 and Marius's.
+
+### The sweep, and a basin the measure does not see
+
+`sweep_ball_height.py` is committed with these numbers and re-runs them. Lever:
+the lift carry's `up` on `netball_one_hand_high_pass`, the key the drill's
+defining cue is about, read at the graded lift frame 33.
+
+**Coarse, 7 points at 0.12 torso lengths:** 199.95, 193.64, 187.32, 181.04,
+174.78, 168.55, 162.35 — steps of −6.31, −6.32, −6.28, −6.26, −6.23, −6.20.
+**37.60 cm of travel, monotone, the steps agreeing to 0.12 cm**, so a
+checkpoint on this measure can fail.
+
+**But one body joint step was four times the others and it sat at the SHIPPED
+value**, so the coarse sweep alone would have published a basin. Fine, 10
+points at 0.02, locates it between `up` 1.42 and 1.40:
+
+| `up` | `ballHeightCm` | step | lift shoulder | body joint step |
+|---|---|---|---|---|
+| 1.44 | 200.98 | −1.04 | 160.44 | 4.55 |
+| **1.42** | **199.95** | −1.03 | 159.60 | 4.78 (shipped) |
+| 1.40 | 198.91 | −1.04 | **139.26** | **19.03** `r_lowarm` |
+| 1.38 | 197.88 | −1.03 | 135.52 | 1.88 |
+
+**THE MEASURE DOES NOT SEE THE BASIN AND THE SUBSTITUTE DOES.** `ballHeightCm`
+steps −1.04 across the boundary, the same as every other step.
+`rightShoulderElevationDegrees` — the substitute this drill's note names — falls
+**20.34 degrees** there, against 0.84 to 3.74 elsewhere, and the elbow reverses
+sign. The ball goes where it is told whatever configuration the arm finds to
+hold it; an arm measure does not.
+
+That is a stronger statement than the impurity already recorded below. The
+substitute is not merely least pure at this height: at this drill's shipped
+pose it is **discontinuous**, 0.02 torso lengths from a boundary.
+
+**NOTHING SHIPPED FAILS BECAUSE OF IT**, and this row does not claim otherwise.
+The lift's graded elbow reads 60.56 and 54.07 across the boundary, both inside
+its 20 to 85 band.
+
+**The release checkpoints move by at most 0.04 degrees, AND THEY MOVE AT THE
+BASIN POINTS.** The shoulder reads 128.48 at eight of the ten points, 128.44 at
+`up` 1.40 and 128.47 at 1.38; the elbow reads 64.63 at nine and 64.64 at 1.40.
+An earlier version of this row said they "do not move at all ... 128.48 and
+64.63 at every one of the ten points", which is false at two decimals — and
+false in the two rows that matter, because the movement is not noise scattered
+through the sweep but the same boundary the lift frame crosses, reaching the
+release pose forty-three frames later at a fortieth of the size. **The claim
+was also made from a script that never read frame 76**; the instrument prints
+those two columns now, which is how the 0.04 was found.
+
+### Three ways an instrument reported something it had not measured
+
+All three were found by this lane during the two height packs, and all three
+have the same shape as the bytecode trap recorded earlier in this file: **the
+run returns an answer, and the answer is not about the thing under test.** They
+are recorded as verification rules because a defect in how work is checked
+outlives any defect in the work.
+
+**A MUTATION THAT NEVER APPLIED, REPORTED AS A GUARD THAT HELD.** A loop made
+the loader's unit refusal unreachable and the guards passed, which reads as
+"this refusal is not mutation-proven". The replacement string carried eight
+spaces of indentation where the file has four, so `str.replace` matched nothing
+and the tests ran on untouched code. **The rule: a mutation asserts the
+substitution CHANGED the file before the run.** Re-run properly, the same
+mutation fails three guards. This is the bytecode trap's cousin — there the
+edit reached the file and not the run; here it reached neither.
+
+**A RESTORE CHECK THAT FAILED FOR EVERY CASE, WHICH IS NOT A RESULT.** The same
+loop verified its restores with a shell parameter expansion that split each
+path at the first colon — the Windows drive letter — so it compared `C` against
+nothing and reported MISMATCH for all three files whether or not they were
+restored. **The rule: a check that fails for every case is a broken check.** A
+verifier that never passes has not found three faults; it has one of its own.
+
+**A SWEEP THAT REPORTED ITS OWN LEVER INERT.** Found while folding this review.
+The sweep script points the movement loaders at a temporary copy, and a rewrite
+set `ball_track.MOVEMENT_DIR` but not `technique.MOVEMENT_DIR`. `technique.py`
+does `from ball_track import MOVEMENT_DIR`, which binds the VALUE at import, so
+the technique file — where this sweep's lever lives — was still read from the
+tracked tree. Every one of the ten points came back byte-identical, and the
+honest reading of that output is "the lift carry does nothing to the ball
+height", which is false. **The rule: an instrument that reports no movement has
+not measured no movement; it has usually failed to reach what it was pointed
+at.** `sweep_ball_height.py` now refuses to print a sweep whose span is under
+1 cm and says which modules to check.
+
+### Two sentences in a gate-4 file are now false, and one of them is mine
+
+`netball_one_hand_high_pass`'s `heightGapNote` says:
+
+- **"Nothing in `segment_measures.MEASURE_UNITS` reads a height except
+  `footHeightGapCm`."** False since 2026-09-07. The pack before this one
+  declared `leftFootHeightCm` and `rightFootHeightCm`, which were written by
+  both solvers and declared by neither. **The sentence was true when written
+  and this lane's own merge broke it.**
+- **"This drill puts the ball at 199.95 cm."** True of the court zero and not
+  of the convention the existing heights use, which reads 192.56. The note does
+  not say which zero it means, and the row above now does.
+
+Both are in `spikes/movements/`, which is **gate 4**: a change there is a key
+retune whose proposal goes to Marius with its evidence first. **Nothing under
+that directory has been edited.** Two questions are with him: whether a prose
+note may be corrected when no number a checkpoint reads changes, and the step-1
+checkpoint itself. The measure ships without either; the drill's checkpoint
+follows the ruling.
+
 ## No units-correct distance measures, and six cues already want them
+
+**SUPERSEDED IN PART on 2026-09-07 by `ballHeightCm` and the centimetre band
+field, recorded in the section above.** A height measure exists, and a band now
+names the unit it is in. What survives here and is still open: the
+ahead-of-chest measure, the step-length measure, and the five cues those two
+would serve. The history below is kept as written, because the reasoning that
+refused a height twice is what shaped the one that shipped.
 
 Raised 2026-09-02 by the content lane while authoring `netball_overhead_pass`.
 An open row, not a defect in anything shipped: nothing today reads a height,
@@ -565,6 +748,13 @@ are stored in a field called degrees", with three occurrences. Adding a height
 measure to a checkpoint today would make a fourth. The orchestrator ruled on
 2026-09-02 that no centimetre value goes into a degrees field, and that the fix
 is a units-correct band rather than a fourth instance.
+
+**SUPERSEDED 2026-09-07: the fix that ruling asked for now exists.**
+`minimumCentimetres` and `maximumCentimetres`, and `read_band` refuses a band
+whose spelling is not its measure's unit, in both directions. The three
+occurrences are unchanged and excused BY NAME, because their file is gate 4 and
+awaits a ruling; the list can only shrink. A height checkpoint added today
+would be the FIRST to spell its band correctly, not a fourth instance.
 
 **What the substitute costs, measured.** `leftShoulderElevationDegrees` reads
 arm FOLD as well as height. Inputs: possession solve, grip `spreadDegrees` 90
