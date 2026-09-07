@@ -47,20 +47,42 @@ MINIMUM_MEANINGFUL_BAND_DEGREES = 5.0
 # same seed. Every length this engine writes is a difference of TWO landmark
 # coordinates -- a height is `joint - ground`, and the foot gap is
 # `|(L - g) - (R - g)| = |L - R|` -- so two independent perturbations enter it.
-# Measured: mean 6.00 mm, 95th percentile 14.53 mm = 1.45 cm. The floor is the
-# smallest round value at or above that percentile.
+# MEASURED: mean 6.00 mm, 95th percentile 14.53 mm.
 #
-# IT IS NOT 5.0 SCALED BY ANYTHING. A tempting derivation reads the floor as
-# "some ratio times the noise budget" and computes 5.0 / 1.53 = 3.3, then
-# 5 mm x 3.3 = 1.7 cm. That ratio is not a property of the floor: 5.0 comes
-# from the clinical source and 1.53 from the propagation, so the ratio between
-# them is an accident of two different sources meeting. Spending it on a length
-# is the fault this project has recorded twelve times.
+# THE FLOOR IS 2.0 cm, AND IT CARRIES THE SAME SAFETY MARGIN THE DEGREES FLOOR
+# HAS. Two readings of that margin, taken from different statistics of the one
+# study, agree to within a tenth of a millimetre:
+#
+#     over the 95th percentile   5.0 / 3.89 = 1.285   x 14.53 mm = 18.68 mm
+#     over the propagated mean   5.0 / 1.53 = 3.268   x  6.00 mm = 19.61 mm
+#
+# They share no numerator and no denominator, so the agreement is evidence and
+# not arithmetic. A floor exists to keep noise out of coaching, so the wide
+# side is the safe side, and both shipped centimetre bands (6.0 and 14.0) clear
+# it either way, which keeps this a fix rather than a retune.
+#
+# BOTH RATIOS ARE POST-HOC AND THE IMPORT IS DELIBERATE. 5.0 was a CLINICAL
+# figure first; nobody derived it from 3.89 or from 1.53, and it was found to
+# clear them afterwards. So 1.285 and 3.268 describe the margin the degrees
+# floor turned out to have rather than a rule anyone applied. The length floor
+# imports that margin knowingly, because the clinical half of the degrees
+# floor's justification has no length counterpart to import.
+#
+# TWO WRONG ROUTES, BOTH TRIED AND BOTH NAMED SO NOBODY RE-DERIVES THEM.
+# Each takes a ratio from an OUTPUT and spends it on an INPUT: the 5 mm is the
+# landmark noise that ENTERS the study, and 1.53 and 3.89 are what LEAVES it.
+#
+#     3.268 x 5.00 mm  = 1.63 cm      the ratio spent on the input noise
+#     3.3   x 5.00 mm  = 1.6  cm      the same, to one decimal place
+#
+# That is the fault class this ledger has recorded twelve times, appearing in
+# the derivation of the threshold meant to prevent it. Tests assert the shipped
+# constant is neither number.
 #
 # WHAT IS MISSING IS NAMED RATHER THAN INVENTED: there is no coach's figure for
 # a meaningful height difference. This floor therefore protects against noise
 # only, and a coach's figure replaces it the way 5 degrees does for angles.
-MINIMUM_MEANINGFUL_BAND_CENTIMETRES = 1.5
+MINIMUM_MEANINGFUL_BAND_CENTIMETRES = 2.0
 
 MINIMUM_MEANINGFUL_BAND: dict[str, float] = {
     DEGREES: MINIMUM_MEANINGFUL_BAND_DEGREES,

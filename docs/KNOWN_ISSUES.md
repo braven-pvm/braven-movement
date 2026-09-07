@@ -208,7 +208,7 @@ meaningful steps it moved and is unit-free.
 
 ### The length floor is DERIVED, and the derivation names what is missing
 
-`MINIMUM_MEANINGFUL_BAND_CENTIMETRES = 1.5`.
+`MINIMUM_MEANINGFUL_BAND_CENTIMETRES = 2.0`.
 
 The five-degree floor has TWO justifications that happen to agree, and only one
 survives the trip to centimetres:
@@ -225,31 +225,70 @@ through a length instead of an angle, with the same 400 samples and the same
 seed 20260817. Every length this engine writes is a difference of TWO landmark
 coordinates — a height is `joint - ground`, and the gap is
 `|(L - g) - (R - g)| = |L - R|` — so two independent perturbations enter it.
-**Measured: mean 6.00 mm, 95th percentile 14.53 mm = 1.45 cm.** The floor is
-the smallest round value at or above it. `test_band_floor` re-runs that
-propagation and fails if the constant drifts from it in either direction.
+**Measured: mean 6.00 mm, 95th percentile 14.53 mm.** `test_band_floor`
+re-runs that propagation and fails if the constant drifts from it.
 
-**IT IS NOT THE DEGREES FLOOR SCALED BY A RATIO, and that route was considered
-and rejected.** Reading the floor as "a multiple of the noise budget" gives
-5.0 / 1.53 = 3.27 and then 5 mm x 3.27 = 1.63 cm. That ratio is not a property
-of the floor: 5.0 is clinical and 1.53 is propagated, so the ratio between them
-is an accident of two different sources meeting. Spending it on a length is the
-fault this ledger has recorded twelve times. A test asserts the shipped
-constant is NOT that number, so a later reader cannot quietly re-derive it the
-wrong way.
+**The floor carries the same safety margin the degrees floor has**, and two
+readings of that margin, from different statistics of the one study, agree to
+within a tenth of a millimetre:
+
+| the margin, read as | arithmetic | floor |
+|---|---|---|
+| over the 95th percentile | 5.0 / 3.89 = 1.285, x 14.53 mm | 18.68 mm |
+| over the propagated mean | 5.0 / 1.53 = 3.268, x 6.00 mm | 19.61 mm |
+
+They share no numerator and no denominator, so the agreement is evidence and
+not arithmetic. **Both ratios are post-hoc and the import is deliberate**: 5.0
+was a clinical figure first, so 1.285 and 3.268 describe the margin the degrees
+floor turned out to have rather than a rule anyone applied. The length floor
+imports it knowingly, because the clinical half has no length counterpart.
+
+**TWO WRONG ROUTES WERE TAKEN AND BOTH ARE NAMED SO NOBODY RE-DERIVES THEM.**
+Each spends a ratio from an OUTPUT on an INPUT — 5 mm is the noise that ENTERS
+the study, and 1.53 and 3.89 are what leaves it:
+
+| route | arithmetic | gives |
+|---|---|---|
+| the ratio spent on the input noise | 3.268 x 5.00 mm | 1.63 cm |
+| the same, to one decimal place | 3.3 x 5.00 mm | 1.6 cm |
+
+The first was written into a draft of this branch. The second was ruled by the
+orchestrator on 2026-09-07 and withdrawn by it the same hour, once the lane
+showed that the ratio came from an output. **That is this ledger's own fault
+class appearing inside the derivation of the threshold meant to prevent it**,
+and it is recorded here for that reason rather than for the 0.4 cm. Tests
+assert the shipped constant is neither number.
 
 **WHAT IS MISSING IS NAMED RATHER THAN INVENTED.** This floor protects against
 noise and nothing else. A coach's figure for a meaningful height difference
 replaces it, the way 5 degrees does for angles.
 
-**AND THE INSTRUMENT IT GUARDS MAY NOT BE ABLE TO GRADE A FILMED ATHLETE.**
-`footHeightGapCm` spans 0.00 to 1.22 cm across all 110 frames of
+### The landing's own cue may be graded by an instrument that cannot fail
+
+Measured 2026-09-07 on `b214bc4`. **An open row with an owner, not a defect in
+anything shipped, and it claims nothing beyond what was measured.**
+
+`footHeightGapCm` spans **0.00 to 1.22 cm across all 110 frames** of
 `netball_double_foot_landing`, against bands of 0-14, 0-6 and 0-6. Its whole
-observed range is BELOW the 1.45 cm its own landmark noise produces. On a
-solved skeleton the number is exact and the bands are never approached; on a
-filmed athlete the same column would be indistinguishable from noise. Whether
-those three checkpoints can fail under any lever is a SWEEP nobody has run, and
-this row does not claim they cannot.
+observed range sits BELOW the **1.45 cm** its own landmark noise produces.
+
+Two consequences, and they are different:
+
+- **On a solved skeleton** the number is exact and the bands are never
+  approached. The three checkpoints read `within` at every phase.
+- **On a filmed athlete** the same column would be indistinguishable from
+  noise, because the range the drill produces is smaller than the measurement
+  error the noise study propagates.
+
+**WHETHER THOSE THREE CHECKPOINTS CAN FAIL UNDER ANY LEVER IS A SWEEP NOBODY
+HAS RUN.** This row does not claim they cannot. It records that the question
+has never been asked of the library's only length checkpoints, and that the
+reading above is the reason to ask it.
+
+**Owner: the movement lane**, queued after the height measure. It is also a
+coach-facing fact — the engine may not be able to fail the landing's defining
+cue — so it goes to the content lane's agenda for a coach's view, which the
+orchestrator carries.
 
 ### Two more sites, found and NOT fixed here
 

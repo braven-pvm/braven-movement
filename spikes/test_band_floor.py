@@ -81,29 +81,46 @@ class TheLengthFloorIsDerivedFromTheNoiseStudy(unittest.TestCase):
             "at the floor would report noise as coaching",
         )
 
-    def test_the_floor_is_not_padded_far_beyond_it(self) -> None:
-        """A floor far above its evidence is an unstated coaching judgment.
+    def test_the_floor_carries_the_margin_the_degrees_floor_carries(self):
+        """And no more, because the extra would be an unstated judgment.
 
-        There is no coach's figure for a meaningful height difference. Until
-        there is, this floor may protect against noise and nothing else, so it
-        stays near the number it came from.
+        The degrees floor sits 1.285 times its own 95th percentile. The length
+        floor imports that margin deliberately, which the comment beside the
+        constant says outright. This bounds it from both sides: at least the
+        percentile, and not past the imported margin by more than the rounding
+        to a round value.
         """
         measured_cm = length_error_95th_mm() / 10.0
-        self.assertLess(MINIMUM_MEANINGFUL_BAND_CENTIMETRES, 2.0 * measured_cm)
-
-    def test_it_is_not_the_degrees_floor_scaled_by_the_ratio(self) -> None:
-        """The tempting derivation, ruled out by name.
-
-        5.0 / 1.53 = 3.27 reads the floor as a multiple of the noise budget and
-        would give 5 mm x 3.27 = 1.63 cm. That ratio is an accident of two
-        different sources meeting: 5.0 is clinical and 1.53 is propagated. This
-        asserts the shipped constant is NOT that number, so a later reader
-        cannot quietly re-derive it the wrong way and land on the same value.
-        """
-        by_the_wrong_route = 0.5 * (MINIMUM_MEANINGFUL_BAND_DEGREES / 1.53)
-        self.assertNotAlmostEqual(
-            MINIMUM_MEANINGFUL_BAND_CENTIMETRES, by_the_wrong_route, places=1
+        imported = (MINIMUM_MEANINGFUL_BAND_DEGREES / 3.89) * measured_cm
+        self.assertGreaterEqual(MINIMUM_MEANINGFUL_BAND_CENTIMETRES, measured_cm)
+        self.assertLess(
+            MINIMUM_MEANINGFUL_BAND_CENTIMETRES, imported + 0.5,
+            f"the floor sits further above the {imported:.3f} cm margin the "
+            "degrees floor carries than rounding explains, so it holds a "
+            "coaching judgment nobody has stated",
         )
+
+    def test_it_is_neither_of_the_two_wrong_routes(self) -> None:
+        """Both were actually taken, so both are ruled out by name.
+
+        Each spends a ratio from an OUTPUT on an INPUT: 5 mm is the landmark
+        noise that ENTERS the study; 1.53 and 3.89 are what leaves it. The
+        first route was written into a draft of this branch. The second was
+        ruled by the orchestrator and withdrawn by it the same hour, once this
+        lane showed where the ratio came from. Asserting the shipped constant
+        is neither number stops a later reader re-deriving the floor the wrong
+        way and landing on something that looks right.
+        """
+        for label, wrong in (
+            ("the ratio spent on the input noise",
+             0.5 * (MINIMUM_MEANINGFUL_BAND_DEGREES / 1.53)),
+            ("the same, to one decimal place", 0.5 * 3.3),
+        ):
+            with self.subTest(route=label):
+                self.assertNotAlmostEqual(
+                    MINIMUM_MEANINGFUL_BAND_CENTIMETRES, wrong, places=1,
+                    msg=f"the floor equals {label}, {wrong:.3f} cm",
+                )
 
 
 class TheFloorIsChosenByUnit(unittest.TestCase):
@@ -136,10 +153,11 @@ class TheFloorIsChosenByUnit(unittest.TestCase):
     def test_a_centimetre_band_the_old_degrees_floor_refused_is_accepted(self):
         """The fix, stated as the case that changed.
 
-        A 2 cm band is four times the landmark noise and was rejected before,
-        because it was held to a threshold belonging to angles.
+        A 3 cm band is twice the 1.45 cm the noise study propagates into a
+        length, and it was rejected before because it was held to a threshold
+        belonging to angles.
         """
-        width = 2.0
+        width = 3.0
         self.assertLess(width, MINIMUM_MEANINGFUL_BAND_DEGREES)
         self.assertGreater(width, MINIMUM_MEANINGFUL_BAND_CENTIMETRES)
         Checkpoint(
@@ -235,9 +253,9 @@ class ThePhaseWinnerIsChosenWithoutMixingUnits(unittest.TestCase):
         self.assertEqual(winner.moved, 4.0)
 
     def test_a_length_is_distinguishable_at_its_own_floor(self) -> None:
-        """2 cm cleared nothing before, because it was held to 5 degrees."""
+        """3 cm cleared nothing before, because it was held to 5 degrees."""
         first = {"footHeightGapCm": 0.0}
-        second = {"footHeightGapCm": 2.0}
+        second = {"footHeightGapCm": 3.0}
         report = self.movement().separation([first, second])
         self.assertTrue(report[1].distinguishable)
 
