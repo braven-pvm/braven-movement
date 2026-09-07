@@ -6,6 +6,158 @@ grading. An entry belongs to whichever lane can fix it.
 
 # Rendering and modelling
 
+## This rig cannot reach the girdle the solve asks for
+
+The job now sends `shoulderShiftFromRestInTorsos` and the renderer poses the
+clavicles from it. The ball's anchor error fell from 0 of 48 phases inside a
+ten-millimetre rule to 46 of 48. The two failures are `hooks_outside_hand`, at
+20.45 mm on `facing_away` and 11.60 mm on `contact`, and that is the library's
+only drill where she is turned.
+
+WHAT REMAINS IS THE WIDTH. A clavicle rotates about its sternal end and does not
+stretch, so a shoulder lands on a sphere. Of 102 transmitted targets 97 sit
+outside this rig's sphere and 5 sit inside it, and none lies on it, so all 102
+are out of reach; the shipped library's 96 read 96 of 96. The rendered girdle is a MEDIAN 43.98 mm narrower
+than the solve asks and 62.01 mm narrower at worst. A shoulder-width reading on
+a rendered figure is a reading of THE RIG and not of the solve.
+
+The ball can be right while the girdle is narrow because each shoulder falls
+short outward along its own clavicle, and those errors cancel in the midpoint
+and do not cancel in the width. At `bounce_pass/ready` the left shoulder misses
+by 25.473 mm of which 24.084 mm is the across axis.
+
+THE MECHANISM IS A BUILD DIFFERENCE. The engine's clavicle is 0.35553 torso
+lengths against this rig's 0.29530, which is 20.4 percent longer relative to its
+torso, so a torso-normalised displacement asks a shorter bone to reach further
+than it can. Measured by `scripts/engine_clavicle.py` and by
+`blender_movement_render.rest_girdle`. A clavicle divisor was measured rather
+than proposed: it cuts the worst residual from 52.09 mm to 31.03 mm and does not
+remove it, because the two clavicles differ in rest orientation as well as
+length. The normalisation is the movement lane's field.
+
+`out of reach` IS NOT A CHECK THAT PASSED. `rotate_bone_toward` lands on the
+radial projection by construction, so `beyondReachableMm` is zero on every
+target and the `disagrees` branch is unreachable from that caller. It is a
+tripwire for a later change that clamps the rotation or moves the pivot. The
+number that says whether a FIGURE is right is `ballAnchorErrorMm`.
+
+The clavicle is turned up to 68.33 degrees to follow the girdle. Nothing in this
+lane bounds that angle, and a real clavicle's elevation and protraction are
+limited. That is a missing instrument.
+
+## `netball_one_hand_high_pass` cannot be posed at its ready phase
+
+    FLEXION_AXIS: r index is set to flex about axis 0, which carries only 0.44
+    of the turn: x=18.5 y=-7.2 z=42.2 degrees.
+
+The right index knuckle turns 42.2 degrees about z while the limits are applied
+to x. The drill is therefore ABSENT from the `2413f9d` library; its `lift` and
+`release` phases pose and pass.
+
+It is not caused by the girdle change. Posing the phase with the shift ZEROED
+raises the identical error with identical numbers, and a zero shift leaves this
+rig at its own rest girdle. Do NOT try it by removing the field: a missing field
+is refused before the hands are posed, so the run stops with the refusal
+instead.
+
+## One failing phase aborts the whole library render
+
+**Status: queued. Owner: the rendering lane.**
+
+`render_job` raises out of the whole run when any one phase raises, so eleven
+good drills were lost to one bad one on 2026-09-07 and the library cost a second
+full render. A phase that cannot be posed should be recorded and skipped, and
+the run should end by naming what it could not render, so that one bad phase
+costs one figure rather than a library.
+
+It is filed here rather than under the drill that triggered it, because it is a
+defect in the renderer's loop and a reader searching for renderer defects must
+find it under its own heading.
+
+
+## The ball is anchored to a landmark the job does not transmit
+
+EVERY NUMBER IN THIS ENTRY was measured on 2026-09-04 against the `aa3f244`
+job export in `spikes/poc-output`, with the renderer at `2015424` and the rig
+from `load_reference_catch_config`. The engine's figures are the movement
+lane's, reported the same day from the solved pose. This attribution is here
+because `scripts/docs_number_audit.py` found the first version of this entry
+quoting 42.7681 and 0.2648 with NO BUILD NAMED, which is the fault the audit
+exists to find.
+
+`pose_phase` places the ball at `shoulders + fromShouldersInArms * arm`. Every
+term on that line comes from the job except `shoulders`, which this rig
+supplies itself. The ball's position error is therefore the shoulder midpoint's
+error, one for one, with nothing to attenuate it.
+
+The movement renderer never poses a clavicle. Measured on 2026-09-04, this rig
+holds its shoulder midpoint 42.7681 cm above the pelvis on all 43 graded phases
+of all 10 drills, with a range of 0.0000 cm. The engine's midpoint moves on
+every drill. Against a one-centimetre rule, 15 of the 43 figures pass and 28
+fail. 19 of the failures are HELD phases, where the ball is in her hands and a
+coach reads a cue from it. Every one of the 10 drills has at least one failing
+phase. The worst is `overhead_pass/lift` at 8.451 cm, which is 77 percent of
+the ball's radius.
+
+MEASURE ALL THREE AXES. The first version of this entry reported 7.41 cm at
+`overhead_pass/lift` from a vertical-only column and understated the error by a
+whole tolerance. The true figure is 8.451 cm, because the midpoint also travels
+4.08 cm fore-and-aft. `bounce_pass` is the sharper case: its vertical barely
+changes, so a vertical-only column would have called it the cleanest drill in
+the library, and it is not.
+
+A width instrument is worse still. A symmetric change of shoulder width does
+not move the midpoint at all, and `hooks_outside_hand` is the only drill with a
+real across-body component, 1.776 cm at `facing_away`, because she is turned.
+
+The three phases that pass exactly are the neutral-girdle phases. That is the
+evidence that this rig is calibrated to the engine's rest pose, because a wrong
+calibration point would put the passes somewhere else.
+
+`bounce_pass` has five graded phases in the engine and NO JOB FILE in
+`spikes/poc-output`. This lane cannot render it. A drill the renderer never
+sees is not a passing drill.
+
+THE FIX MUST BE TRANSMITTED IN THE JOB'S OWN UNITS. `arms.reachFraction`,
+`ball.fromShouldersInArms` and `grip.wristFromSurfaceInArms` are all in arm
+lengths, and `ball.radiusM` is the only absolute length in the file, because a
+real netball is one physical size on every body. A shoulder position has the
+opposite property. Shoulder positions sent in metres would place this rig's
+ball about 6 cm too high on every frame, including the 15 that pass today.
+Send them relative to the pelvis, in arm lengths.
+
+SEND THE DISPLACEMENT, NOT THE POSITION. Transmitting the shoulder POSITION
+does not work across these two bodies, even normalised. Resolving the engine's
+positions onto this rig at 42.7689 / 49.6456 puts ZERO of the 48 phases under
+the one-centimetre rule, with a smallest error of 1.108 cm. `chest_pass/ready`
+reads 2.488 cm, and that is a phase where both bodies are at their neutral
+girdle and nothing is wrong at all. An instrument that reports an error where
+there is none is measuring something else.
+
+It is measuring a constant. This rig's shoulders sit 0.2648 cm BEHIND its
+pelvis and the engine's sit 2.4622 cm AHEAD of its own, which is 2.386 cm after
+scaling. A divisor scales and it does not translate, so no scalar can remove a
+difference in where MHR's `root` sits against MPFB's `pelvis`, or a difference
+in neutral posture. Nobody can currently separate those two causes: this rig
+has no `root` bone and the movement lane has no MPFB rig.
+
+So the field carries `(position at the frame - that body's REST-POSE shoulder
+position) / restTorso`, and each side applies the displacement to its own rest
+pose. The reference is the rest pose and not a drill's neutral phase, because
+the rest pose is the only reference both sides compute without being told. Every
+constant cancels, a neutral phase reads exactly zero, and the quantity
+transmitted is the one that is actually missing, which is that this rig's
+girdle does not move.
+
+`girdle_agreement.py` holds the consumer guard. It refuses a frame whose
+transmitted positions are absent, because a frame nobody can check must not
+read the same as a frame that passed. On this rig the clavicle tail and the
+upper-arm bone head are the same point to 0.000000 mm, so the bone head is this
+rig's own shoulder joint rather than an offset from it.
+
+Do not add a scapula motion to the renderer to close this. A pose that no solve
+produced must not reach a figure.
+
 ## Reference catch is not yet a final coaching sample
 
 The current MPFB catch render remains a review artifact. Its hand orientation in the locked
@@ -171,11 +323,222 @@ move together.
 in `minimumDegrees` and `maximumDegrees`. Three occurrences across the
 library.
 
-Nothing is wrong today: the same numbers are compared against each other, and
-the phase separation guard's threshold is far from the values it judges, so
-all three dead phases are dead in either unit. It is recorded because a name
-that does not say what it holds is how `fingerBaseDeviation` came to bound a
-flexion axis, and that cost a day.
+**"NOTHING IS WRONG TODAY" WAS WRONG IN ONE PLACE, AND IT WAS THE PLACE A
+COACH READS.** Measured on `b214bc4`, 2026-09-07. `CheckpointResult.feedback`
+wrote "degrees" for every measure, so these three checkpoints would tell a
+coach this about a distance in centimetres:
+
+    flight  band 0 to 14 -> "Needs less: 17 degrees against a target of 0 to 14"
+    land    band 0 to  6 -> "Needs less: 9 degrees against a target of 0 to 6"
+    absorb  band 0 to  6 -> "Needs less: 9 degrees against a target of 0 to 6"
+
+**THOSE THREE SENTENCES ARE CONSTRUCTED, NOT OBSERVED, AND THE DISTINCTION
+MATTERS.** Each was produced by calling `feedback()` on the shipped checkpoint
+with a measured value of the band maximum plus 3 — 17 against 14, and 9
+against 6. **No shipped receipt carries them.** The landing's foot gap reads
+0.01, 0.00 and 0.01 cm at the three graded frames on both solve paths, so
+every one of those checkpoints is `within` today and none of them produces a
+"Needs less" sentence at all.
+
+**The code path is live; the sentence is a construction.** Any value outside
+the band reaches it, the checkpoints are shipped and graded, and nothing but
+the athlete's own performance stands between the library and that output. A
+future drill, a variant, or a filmed athlete would produce it. Calling it a
+defect is right; calling it something a coach has read is not, and an earlier
+version of this row implied so.
+
+The rest of the original paragraph holds and is kept: the same numbers are
+compared against each other, and all three dead phases are dead in either unit.
+The name that does not say what it holds is how `fingerBaseDeviation` came to
+bound a flexion axis, and that cost a day.
+
+### Three defects under that one sentence, fixed 2026-09-07
+
+**ONE. The coach was told the wrong unit.** Above. A measure now names its own
+unit through `MEASURE_UNITS`, and a measure with no declared unit gets NO unit
+word rather than a wrong one.
+
+**TWO. A five-degree threshold was spent on a centimetre band.**
+`MINIMUM_MEANINGFUL_BAND_DEGREES` guarded every checkpoint's width and every
+phase-separation verdict, whatever the measure was in. A length had to move
+three times as far as the evidence requires before a phase counted as distinct.
+
+**THREE. The widest-moving checkpoint of a phase was chosen across units.**
+`separation` maximised raw values, so a phase grading a length and an angle
+together picked whichever number was larger, which is not a question with an
+answer. **Real in the code and INERT in the library**, and the reading names
+its path and its frames because a first reviewer read a different path. Taken
+on the POSSESSION path, which `build_library` uses for this drill: the only
+mixed phases are `netball_double_foot_landing`'s, graded at frames 54, 89 and
+109 of 110. Across those three transitions `footHeightGapCm` moves 0.01, 0.00
+and 0.01 cm while the angles move 1.92, 0.13 and 25.07, so the raw maximum
+picked the angle every time. The gap's largest value anywhere in the clip is
+1.22 cm at frame 30, which no phase grades. Fixed anyway, because a
+defect that today's numbers happen to hide is still a defect, and the numbers
+that hide it belong to the library rather than to the code. The winner
+is now chosen in units of each measure's own floor, which asks how many
+meaningful steps it moved and is unit-free.
+
+### The length floor is DERIVED, and the derivation names what is missing
+
+`MINIMUM_MEANINGFUL_BAND_CENTIMETRES = 2.0`.
+
+The five-degree floor has TWO justifications that happen to agree, and only one
+survives the trip to centimetres:
+
+- clinical practice calls an angle difference under 5 degrees meaningless. That
+  is an external figure about ANGLES. **There is no clinical figure for a length
+  difference in this repository or in the manual.**
+- the landmark noise study perturbs every landmark with per-axis Gaussian noise
+  and reports the angle error: at 5 mm, mean 1.53 degrees and 95th percentile
+  3.89. The floor sits above that percentile.
+
+So the length floor comes from the second only, by propagating the SAME 5 mm
+through a length instead of an angle, with the same 400 samples and the same
+seed 20260817. Every length this engine writes is a difference of TWO landmark
+coordinates — a height is `joint - ground`, and the gap is
+`|(L - g) - (R - g)| = |L - R|` — so two independent perturbations enter it.
+**Measured: mean 6.00 mm, 95th percentile 14.53 mm.** `test_band_floor`
+re-runs that propagation and asserts BOTH statistics, because both are spent:
+the percentile sets the lower bound and the mean feeds the second reading of
+the margin below. An earlier version computed the percentile only, so the
+19.61 mm figure was quoted from a number this repository could not produce.
+
+**THE GUARD BOUNDS THE FLOOR TO AN INTERVAL AND NOT TO A VALUE**, and the
+interval is `[1.453, 2.018)` cm: at least the propagated percentile, and at
+most the imported margin (1.868 cm) plus the 0.15 cm rounding that reaches a
+round number. It does not pin the constant to 2.0 and does not claim to. An
+earlier slack of 0.5 cm admitted 2.3, which no rounding explains.
+
+**The floor carries the same safety margin the degrees floor has**, and two
+readings of that margin, from different statistics of the one study, land
+0.93 mm apart and round to the same centimetre:
+
+| the margin, read as | arithmetic | floor |
+|---|---|---|
+| over the 95th percentile | 5.0 / 3.89 = 1.285, x 14.53 mm | 18.68 mm |
+| over the propagated mean | 5.0 / 1.53 = 3.268, x 6.00 mm | 19.61 mm |
+
+They share no numerator and no denominator, so the agreement is evidence and
+not arithmetic. **They agree at the centimetre and not more closely**: 19.61
+against 18.68 is a 0.93 mm spread, about 5 per cent of either, and both round
+to 2.0. An earlier version of this row said "within a tenth of a millimetre",
+which overstated two readings that differ by nine times that. **Both ratios are post-hoc and the import is deliberate**: 5.0
+was a clinical figure first, so 1.285 and 3.268 describe the margin the degrees
+floor turned out to have rather than a rule anyone applied. The length floor
+imports it knowingly, because the clinical half has no length counterpart.
+
+**TWO WRONG ROUTES WERE TAKEN AND BOTH ARE NAMED SO NOBODY RE-DERIVES THEM.**
+Each spends a ratio from an OUTPUT on an INPUT — 5 mm is the noise that ENTERS
+the study, and 1.53 and 3.89 are what leaves it:
+
+| route | arithmetic | gives |
+|---|---|---|
+| the ratio spent on the input noise | 3.268 x 5.00 mm | 16.34 mm |
+| the same ratio rounded first | 3.3 x 5.00 mm | 16.50 mm |
+| that product as it was WRITTEN DOWN | — | 1.6 cm |
+
+**The third row is a third number and is guarded as one.** 3.3 x 5.00 mm is
+16.5 mm, and the ruling wrote it as "1.6 cm". The three sit 0.016 cm apart at
+the closest, so the guard's tolerance is 0.01 cm: below that gap, which is
+what lets it name the route actually taken. An earlier version used
+`assertNotAlmostEqual(places=1)`, which rejects anything within 0.05 and so
+failed every route at once — the per-route labels said nothing, and a reviewer
+found that before a reader did.
+
+The first was written into a draft of this branch. The second was ruled by the
+orchestrator on 2026-09-07 and withdrawn by it the same hour, once the lane
+showed that the ratio came from an output. **That is this project's recurring
+fault class appearing inside the derivation of the threshold meant to prevent
+it**, and it is recorded here for that reason rather than for the 0.4 cm.
+Tests assert the shipped constant is none of the three.
+
+**ON "TWELVE TIMES", WHICH THIS SECTION USED TO SAY.** That count came from a
+lane's own notes, not from this ledger or from anything else in the repository.
+`segment_measures.py` counts six of the units-across-a-boundary form, and the
+highest ordinal any row here uses is a sixth instance. A reader could not check
+twelve, which makes it a number without its inputs — in the section that exists
+to insist on them. It is withdrawn.
+
+**WHAT IS MISSING IS NAMED RATHER THAN INVENTED.** This floor protects against
+noise and nothing else. A coach's figure for a meaningful height difference
+replaces it, the way 5 degrees does for angles.
+
+### The landing's own cue may be graded by an instrument that cannot fail
+
+Measured 2026-09-07 on `b214bc4`. **An open row with an owner, not a defect in
+anything shipped, and it claims nothing beyond what was measured.**
+
+`footHeightGapCm` spans **0.00 to 1.22 cm across all 110 frames** of
+`netball_double_foot_landing`, against bands of 0-14, 0-6 and 0-6. Its whole
+observed range sits BELOW the **1.45 cm** its own landmark noise produces.
+
+Two consequences, and they are different:
+
+- **On a solved skeleton** the number is exact and the bands are never
+  approached. The three checkpoints read `within` at every phase.
+- **On a filmed athlete** the same column would be indistinguishable from
+  noise, because the range the drill produces is smaller than the measurement
+  error the noise study propagates.
+
+**WHETHER THOSE THREE CHECKPOINTS CAN FAIL UNDER ANY LEVER IS A SWEEP NOBODY
+HAS RUN.** This row does not claim they cannot. It records that the question
+has never been asked of the library's only length checkpoints, and that the
+reading above is the reason to ask it.
+
+**Owner: the movement lane**, queued after the height measure. It is also a
+coach-facing fact — the engine may not be able to fail the landing's defining
+cue — so it goes to the content lane's agenda for a coach's view, which the
+orchestrator carries.
+
+### Four more sites, found and NOT fixed here
+
+**Owner: the movement lane. Queued after Pack B, the height measure.**
+
+All four are recorded rather than changed, because this pack was scoped to the
+three defects above and none of these is live today. An earlier version of this
+section listed two and gave no owner; a reviewer found the other two in the
+same file.
+
+- **`build_library.py:222`** writes `"thresholdDegrees":
+  MINIMUM_MEANINGFUL_BAND_DEGREES` into every receipt's `phaseSeparation`. A
+  centimetre winner is now judged at 2.0, so the receipt's own field
+  misdescribes the threshold that was applied.
+- **`build_library.py:341-342`** prints "cannot fail ... under the 5
+  threshold" for whichever measure won a phase, in any unit.
+- **`build_library.py:367`** filters what a variant changes with
+  `MINIMUM_MEANINGFUL_BAND_DEGREES` and prints the survivors under a heading
+  reading "in degrees". A variant drill grading a length would have its
+  centimetre spread judged by a degrees threshold and printed as degrees.
+- **`MovementAssessment.to_receipt`** writes `band` as a bare pair of numbers
+  with no unit, so a receipt consumer has exactly the problem the feedback
+  sentence had. Latent until something outside this repository reads it.
+
+**Why all four are latent**: the landing is the only drill grading a length,
+and its winner is an ANGLE in every phase on both solve paths, so no centimetre
+value reaches any of these three prints today. The fourth waits on a consumer
+outside this repository.
+
+### A verification trap this pack walked into, and the rule that follows
+
+**A MUTATION RUN CAN TEST THE PREVIOUS MUTATION'S BYTECODE.** This lane ran a
+loop that set the band floor to four values in turn and reported the guards
+each one failed. One reading was wrong and could not be reproduced; it was
+withdrawn from the pack for that reason, and the review then explained it.
+
+CPython validates a `.pyc` by the source's **integer-second mtime and byte
+size**. Two values of the same length — `1.0` and `3.5` — give sources of
+identical size, so a write landing in the same second as the previous one
+reuses the previous bytecode. The review proved it deterministically: compile
+the cache from the 1.0 source, write 3.5, set the source mtime to the cache's
+second, and the run reports the 1.0 failures; delete the cache and the same
+source reports its own four.
+
+**Every mutation loop in this repository that edits a constant to a
+same-length value is exposed.** The rule is `python -B`, or clear
+`__pycache__` between edits. This is not a defect in any pack; it is a defect
+in how packs are verified, which is worse, because it silently returns the
+previous answer.
 
 ## No units-correct distance measures, and six cues already want them
 
@@ -336,6 +699,19 @@ Row 6 is one quantity counted once, though the cue appears in every pass block
 in the section. A seventh cue, the bounce pass's "Pull the ball to the side",
 wants a LATERAL position and is recorded in that drill's `sideMeasureNote`
 rather than here, because it is a third quantity again.
+
+**THE AHEAD MEASURE IS NOT THE SAME SHAPE AS THE HEIGHT, AND THE TWO SHOULD NOT
+BE BUILT TOGETHER.** Ruled 2026-09-07 after the movement lane was asked to check
+before folding it in. A HEIGHT has a fixed, rig-independent zero: the court,
+taken as the rest pose's left foot, exactly as `leftFootHeightCm` already takes
+it. An AHEAD-OF-CHEST distance is measured from a landmark that MOVES on every
+frame, so the measure carries the chest's own travel as well as the ball's.
+That is the anchor problem the Blender job spent a week on: `fromShouldersInArms`
+was measured from a shoulder midpoint the job never transmitted, and four
+attempts at a fix were killed by measurement before a pelvis-relative
+displacement worked. An ahead measure needs its own anchor argument, stated and
+measured, and it needs the frame that anchor is read at named beside it. It is
+its own unit of work with its own owner, not a rider on the height.
 
 **A caution for whoever builds them.** `netball_overhead_pass` was nearly
 shipped with a checkpoint that passed a single mutation and measured nothing it
