@@ -19,6 +19,7 @@ from girdle_agreement import (  # noqa: E402
     AGREES,
     OUT_OF_REACH,
     classify,
+    refuse_unrenderable_girdle,
     reachable_miss_mm,
     DISAGREES,
     ROUNDING_M,
@@ -318,3 +319,52 @@ class ReachTest(unittest.TestCase):
 
         self.assertGreater(REACH_TOLERANCE_MM, 0.0001)
         self.assertLess(REACH_TOLERANCE_MM, 10.0 / 100.0)
+
+
+class RefuseUnrenderableTest(unittest.TestCase):
+    """A frame nobody can check must not reach a coach.
+
+    Six of the fifteen findings in the 2026-09-07 review were this one gap,
+    found independently by five lenses: a job with no girdle field rendered the
+    PRE-FIX figure, with the whole 5 to 6 cm error back in the ball, and the
+    run printed PASS and wrote a receipt like any other.
+    """
+
+    def test_a_reach_limit_is_ALLOWED_through(self):
+        """97 of 102 targets are out of reach. Refusing them renders nothing.
+
+        A bone that cannot stretch is a fact about the body, not a defect in
+        the render, and it must not stop a figure.
+        """
+        refuse_unrenderable_girdle(
+            {"verdict": OUT_OF_REACH, "worstOffsetMm": 52.091}, "chest/ready")
+
+    def test_agreement_is_allowed_through(self):
+        refuse_unrenderable_girdle({"verdict": AGREES}, "chest/ready")
+
+    def test_a_MISSING_girdle_STOPS_the_frame(self):
+        with self.assertRaises(ValueError) as caught:
+            refuse_unrenderable_girdle(
+                {"verdict": UNAVAILABLE, "worstOffsetMm": None}, "chest/ready")
+
+        self.assertIn("chest/ready", str(caught.exception))
+        self.assertIn("girdle at rest", str(caught.exception))
+
+    def test_an_aim_that_FAILED_stops_the_frame(self):
+        """Beyond what the bone explains is a defect, not anatomy."""
+        with self.assertRaises(ValueError) as caught:
+            refuse_unrenderable_girdle(
+                {"verdict": DISAGREES, "worstOffsetMm": 40.0,
+                 "worstBeyondReachableMm": 14.5}, "overhead/lift")
+
+        self.assertIn("BEYOND", str(caught.exception))
+        self.assertIn("14.5", str(caught.exception))
+
+    def test_an_unknown_verdict_is_refused_and_not_waved_through(self):
+        """A verdict this function does not recognise must fail closed.
+
+        Failing open would let a later rename of a verdict silently disable
+        every refusal here.
+        """
+        with self.assertRaises(ValueError):
+            refuse_unrenderable_girdle({"verdict": "probably fine"}, "x/y")

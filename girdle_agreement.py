@@ -194,3 +194,31 @@ def classify(offset_mm: float, reachable_mm: float,
     if offset_mm - reachable_mm <= tolerance_mm:
         return OUT_OF_REACH
     return DISAGREES
+
+
+def refuse_unrenderable_girdle(report: dict, label: str) -> None:
+    """Stop a frame whose girdle cannot be trusted. OUT_OF_REACH is allowed.
+
+    A miss the anatomy explains is not a reason to refuse a figure: this rig's
+    clavicle is shorter relative to its torso than the engine's and cannot
+    reach 97 of 102 targets, which is a fact about the body and not about the
+    render. UNAVAILABLE and DISAGREES are different. A job with no girdle field
+    renders the PRE-FIX figure, with the whole 5 to 6 cm error back in the
+    ball, and without this it would print PASS and write a receipt like any
+    other. A frame nobody can check must not reach a coach.
+    """
+    verdict = report.get("verdict")
+    if verdict in (AGREES, OUT_OF_REACH):
+        return
+    if verdict == UNAVAILABLE:
+        raise ValueError(
+            f"{label}: the job carries no shoulder girdle, so this figure "
+            f"would be rendered with the girdle at rest, which is the defect "
+            f"the field exists to remove. Refusing the frame."
+        )
+    raise ValueError(
+        f"{label}: the rendered girdle is {report.get('worstOffsetMm')} mm "
+        f"from the transmitted one and "
+        f"{report.get('worstBeyondReachableMm')} mm of that is BEYOND what "
+        f"the clavicle's length explains. The aim failed. Refusing the frame."
+    )

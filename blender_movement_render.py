@@ -47,6 +47,8 @@ from girdle_agreement import (  # noqa: E402
     agreement,
     classify,
     reachable_miss_mm,
+    refuse_unrenderable_girdle,
+    shoulder_position,
 )
 from reference_pose_config import (  # noqa: E402
     DEFAULT_CONFIG_PATH,
@@ -302,6 +304,13 @@ def rest_girdle(rig) -> dict:
             side: (shoulders[side] - world_head(rig, f"clavicle_{side}")).length
             for side in ("l", "r")
         },
+        # The rest direction of each clavicle, so the receipt can say HOW FAR
+        # the bone was turned. A displacement in millimetres does not say
+        # whether the girdle was nudged or wrenched.
+        "clavicleAxis": {
+            side: (shoulders[side] - world_head(rig, f"clavicle_{side}")).normalized()
+            for side in ("l", "r")
+        },
     }
 
 
@@ -327,6 +336,16 @@ def pose_girdle(rig, phase: dict, rest: dict) -> dict:
     a clavicle to hit a number would invent an anatomy no solve produced, which
     is the fault this whole field exists to remove.
 
+    `out of reach` IS NOT EVIDENCE THAT THE AIM IS RIGHT, and it must not be
+    read as one. `rotate_bone_toward` lands on the radial projection of the
+    target BY CONSTRUCTION, so `beyondReachableMm` is zero on every one of the
+    102 targets measured and the `disagrees` branch is unreachable from this
+    caller as the code stands. It is a TRIPWIRE for a later change that clamps
+    the rotation, constrains the bone or moves the pivot, not a check that has
+    passed. The number that says whether the FIGURE is right is
+    `ballAnchorErrorMm`, which is not an identity and does fail: 2 of 51 phases
+    exceed the ten-millimetre rule.
+
     A phase with no field leaves the girdle at rest and reports `unavailable`.
     It must never read as agreement: the defect this replaces was a missing
     landmark behaving like a satisfied one.
@@ -341,8 +360,15 @@ def pose_girdle(rig, phase: dict, rest: dict) -> dict:
         }
 
     pelvis = world_head(rig, "pelvis")
+    # THE TESTED FUNCTION, NOT A SECOND COPY OF IT. This formula was written
+    # out inline here once, beside a `shoulder_position` in girdle_agreement
+    # that carried its guards and had no caller. Two copies of one rule means
+    # the tested one is not the one that runs.
     wanted = {
-        side: pelvis + rest["offset"][side] + Vector(shift[side]) * rest["torso"]
+        side: Vector(shoulder_position(
+            shift[side], tuple(rest["offset"][side]), tuple(pelvis),
+            rest["torso"],
+        ))
         for side in ("l", "r")
     }
     for side in ("l", "r"):
@@ -370,14 +396,29 @@ def pose_girdle(rig, phase: dict, rest: dict) -> dict:
         over = report["offsetMm"] - reachable
         worst = max(worst, report["offsetMm"])
         excess = max(excess, over)
+        turned = math.degrees(
+            rest["clavicleAxis"][side].angle(
+                (rendered - pivot).normalized()
+            )
+        )
         sides[side] = {
             "verdict": classify(report["offsetMm"], reachable),
+            "clavicleTurnedDegrees": round(turned, 3),
             "offsetMm": round(report["offsetMm"], 4),
             "reachableMissMm": round(reachable, 4),
             "beyondReachableMm": round(over, 4),
             "perAxisMm": [round(value, 4) for value in report["perAxisMm"]],
             "shiftInTorsos": shift[side],
         }
+    # THE NUMBER THE BALL CARRIES. The ball is placed from the shoulder
+    # MIDPOINT, so a per-shoulder miss is not what lands in the figure. The two
+    # shoulders fall short outward along their own clavicles and those errors
+    # largely cancel here, which is why the ball can be right while the girdle
+    # is narrow. Without this a reader sees 25 mm and a benign verdict and
+    # cannot tell which one the figure inherits.
+    wanted_mid = (wanted["l"] + wanted["r"]) / 2.0
+    rendered_mid = (world_head(rig, "upperarm_l")
+                    + world_head(rig, "upperarm_r")) / 2.0
     verdicts = {entry["verdict"] for entry in sides.values()}
     if verdicts == {AGREES}:
         verdict = AGREES
@@ -392,6 +433,12 @@ def pose_girdle(rig, phase: dict, rest: dict) -> dict:
         "restTorsoM": round(rest["torso"], 6),
         "worstOffsetMm": round(worst, 4),
         "worstBeyondReachableMm": round(excess, 4),
+        # What the BALL inherits, in millimetres.
+        "ballAnchorErrorMm": round((rendered_mid - wanted_mid).length * 1000.0, 4),
+        "renderedWidthMm": round(
+            (world_head(rig, "upperarm_l")
+             - world_head(rig, "upperarm_r")).length * 1000.0, 4),
+        "wantedWidthMm": round((wanted["l"] - wanted["r"]).length * 1000.0, 4),
         "sides": sides,
     }
 
@@ -458,6 +505,10 @@ def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
     # aimed from its own shoulder. Posing it afterwards would move the
     # shoulders out from under targets already computed.
     girdle = pose_girdle(rig, phase, rest)
+    # A frame nobody can check must not reach a coach. `out of reach` passes,
+    # because a bone that cannot stretch is anatomy; a MISSING field does not,
+    # because it renders the pre-fix figure and would otherwise print PASS.
+    refuse_unrenderable_girdle(girdle, f"{phase.get('name', '?')}")
 
     # The ball is placed from the body, and it is the one absolute size in the
     # scene. A grip on it cannot be carried across as a direction from the
