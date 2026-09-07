@@ -658,7 +658,8 @@ class Studio:
         )
 
 
-def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) -> None:
+def render_job(studio: Studio, job: dict, job_path: Path, args,
+               output: Path) -> list[dict]:
     # Delete any receipt from an earlier run BEFORE rendering. The solve can
     # raise part way through, and `--output` reuses its directory, so a PASS
     # receipt from a previous run would otherwise sit beside the fresh partial
@@ -676,13 +677,33 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
     if not phases:
         raise SystemExit(f"no phase of {job['movementId']} matches {wanted}")
 
-    rendered = []
+    rendered, failed = [], []
     for phase in phases if not args.no_stills else []:
-        centre, receipt = pose_phase(
-            rig, phase, job["anatomyLimitsDegrees"], basis, foot_baseline,
-            config.finger_curl_degrees, job.get("knuckleLimitsDegrees"),
-            studio.human,
-        )
+        # ONE BAD PHASE MUST COST ONE FIGURE AND NOT A LIBRARY. On 2026-09-07
+        # `netball_one_hand_high_pass/ready` raised out of the whole run and
+        # took eleven good drills with it, twice, at forty minutes a time. The
+        # failure is RECORDED rather than swallowed: it goes in the receipt
+        # with its reason, the run's word stops being PASS, and the process
+        # exits non-zero at the end. A loop that carried on quietly would have
+        # traded a loud failure for a silent one.
+        try:
+            centre, receipt = pose_phase(
+                rig, phase, job["anatomyLimitsDegrees"], basis, foot_baseline,
+                config.finger_curl_degrees, job.get("knuckleLimitsDegrees"),
+                studio.human,
+            )
+        except Exception as error:
+            failed.append({
+                "name": phase["name"],
+                "frame": phase["frame"],
+                "failed": True,
+                "error": f"{type(error).__name__}: {error}",
+            })
+            print(
+                f"[movement-render] FAILED {phase['name']} frame "
+                f"{phase['frame']}: {type(error).__name__}: {error}"
+            )
+            continue
         ball.location = centre
         bpy.context.view_layer.update()
 
@@ -842,7 +863,12 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
         "jobSha256": sha256(job_path),
         "sourceAssets": [str(path) for path in studio.source_assets],
         "animation": animation,
+        # The phases that DREW, then the phases that could not, each with its
+        # reason. A reader counting `phases` alone would see a short list and
+        # no cause; a reader seeing only the failures would not know what was
+        # produced beside them.
         "phases": rendered,
+        "failedPhases": failed,
     }
     # The stamp is the point of the receipt for anyone asking which pictures
     # predate a fix, so it is checked before the file is written rather than
@@ -864,9 +890,11 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
     # and `--no-stills` took exactly that path over eight drills and printed
     # PASS eight times.
     print(
-        f"[movement-render] {render_outcome(len(rendered), animation)} "
+        f"[movement-render] "
+        f"{render_outcome(len(rendered), animation, len(failed))} "
         f"receipt={receipt_path}"
     )
+    return failed
 
 
 def main() -> None:
@@ -882,9 +910,21 @@ def main() -> None:
     studio = Studio(load_reference_catch_config(args.config))
     studio.add_ball(radii.pop())
 
+    unposable = []
     for number, (job, path) in enumerate(zip(jobs, args.job), start=1):
         print(f"[movement-render] {number}/{len(jobs)} {job['movementId']}")
-        render_job(studio, job, path, args, output)
+        for entry in render_job(studio, job, path, args, output):
+            unposable.append(f"{job['movementId']}/{entry['name']}")
+
+    # AFTER every drill, never during one. Raising here is what keeps the exit
+    # code honest without costing the drills that would have followed.
+    if unposable:
+        raise SystemExit(
+            f"[movement-render] {len(unposable)} phase(s) could not be posed "
+            f"and are missing from the library: {', '.join(unposable)}. Every "
+            f"other phase was rendered and every receipt was written; each "
+            f"failure is in its receipt's `failedPhases` with its reason."
+        )
 
 
 if __name__ == "__main__":

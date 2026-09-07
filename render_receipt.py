@@ -17,6 +17,7 @@ from __future__ import annotations
 
 PASS = "PASS"
 NOTHING_RENDERED = "NOTHING RENDERED"
+SOME_PHASES_FAILED = "SOME PHASES FAILED"
 
 
 # THE BUILD STAMP IS NOT HERE, AND IT WAS, FOR A DAY.
@@ -38,24 +39,40 @@ NOTHING_RENDERED = "NOTHING RENDERED"
 # for the first. Look for the existing one first.
 
 
-def render_outcome(phase_count: int, animation: object | None) -> str:
-    """PASS only when the run actually produced something.
+def render_outcome(phase_count: int, animation: object | None,
+                   failed_count: int = 0) -> str:
+    """PASS only when the run actually produced something and nothing failed.
 
     A run that posed no phase and exported no animation has measured nothing.
     It has not failed either, and it must not say so, because a legitimate
     `--turntable`-only or `--animate`-only run is not a defect. It says what
     happened, which is that nothing was rendered.
+
+    A run with a FAILED phase is different, and it outranks both. Something was
+    asked for and could not be drawn, so the word must not be PASS even though
+    other phases succeeded. It is checked FIRST for that reason: a run of one
+    good phase and one failure is not a pass.
     """
+    if failed_count > 0:
+        return SOME_PHASES_FAILED
     if phase_count <= 0 and not animation:
         return NOTHING_RENDERED
     return PASS
 
 
-# THE EXIT CODE IS 0 EITHER WAY, and a script must not read it as a result.
-# NOTHING RENDERED is not a failure: a turntable-only or animation-only run is
-# legitimate, and so is a phase filter that matches nothing in this job. The
-# renderer exits non-zero only when it actually raises.
+# NOTHING RENDERED EXITS 0 AND A FAILED PHASE DOES NOT.
 #
-# So a caller that wants to know whether anything was measured must read the
-# receipt's `phases`, or match this word on the console. Reading the exit code
-# alone is how eight empty runs looked like eight clean ones.
+# NOTHING RENDERED is not a failure: a turntable-only or animation-only run is
+# legitimate, and so is a phase filter that matches nothing in this job.
+#
+# A FAILED PHASE IS A FAILURE and the run exits non-zero, after every other
+# drill has been rendered and every receipt written. On 2026-09-07 one
+# unposable phase of one drill aborted the whole library render and cost eleven
+# good drills and forty minutes. One bad phase should cost one figure. But a
+# run that carries on must not then report success, or the loop would have
+# traded a loud failure for a quiet one, which is the fault this module exists
+# to prevent.
+#
+# So a caller that wants to know whether anything was measured must still read
+# the receipt's `phases`, or match this word on the console. Reading the exit
+# code alone is how eight empty runs looked like eight clean ones.
