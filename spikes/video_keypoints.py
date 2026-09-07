@@ -58,17 +58,46 @@ OUTPUT = SPIKE_DIR / "poc-output" / "video"
 # THIS file to reach the reference view's clock. Refer to the schema: the
 # direction is carried as a worked example because prose about it failed once.
 REFERENCE_VIEW = "front"
+# THE OFFSET BETWEEN THE TWO VIEWS, measured frame-exactly on a SHARED
+# PHYSICAL EVENT: the frame in which the ball first meets her hands on the
+# first catch, read in both views.
+#
+# `offsetSecondsToReference` is ADDED TO A TIME IN THIS FILE to reach the
+# reference view's clock, and each worked example below satisfies that
+# arithmetic exactly — the schema tells a consumer to assert it on load, so
+# both numbers are real container timestamps and neither is a midpoint.
+#
+# CORRECTED 2026-09-07, AND THE OLD VALUE WAS WRONG RATHER THAN MERELY LOOSE.
+# Set 0.1 carried +1.0 s with the worked example "side 8.25 against front
+# 9.25". At side 8.25 she is HOLDING a ball at chest height, not catching one;
+# the example paired a hold with a catch, and it had the SIGN backwards as
+# well. Every two-view result built on it is void, the 15 mm lift residual
+# included.
+#
+# WHY CORRELATION COULD NOT FIND THIS. Her toss cycle runs about two seconds,
+# so the signal is periodic and its correlation peaks alias: -1.29 and +0.73
+# are one cycle apart and score alike. A unique shared event beats a periodic
+# one, which is why this is measured on a catch frame and not on a curve.
 SYNC = {
-    "0.1": {"offsetSecondsToReference": 1.0, "thisViewSeconds": 8.25,
-            "referenceViewSeconds": 9.25},
+    # side 9.8628 + (-0.7295) = front 9.1333
+    "0.1": {"offsetSecondsToReference": -0.7295, "thisViewSeconds": 9.8628,
+            "referenceViewSeconds": 9.1333},
+    # side 8.9298 + (+1.8702) = front 10.8000
+    "0.2": {"offsetSecondsToReference": 1.8702, "thisViewSeconds": 8.9298,
+            "referenceViewSeconds": 10.8000},
 }
-SYNC_UNCERTAINTY_SECONDS = 0.15
+
+# ONE FRAME, and no better. Both offsets are the difference between two frame
+# timestamps, so the error is which frame each view's contact was called in.
+# 30.000 fps on the front against 30.010 on the side, no dropped frames and no
+# gaps, so there is no drift to add over a 29 s clip.
+SYNC_UNCERTAINTY_SECONDS = 0.0333
 
 # HOW THE OFFSET WAS ARRIVED AT, as a field of its own rather than a phrase
 # inside a sentence — the same reason a threshold declares its kind separately.
 # A consumer deciding whether to trust a pairing needs the grade, and a grade it
 # has to parse out of prose is not a field.
-METHOD_KINDS = ("clap", "eye", "correlation", "unknown")
+METHOD_KINDS = ("clap", "shared-event", "eye", "correlation", "unknown")
 
 # WHAT THIS BLOCK MUST NEVER SAY. Until 2026-09-04 the writer stamped
 # "two visual events matched by eye; no clap exists in this material" into every
@@ -79,10 +108,15 @@ METHOD_KINDS = ("clap", "eye", "correlation", "unknown")
 # out.
 SYNC_METHOD_NOTE = (
     "This block states what was DONE to arrive at the offset, and makes no "
-    "claim about what else the recordings contain. An earlier version asserted "
-    "that no clap existed in this material; two claps were later found in the "
-    "front view of set 0.1, at 5.800 s and 17.835 s. Refer to 'The alignment "
-    "ranked a sync clap above every real catch' in docs/KNOWN_ISSUES.md."
+    "claim about what else the recordings contain. TWO EARLIER CLAIMS ARE "
+    "WITHDRAWN. First, this block asserted that no clap existed in this "
+    "material; two claps were later found in the front view of set 0.1, at "
+    "5.800 s and 17.835 s. Second, and worse, set 0.1 carried an offset of "
+    "+1.0 s whose worked example paired side 8.25 with front 9.25 — at side "
+    "8.25 she is holding a ball at chest height and not catching one, and the "
+    "sign was backwards. THAT OFFSET WAS WRONG, NOT MERELY LOOSE, and every "
+    "two-view result built on it is void. Refer to 'The alignment ranked a "
+    "sync clap above every real catch' in docs/KNOWN_ISSUES.md."
 )
 # The camera is picked up after this, measured per frame by the rendering lane.
 USABLE_TO = {("front", "0.1"): 25.7}
@@ -284,11 +318,13 @@ def _sync_block(view: str, set_id: str, measured: bool, sync: dict) -> dict:
         )
         return block
     block["offsetUncertaintySeconds"] = SYNC_UNCERTAINTY_SECONDS
-    block["method"] = "two visual events matched by eye"
-    block["methodKind"] = "eye"
+    block["method"] = (
+        "the frame the ball first meets her hands on the first catch, read in "
+        "both views by container timestamp")
+    block["methodKind"] = "shared-event"
     block["methodNote"] = SYNC_METHOD_NOTE
     block["worked"] = {
-        "event": "first catch, seen in both views",
+        "event": "first catch, the frame the ball meets the hands, both views",
         "thisViewSeconds": sync.get("thisViewSeconds"),
         "referenceViewSeconds": sync.get("referenceViewSeconds"),
     }

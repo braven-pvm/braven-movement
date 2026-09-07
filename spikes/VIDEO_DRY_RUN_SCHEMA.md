@@ -502,6 +502,9 @@ same as wide.
   same as a shoot that passes.
 - **The `sync` bar is chosen at one frame, and the derived bar is far
   tighter.** The lift's own 15 mm residual over a hand at 2 m/s allows 8 ms.
+  WITHDRAWN 2026-09-07: that residual is nearly insensitive to the offset —
+  sweeping the sync from −5.0 to +3.0 s moves its median only 14.8 to 16.0 mm —
+  so it never measured sync quality and cannot bound it.
   The looser bar is used because a sub-frame claim cannot be verified on this
   material at all, and a bar nothing can check is not a bar. When a clap
   exists, re-derive it.

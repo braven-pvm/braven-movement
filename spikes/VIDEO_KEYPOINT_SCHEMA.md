@@ -90,15 +90,15 @@ is worse than a missing frame.
 
   "sync": {
     "referenceView": "front",
-    "offsetSecondsToReference": 1.0,
-    "offsetUncertaintySeconds": 0.15,
+    "offsetSecondsToReference": -0.7295,
+    "offsetUncertaintySeconds": 0.0333,
     "worked": {
-      "event": "first catch, seen in both views",
-      "thisViewSeconds": 8.25,
-      "referenceViewSeconds": 9.25
+      "event": "first catch, the frame the ball meets the hands, both views",
+      "thisViewSeconds": 9.8628,
+      "referenceViewSeconds": 9.1333
     },
-    "method": "two visual events matched by eye",
-    "methodKind": "eye",
+    "method": "the frame the ball first meets her hands on the first catch, read in both views by container timestamp",
+    "methodKind": "shared-event",
     "methodNote": "This block states what was DONE to arrive at the offset, and makes no claim about what else the recordings contain. …"
   },
 

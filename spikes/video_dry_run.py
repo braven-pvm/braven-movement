@@ -363,10 +363,12 @@ def judge_capture(evidence: dict, movement: str) -> list[dict]:
     found.append(condition(
         "sync", "Are the two views on one clock to within a frame?",
         uncertainty, "seconds", step, "chosen",
-        "one frame, because that is the finest this material can resolve and a "
-        "clap reaches it. The DERIVED bound is far tighter: the lift's own "
-        f"15 mm residual over a hand at {FAST_HAND_METRES_PER_SECOND} m/s "
-        f"allows only {0.015 / FAST_HAND_METRES_PER_SECOND * 1000:.0f} ms. The "
+        "one frame, because that is the finest this material can resolve and "
+        "that is what a shared event on a contact frame reaches. THE TIGHTER "
+        "DERIVED BOUND IS WITHDRAWN: it came from the lift's 15 mm two-view "
+        "residual, and that residual is NEARLY INSENSITIVE TO THE OFFSET — "
+        "sweeping the sync from -5.0 to +3.0 s moves its median only 14.8 to "
+        "16.0 mm, so it never measured sync quality and cannot bound it. The "
         "looser bar is used because a sub-frame claim cannot be verified here "
         "at all, and a bar nothing can check is not a bar.",
         None if uncertainty is None else uncertainty <= step,

@@ -180,9 +180,37 @@ together: hands-together sequences at +2.442, wrist-height peak sequences at
 can therefore alias together, and the by-eye 1.0 s and the 0.95–1.00 strip
 readings point elsewhere. It is worth attention and it is not an offset.
 
-**The by-eye 1.0 s remains the only measured offset**, and the keypoint times it
-rests on are true container timestamps rather than a constant-rate multiply —
-checked against ffprobe to six decimals on the variable-rate side file.
+**SOLVED 2026-09-07, AND THE 1.0 s WAS WRONG RATHER THAN LOOSE.** The offset is
+measured on a SHARED PHYSICAL EVENT — the frame in which the ball first meets
+her hands on the first catch, read in both views by container timestamp:
+
+| set | front contact | side contact | offsetSecondsToReference (side) |
+|---|---|---|---|
+| 0.1 | **9.1333 s** | **9.8628 s** | **−0.7295** |
+| 0.2 | **10.8000 s** | **8.9298 s** | **+1.8702** |
+
+Each satisfies the arithmetic the schema tells a consumer to assert:
+9.8628 − 0.7295 = 9.1333 exactly. Uncertainty is ONE FRAME, 0.0333 s — the
+error is which frame each view's contact was called in, and there is no drift
+to add: 30.000 fps against 30.010, no dropped frames, no gaps.
+
+**The old 1.0 s had the SIGN backwards and paired the wrong moments.** Its
+worked example put the first catch at side 8.25 against front 9.25; at side
+8.25 she is HOLDING a ball at chest height, not catching one. I read all four
+frames to check rather than take the correction on trust, and set 0.1's
+sequence settles it: the front's first contact frame is 9.1333 and the side's
+is 9.8628, with the ball plainly in the air above open hands one frame earlier
+in each.
+
+**WHY EVERY CORRELATION FAILED, INCLUDING SEVEN OF MINE.** Her toss cycle runs
+about two seconds, so the signal is periodic and its peaks alias: −1.29 and
++0.73 are one cycle apart and score alike. A unique shared event beats a
+periodic one. That is also why the hands-together and peak-sequence readings
+clustered near +2.4 — one cycle from the truth.
+
+The keypoint times this rests on are true container timestamps rather than a
+constant-rate multiply, checked against ffprobe to six decimals on the
+variable-rate side file.
 What it says is that **the ±0.25 s band is not conservative**, and that a
 number sitting at the edge of its own uncertainty is the shape of a bias rather
 than of noise. The clap is what settles it, which is why it is instruction 1.
