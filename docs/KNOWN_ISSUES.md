@@ -171,11 +171,99 @@ move together.
 in `minimumDegrees` and `maximumDegrees`. Three occurrences across the
 library.
 
-Nothing is wrong today: the same numbers are compared against each other, and
-the phase separation guard's threshold is far from the values it judges, so
-all three dead phases are dead in either unit. It is recorded because a name
-that does not say what it holds is how `fingerBaseDeviation` came to bound a
-flexion axis, and that cost a day.
+**"NOTHING IS WRONG TODAY" WAS WRONG IN ONE PLACE, AND IT WAS THE PLACE A
+COACH READS.** Measured on `b214bc4`, 2026-09-07. `CheckpointResult.feedback`
+wrote "degrees" for every measure, so those three checkpoints told a coach this
+about a distance in centimetres:
+
+    flight  band 0 to 14 -> "Needs less: 17 degrees against a target of 0 to 14"
+    land    band 0 to  6 -> "Needs less: 9 degrees against a target of 0 to 6"
+    absorb  band 0 to  6 -> "Needs less: 9 degrees against a target of 0 to 6"
+
+The rest of the original paragraph holds and is kept: the same numbers are
+compared against each other, and all three dead phases are dead in either unit.
+The name that does not say what it holds is how `fingerBaseDeviation` came to
+bound a flexion axis, and that cost a day.
+
+### Three defects under that one sentence, fixed 2026-09-07
+
+**ONE. The coach was told the wrong unit.** Above. A measure now names its own
+unit through `MEASURE_UNITS`, and a measure with no declared unit gets NO unit
+word rather than a wrong one.
+
+**TWO. A five-degree threshold was spent on a centimetre band.**
+`MINIMUM_MEANINGFUL_BAND_DEGREES` guarded every checkpoint's width and every
+phase-separation verdict, whatever the measure was in. A length had to move
+three times as far as the evidence requires before a phase counted as distinct.
+
+**THREE. The widest-moving checkpoint of a phase was chosen across units.**
+`separation` maximised raw values, so a phase grading a length and an angle
+together picked whichever number was larger, which is not a question with an
+answer. **Real in the code and INERT in the library**, the same form as the
+return-pass speed below: the only mixed phases are the landing's, where
+`footHeightGapCm` moves 0.00, 0.00 and 0.01 cm against angles moving 1.92, 0.13
+and 25.07, so the raw maximum happened to pick the angle every time. The winner
+is now chosen in units of each measure's own floor, which asks how many
+meaningful steps it moved and is unit-free.
+
+### The length floor is DERIVED, and the derivation names what is missing
+
+`MINIMUM_MEANINGFUL_BAND_CENTIMETRES = 1.5`.
+
+The five-degree floor has TWO justifications that happen to agree, and only one
+survives the trip to centimetres:
+
+- clinical practice calls an angle difference under 5 degrees meaningless. That
+  is an external figure about ANGLES. **There is no clinical figure for a length
+  difference in this repository or in the manual.**
+- the landmark noise study perturbs every landmark with per-axis Gaussian noise
+  and reports the angle error: at 5 mm, mean 1.53 degrees and 95th percentile
+  3.89. The floor sits above that percentile.
+
+So the length floor comes from the second only, by propagating the SAME 5 mm
+through a length instead of an angle, with the same 400 samples and the same
+seed 20260817. Every length this engine writes is a difference of TWO landmark
+coordinates — a height is `joint - ground`, and the gap is
+`|(L - g) - (R - g)| = |L - R|` — so two independent perturbations enter it.
+**Measured: mean 6.00 mm, 95th percentile 14.53 mm = 1.45 cm.** The floor is
+the smallest round value at or above it. `test_band_floor` re-runs that
+propagation and fails if the constant drifts from it in either direction.
+
+**IT IS NOT THE DEGREES FLOOR SCALED BY A RATIO, and that route was considered
+and rejected.** Reading the floor as "a multiple of the noise budget" gives
+5.0 / 1.53 = 3.27 and then 5 mm x 3.27 = 1.63 cm. That ratio is not a property
+of the floor: 5.0 is clinical and 1.53 is propagated, so the ratio between them
+is an accident of two different sources meeting. Spending it on a length is the
+fault this ledger has recorded twelve times. A test asserts the shipped
+constant is NOT that number, so a later reader cannot quietly re-derive it the
+wrong way.
+
+**WHAT IS MISSING IS NAMED RATHER THAN INVENTED.** This floor protects against
+noise and nothing else. A coach's figure for a meaningful height difference
+replaces it, the way 5 degrees does for angles.
+
+**AND THE INSTRUMENT IT GUARDS MAY NOT BE ABLE TO GRADE A FILMED ATHLETE.**
+`footHeightGapCm` spans 0.00 to 1.22 cm across all 110 frames of
+`netball_double_foot_landing`, against bands of 0-14, 0-6 and 0-6. Its whole
+observed range is BELOW the 1.45 cm its own landmark noise produces. On a
+solved skeleton the number is exact and the bands are never approached; on a
+filmed athlete the same column would be indistinguishable from noise. Whether
+those three checkpoints can fail under any lever is a SWEEP nobody has run, and
+this row does not claim they cannot.
+
+### Two more sites, found and NOT fixed here
+
+Both are recorded rather than changed, because this pack was scoped to the
+three defects above and neither of these is live.
+
+- **`build_library.py:367`** filters what a variant changes with
+  `MINIMUM_MEANINGFUL_BAND_DEGREES` and prints the survivors under a heading
+  reading "in degrees". A variant drill grading a length would have its
+  centimetre spread judged by a degrees threshold and printed as degrees.
+  Latent: no drill with variants grades a length today.
+- **`MovementAssessment.to_receipt`** writes `band` as a bare pair of numbers
+  with no unit, so a receipt consumer has exactly the problem the feedback
+  sentence had. Latent until something outside this repository reads it.
 
 ## No units-correct distance measures, and six cues already want them
 
@@ -336,6 +424,19 @@ Row 6 is one quantity counted once, though the cue appears in every pass block
 in the section. A seventh cue, the bounce pass's "Pull the ball to the side",
 wants a LATERAL position and is recorded in that drill's `sideMeasureNote`
 rather than here, because it is a third quantity again.
+
+**THE AHEAD MEASURE IS NOT THE SAME SHAPE AS THE HEIGHT, AND THE TWO SHOULD NOT
+BE BUILT TOGETHER.** Ruled 2026-09-07 after the movement lane was asked to check
+before folding it in. A HEIGHT has a fixed, rig-independent zero: the court,
+taken as the rest pose's left foot, exactly as `leftFootHeightCm` already takes
+it. An AHEAD-OF-CHEST distance is measured from a landmark that MOVES on every
+frame, so the measure carries the chest's own travel as well as the ball's.
+That is the anchor problem the Blender job spent a week on: `fromShouldersInArms`
+was measured from a shoulder midpoint the job never transmitted, and four
+attempts at a fix were killed by measurement before a pelvis-relative
+displacement worked. An ahead measure needs its own anchor argument, stated and
+measured, and it needs the frame that anchor is read at named beside it. It is
+its own unit of work with its own owner, not a rider on the height.
 
 **A caution for whoever builds them.** `netball_overhead_pass` was nearly
 shipped with a checkpoint that passed a single mutation and measured nothing it

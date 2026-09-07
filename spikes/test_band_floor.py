@@ -1,0 +1,252 @@
+"""The band floor is per unit, and the length floor is derived, not scaled.
+
+Three defects sat under one sentence in `movement_definition`: a coach was told
+"degrees" about a distance in centimetres, a 5-degree threshold was spent on a
+centimetre band, and the widest-moving checkpoint of a phase was chosen by
+comparing centimetres with degrees.
+
+Every guard here is written to FAIL under the code that shipped before it, and
+each was run against that code to check that it does.
+"""
+
+from __future__ import annotations
+
+import random
+import statistics
+import unittest
+
+from movement_definition import (
+    CENTIMETRES,
+    DEGREES,
+    MINIMUM_MEANINGFUL_BAND,
+    MINIMUM_MEANINGFUL_BAND_CENTIMETRES,
+    MINIMUM_MEANINGFUL_BAND_DEGREES,
+    Checkpoint,
+    MovementDefinition,
+    MovementDefinitionError,
+    Phase,
+    minimum_meaningful_band,
+)
+
+# The noise study's own parameters, restated so this file can re-run its
+# propagation without OpenSim. `opensim_crosscheck.run_noise_study` needs a
+# model to turn landmark noise into ANGLE error; turning the same noise into
+# LENGTH error needs no model at all, because a length IS a landmark
+# coordinate. Restated rather than imported for that reason: importing would
+# pull in OpenSim to reach three numbers.
+LANDMARK_NOISE_MM = 5.0
+SAMPLES = 400
+SEED = 20260817
+
+# Every length this engine writes is a difference of TWO landmark coordinates.
+# A height is `joint - ground`; the foot gap is `|(L - g) - (R - g)| = |L - R|`,
+# where the ground cancels and two joints remain. So two independent
+# perturbations enter every one of them.
+LANDMARKS_IN_A_LENGTH = 2
+
+
+def length_error_95th_mm() -> float:
+    """The 95th percentile of a length's error under the study's own noise.
+
+    Same sigma, same sample count, same seed and the same statistic as the
+    angle rows in README.md, so the two are read the same way.
+    """
+    generator = random.Random(SEED)
+    errors = [
+        abs(
+            sum(
+                generator.gauss(0.0, LANDMARK_NOISE_MM)
+                for _ in range(LANDMARKS_IN_A_LENGTH)
+            )
+        )
+        for _ in range(SAMPLES)
+    ]
+    return sorted(errors)[int(0.95 * len(errors))]
+
+
+class TheLengthFloorIsDerivedFromTheNoiseStudy(unittest.TestCase):
+    def test_the_propagation_produces_a_real_number(self) -> None:
+        """Guards the guard. A propagation returning zero passes anything."""
+        measured = length_error_95th_mm()
+        self.assertGreater(measured, LANDMARK_NOISE_MM)
+        self.assertLess(measured, 10.0 * LANDMARK_NOISE_MM)
+
+    def test_the_floor_is_at_or_above_the_measured_percentile(self) -> None:
+        """The constant cannot drift from the evidence that set it."""
+        measured_cm = length_error_95th_mm() / 10.0
+        self.assertGreaterEqual(
+            MINIMUM_MEANINGFUL_BAND_CENTIMETRES, measured_cm,
+            f"the floor {MINIMUM_MEANINGFUL_BAND_CENTIMETRES} cm sits BELOW "
+            f"the {measured_cm:.3f} cm the noise study propagates, so a band "
+            "at the floor would report noise as coaching",
+        )
+
+    def test_the_floor_is_not_padded_far_beyond_it(self) -> None:
+        """A floor far above its evidence is an unstated coaching judgment.
+
+        There is no coach's figure for a meaningful height difference. Until
+        there is, this floor may protect against noise and nothing else, so it
+        stays near the number it came from.
+        """
+        measured_cm = length_error_95th_mm() / 10.0
+        self.assertLess(MINIMUM_MEANINGFUL_BAND_CENTIMETRES, 2.0 * measured_cm)
+
+    def test_it_is_not_the_degrees_floor_scaled_by_the_ratio(self) -> None:
+        """The tempting derivation, ruled out by name.
+
+        5.0 / 1.53 = 3.27 reads the floor as a multiple of the noise budget and
+        would give 5 mm x 3.27 = 1.63 cm. That ratio is an accident of two
+        different sources meeting: 5.0 is clinical and 1.53 is propagated. This
+        asserts the shipped constant is NOT that number, so a later reader
+        cannot quietly re-derive it the wrong way and land on the same value.
+        """
+        by_the_wrong_route = 0.5 * (MINIMUM_MEANINGFUL_BAND_DEGREES / 1.53)
+        self.assertNotAlmostEqual(
+            MINIMUM_MEANINGFUL_BAND_CENTIMETRES, by_the_wrong_route, places=1
+        )
+
+
+class TheFloorIsChosenByUnit(unittest.TestCase):
+    def test_each_unit_gets_its_own_floor(self) -> None:
+        self.assertEqual(
+            minimum_meaningful_band("leftElbowFlexionDegrees"),
+            (MINIMUM_MEANINGFUL_BAND_DEGREES, DEGREES),
+        )
+        self.assertEqual(
+            minimum_meaningful_band("footHeightGapCm"),
+            (MINIMUM_MEANINGFUL_BAND_CENTIMETRES, CENTIMETRES),
+        )
+
+    def test_an_undeclared_measure_gets_the_strictest_floor_and_no_unit(self):
+        """It must not get degrees, and it must not get the loosest floor."""
+        floor, unit = minimum_meaningful_band("somethingNobodyDeclared")
+        self.assertIsNone(unit)
+        self.assertEqual(floor, max(MINIMUM_MEANINGFUL_BAND.values()))
+
+    def test_a_centimetre_band_narrower_than_the_length_floor_is_refused(self):
+        with self.assertRaises(MovementDefinitionError):
+            Checkpoint(
+                measure="footHeightGapCm",
+                minimum_degrees=0.0,
+                maximum_degrees=MINIMUM_MEANINGFUL_BAND_CENTIMETRES - 0.5,
+                cue="a cue",
+                why="a reason",
+            )
+
+    def test_a_centimetre_band_the_old_degrees_floor_refused_is_accepted(self):
+        """The fix, stated as the case that changed.
+
+        A 2 cm band is four times the landmark noise and was rejected before,
+        because it was held to a threshold belonging to angles.
+        """
+        width = 2.0
+        self.assertLess(width, MINIMUM_MEANINGFUL_BAND_DEGREES)
+        self.assertGreater(width, MINIMUM_MEANINGFUL_BAND_CENTIMETRES)
+        Checkpoint(
+            measure="footHeightGapCm",
+            minimum_degrees=0.0,
+            maximum_degrees=width,
+            cue="a cue",
+            why="a reason",
+        )
+
+    def test_an_angle_band_is_still_held_to_five_degrees(self) -> None:
+        """The fix must not loosen the rule it was not about."""
+        with self.assertRaises(MovementDefinitionError):
+            Checkpoint(
+                measure="leftElbowFlexionDegrees",
+                minimum_degrees=20.0,
+                maximum_degrees=20.0 + MINIMUM_MEANINGFUL_BAND_DEGREES - 0.5,
+                cue="a cue",
+                why="a reason",
+            )
+
+
+class TheCoachIsToldTheRightUnit(unittest.TestCase):
+    def failing(self, measure: str, top: float) -> str:
+        return Checkpoint(
+            measure=measure,
+            minimum_degrees=0.0,
+            maximum_degrees=top,
+            cue="A cue.",
+            why="A reason.",
+        ).assess(top + 3.0).feedback()
+
+    def test_a_length_is_reported_in_centimetres(self) -> None:
+        """The defect, in the sentence a coach reads.
+
+        Before this, `netball_double_foot_landing` told a coach "Needs less:
+        17 degrees against a target of 0 to 14" about a distance.
+        """
+        said = self.failing("footHeightGapCm", 14.0)
+        self.assertIn("centimetres", said)
+        self.assertNotIn("degrees", said)
+
+    def test_an_angle_is_still_reported_in_degrees(self) -> None:
+        said = self.failing("leftElbowFlexionDegrees", 60.0)
+        self.assertIn("degrees", said)
+        self.assertNotIn("centimetres", said)
+
+    def test_an_undeclared_measure_is_given_no_unit_at_all(self) -> None:
+        """No unit beats a wrong unit."""
+        said = self.failing("somethingNobodyDeclared", 60.0)
+        self.assertNotIn("degrees", said)
+        self.assertNotIn("centimetres", said)
+        self.assertIn("against a target of", said)
+
+
+class ThePhaseWinnerIsChosenWithoutMixingUnits(unittest.TestCase):
+    """`separation` maximised raw values across units.
+
+    Inert in today's library, because the only phases grading both a length and
+    an angle are the landing's, where the foot gap moves 0.00 to 0.01 cm. This
+    builds the case the library does not have.
+    """
+
+    def movement(self) -> MovementDefinition:
+        return MovementDefinition(
+            movement_id="probe",
+            sport="netball",
+            skill="a skill",
+            source="a source",
+            phases=(
+                Phase("first", 0.0, (
+                    Checkpoint("footHeightGapCm", 0.0, 20.0, "c", "w"),
+                )),
+                Phase("second", 1.0, (
+                    Checkpoint("footHeightGapCm", 0.0, 20.0, "c", "w"),
+                    Checkpoint("leftElbowFlexionDegrees", 0.0, 90.0, "c", "w"),
+                )),
+            ),
+        )
+
+    def test_the_larger_number_does_not_win_when_it_is_a_different_unit(self):
+        """The length moves 4 cm, which is 2.7 floors. The angle moves 6
+        degrees, which is 1.2 floors. The raw maximum picks the angle."""
+        first = {"footHeightGapCm": 0.0, "leftElbowFlexionDegrees": 0.0}
+        second = {"footHeightGapCm": 4.0, "leftElbowFlexionDegrees": 6.0}
+        report = self.movement().separation([first, second])
+        winner = report[1]
+        self.assertGreater(6.0, 4.0, "the angle must be the larger raw number")
+        self.assertEqual(
+            winner.measure, "footHeightGapCm",
+            "the winner was picked by comparing centimetres with degrees",
+        )
+        self.assertEqual(winner.moved, 4.0)
+
+    def test_a_length_is_distinguishable_at_its_own_floor(self) -> None:
+        """2 cm cleared nothing before, because it was held to 5 degrees."""
+        first = {"footHeightGapCm": 0.0}
+        second = {"footHeightGapCm": 2.0}
+        report = self.movement().separation([first, second])
+        self.assertTrue(report[1].distinguishable)
+
+    def test_a_length_under_its_own_floor_is_still_refused(self) -> None:
+        first = {"footHeightGapCm": 0.0}
+        second = {"footHeightGapCm": MINIMUM_MEANINGFUL_BAND_CENTIMETRES - 0.5}
+        report = self.movement().separation([first, second])
+        self.assertFalse(report[1].distinguishable)
+
+
+if __name__ == "__main__":  # pragma: no cover
+    unittest.main()
