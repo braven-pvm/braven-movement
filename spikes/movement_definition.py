@@ -72,8 +72,10 @@ MINIMUM_MEANINGFUL_BAND_DEGREES = 5.0
 # Each takes a ratio from an OUTPUT and spends it on an INPUT: the 5 mm is the
 # landmark noise that ENTERS the study, and 1.53 and 3.89 are what LEAVES it.
 #
-#     3.268 x 5.00 mm  = 1.63 cm      the ratio spent on the input noise
-#     3.3   x 5.00 mm  = 1.6  cm      the same, to one decimal place
+#     3.268 x 5.00 mm = 16.34 mm     the ratio spent on the input noise
+#     3.3   x 5.00 mm = 16.50 mm     the same ratio rounded first
+#                       16.5  mm     was then WRITTEN as "1.6 cm", which is a
+#                                    third number and is guarded as one
 #
 # That is the fault class this ledger has recorded twelve times, appearing in
 # the derivation of the threshold meant to prevent it. Tests assert the shipped
@@ -284,9 +286,9 @@ class MovementDefinition:
             # matters: how many meaningful steps did this checkpoint move?
             #
             # INERT IN TODAY'S LIBRARY AND REAL IN THE CODE. The only mixed
-            # phases are the landing's, where `footHeightGapCm` moves 0.00 to
-            # 0.01 cm against degrees that move 0.13 to 25.07, so the raw
-            # maximum happens to pick the angle every time.
+            # phases are the landing's, where `footHeightGapCm` moves
+            # 0.01, 0.00 and 0.01 cm against degrees moving 1.92, 0.13 and
+            # 25.07, so the raw maximum happens to pick the angle every time.
             widest, measure, scale = None, None, None
             if previous is not None:
                 for checkpoint in phase.checkpoints:
@@ -358,10 +360,11 @@ class PhaseSeparation:
     def distinguishable(self) -> bool:
         """A first phase has nothing to differ from, so it always counts.
 
-        The floor is the one this measure's own unit carries. Held against the
-        degrees floor, a centimetre movement was asked to clear 5.0 when its
-        own noise threshold is 1.5, so a length had to move three times as far
-        as the evidence requires before a phase counted as distinct.
+        The floor is the one this measure's own unit carries. Held against
+        the degrees floor, a centimetre movement was asked to clear 5.0 when
+        its own propagated noise is 1.45 cm and its floor 2.0, so a length had
+        to move two and a half times as far as its own rule requires before a
+        phase counted as distinct.
         """
         if self.first:
             return True

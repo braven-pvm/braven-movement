@@ -12,7 +12,6 @@ each was run against that code to check that it does.
 from __future__ import annotations
 
 import random
-import statistics
 import unittest
 
 from movement_definition import (
@@ -45,11 +44,18 @@ SEED = 20260817
 LANDMARKS_IN_A_LENGTH = 2
 
 
-def length_error_95th_mm() -> float:
-    """The 95th percentile of a length's error under the study's own noise.
+def length_error_mm() -> tuple[float, float]:
+    """The mean and the 95th percentile of a length's error, in millimetres.
 
-    Same sigma, same sample count, same seed and the same statistic as the
-    angle rows in README.md, so the two are read the same way.
+    Same sigma, same sample count, same seed and the same two statistics as
+    the angle rows in README.md, so the two sides are read the same way.
+
+    BOTH ARE RETURNED BECAUSE BOTH ARE SPENT. An earlier version computed the
+    percentile only, while the comment beside the constant and the ledger both
+    quoted a mean of 6.00 mm and used it in the second reading of the imported
+    margin. That reading was therefore not re-measurable from this repository,
+    which is the "commit the instrument with its numbers" rule broken in the
+    one place the pack was about.
     """
     generator = random.Random(SEED)
     errors = [
@@ -61,7 +67,13 @@ def length_error_95th_mm() -> float:
         )
         for _ in range(SAMPLES)
     ]
-    return sorted(errors)[int(0.95 * len(errors))]
+    mean = sum(errors) / len(errors)
+    return mean, sorted(errors)[int(0.95 * len(errors))]
+
+
+def length_error_95th_mm() -> float:
+    """The percentile alone, for the guards that only want it."""
+    return length_error_mm()[1]
 
 
 class TheLengthFloorIsDerivedFromTheNoiseStudy(unittest.TestCase):
@@ -70,6 +82,17 @@ class TheLengthFloorIsDerivedFromTheNoiseStudy(unittest.TestCase):
         measured = length_error_95th_mm()
         self.assertGreater(measured, LANDMARK_NOISE_MM)
         self.assertLess(measured, 10.0 * LANDMARK_NOISE_MM)
+
+    def test_both_statistics_are_the_ones_the_derivation_quotes(self) -> None:
+        """The mean is SPENT, so it must be re-measurable here.
+
+        3.268 x 6.00 mm = 19.61 mm is one of the two readings that set the
+        floor. A comment quoting a number no committed instrument produces is
+        a figure nobody can check.
+        """
+        mean, percentile = length_error_mm()
+        self.assertAlmostEqual(mean, 6.00, delta=0.1)
+        self.assertAlmostEqual(percentile, 14.53, delta=0.1)
 
     def test_the_floor_is_at_or_above_the_measured_percentile(self) -> None:
         """The constant cannot drift from the evidence that set it."""
@@ -84,24 +107,31 @@ class TheLengthFloorIsDerivedFromTheNoiseStudy(unittest.TestCase):
     def test_the_floor_carries_the_margin_the_degrees_floor_carries(self):
         """And no more, because the extra would be an unstated judgment.
 
-        The degrees floor sits 1.285 times its own 95th percentile. The length
-        floor imports that margin deliberately, which the comment beside the
-        constant says outright. This bounds it from both sides: at least the
-        percentile, and not past the imported margin by more than the rounding
-        to a round value.
+        The degrees floor sits 1.285 times its own 95th percentile. The
+        length floor imports that margin deliberately, which the comment
+        beside the constant says outright.
+
+        THIS ADMITS AN INTERVAL AND NOT A VALUE, and the interval is worth
+        stating rather than implying: [1.453, 2.018) cm. It does not pin the
+        floor to 2.0 and it is not meant to; it bounds it below by the
+        propagated percentile and above by the imported margin plus the
+        rounding that reaches a round number. An earlier slack of 0.5 cm
+        admitted 2.3, which no rounding explains — 1.868 rounds up to 2.0, a
+        step of 0.132, so the slack is 0.15.
         """
         measured_cm = length_error_95th_mm() / 10.0
         imported = (MINIMUM_MEANINGFUL_BAND_DEGREES / 3.89) * measured_cm
+        rounding = 0.15
         self.assertGreaterEqual(MINIMUM_MEANINGFUL_BAND_CENTIMETRES, measured_cm)
         self.assertLess(
-            MINIMUM_MEANINGFUL_BAND_CENTIMETRES, imported + 0.5,
+            MINIMUM_MEANINGFUL_BAND_CENTIMETRES, imported + rounding,
             f"the floor sits further above the {imported:.3f} cm margin the "
-            "degrees floor carries than rounding explains, so it holds a "
-            "coaching judgment nobody has stated",
+            f"degrees floor carries than the {rounding} cm rounding explains, "
+            "so it holds a coaching judgment nobody has stated",
         )
 
-    def test_it_is_neither_of_the_two_wrong_routes(self) -> None:
-        """Both were actually taken, so both are ruled out by name.
+    def test_it_is_none_of_the_three_wrong_numbers(self) -> None:
+        """All three were actually written down, so all three are ruled out.
 
         Each spends a ratio from an OUTPUT on an INPUT: 5 mm is the landmark
         noise that ENTERS the study; 1.53 and 3.89 are what leaves it. The
@@ -111,15 +141,22 @@ class TheLengthFloorIsDerivedFromTheNoiseStudy(unittest.TestCase):
         is neither number stops a later reader re-deriving the floor the wrong
         way and landing on something that looks right.
         """
+        # THREE NUMBERS, NOT TWO, and they are 0.016 cm apart at the
+        # closest. `assertNotAlmostEqual(places=1)` cannot separate them: it
+        # rejects anything within 0.05, so a floor of 1.634 failed the 1.65
+        # subTest as well and the per-route labels said nothing. The tolerance
+        # is 0.01 cm, which is under the smallest gap between the three and so
+        # names the route actually taken.
         for label, wrong in (
-            ("the ratio spent on the input noise",
+            ("3.268 x 5.00 mm, the ratio spent on the input noise",
              0.5 * (MINIMUM_MEANINGFUL_BAND_DEGREES / 1.53)),
-            ("the same, to one decimal place", 0.5 * 3.3),
+            ("3.3 x 5.00 mm, the same ratio rounded first", 0.5 * 3.3),
+            ("1.6 cm, that product as it was written down", 1.6),
         ):
             with self.subTest(route=label):
-                self.assertNotAlmostEqual(
-                    MINIMUM_MEANINGFUL_BAND_CENTIMETRES, wrong, places=1,
-                    msg=f"the floor equals {label}, {wrong:.3f} cm",
+                self.assertGreater(
+                    abs(MINIMUM_MEANINGFUL_BAND_CENTIMETRES - wrong), 0.01,
+                    f"the floor is {label} = {wrong:.4f} cm",
                 )
 
 
@@ -239,7 +276,7 @@ class ThePhaseWinnerIsChosenWithoutMixingUnits(unittest.TestCase):
         )
 
     def test_the_larger_number_does_not_win_when_it_is_a_different_unit(self):
-        """The length moves 4 cm, which is 2.7 floors. The angle moves 6
+        """The length moves 4 cm, which is 2.0 floors. The angle moves 6
         degrees, which is 1.2 floors. The raw maximum picks the angle."""
         first = {"footHeightGapCm": 0.0, "leftElbowFlexionDegrees": 0.0}
         second = {"footHeightGapCm": 4.0, "leftElbowFlexionDegrees": 6.0}
@@ -253,7 +290,10 @@ class ThePhaseWinnerIsChosenWithoutMixingUnits(unittest.TestCase):
         self.assertEqual(winner.moved, 4.0)
 
     def test_a_length_is_distinguishable_at_its_own_floor(self) -> None:
-        """3 cm cleared nothing before, because it was held to 5 degrees."""
+        """3 cm cleared nothing before, because it was held to 5 degrees.
+
+        It is twice the 1.45 cm the noise study propagates into a length.
+        """
         first = {"footHeightGapCm": 0.0}
         second = {"footHeightGapCm": 3.0}
         report = self.movement().separation([first, second])

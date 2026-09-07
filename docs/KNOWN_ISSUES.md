@@ -173,12 +173,27 @@ library.
 
 **"NOTHING IS WRONG TODAY" WAS WRONG IN ONE PLACE, AND IT WAS THE PLACE A
 COACH READS.** Measured on `b214bc4`, 2026-09-07. `CheckpointResult.feedback`
-wrote "degrees" for every measure, so those three checkpoints told a coach this
-about a distance in centimetres:
+wrote "degrees" for every measure, so these three checkpoints would tell a
+coach this about a distance in centimetres:
 
     flight  band 0 to 14 -> "Needs less: 17 degrees against a target of 0 to 14"
     land    band 0 to  6 -> "Needs less: 9 degrees against a target of 0 to 6"
     absorb  band 0 to  6 -> "Needs less: 9 degrees against a target of 0 to 6"
+
+**THOSE THREE SENTENCES ARE CONSTRUCTED, NOT OBSERVED, AND THE DISTINCTION
+MATTERS.** Each was produced by calling `feedback()` on the shipped checkpoint
+with a measured value of the band maximum plus 3 — 17 against 14, and 9
+against 6. **No shipped receipt carries them.** The landing's foot gap reads
+0.01, 0.00 and 0.01 cm at the three graded frames on both solve paths, so
+every one of those checkpoints is `within` today and none of them produces a
+"Needs less" sentence at all.
+
+**The code path is live; the sentence is a construction.** Any value outside
+the band reaches it, the checkpoints are shipped and graded, and nothing but
+the athlete's own performance stands between the library and that output. A
+future drill, a variant, or a filmed athlete would produce it. Calling it a
+defect is right; calling it something a coach has read is not, and an earlier
+version of this row implied so.
 
 The rest of the original paragraph holds and is kept: the same numbers are
 compared against each other, and all three dead phases are dead in either unit.
@@ -199,10 +214,12 @@ three times as far as the evidence requires before a phase counted as distinct.
 **THREE. The widest-moving checkpoint of a phase was chosen across units.**
 `separation` maximised raw values, so a phase grading a length and an angle
 together picked whichever number was larger, which is not a question with an
-answer. **Real in the code and INERT in the library**, the same form as the
-return-pass speed below: the only mixed phases are the landing's, where
-`footHeightGapCm` moves 0.00, 0.00 and 0.01 cm against angles moving 1.92, 0.13
-and 25.07, so the raw maximum happened to pick the angle every time. The winner
+answer. **Real in the code and INERT in the library**: the only mixed phases
+are the landing's, where `footHeightGapCm` moves 0.01, 0.00 and 0.01 cm at the
+three graded transitions against angles moving 1.92, 0.13 and 25.07, so the
+raw maximum happened to pick the angle every time. Fixed anyway, because a
+defect that today's numbers happen to hide is still a defect, and the numbers
+that hide it belong to the library rather than to the code. The winner
 is now chosen in units of each measure's own floor, which asks how many
 meaningful steps it moved and is unit-free.
 
@@ -226,7 +243,16 @@ seed 20260817. Every length this engine writes is a difference of TWO landmark
 coordinates — a height is `joint - ground`, and the gap is
 `|(L - g) - (R - g)| = |L - R|` — so two independent perturbations enter it.
 **Measured: mean 6.00 mm, 95th percentile 14.53 mm.** `test_band_floor`
-re-runs that propagation and fails if the constant drifts from it.
+re-runs that propagation and asserts BOTH statistics, because both are spent:
+the percentile sets the lower bound and the mean feeds the second reading of
+the margin below. An earlier version computed the percentile only, so the
+19.61 mm figure was quoted from a number this repository could not produce.
+
+**THE GUARD BOUNDS THE FLOOR TO AN INTERVAL AND NOT TO A VALUE**, and the
+interval is `[1.453, 2.018)` cm: at least the propagated percentile, and at
+most the imported margin (1.868 cm) plus the 0.15 cm rounding that reaches a
+round number. It does not pin the constant to 2.0 and does not claim to. An
+earlier slack of 0.5 cm admitted 2.3, which no rounding explains.
 
 **The floor carries the same safety margin the degrees floor has**, and two
 readings of that margin, from different statistics of the one study, agree to
@@ -249,8 +275,17 @@ the study, and 1.53 and 3.89 are what leaves it:
 
 | route | arithmetic | gives |
 |---|---|---|
-| the ratio spent on the input noise | 3.268 x 5.00 mm | 1.63 cm |
-| the same, to one decimal place | 3.3 x 5.00 mm | 1.6 cm |
+| the ratio spent on the input noise | 3.268 x 5.00 mm | 16.34 mm |
+| the same ratio rounded first | 3.3 x 5.00 mm | 16.50 mm |
+| that product as it was WRITTEN DOWN | — | 1.6 cm |
+
+**The third row is a third number and is guarded as one.** 3.3 x 5.00 mm is
+16.5 mm, and the ruling wrote it as "1.6 cm". The three sit 0.016 cm apart at
+the closest, so the guard's tolerance is 0.01 cm: below that gap, which is
+what lets it name the route actually taken. An earlier version used
+`assertNotAlmostEqual(places=1)`, which rejects anything within 0.05 and so
+failed every route at once — the per-route labels said nothing, and a reviewer
+found that before a reader did.
 
 The first was written into a draft of this branch. The second was ruled by the
 orchestrator on 2026-09-07 and withdrawn by it the same hour, once the lane
@@ -290,19 +325,54 @@ coach-facing fact — the engine may not be able to fail the landing's defining
 cue — so it goes to the content lane's agenda for a coach's view, which the
 orchestrator carries.
 
-### Two more sites, found and NOT fixed here
+### Four more sites, found and NOT fixed here
 
-Both are recorded rather than changed, because this pack was scoped to the
-three defects above and neither of these is live.
+**Owner: the movement lane. Queued after Pack B, the height measure.**
 
+All four are recorded rather than changed, because this pack was scoped to the
+three defects above and none of these is live today. An earlier version of this
+section listed two and gave no owner; a reviewer found the other two in the
+same file.
+
+- **`build_library.py:222`** writes `"thresholdDegrees":
+  MINIMUM_MEANINGFUL_BAND_DEGREES` into every receipt's `phaseSeparation`. A
+  centimetre winner is now judged at 2.0, so the receipt's own field
+  misdescribes the threshold that was applied.
+- **`build_library.py:341-342`** prints "cannot fail ... under the 5
+  threshold" for whichever measure won a phase, in any unit.
 - **`build_library.py:367`** filters what a variant changes with
   `MINIMUM_MEANINGFUL_BAND_DEGREES` and prints the survivors under a heading
   reading "in degrees". A variant drill grading a length would have its
   centimetre spread judged by a degrees threshold and printed as degrees.
-  Latent: no drill with variants grades a length today.
 - **`MovementAssessment.to_receipt`** writes `band` as a bare pair of numbers
   with no unit, so a receipt consumer has exactly the problem the feedback
   sentence had. Latent until something outside this repository reads it.
+
+**Why all four are latent**: the landing is the only drill grading a length,
+and its winner is an ANGLE in every phase on both solve paths, so no centimetre
+value reaches any of these three prints today. The fourth waits on a consumer
+outside this repository.
+
+### A verification trap this pack walked into, and the rule that follows
+
+**A MUTATION RUN CAN TEST THE PREVIOUS MUTATION'S BYTECODE.** This lane ran a
+loop that set the band floor to four values in turn and reported the guards
+each one failed. One reading was wrong and could not be reproduced; it was
+withdrawn from the pack for that reason, and the review then explained it.
+
+CPython validates a `.pyc` by the source's **integer-second mtime and byte
+size**. Two values of the same length — `1.0` and `3.5` — give sources of
+identical size, so a write landing in the same second as the previous one
+reuses the previous bytecode. The review proved it deterministically: compile
+the cache from the 1.0 source, write 3.5, set the source mtime to the cache's
+second, and the run reports the 1.0 failures; delete the cache and the same
+source reports its own four.
+
+**Every mutation loop in this repository that edits a constant to a
+same-length value is exposed.** The rule is `python -B`, or clear
+`__pycache__` between edits. This is not a defect in any pack; it is a defect
+in how packs are verified, which is worse, because it silently returns the
+previous answer.
 
 ## No units-correct distance measures, and six cues already want them
 
