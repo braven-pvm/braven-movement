@@ -1019,3 +1019,129 @@ class GirdleWiringTest(unittest.TestCase):
                     f"pose_girdle contains the bare verdict string "
                     f"{node.value!r}; use the imported constant"
                 )
+
+
+class MeasuringScriptWiringTest(unittest.TestCase):
+    """The scripts that produce published numbers must pose as `render_job` does.
+
+    `fan_mirror_check.py` posed with the CONFIG's anatomy limits and `None` for
+    the knuckle limits while `render_job` passes the JOB's own. On this library
+    that changed no fan by 0.000000 cm, because every job's limits equal the
+    config's, so nothing caught it and nothing would have. It is a latent fault
+    and this is what stops it returning.
+
+    It also pins the gate. The first version compared only the girdle, which
+    `pose_girdle` computes before the ball, the arms and the hands are touched,
+    and fed the result to a printed string, so a run could report 48 mismatches
+    and still exit 0.
+    """
+
+    SCRIPTS = ("fan_mirror_check.py", "wrist_release_options.py")
+
+    def tree(self, name):
+        return ast.parse(
+            (MODULE_DIR / "scripts" / name).read_text(encoding="utf-8")
+        )
+
+    def pose_call(self, name):
+        for node in ast.walk(self.tree(name)):
+            if not isinstance(node, ast.FunctionDef) or node.name != "pose":
+                continue
+            for inner in ast.walk(node):
+                if (isinstance(inner, ast.Call)
+                        and isinstance(inner.func, ast.Attribute)
+                        and inner.func.attr == "pose_phase"):
+                    return inner
+        return None
+
+    def test_each_script_poses_with_the_JOBS_limits(self):
+        for name in self.SCRIPTS:
+            call = self.pose_call(name)
+            self.assertIsNotNone(call, f"{name} has no pose_phase call")
+            read = {
+                node.value
+                for node in ast.walk(call)
+                if isinstance(node, ast.Constant) and isinstance(node.value, str)
+            }
+            self.assertIn(
+                "anatomyLimitsDegrees", read,
+                f"{name} must pass the JOB's anatomy limits, not the config's",
+            )
+            self.assertIn(
+                "knuckleLimitsDegrees", read,
+                f"{name} must pass the JOB's knuckle limits, not None",
+            )
+
+    def gate(self):
+        for node in ast.walk(self.tree("fan_mirror_check.py")):
+            if (isinstance(node, ast.FunctionDef)
+                    and node.name == "refuse_unless_shipped"):
+                return node
+        self.fail("fan_mirror_check must have a gate that can stop the run")
+
+    def test_EVERY_comparison_in_the_gate_can_raise(self):
+        """One raise is not enough: each half must be able to stop the run.
+
+        A first version of this test asserted only that the function contained
+        a Raise. A mutation that turned the girdle branch into a bare `return`
+        left the hands branch raising, and the test stayed green. The gate has
+        two comparisons and both must be armed.
+        """
+        gate = self.gate()
+        raises = [n for n in ast.walk(gate) if isinstance(n, ast.Raise)]
+        self.assertGreaterEqual(
+            len(raises), 2,
+            "each comparison in the gate must raise; a bare return in one "
+            "branch leaves that half of the pose unpinned",
+        )
+
+    def test_the_gate_pins_the_HANDS_and_not_only_the_girdle(self):
+        """The girdle is computed before the hands are posed.
+
+        A girdle-only comparison reads `same` with the forearm roll cut from 75
+        degrees to 15 and the fans moved by 2.15 cm, so it cannot support a fan
+        claim.
+
+        Matched on the AST and not on the source text: a mutation that emptied
+        the side loop to `for side in ()` left every field NAME in the file and
+        a text search green, while the hands went unchecked.
+        """
+        gate = self.gate()
+        sides = []
+        fields = set()
+        for node in ast.walk(gate):
+            if isinstance(node, ast.For) and isinstance(node.iter, ast.Tuple):
+                values = [
+                    element.value for element in node.iter.elts
+                    if isinstance(element, ast.Constant)
+                ]
+                if set(values) == {"l", "r"}:
+                    sides.append(node)
+                fields.update(values)
+        self.assertTrue(
+            sides,
+            "the gate must iterate BOTH sides; an emptied loop checks nothing",
+        )
+        for field in ("wristBendDegrees", "forearmRollDegrees",
+                      "palmNormalErrorDegrees"):
+            self.assertIn(
+                field, fields,
+                f"the gate must compare {field} inside a loop that runs",
+            )
+        self.assertIn(
+            "jobSha256",
+            {
+                node.value
+                for node in ast.walk(self.tree("fan_mirror_check.py"))
+                if isinstance(node, ast.Constant) and isinstance(node.value, str)
+            },
+            "the run must pin the job digest against the receipt's",
+        )
+
+    def test_the_fan_gate_is_CALLED_and_not_only_defined(self):
+        called = False
+        for node in ast.walk(self.tree("fan_mirror_check.py")):
+            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                    and node.func.id == "refuse_unless_shipped"):
+                called = True
+        self.assertTrue(called, "the gate is defined but never invoked")
