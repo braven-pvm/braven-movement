@@ -888,3 +888,134 @@ class BlenderSourceContractTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GirdleWiringTest(unittest.TestCase):
+    """The girdle RULES are guarded elsewhere; this guards that Blender CALLS them.
+
+    An independent review of 0b2495c mutated the call path five ways and left
+    the 163-test suite green every time: deleting the
+    `refuse_unrenderable_girdle` call, re-inlining the resolution in place of
+    `shoulder_position`, dropping `ballAnchorErrorMm` from the receipt,
+    returning AGREES instead of UNAVAILABLE for a missing field, and passing
+    the torso where the clavicle's length belongs.
+
+    That is the same fault this lane reported against itself a commit earlier:
+    `classify` was mutation-tested in isolation and nobody asked whether its
+    call site could reach the failing branch. A rule nothing invokes protects
+    nothing, and this code runs only inside Blender, where these tests skip.
+
+    Matched on AST shape, so a mention in a comment or a docstring cannot
+    satisfy it.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tree = ast.parse(
+            (MODULE_DIR / "blender_movement_render.py").read_text(
+                encoding="utf-8"
+            )
+        )
+        cls.source = (MODULE_DIR / "blender_movement_render.py").read_text(
+            encoding="utf-8"
+        )
+
+    def function(self, name):
+        for node in ast.walk(self.tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                if node.name == name:
+                    return node
+        self.fail(f"{name} is not defined in blender_movement_render.py")
+
+    def calls(self, function_name, callee):
+        for inner in ast.walk(self.function(function_name)):
+            if (isinstance(inner, ast.Call)
+                    and isinstance(inner.func, ast.Name)
+                    and inner.func.id == callee):
+                return inner
+        return None
+
+    def test_pose_phase_REFUSES_a_girdle_nobody_can_check(self):
+        """Deleting this call renders the pre-fix figure and prints PASS."""
+        self.assertIsNotNone(
+            self.calls("pose_phase", "refuse_unrenderable_girdle"),
+            "pose_phase must CALL the refusal, not merely import it",
+        )
+
+    def test_pose_girdle_uses_the_TESTED_resolution(self):
+        """The guarded formula must be the executed formula.
+
+        `shoulder_position` carried the tests and had no caller once already,
+        while pose_girdle held a second inline copy of the same arithmetic.
+        """
+        self.assertIsNotNone(
+            self.calls("pose_girdle", "shoulder_position"),
+            "pose_girdle must resolve through shoulder_position",
+        )
+
+    def test_the_reachable_miss_is_measured_against_the_CLAVICLE(self):
+        """Passing the torso here reads a 42 cm bone and nothing is out of reach."""
+        call = self.calls("pose_girdle", "reachable_miss_mm")
+        self.assertIsNotNone(call, "pose_girdle must measure the reachable miss")
+        self.assertGreaterEqual(len(call.args), 3, "bone length argument missing")
+        named = {
+            node.value
+            for node in ast.walk(call.args[2])
+            if isinstance(node, ast.Constant) and isinstance(node.value, str)
+        }
+        self.assertIn(
+            "clavicle", named,
+            "the bone length must come from rest['clavicle'], not the torso",
+        )
+
+    def test_a_missing_field_returns_the_NAME_and_not_a_string(self):
+        """Returning AGREES here silently disables the refusal.
+
+        The name is required rather than a literal, so that renaming the
+        constant is a failure here and not a quiet change of behaviour.
+        """
+        found = False
+        for node in ast.walk(self.function("pose_girdle")):
+            if not isinstance(node, ast.Return) or not isinstance(node.value, ast.Dict):
+                continue
+            for key, value in zip(node.value.keys, node.value.values):
+                if (isinstance(key, ast.Constant) and key.value == "verdict"
+                        and isinstance(value, ast.Name)
+                        and value.id == "UNAVAILABLE"):
+                    found = True
+        self.assertTrue(
+            found,
+            "the missing-field branch must return the UNAVAILABLE name",
+        )
+
+    def test_the_receipt_carries_the_number_the_BALL_inherits(self):
+        """`ballAnchorErrorMm` is what the figure carries; the per-shoulder miss is not.
+
+        Dropping it leaves a reader with a 25 mm miss and a benign verdict and
+        no way to tell which one the picture inherits.
+        """
+        keys = {
+            key.value
+            for node in ast.walk(self.function("pose_girdle"))
+            if isinstance(node, ast.Dict)
+            for key in node.keys
+            if isinstance(key, ast.Constant) and isinstance(key.value, str)
+        }
+        for wanted in ("ballAnchorErrorMm", "renderedWidthMm", "wantedWidthMm",
+                       "clavicleTurnedDegrees"):
+            self.assertIn(wanted, keys, f"the receipt must carry {wanted}")
+
+    def test_the_verdict_is_the_CONSTANT_and_never_a_bare_string(self):
+        """The refusal compares against the imported name.
+
+        A literal here would survive a rename of the constant and leave a
+        verdict the refusal no longer recognises.
+        """
+        for node in ast.walk(self.function("pose_girdle")):
+            if isinstance(node, ast.Constant) and node.value in (
+                "disagrees", "out of reach", "agrees", "unavailable",
+            ):
+                self.fail(
+                    f"pose_girdle contains the bare verdict string "
+                    f"{node.value!r}; use the imported constant"
+                )
