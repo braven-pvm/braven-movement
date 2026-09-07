@@ -3783,3 +3783,66 @@ Section 18 of `docs/VIDEO_CAPTURE_FINDINGS.md`: the clap must be **in frame for
 both cameras**, not merely audible, and both files must be opened on the day to
 confirm that each one heard and saw it. A clap that only one camera records is
 worth nothing, and this session spent a morning proving that the hard way.
+
+
+## A consumer nothing executes is a consumer nobody has checked
+
+Found 2026-09-07, in a tip that had already been pushed and sent to review.
+
+`offsetSecondsToReference` was removed from the sync block, because the
+measurement is a frame count and two offsets in seconds had been withdrawn from
+the same material. **The field was removed and its two readers were left
+behind.** `spikes/video_lift_3d.py:116` and `spikes/video_elbow_curve.py:89`
+both still subscripted it.
+
+```
+$ python video_lift_3d.py --set 0.2
+    offset = float(side["sync"]["offsetSecondsToReference"])
+KeyError: 'offsetSecondsToReference'
+```
+
+**THE SPIKES SUITE WAS 786 TESTS AND GREEN.** Not one of them executed either
+consumer: every test builds a sync block as a dictionary literal and asserts on
+that dictionary. A mocked block has whatever fields the mock was given, so
+removing a field from the real writer changed nothing any test could see.
+
+### Why it did not show even when the consumers were tried
+
+Both are guarded by `if not side["sync"].get("measured")`, and both load
+`keypoints-<view>-<SET>.json` — the same set for both views.
+
+- **Set 0.1**: `side 0.1.mp4` is unmeasured, so the guard fired and the script
+  exited 1 with a clear message. That is the case that was tested, and it looked
+  right.
+- **Set 0.2**: **`side 0.2.mp4` IS measured** — it is half of the real pair,
+  with `front 0.1.mp4`. The guard passed, and the next line read the removed
+  field.
+
+The set that was tested was the one the author had been thinking about. The set
+that broke was the one the change itself created, because the pairing crosses
+sets and every consumer built on "both views of a set" rests on an assumption
+the mislabel finding had already destroyed.
+
+### And the first repair had the same shape as the fault it fixed
+
+Asking `if not side["sync"]["measured"]` is not the question. `side 0.2.mp4` has
+a sync, so `--set 0.2` loaded `front 0.2.mp4` against `side 0.2.mp4`, passed,
+and **wrote a plausible lift from two files that are not a pair**. A wrong
+artefact is worse than a crash: the crash was found in a minute and the lift
+would have been read. The guard now asks whether these two files ARE the pair.
+
+### What was done
+
+- Both consumers resolve through `PAIRS` and take the mapping BY FRAME INDEX,
+  so a wrong offset lands on executing code. `--pair` names two files; `--set`
+  survives only so the refusal can name the real pairing.
+- `spikes/test_video_sync_consumers.py` RUNS both entry points as subprocesses
+  and reads their exit codes — including the reachable pass, the lift on the
+  established pair, because a refusal-only test proves nothing a syntax error
+  would not also prove.
+- Mutating the frame offset to −4 or −6 now fails the anchor assertion inside
+  the consumer, by event name.
+
+**The rule, beside "commit the instrument with its numbers": a consumer nothing
+executes is a consumer nobody has checked.** A green suite over mocks says the
+mocks agree with each other.

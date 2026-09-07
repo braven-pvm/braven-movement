@@ -32,6 +32,8 @@ from pathlib import Path
 
 import numpy as np
 
+from video_keypoints import refuse_by_set
+
 SPIKE_DIR = Path(__file__).resolve().parent
 OUTPUT = SPIKE_DIR / "poc-output" / "video"
 # The library drill closest in ARM SHAPE: a two-hand catch brought in to the
@@ -72,27 +74,31 @@ def main(argv: list[str]) -> int:
     # FileNotFoundError about a derived artifact, which names the symptom and
     # hides the cause: the set has no measured offset, so no lift was ever made.
     side = json.loads((OUTPUT / f"keypoints-side-{arguments.set_id}.json").read_text(encoding="utf-8"))
-    if not side["sync"].get("measured"):
-        raise SystemExit(
-            f"set {arguments.set_id} has no measured sync offset, so its two "
-            "views cannot be placed on one clock. THE FILE NAMES ARE WRONG: "
-            "`front 0.1.mp4` pairs with `side 0.2.mp4`, and the remaining two "
-            "files have no established partner. Refer to the sync block in the "
-            "keypoint file and to PAIRS in video_keypoints.py."
-        )
+    # THE GUARD IS "ARE THESE TWO FILES THE PAIR", NOT "IS ONE OF THEM
+    # MEASURED". A first version of this check asked only whether the side file
+    # had a sync, and `side 0.2.mp4` HAS one — it is half of the real pair, with
+    # `front 0.1.mp4`. So asking for set 0.2 loaded front 0.2 against side 0.2,
+    # passed, and wrote a plausible lift from two files that are not a pair.
+    # That is the same fault as the offsets this pack withdraws, one level up.
+    if side["sync"].get("pairedWith") != front["source"]["videoFile"]:
+        raise SystemExit(refuse_by_set(arguments.set_id))
     lift = json.loads((OUTPUT / f"lift-3d-{arguments.set_id}.json").read_text(encoding="utf-8"))
     front = json.loads((OUTPUT / f"keypoints-front-{arguments.set_id}.json").read_text(encoding="utf-8"))
     reference = json.loads((OUTPUT / "reference-curves.json").read_text(encoding="utf-8"))
 
     across = lift["scale"]["frontMetresPerPixel"]
     ahead = lift["scale"]["sideMetresPerPixel"]
-    offset = float(side["sync"]["offsetSecondsToReference"])
-    # The assertion the schema tells every consumer to run on load.
-    worked = side["sync"]["worked"]
-    assert abs(worked["thisViewSeconds"] + offset
-               - worked["referenceViewSeconds"]) < 1e-6, (
-        "the sync block's own worked example does not hold; the sign is wrong"
-    )
+    # THE MAPPING IS BY FRAME INDEX. `offsetSecondsToReference` is gone: the
+    # cameras' frame periods differ by 11 microseconds, so any offset in
+    # seconds drifts across the clip, and two such offsets have already been
+    # withdrawn from this material.
+    frame_offset = int(side["sync"]["frameOffsetToReference"])
+
+    # THE ASSERTION THE SCHEMA TELLS EVERY CONSUMER TO RUN, on integers.
+    for row in side["sync"]["anchors"] + side["sync"]["checks"]:
+        assert row["otherIndex"] == row["referenceIndex"] + frame_offset, (
+            "the sync block's own anchor does not satisfy its frame offset: "
+            f"{row['event']}")
 
     side_by_time = {round(f["ptsSeconds"], 6): f for f in side["frames"]}
     side_times = np.array(sorted(side_by_time))
@@ -111,7 +117,10 @@ def main(argv: list[str]) -> int:
             continue
         if limit is not None and record["ptsSeconds"] > limit:
             continue
-        mate = side_near(record["ptsSeconds"] - offset)
+        # EXACT, not nearest: with a frame offset the mate is a subscript.
+        index = record["frameIndex"] + frame_offset
+        mate = (side["frames"][index]
+                if 0 <= index < len(side["frames"]) else None)
         if mate is None or not mate["detected"] or mate["degraded"]:
             continue
         if side_limit is not None and mate["ptsSeconds"] > side_limit:

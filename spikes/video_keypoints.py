@@ -162,6 +162,33 @@ def pair_for(view: str, set_id: str) -> tuple[str, dict] | tuple[None, None]:
     return None, None
 
 
+def paired_files(name: str) -> tuple[str, str, int] | None:
+    """The pair a file belongs to, as (reference, other, frameOffset).
+
+    THE ARGUMENT IS A FILE NAME, NOT A SET. Every consumer in this repository
+    used to load "both views of set X", and that is exactly the assumption the
+    mislabel destroyed: there is no set whose two same-named files are a pair.
+    A consumer that still asks by set gets None here and must say so rather
+    than reach for a field.
+    """
+    for pair in PAIRS.values():
+        if name in (pair["referenceFile"], pair["otherFile"]):
+            return (pair["referenceFile"], pair["otherFile"],
+                    pair["frameOffsetToReference"])
+    return None
+
+
+def refuse_by_set(set_id: str) -> str:
+    """What to tell a caller that asked for a set rather than a pair."""
+    established = ", ".join(f"{p['referenceFile']} + {p['otherFile']}"
+                            for p in PAIRS.values())
+    return (f"set {set_id} is not a pair. THE FILE NAMES ARE WRONG: the only "
+            f"established pairing is {established}, at a constant FRAME offset. "
+            f"{PAIRING_UNKNOWN[0]} and {PAIRING_UNKNOWN[1]} have no established "
+            "partner. Ask for a pair rather than a set; refer to PAIRS in "
+            "video_keypoints.py.")
+
+
 # THE FLOOR A FRAME-PAIRED OFFSET REACHES, kept for consumers that need an
 # uncertainty in seconds. One frame, because the measurement is which frame
 # each view's contact falls in.

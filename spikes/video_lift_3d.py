@@ -48,6 +48,8 @@ from pathlib import Path
 
 import numpy as np
 
+from video_keypoints import PAIRS, refuse_by_set
+
 SPIKE_DIR = Path(__file__).resolve().parent
 OUTPUT = SPIKE_DIR / "poc-output" / "video"
 
@@ -62,6 +64,12 @@ CHECKED = (
 )
 # Below this, a landmark is a guess rather than a reading.
 VISIBLE_ENOUGH = 0.5
+
+
+def load_file(video_name: str) -> dict:
+    """The keypoint file for a named VIDEO, whatever set its name claims."""
+    view, rest = video_name.split(" ", 1)
+    return load(view, rest.removesuffix(".mp4"))
 
 
 def load(view: str, set_id: str) -> dict:
@@ -103,22 +111,50 @@ def span(points: dict, first: str, second: str, axis: str) -> float | None:
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--set", dest="set_id", default="0.1")
+    # --set IS KEPT SO THE REFUSAL IS REACHABLE. No set's two same-named files
+    # are a pair, so every --set now refuses and names the real pairing; the
+    # argument exists to tell a caller that rather than to fail obscurely.
+    parser.add_argument("--set", dest="set_id", default=None)
+    parser.add_argument("--pair", dest="pair_key", default=None,
+                        help="a key from PAIRS in video_keypoints.py, "
+                             "for example 'front 0.1 + side 0.2'")
     arguments = parser.parse_args(argv[1:])
 
-    front = load("front", arguments.set_id)
-    side = load("side", arguments.set_id)
-    if not side["sync"].get("measured"):
-        raise SystemExit(
-            f"set {arguments.set_id} has no measured sync offset, so its two "
-            "views cannot be placed on one clock. Refer to the sync block."
-        )
-    offset = float(side["sync"]["offsetSecondsToReference"])
-    # The assertion the schema tells every consumer to run.
-    worked = side["sync"]["worked"]
-    assert abs(worked["thisViewSeconds"] + offset - worked["referenceViewSeconds"]) < 1e-6, (
-        "the sync block's own worked example does not hold; the sign is wrong"
-    )
+    if arguments.pair_key:
+        pair = PAIRS.get(arguments.pair_key)
+        if pair is None:
+            raise SystemExit(
+                f"no pair named {arguments.pair_key!r}. Known: "
+                + ", ".join(repr(k) for k in PAIRS))
+        label = arguments.pair_key
+        front = load_file(pair["referenceFile"])
+        side = load_file(pair["otherFile"])
+    elif arguments.set_id:
+        label = f"set {arguments.set_id}"
+        front = load("front", arguments.set_id)
+        side = load("side", arguments.set_id)
+    else:
+        raise SystemExit("give --pair (preferred) or --set")
+    # THE GUARD IS "ARE THESE TWO FILES THE PAIR", NOT "IS ONE OF THEM
+    # MEASURED". A first version of this check asked only whether the side file
+    # had a sync, and `side 0.2.mp4` HAS one — it is half of the real pair, with
+    # `front 0.1.mp4`. So asking for set 0.2 loaded front 0.2 against side 0.2,
+    # passed, and wrote a plausible lift from two files that are not a pair.
+    # That is the same fault as the offsets this pack withdraws, one level up.
+    if side["sync"].get("pairedWith") != front["source"]["videoFile"]:
+        raise SystemExit(refuse_by_set(arguments.set_id or arguments.pair_key))
+
+    # THE MAPPING IS BY FRAME INDEX. `offsetSecondsToReference` is gone: the two
+    # cameras' frame periods differ by 11 microseconds, so any offset in seconds
+    # drifts across the clip and two such offsets have already been withdrawn
+    # from this material. The index arithmetic cannot drift.
+    frame_offset = int(side["sync"]["frameOffsetToReference"])
+
+    # THE ASSERTION THE SCHEMA TELLS EVERY CONSUMER TO RUN, on integers.
+    for row in side["sync"]["anchors"] + side["sync"]["checks"]:
+        assert row["otherIndex"] == row["referenceIndex"] + frame_offset, (
+            "the sync block's own anchor does not satisfy its frame offset: "
+            f"{row['event']}")
 
     front_limit = front["source"].get("usableToSeconds")
     side_limit = side["source"].get("usableToSeconds")
@@ -129,7 +165,12 @@ def main(argv: list[str]) -> int:
     for record in front["frames"]:
         if not usable(record, front_limit):
             continue
-        mate = nearest(side["frames"], record["ptsSeconds"] - offset)
+        # EXACT, not nearest. With a frame offset the mate is a subscript,
+        # so no frame is paired with a neighbour because a time landed between
+        # two of them.
+        index = record["frameIndex"] + frame_offset
+        mate = (side["frames"][index]
+                if 0 <= index < len(side["frames"]) else None)
         if mate is None or not usable(mate, side_limit):
             continue
         pairs.append((record, mate))
@@ -216,9 +257,11 @@ def main(argv: list[str]) -> int:
     print("  banding, which tests whether this residual is sync-dominated.")
 
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    where = OUTPUT / f"lift-3d-{arguments.set_id}.json"
+    slug = (label.replace(" + ", "-and-").replace(" ", "_")
+            .replace(".mp4", ""))
+    where = OUTPUT / f"lift-3d-{slug}.json"
     where.write_text(json.dumps({
-        "set": arguments.set_id,
+        "pair": label,
         "method": (
             "NOT triangulation. The two cameras are assumed 90 degrees apart "
             "and roughly level, so the front view reads across and up and the "
@@ -235,9 +278,16 @@ def main(argv: list[str]) -> int:
             "torsoNote": "shoulder midpoint to hip midpoint; one length seen by both cameras, which is what ties the side view's scale to the front's without anthropometry",
         },
         "syncApplied": {
-            "offsetSecondsToReference": offset,
+            "frameOffsetToReference": frame_offset,
+            "pairedWith": side["sync"]["pairedWith"],
             "uncertaintySeconds": side["sync"]["offsetUncertaintySeconds"],
-            "note": "The residual below is dominated by this, not by camera geometry.",
+            "note": ("THE RESIDUAL BELOW IS NOT DOMINATED BY THE SYNC, which an "
+                     "earlier version of this line claimed. Sweeping the offset "
+                     "across eight seconds moved the MEDIAN by 1.2 mm. What the "
+                     "sync moves is the TAIL: on the mislabelled pairing the "
+                     "mean was 49.8 mm and the worst 535.7; on the real pair "
+                     "they are 29.4 and 209.2. The median rose, from 15.0 to "
+                     "20.0, because it was never measuring the pairing."),
         },
         "residualMetres": {
             "readings": len(rows),

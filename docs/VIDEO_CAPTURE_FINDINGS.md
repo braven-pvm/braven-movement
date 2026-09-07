@@ -227,6 +227,37 @@ one thing only: video frames dropped and renumbered, which would leave the audio
 longer. **It does not rule out much else, and it did not need to** — the
 mislabel explains what the durations were being asked about.
 
+### The first two-view residual measured on files that are a pair
+
+Run on `front 0.1.mp4` + `side 0.2.mp4` through the frame mapping, 767 frame
+pairs and 5622 readings, against the void figures from the mislabelled pairing:
+
+| | mislabelled (void) | **the real pair** |
+|---|---|---|
+| median | 15.0 mm | **20.0 mm** |
+| mean | 49.8 mm | **29.4 mm** |
+| 90th percentile | 146.4 mm | **64.0 mm** |
+| worst | 535.7 mm | **209.2 mm** |
+| frame pairs | 735 | **767** |
+
+**THE MEDIAN GOT WORSE AND EVERYTHING ELSE GOT MUCH BETTER**, and that is the
+whole lesson of this pack in one table. The mean falls 41 per cent, the 90th by
+56, the worst by 61. The median rises because **it was never measuring the
+pairing**: most of the clip is the athlete standing still, where any pairing
+agrees, so the median reports how much of the clip is static.
+
+**The tail was the instrument all along, and it was in the same JSON the whole
+time.** The 15 mm median is the figure that travelled through this repository
+for weeks. The mean, the 90th and the worst sat beside it in
+`lift-3d-0.1.json`, they were the readings that would have shown the pairing was
+wrong, and nobody quoted them — including me, until a sweep showed the median
+would not move and I had to ask what else was in the file.
+
+That also explains the sweep: moving the offset by eight seconds changed the
+median by 1.2 mm because the median is insensitive to the sync by construction.
+It is not that the residual could not see a sync error. **It is that the number
+being read could not.**
+
 ### What was not done
 
 **Windowed audio correlation as a function of time was never run.** It was
