@@ -550,9 +550,17 @@ class MovementAssessment:
                         "measure": result.checkpoint.measure,
                         "measured": round(result.measured, 2),
                         "band": [
-                            result.checkpoint.minimum_degrees,
-                            result.checkpoint.maximum_degrees,
+                            result.checkpoint.minimum,
+                            result.checkpoint.maximum,
                         ],
+                        # THE UNIT TRAVELS WITH THE PAIR. `band` was two bare
+                        # numbers, so a receipt consumer had exactly the
+                        # problem the coach sentence had before it named the
+                        # measure's unit: three of these rows are centimetres
+                        # and the rest are degrees, and nothing in the file
+                        # said which. ADDITIVE -- `band` is unchanged, so a
+                        # reader taking `tuple(row["band"])` is unaffected.
+                        "unit": unit_of(result.checkpoint.measure),
                         "verdict": result.verdict,
                         "cue": result.checkpoint.cue,
                     }
@@ -561,6 +569,65 @@ class MovementAssessment:
                 for phase_name, phase_results in self.results.items()
             },
         }
+
+
+def what_the_ball_changes(varied: dict) -> dict[str, list[dict]]:
+    """Readings that move more than THEIR OWN measure's floor across variants.
+
+    IT LIVES HERE, NOT IN `build_library`, FOR TWO REASONS. It is arithmetic
+    over readings and a threshold, and it needs no solver; and while it sat in
+    `build_library` a test could not reach it without importing the solver
+    chain, so the four guards over it ERRORED on a runner without one. This
+    module is stdlib-only by contract, which is where a rule about thresholds
+    belongs and where a guard can run everywhere.
+
+    IT WAS INLINE IN `main` BEFORE THAT, which needs a solver and a built
+    library, so reverting its floor lookup failed no test at all -- and a first
+    fix of that lookup was inert, because the key it receives is
+    "{phase}/{measure}" and the measure had to be split out of it first.
+
+    A reading whose measure cannot be resolved keeps the strictest floor and
+    reports no unit, which is what `minimum_meaningful_band` answers for
+    anything it does not know.
+    """
+    moved: dict[str, list[dict]] = {}
+    for mid, rows in varied.items():
+        for name in sorted({n for row in rows for n in row["readings"]}):
+            values = [row["readings"].get(name) for row in rows]
+            if any(value is None for value in values):
+                continue
+            # EACH MEASURE AGAINST ITS OWN FLOOR, AND THE KEY MUST BE
+            # SPLIT FIRST. `readings` is keyed "{phase}/{measure}" (built
+            # above), so a first fix passed "landing/footHeightGapCm" to the
+            # lookup, which cannot resolve it and returns the UNDECLARED
+            # answer -- the strictest floor, 5.0, and no unit. Every reading
+            # was therefore still held to 5 degrees while the heading claimed
+            # each was held to its own, which is a worse statement than the
+            # "in degrees" it replaced.
+            #
+            # THE FALLBACK IS WHAT MADE IT SILENT. `unit_of` RAISES for an
+            # undeclared measure, by design; `minimum_meaningful_band` catches
+            # that and answers, so a caller passing a key that is not a
+            # measure gets a plausible number instead of an error. That
+            # tolerance exists for hand-built test checkpoints with abstract
+            # names, and here it swallowed a real defect. The guard in
+            # `test_receipt_units` now drives the filter itself rather than
+            # the helper.
+            measure = name.partition("/")[2] or name
+            floor, unit = minimum_meaningful_band(measure)
+            if max(values) - min(values) < floor:
+                continue
+            moved.setdefault(mid, []).append(
+                {
+                    "checkpoint": name,
+                    "unit": unit,
+                    "byVariant": {
+                        str(row["variant"]): row["readings"][name] for row in rows
+                    },
+                    "spread": round(max(values) - min(values), 2),
+                }
+            )
+    return moved
 
 
 def definition_files(folder: Path) -> list[Path]:
