@@ -491,7 +491,67 @@ coach-facing fact — the engine may not be able to fail the landing's defining
 cue — so it goes to the content lane's agenda for a coach's view, which the
 orchestrator carries.
 
-### Four more sites, found and NOT fixed here
+### Four more sites — all four fixed on 2026-09-07, the fourth twice
+
+**They are kept here rather than deleted**, because the row's value is the
+shape: four places where one unit's threshold or one unit's silence was spent
+on measures of two units, all latent, all in code that had been read many
+times. What each was is below; what each is now:
+
+- **`build_library.py:222`** writes `thresholdsByUnit`, the whole table, and
+  every phase row carries the `threshold` and `unit` actually applied to it. A
+  reader no longer has to know a measure's unit to check its verdict.
+- **`build_library.py:338-343`** prints the phase's own threshold and unit.
+- **`build_library.py:367`** filters each spread against its own measure's
+  floor, and the heading says "each in its own unit" rather than "in degrees".
+  **THE FIRST FIX OF THIS ONE WAS INERT AND THE REVIEW CAUGHT IT.** `readings`
+  is keyed `"{phase}/{measure}"`, and the whole key went to the lookup, which
+  cannot resolve it and answers with the UNDECLARED case: the strictest floor,
+  5.0, and no unit. Every reading was therefore still held to 5 degrees while
+  the new heading claimed each was held to its own — **a worse statement than
+  the "in degrees" it replaced**, because the old one was at least true of what
+  the code did. The measure is split out of the key now.
+
+  Two things made it silent, and both are worth naming. `minimum_meaningful_band`
+  CATCHES the `KeyError` that `unit_of` raises for an undeclared measure, so a
+  caller passing something that is not a measure gets a plausible number
+  instead of an error; that tolerance exists for hand-built test checkpoints
+  with abstract names. And the filter was inline in `main`, which needs a
+  solver and a built library, so **reverting the line failed no test at all**.
+  It is a named function now and the guard drives it, not the helper.
+- **`MovementAssessment.to_receipt`** writes `unit` beside `band`. **Additive**:
+  `band` is unchanged, so a consumer taking `tuple(row["band"])` is unaffected,
+  and two tests do exactly that.
+
+**The consumers were checked before the schema moved**, and the conclusion
+held while the list behind it did not. `thresholdDegrees` was read by nothing
+outside the writer, so the rename is safe. `band` is read as a pair, so the
+unit is a sibling key and not a change to the pair — **but the list of readers
+this lane gave was wrong in both directions.** `test_hand_orientation` reads
+whether the band is `None`, not the pair; and `build_library.py:378` reads
+`band[0]` and `band[1]` in PRODUCTION and was not listed at all. A production
+reader missing from a consumer list is the more serious half, and the search
+that found the other writers should have found it.
+
+### Two more `band` writers, found by that search and NOT fixed
+
+**Owner: the movement lane. Queued.** Neither is the receipt, so neither was in
+this pack's scope, and they are two different faults rather than one repeated.
+
+- **`export_manual_page.py:102`** writes `{"measure", "band": [min, max]}` —
+  the same bare pair the receipt had, and this one is COACH-FACING. It is the
+  larger of the two for that reason.
+- **`hand_orientation.py:235`** writes `"band": None` with a `REPORTED`
+  verdict, so there is no band to carry a unit and it is NOT the band fault.
+  Its fault is the declaration gap in a third writer: its six measures —
+  `leftFingerUpDegrees`, `leftThumbToBallDegrees`, `leftThumbUpDegrees` and
+  the three right-hand names — are **none of them in `MEASURE_UNITS`**, so
+  `unit_of` raises for every one. They end in "Degrees", which is exactly the
+  suffix rule `unit_of` refuses to apply, and `test_written_measures` does not
+  reach them because it covers the two solvers' measurement rows and this is a
+  reporter.
+
+*The original row follows.*
 
 **Owner: the movement lane. Queued after Pack B, the height measure.**
 

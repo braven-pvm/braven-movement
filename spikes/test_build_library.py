@@ -87,6 +87,37 @@ class AVariantIsReceiptedUnderTheSameCheckpoints(unittest.TestCase):
         self.assertIsNone(self.plain.get("variant"))
         self.assertEqual(self.high.get("variant"), "high")
 
+    def test_the_receipt_says_what_its_separation_threshold_was(self):
+        """The wiring `test_receipt_units` checks the values of.
+
+        Nothing read `phaseSeparation` before this, so reverting the receipt's
+        per-row threshold and unit passed the whole suite. The verdict beside
+        them is taken against each measure's OWN floor, so a receipt that does
+        not say which floor was applied cannot be checked by its reader.
+        """
+        from movement_definition import minimum_meaningful_band
+
+        separation = self.plain["phaseSeparation"]
+        self.assertIn("thresholdsByUnit", separation)
+        self.assertNotIn(
+            "thresholdDegrees", separation,
+            "one scalar cannot describe a per-unit threshold",
+        )
+        self.assertGreaterEqual(len(separation["thresholdsByUnit"]), 2)
+        checked = 0
+        for item in separation["phases"]:
+            with self.subTest(phase=item["phase"]):
+                self.assertIn("threshold", item)
+                self.assertIn("unit", item)
+                if item["measure"] is None:
+                    self.assertIsNone(item["unit"])
+                    continue
+                floor, unit = minimum_meaningful_band(item["measure"])
+                self.assertEqual(item["threshold"], floor)
+                self.assertEqual(item["unit"], unit)
+                checked += 1
+        self.assertGreater(checked, 0, "no phase carried a measure")
+
     def test_both_are_graded_against_the_same_checkpoints(self):
         """THE RULING THIS IMPLEMENTS. No per-variant bands.
 
