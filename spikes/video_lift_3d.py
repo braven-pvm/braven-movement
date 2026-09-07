@@ -48,7 +48,8 @@ from pathlib import Path
 
 import numpy as np
 
-from video_keypoints import PAIRS, refuse_by_set
+from video_keypoints import (PAIRS, frame_offset_of, load_keypoints,
+                             pair_slug, refuse_by_set)
 
 SPIKE_DIR = Path(__file__).resolve().parent
 OUTPUT = SPIKE_DIR / "poc-output" / "video"
@@ -66,17 +67,8 @@ CHECKED = (
 VISIBLE_ENOUGH = 0.5
 
 
-def load_file(video_name: str) -> dict:
-    """The keypoint file for a named VIDEO, whatever set its name claims."""
-    view, rest = video_name.split(" ", 1)
-    return load(view, rest.removesuffix(".mp4"))
-
-
 def load(view: str, set_id: str) -> dict:
-    path = OUTPUT / f"keypoints-{view}-{set_id}.json"
-    if not path.exists():
-        raise SystemExit(f"{path} is missing; run video_keypoints.py first")
-    return json.loads(path.read_text(encoding="utf-8"))
+    return load_keypoints(f"{view} {set_id}.mp4")
 
 
 def by_name(record: dict) -> dict:
@@ -127,8 +119,8 @@ def main(argv: list[str]) -> int:
                 f"no pair named {arguments.pair_key!r}. Known: "
                 + ", ".join(repr(k) for k in PAIRS))
         label = arguments.pair_key
-        front = load_file(pair["referenceFile"])
-        side = load_file(pair["otherFile"])
+        front = load_keypoints(pair["referenceFile"])
+        side = load_keypoints(pair["otherFile"])
     elif arguments.set_id:
         label = f"set {arguments.set_id}"
         front = load("front", arguments.set_id)
@@ -148,13 +140,9 @@ def main(argv: list[str]) -> int:
     # cameras' frame periods differ by 11 microseconds, so any offset in seconds
     # drifts across the clip and two such offsets have already been withdrawn
     # from this material. The index arithmetic cannot drift.
-    frame_offset = int(side["sync"]["frameOffsetToReference"])
-
-    # THE ASSERTION THE SCHEMA TELLS EVERY CONSUMER TO RUN, on integers.
-    for row in side["sync"]["anchors"] + side["sync"]["checks"]:
-        assert row["otherIndex"] == row["referenceIndex"] + frame_offset, (
-            "the sync block's own anchor does not satisfy its frame offset: "
-            f"{row['event']}")
+    # THE CHECK THE SCHEMA TELLS EVERY CONSUMER TO RUN, on integers, and it
+    # lives with the writer so that one mutation can fail both consumers.
+    frame_offset = frame_offset_of(side["sync"])
 
     front_limit = front["source"].get("usableToSeconds")
     side_limit = side["source"].get("usableToSeconds")
@@ -257,9 +245,7 @@ def main(argv: list[str]) -> int:
     print("  banding, which tests whether this residual is sync-dominated.")
 
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    slug = (label.replace(" + ", "-and-").replace(" ", "_")
-            .replace(".mp4", ""))
-    where = OUTPUT / f"lift-3d-{slug}.json"
+    where = OUTPUT / f"lift-3d-{pair_slug(label)}.json"
     where.write_text(json.dumps({
         "pair": label,
         "method": (

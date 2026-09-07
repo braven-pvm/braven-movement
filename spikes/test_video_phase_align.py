@@ -22,6 +22,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from reference_curves import SCHEMA_VERSION  # noqa: E402
 from video_phase_align import (  # noqa: E402
     FEATURELESS_TOLERANCE_DEGREES,
     AlignmentError,
@@ -64,12 +65,25 @@ def warped_copy(curve: np.ndarray, power: float, samples: int) -> np.ndarray:
 
 
 def library(**curves) -> dict:
+    """A reference file IN THE SHAPE THE EXPORT ACTUALLY WRITES.
+
+    THIS FIXTURE USED TO BE THE VERSION-1 SHAPE, a bare list with no unit and
+    no version on the file. The export moved to version 2 on 1 September and
+    this mock did not, so 34 green tests ran over a shape the producer had
+    stopped writing, while the real reader collected the words "unit" and
+    "values" from the real file. A mock that has drifted from its producer
+    tests nothing but itself.
+    """
     return {
+        "schemaVersion": SCHEMA_VERSION,
         "measures": ["leftElbowFlexionDegrees"],
         "movements": {
             name: {
                 "phase": list(np.linspace(0.0, 1.0, len(curve))),
-                "curves": {"leftElbowFlexionDegrees": [float(v) for v in curve]},
+                "curves": {"leftElbowFlexionDegrees": {
+                    "unit": "degrees",
+                    "values": [float(v) for v in curve],
+                }},
                 "landmarks": {"contactPhase": CONTACT_PHASE},
             }
             for name, curve in curves.items()

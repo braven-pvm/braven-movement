@@ -178,6 +178,53 @@ def paired_files(name: str) -> tuple[str, str, int] | None:
     return None
 
 
+def frame_offset_of(sync: dict) -> int:
+    """The frame offset of a sync block, WITH ITS OWN ANCHORS CHECKED.
+
+    Every consumer must run this check, and the check must live in ONE place.
+    Two copies of it existed, one in each consumer, and neither was held by a
+    test: they read the offset out of a written artefact, so mutating the
+    offset in PAIRS above changed nothing either of them could see. A guard no
+    mutation has failed is a guard nobody has checked.
+
+    It RAISES rather than asserting. `assert` disappears under `python -O`, and
+    this is a check on data, not on a programming mistake."""
+    offset = int(sync["frameOffsetToReference"])
+    for row in sync["anchors"] + sync["checks"]:
+        if row["otherIndex"] != row["referenceIndex"] + offset:
+            raise SystemExit(
+                "the sync block's own anchor does not satisfy its frame "
+                f"offset of {offset}: {row['event']} has reference index "
+                f"{row['referenceIndex']} and other index {row['otherIndex']}, "
+                f"a difference of {row['otherIndex'] - row['referenceIndex']}.")
+    return offset
+
+
+def keypoint_file(view: str, set_id: str) -> Path:
+    """Where the writer puts a view's keypoints. The writer owns this name, so
+    every consumer asks the writer for it rather than rebuilding the string."""
+    return OUTPUT / f"keypoints-{view}-{set_id}.json"
+
+
+def load_keypoints(video_name: str) -> dict:
+    """The keypoint file for a named VIDEO FILE, whatever set its name claims.
+    The name is only a label: `side 0.2.mp4` is the partner of `front 0.1.mp4`.
+    Both consumers call this, so neither can invent a different mapping."""
+    view, rest = video_name.split(" ", 1)
+    path = keypoint_file(view, rest.removesuffix(".mp4"))
+    if not path.exists():
+        raise SystemExit(f"{path} is missing; run video_keypoints.py first")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def pair_slug(pair_key: str) -> str:
+    """The file-name form of a pair key. ONE definition, because two
+    consumers name artefacts by it: the lift writes `lift-3d-<slug>.json`
+    and the elbow curve reads exactly that file. Two copies of this rule
+    would let one of them drift and read a file the other never wrote."""
+    return pair_key.replace(" + ", "-and-").replace(" ", "_").replace(".mp4", "")
+
+
 def refuse_by_set(set_id: str) -> str:
     """What to tell a caller that asked for a set rather than a pair."""
     established = ", ".join(f"{p['referenceFile']} + {p['otherFile']}"

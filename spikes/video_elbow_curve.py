@@ -32,7 +32,9 @@ from pathlib import Path
 
 import numpy as np
 
-from video_keypoints import refuse_by_set
+from reference_curves import curve_values
+from video_keypoints import (PAIRS, frame_offset_of, load_keypoints,
+                             pair_slug, refuse_by_set)
 
 SPIKE_DIR = Path(__file__).resolve().parent
 OUTPUT = SPIKE_DIR / "poc-output" / "video"
@@ -66,14 +68,45 @@ def angle_at(middle, first, second) -> float:
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--set", dest="set_id", default="0.1")
+    # --set IS KEPT SO ITS REFUSAL IS REACHABLE, and it has NO DEFAULT. It used
+    # to default to "0.1", so a call with no argument silently analysed one
+    # particular pairing — and that pairing is now known to be wrong.
+    parser.add_argument("--set", dest="set_id", default=None)
+    parser.add_argument("--pair", dest="pair_key", default=None,
+                        help="a key from PAIRS in video_keypoints.py, "
+                             "for example 'front 0.1 + side 0.2'")
     arguments = parser.parse_args(argv[1:])
+
+    # THE REACHABLE PASS. Without --pair this script had no working path at
+    # all: every set refuses, so the only thing it could do was exit 1, and a
+    # consumer that can only refuse proves nothing a syntax error would not.
+    if arguments.pair_key:
+        pair = PAIRS.get(arguments.pair_key)
+        if pair is None:
+            raise SystemExit(
+                f"no pair named {arguments.pair_key!r}. Known: "
+                + ", ".join(repr(k) for k in PAIRS))
+        label = arguments.pair_key
+        front_name, side_name = pair["referenceFile"], pair["otherFile"]
+    elif arguments.set_id:
+        label = f"set {arguments.set_id}"
+        front_name = f"front {arguments.set_id}.mp4"
+        side_name = f"side {arguments.set_id}.mp4"
+    else:
+        raise SystemExit("give --pair (preferred) or --set")
 
     # THE SYNC IS CHECKED FIRST, before any file that only exists for a synced
     # set. Loading the lift first made an unsynced set fail with a
     # FileNotFoundError about a derived artifact, which names the symptom and
     # hides the cause: the set has no measured offset, so no lift was ever made.
-    side = json.loads((OUTPUT / f"keypoints-side-{arguments.set_id}.json").read_text(encoding="utf-8"))
+    # BOTH KEYPOINT FILES ARE LOADED BEFORE THE GUARD, because the guard reads
+    # both of them. An earlier arrangement loaded only the side file here and
+    # then compared it against `front`, which was loaded two lines LOWER: every
+    # call raised UnboundLocalError. It went unseen because the test asserted
+    # only that the exit code was not zero, and a crash is not zero either. A
+    # refusal test must read the refusal, not merely the failure.
+    side = load_keypoints(side_name)
+    front = load_keypoints(front_name)
     # THE GUARD IS "ARE THESE TWO FILES THE PAIR", NOT "IS ONE OF THEM
     # MEASURED". A first version of this check asked only whether the side file
     # had a sync, and `side 0.2.mp4` HAS one — it is half of the real pair, with
@@ -81,9 +114,11 @@ def main(argv: list[str]) -> int:
     # passed, and wrote a plausible lift from two files that are not a pair.
     # That is the same fault as the offsets this pack withdraws, one level up.
     if side["sync"].get("pairedWith") != front["source"]["videoFile"]:
-        raise SystemExit(refuse_by_set(arguments.set_id))
-    lift = json.loads((OUTPUT / f"lift-3d-{arguments.set_id}.json").read_text(encoding="utf-8"))
-    front = json.loads((OUTPUT / f"keypoints-front-{arguments.set_id}.json").read_text(encoding="utf-8"))
+        raise SystemExit(refuse_by_set(arguments.set_id or arguments.pair_key))
+    # The lift is loaded only after the pairing holds: it exists only for a
+    # pair, so a FileNotFoundError here would name the symptom and hide it.
+    lift = json.loads(
+        (OUTPUT / f"lift-3d-{pair_slug(label)}.json").read_text(encoding="utf-8"))
     reference = json.loads((OUTPUT / "reference-curves.json").read_text(encoding="utf-8"))
 
     across = lift["scale"]["frontMetresPerPixel"]
@@ -92,22 +127,10 @@ def main(argv: list[str]) -> int:
     # cameras' frame periods differ by 11 microseconds, so any offset in
     # seconds drifts across the clip, and two such offsets have already been
     # withdrawn from this material.
-    frame_offset = int(side["sync"]["frameOffsetToReference"])
+    # THE CHECK THE SCHEMA TELLS EVERY CONSUMER TO RUN, on integers, and it
+    # lives with the writer so that one mutation can fail both consumers.
+    frame_offset = frame_offset_of(side["sync"])
 
-    # THE ASSERTION THE SCHEMA TELLS EVERY CONSUMER TO RUN, on integers.
-    for row in side["sync"]["anchors"] + side["sync"]["checks"]:
-        assert row["otherIndex"] == row["referenceIndex"] + frame_offset, (
-            "the sync block's own anchor does not satisfy its frame offset: "
-            f"{row['event']}")
-
-    side_by_time = {round(f["ptsSeconds"], 6): f for f in side["frames"]}
-    side_times = np.array(sorted(side_by_time))
-
-    def side_near(when: float):
-        if not len(side_times):
-            return None
-        found = side_times[np.argmin(np.abs(side_times - when))]
-        return side_by_time[found] if abs(found - when) <= 0.017 else None
 
     limit = front["source"].get("usableToSeconds")
     side_limit = side["source"].get("usableToSeconds")
@@ -175,7 +198,7 @@ def main(argv: list[str]) -> int:
     flat_curve = np.array([r["fromSideViewDegrees"] for r in rows])
     gap = np.abs(lifted_curve - flat_curve)
 
-    print(f"set {arguments.set_id}, LEFT elbow, {len(rows)} frames\n")
+    print(f"{label}, LEFT elbow, {len(rows)} frames\n")
     print("THE TWO VIDEO CURVES, and they are two instruments not one")
     print(f"  from the 3D lift    {lifted_curve.min():6.1f} to {lifted_curve.max():6.1f} deg,"
           f" median {np.median(lifted_curve):6.1f}")
@@ -186,7 +209,8 @@ def main(argv: list[str]) -> int:
     print(f"  correlation between them {np.corrcoef(lifted_curve, flat_curve)[0, 1]:+.3f}")
 
     drill = reference["movements"][NEAREST_DRILL]
-    engine = np.array([v for v in drill["curves"]["leftElbowFlexionDegrees"] if v is not None])
+    engine = curve_values(reference, drill,
+                          "leftElbowFlexionDegrees", "degrees")
     print(f"\nTHE ENGINE, {NEAREST_DRILL[8:]}, for shape only")
     print(f"  {engine.min():6.1f} to {engine.max():6.1f} deg over {len(engine)} frames,"
           f" contact at phase {drill['landmarks']['contactPhase']}")
@@ -197,9 +221,9 @@ def main(argv: list[str]) -> int:
     print("every library drill is fed by a passer, so the ball does something")
     print("entirely different. Same joint, similar shape, never the same drill.")
 
-    where = OUTPUT / f"elbow-curve-{arguments.set_id}.json"
+    where = OUTPUT / f"elbow-curve-{pair_slug(label)}.json"
     where.write_text(json.dumps({
-        "set": arguments.set_id,
+        "pair": label,
         "arm": "left",
         "armNote": (
             "Left only. The side camera sees her in profile so the right limbs "

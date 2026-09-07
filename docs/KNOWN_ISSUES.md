@@ -4030,9 +4030,92 @@ would have been read. The guard now asks whether these two files ARE the pair.
   and reads their exit codes — including the reachable pass, the lift on the
   established pair, because a refusal-only test proves nothing a syntax error
   would not also prove.
-- Mutating the frame offset to −4 or −6 now fails the anchor assertion inside
-  the consumer, by event name.
+- ~~Mutating the frame offset to −4 or −6 now fails the anchor assertion inside
+  the consumer, by event name.~~ **THAT WAS NOT TRUE, and it is corrected
+  below.** Each consumer read the offset out of a WRITTEN artefact, so changing
+  the offset in `PAIRS` reached neither of them: both ran to exit 0 under both
+  mutations. The assertion existed twice, once in each consumer, and no
+  mutation could fail either copy. It now lives once, in `frame_offset_of()`
+  beside the writer, and it RAISES rather than asserting, because `assert`
+  disappears under `python -O` and this is a check on data. Four mutations fail
+  it: the offset one frame out either way, a held-back check row moved by one
+  frame, the offset in `PAIRS` changed, and the loop emptied.
 
 **The rule, beside "commit the instrument with its numbers": a consumer nothing
 executes is a consumer nobody has checked.** A green suite over mocks says the
 mocks agree with each other.
+
+### Writing the test found two more, and neither came from the change
+
+The first version of the test file asserted only that a refusal exits non-zero.
+**A crash is also non-zero.** Both of these passed it.
+
+**The elbow curve compared a variable it had not loaded yet.** The guard read
+`front["source"]["videoFile"]` on a line two above the line that loads `front`.
+Every call raised `UnboundLocalError`. It survived because the test read the
+exit code and not the reason, and because the shell pipeline it was tried in
+reported the exit code of `tail`.
+
+**The engine's reference curves changed shape and TWO readers did not.**
+`reference-curves.json` is at schema version 2, where a curve is
+`{"unit": ..., "values": [...]}` rather than a bare list, so that
+`footHeightGapCm` can declare centimetres in a file that announces itself as
+angles. The widening landed on 1 September. `video_dry_run.py` was widened with
+it, deliberately and in writing. Two others were not:
+
+- `video_elbow_curve.py` iterated the curve, collected the dictionary's KEYS,
+  and raised a numpy type error on the strings `"unit"` and `"values"`.
+- `video_phase_align.py` did the same in TWO places, and the worse of the two
+  is silent. `rank_against_library` skips a curve with fewer than two points.
+  The mapping has two keys, so it PASSED that guard and carried the two words
+  into the ranking across the whole library, which the module's own docstring
+  calls the guard on the whole method.
+
+Proven by reading the exported file:
+
+```
+LINE 531 SHAPE:
+  what it collects: ['unit', 'values']  len 2  passes len<2 guard: True
+LINE 568 SHAPE:
+   ValueError: could not convert string to float: 'unit'
+```
+
+`test_video_phase_align.py` is 34 tests and was green throughout, because its
+fixture builds the reference as a bare list: **the mock had drifted from its
+producer, so it tested nothing but itself.**
+
+That is the sharper form of the rule. The first fault was mine and one commit
+old. These were not mine, they were six days old, and every suite in the
+repository had run over them while they were broken.
+
+The shape now lives in `spikes/reference_curves.py` with no heavy imports.
+`export_reference_curves.py` takes its version number from there, and all three
+readers read through `curve_values` or `curve_length`. `curve_length` counts
+values and returns 0 for a bare list, so the shape that passed a length guard
+now fails it. The phase-align fixture is at version 2, and
+`test_reference_curves.py` reads the REAL exported artefact when it is present.
+That last test is the only one here that can catch the next widening.
+
+### And a claim in the commit before this one was wrong
+
+That commit said mutating the frame offset to −4 or −6 fails the consumers'
+anchor assertion by event name. **It does not.** Each consumer read the offset
+out of a written keypoint artefact, so changing the offset in `PAIRS` reached
+neither of them: both ran to exit 0 under both mutations. The assertion existed
+twice, in two files, and no mutation could fail either copy.
+
+The check now lives once, in `frame_offset_of()` beside the writer, and it
+RAISES rather than asserting, because `assert` disappears under `python -O` and
+this is a check on data. Four mutations fail it: the offset one frame out in
+either direction, a held-back check row moved by one frame, the offset in
+`PAIRS` changed, and the loop emptied.
+
+### What a hosted runner can hold of this
+
+`spikes/poc-output/` is in `.gitignore`, so the keypoint artefacts exist only
+on a machine that has processed the footage. The tests that need them skip on
+the runner and say so. The tests that need no footage — every refusal that is
+decided before a file is opened, the engine-curve schema guard, and the anchor
+check — run everywhere. That split is deliberate: the runner holds that both
+consumers still import, still parse and still refuse, and the machine with the
+footage holds that they still produce.
