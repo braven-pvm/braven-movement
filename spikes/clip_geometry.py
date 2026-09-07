@@ -57,6 +57,43 @@ CLASSES = {
     # manual's pass family and that vocabulary is on the coach agenda. Refer to
     # docs/TACTICS_CLIP_CONTRACT.md section 3 and docs/LOB_AUTHORING_BRIEF.md.
     "netball_overhead_pass": ("pass", "overhead-pass", "release"),
+    # The third `pass`, and the FIRST whose class name a board can already
+    # select: `bounce-pass` is in Tactics' RELEASE_KINDS, unlike `overhead-pass`.
+    # THE CLIP DOES NOT CONTAIN THE BOUNCE. The engine has no floor, and the
+    # release at frame 76 of 96 leaves 19 intervals at 60 fps, frame 76 to
+    # frame 95 = 0.3167 s of flight, against the 0.5842 s the ball needs to
+    # reach the court: short by 0.268 s. THE INTERVAL COUNT IS PART OF THE
+    # FIGURE. An earlier version of this comment said 0.32 s, which is
+    # (1 - 0.80) * 1.60 and does not give 0.268 when subtracted from 0.5842.
+    # The baseline writes the same frame a second way, hit = 76/96 = 0.7920.
+    # The count is 19 and not 20: seconds is frames/fps, a DURATION that runs
+    # one frame period past the last frame at 95/60 = 1.5833 s, so a 20th
+    # interval ends where no frame exists. A
+    # consumer gets the throw and a ball still descending. The other two passes
+    # DO complete inside their clips, at frames 93 and 94 of 95.
+    # Refer to docs/BOUNCE_PASS_INSTRUMENT_AUDIT.md.
+    "netball_bounce_pass": ("pass", "bounce-pass", "release"),
+    # The fourth `pass` and the first ONE-HANDED one. `one-hand-high-pass`
+    # is NOT in Tactics' RELEASE_KINDS, which lists chest-pass,
+    # shoulder-pass, lob and bounce-pass, so no board can select it today.
+    # Exported anyway, for the reason netball_overhead_pass is.
+    #
+    # IT IS DELIBERATELY NOT MAPPED ONTO `shoulder-pass`, THE ONE UNCLAIMED
+    # SLOT IN THAT VOCABULARY, and the reason is a measurement rather than
+    # an opinion: this drill releases the ball 59.31 cm ABOVE the shoulder,
+    # against 47.55 for the overhead pass and 9.58 for the chest pass. Those
+    # three are the BALL CENTRE AT FRAME 76 minus `r_uparm` AT FRAME 0, on
+    # each drill's own solve. Against the shoulder at frame 76, which rises
+    # with the arm, they are 51.88, 39.77 and 6.25; the ordering and the
+    # conclusion hold either way, and the inputs are named because a height
+    # without its reference point is the fault this repository keeps
+    # correcting. A
+    # pass released nearly 60 cm over the shoulder is not a shoulder pass,
+    # and quietly calling it one to fill a slot is the substitution this
+    # library keeps refusing. Whether `shoulder-pass` should instead name
+    # the manual's 1 HAND LOW WIDE or 1 HAND WIDE block is a coach
+    # question and is on the agenda.
+    "netball_one_hand_high_pass": ("pass", "one-hand-high-pass", "release"),
 }
 
 # Above this much root travel, a clip is not in place and the consumer must

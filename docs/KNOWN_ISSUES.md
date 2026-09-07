@@ -260,7 +260,7 @@ all three dead phases are dead in either unit. It is recorded because a name
 that does not say what it holds is how `fingerBaseDeviation` came to bound a
 flexion axis, and that cost a day.
 
-## No units-correct distance measures, and three cues already want them
+## No units-correct distance measures, and six cues already want them
 
 Raised 2026-09-02 by the content lane while authoring `netball_overhead_pass`.
 An open row, not a defect in anything shipped: nothing today reads a height,
@@ -353,6 +353,73 @@ cannot stand in for it. The cue is a DISTANCE and the engine grades ANGLES. Both
 rows here are the same shape: the manual cues lengths, and a length needs a
 measure whose unit says so.
 
+**THE BOUNCE PASS WANTS BOTH OF THEM IN ONE BLOCK**, added 2026-09-02 with
+`netball_bounce_pass`. Its manual block has five numbered steps and two of them
+are lengths this engine cannot read:
+
+- Step 4, "Bounce ball approximately 1m in front of receiver", is a POSITION on
+  the court. It fails twice over: **there is no floor for the ball to strike**,
+  so the event does not exist in the solve, and there is no measure of a court
+  position, so it could not be read if it did.
+- Step 5, "Keep ball low", is a HEIGHT through the flight. Only the release
+  height is authored, and nothing reads it.
+
+Both were left UNAUTHORED rather than given a proxy. That drill's
+`noInstrumentNote` records why: a checkpoint has already been authored for a
+manual cue and withdrawn twice in this library, and a third would be a pattern
+rather than an accident.
+
+A third gap in the same block, "Pull the ball to the side", is a LATERAL
+position and has no measure either; it is recorded in that drill's
+`sideMeasureNote` rather than here, because it wants a different quantity again.
+
+**THE 1 HAND HIGH PASS'S DEFINING CUE IS ONE OF THEM**, added 2026-09-04 with
+`netball_one_hand_high_pass`. Step 1 at manual line 2672, *"Pull the ball up as
+high as arm can go"*, is a HEIGHT, and it is the sentence the whole drill exists
+for.
+
+**It is the worst case for the substitute so far, and that is why the drill
+ships without a height checkpoint at all.** The row above records that
+`ShoulderElevationDegrees` leaks arm fold and hand placement, and that the leak
+GROWS with height: 8.2 degrees of spread with the ball at 184.4 cm against 3.7
+near the crown line at 174.1. **That drill puts the ball at 199.95 cm**, above
+both. So the proxy would be least pure exactly where the drill lives. The
+orchestrator ruled on 2026-09-04 that step 1 is recorded as a gap rather than
+graded on the proxy, and that drill's `heightGapNote` carries the reasoning.
+
+**THE GAP NOW HAS AN OWNER.** A units-correct height measure — ball centre or
+wrist height in centimetres at the graded phase, declared in `MEASURE_UNITS`
+with a centimetre band field — is the movement lane's next engine unit after
+its current pack, ruled the same day. When it exists, that drill's step 1 gets
+its checkpoint.
+
+**THE TALLY, LISTED SO THE NUMBER IN THE HEADING IS CHECKABLE.** Six cues, on
+four drills.
+
+**THIS IS A RE-COUNT AND NOT ONLY AN INCREMENT, so the heading moving from five
+to six is not one new cue.** The previous heading said five and **the row never
+listed which five**, which is exactly how a count drifts. Two things changed at
+once: this drill's height cue is genuinely new, and **the step length was never
+counted before** — the earlier row does not mention it anywhere, though the cue
+appears in every pass block in the section. The audit written before this drill
+was authored said it "adds two more", counting the height and the step
+separately against a row that had counted neither; the itemised list below is
+what the heading now means.
+
+| # | cue | drill | quantity |
+|---|---|---|---|
+| 1 | "Pull the ball up into the air above your head" | overhead | height |
+| 2 | "don't pull ball back behind head" | overhead | position ahead of the chest |
+| 3 | "Bounce ball approximately 1m in front of receiver" | bounce | position on the court |
+| 4 | "Keep ball low" | bounce | height through the flight |
+| 5 | **"Pull the ball up as high as arm can go"** | **one hand high** | **height** |
+| 6 | "Give a small step", with its warning "Don't give a too big step" | **all four passes** | step length |
+
+Row 6 is one quantity counted once, though the cue appears in every pass block
+in the section. A seventh cue, the bounce pass's "Pull the ball to the side",
+wants a LATERAL position and is recorded in that drill's `sideMeasureNote`
+rather than here, because it is a third quantity again.
+
 **A caution for whoever builds them.** `netball_overhead_pass` was nearly
 shipped with a checkpoint that passed a single mutation and measured nothing it
 claimed. The proof method changed with it: a failing mutation is now a SWEEP of
@@ -360,6 +427,50 @@ at least three displacements, the measure must move progressively, and the joint
 positions must move continuously at the crossing. A single-point failure beside a
 joint discontinuity is a basin. That drill's `mutationNote` carries the eight
 sweeps.
+
+## A release clip ends before its ball lands
+
+Raised 2026-09-02 by the content lane while auditing the bounce pass. A fact
+about all three passes, recorded so it is not rediscovered per drill. **No drill
+is retimed for it**: whether a release clip must contain the full flight is a
+contract question, not a movement one.
+
+**The numbers.** All three passes release at **frame 76 of 96**, phase 0.80 in
+the definition and `hit` 0.7920 in the exported clip, which leaves **19
+intervals at 60 frames per second, frame 76 to frame 95 = 0.3167 s of flight**.
+An earlier version of this line said 0.32 s "in the last 19 frames", which
+states one convention and counts in another. Measured: the frame at which each
+ball first reaches its own launch target, against a last frame of 95.
+
+| drill | reaches its target | verdict |
+|---|---|---|
+| `netball_chest_pass` | frame 93 | **completes inside the clip** |
+| `netball_overhead_pass` | frame 94 | **completes inside the clip** |
+| `netball_bounce_pass` | never | **0.268 s short** |
+
+**CORRECTED, AND THE FIRST VERSION OF THIS ROW WAS WRONG.** It said all three
+were truncated. Only the bounce pass is: the other two land with two and one
+frame to spare. The mistake was generalising from the drill in front of me
+without measuring the other two, which is the same shape as the finding above
+it.
+
+The bounce pass makes it concrete. Aimed at a floor point 4.00 m from her chest,
+which is 350.5 cm from a release at 111.7 cm, the ball reaches the court at
+**0.584 s**, which is **1.84 times** the flight the clip contains. A consumer
+playing that clip sees the throw and a ball that never lands.
+
+**The margin on the other two is thin rather than comfortable**, two frames and
+one, so the question below is live for them even though they pass today.
+
+**Two questions, and neither is a movement change.** Should a `pass` clip carry
+the flight to the catch, or only the release and its follow-through? And if the
+first, does the clip lengthen or does the release move earlier? Both belong with
+`docs/TACTICS_CLIP_CONTRACT.md` and the coach agenda.
+
+**This is separate from the missing floor** (refer to the row above and to
+`docs/BOUNCE_PASS_INSTRUMENT_AUDIT.md`). Even with a floor the bounce would fall
+outside the clip, so lengthening the clip and adding a floor are two fixes and
+either alone is not enough for a bounce a person can watch.
 
 ## A per-hand ready offset is a design candidate, not a gap
 
@@ -2195,9 +2306,12 @@ table above is what a ruling needs.
 The drill that decides the table is not measuring the same defect as the rest
 of it.
 
-It releases at **frame 87 of 98**. The follow-through window is 0.12 s, which
-is 7.2 frames, so the aim point reaches `out = 1` at frame **94.2** — and the
-clip runs to frame **97**. **The aim point stops dead 2.8 frames before the
+It releases at **frame 88 of 98** — a first version said 87, which is
+`round(release_phase × (frames − 1))`. `possess` uses the first frame whose
+phase REACHES the release phase, which is the ceiling, and that is 88. The
+follow-through window is 0.12 s, which is 7.2 frames, so the aim point reaches
+`out = 1` at frame **95.2** — and the clip runs to frame **97**. **The aim
+point stops dead 2 frames before the
 clip ends**, under all three easings. Its last frames read:
 
 | | last eight frames |
@@ -2215,8 +2329,143 @@ and reads 20.41.
 **SO THE LIBRARY TABLE CONFLATES TWO DEFECTS.** The release seam is one, and
 the follow-through window closing before the clip ends is another. The easing
 choice moves both, in opposite directions, and the drill that decides the table
-is only measuring the second. **The window-end question is separate and is not
-answered here.**
+is only measuring the second.
+
+### The window closes early on FOUR drills, and one number decides how much it shows
+
+Measured on `eaecbb2`. **This section used to end "the window-end question is
+separate and is not answered here". This answers its scope and its cause, and
+nothing else.**
+
+| drill | frames | release | `out = 1` at | pinned tail | pose drift over that tail |
+|---|---|---|---|---|---|
+| `chest_pass` | 96 | 76 | 83.2 | **12** | 0.30 cm |
+| `deflect_high` | 88 | 70 | 77.2 | **10** | **0.0025 cm** |
+| `overhead_pass` | 96 | 76 | 83.2 | **12** | 0.26 cm |
+| `two_hand_snatch_straight_back` | 98 | 88 | 95.2 | **2** | **0.0106 cm** |
+| `hooks_jump_pull_in` | 108 | 102 | 109.2 | — | the clip ends first |
+| `two_hand_catch_chest` | 98 | 90 | 97.2 | — | the clip ends first |
+
+The tail is `ceil` of the spare, not the fraction: no frame lands on
+release + 7.2, and the frame before full extension is already at
+`out = 0.99923`.
+
+**THREE FRAME NUMBERS DESCRIBE ONE FREEZE ON `deflect_high` AND THEY ARE NOT
+INTERCHANGEABLE.** An earlier version used all three without saying which was
+which:
+
+| frame | what it is |
+|---|---|
+| **77** | the first CLIP ROW identical to its predecessor, after the export rounds |
+| **78** | the first frame at which the engine's `out` reaches 1 — the aim point is pinned from here |
+| **79** | the first frame whose measured elbow step is exactly 0.0000 |
+
+The pinned tail of 10 counts from 78. The clip's 11 identical rows count from
+77. They differ because rounding to the clip's precision hides the last frame
+of real motion.
+
+**THE STATISTIC IN THAT LAST COLUMN**, because a drift figure without one is
+not reproducible: it is the largest displacement of ANY joint in the skeleton,
+between the first frame at which the aim point is pinned and the last frame of
+the clip. Not per frame, and not one joint.
+
+**TWO OF THE FOUR GO STILL AND TWO DO NOT.** `deflect_high` drifts 0.0025 cm
+across ten frames — a still image. `chest_pass` and `overhead_pass` drift about
+0.3 cm across twelve, which is not a stop and this entry does not call it one.
+**That drift is AUTHORED MOTION, not solver residue**: their hips are still
+being asked to move, as the next paragraph shows. An earlier version called it
+IK residual, which contradicts the paragraph that follows it.
+
+**THE THIRD NUMBER IS WHAT DECIDES IT, AND IT IS AUTHORED.** A drill goes fully
+still only if it ALSO has no lower-body motion left in the tail:
+
+| | per-key `hipDrop` | tail |
+|---|---|---|
+| `deflect_high`, `two_hand_snatch_straight_back` | **none** — one `hipDropFraction` and nothing else | still to microns |
+| `chest_pass`, `overhead_pass` | 0.1003 → 0.14 → … → 0.085 → **0.080** | keeps drifting |
+
+So the freeze is the conjunction of the follow-through constant, the drill's
+typed frame count, and whether its hips are still moving. Three numbers, none
+of which was chosen with the others in mind.
+
+**PROVED BY A SWEEP, NOT A POINT**, which is this file's own rule. Moving
+`FOLLOW_THROUGH_SECONDS` moves the onset exactly where the arithmetic says:
+0.06 → 75, 0.09 → 77, 0.12 → 79, 0.16 → 81, 0.20 → 83, five for five on
+`deflect_high`, and at 0.30 the freeze is abolished entirely — the last four
+steps of the right wrist MEASURED RELATIVE TO THE SHOULDER MIDPOINT, so the
+trunk's own travel cannot flatter them, read 0.99, 0.61, 0.44, 0.27 cm.
+
+The possession state, the ball leaving the solve and a held final key were each
+ruled out by measurement. **SOLVER CONVERGENCE WAS NOT.** It is ruled out by
+inference from the same sweep — at 0.30 s nothing freezes and the pose is still
+changing on the last frame, so the solver is not settling on its own — but
+**nobody read a residual**, and this entry does not claim anyone did.
+
+### Who sees the frozen frames, and who does not
+
+**The exported clip carries them.** `netball_deflect_high.clip.json` holds
+**11 byte-identical frames of 88 — rows 77 to 87** — with the ball still flying
+through all of them. `export_coach_animations.py` writes every solved frame, so
+a coach watching the grading pack sees the figure stop.
+
+**A STILL RUN IS NOT BY ITSELF A DEFECT, AND THAT CLIP HAS A LONGER ONE.** Rows
+0 to 20 are also byte-identical — **21 rows**, almost twice the tail — and that
+is her waiting for a ball that is still in flight, which is authored and
+correct. 30 of the 88 rows repeat their predecessor. What distinguishes the
+tail is not that it is still but WHERE it is: a hold before the action is a
+pose, and a hold after the follow-through is the follow-through having stopped
+before the clip did.
+
+**A graded checkpoint reads inside the freeze.** Every definition's last phase
+sits at `atPhase` 1.0, so `deflect_high`'s `send_on` checkpoints grade frame
+87 — ten frames into the still span, on values unchanged since 78.
+
+**NO GUARD NOTICES, AND THE THREE FAIL IN THREE DIFFERENT WAYS.**
+
+`verify_tactics_clip`'s structural check fires only below two frames.
+
+Its numeric gate compares the clip's stored pose against the engine's
+measurement from the same solve, so **a still clip reproduces its stillness
+exactly and passes**. It measures fidelity, not liveness.
+
+`snap_report`'s worst on `deflect_high` is 7.84 at frame 70, the release seam.
+**An earlier version of this entry said that was "because a still region floors
+its own denominator". That names the wrong mechanism.** The floor —
+`SNAP_FLOOR_DEGREES` at `snap_report.py:139-140` — is never reached, because
+the gate at `:137` has already skipped the frame: it judges a frame only when
+`max(step, neighbour median)` reaches the 5 degree meaningful band, and in a
+freeze neither side does. On `deflect_high` the floor is applied to **no frame
+at all**.
+
+| frame | step | neighbour median | judged? |
+|---|---|---|---|
+| 76 | 9.5500 | 4.5100 | yes |
+| 77 | 3.8500 | 2.5950 | **no** |
+| 79–87 | 0.0000 | 0.0000 | **no** |
+
+**AND THE REASON IS THE DETECTOR'S OWN ROBUSTNESS.** Its docstring records that
+an earlier version "could not see a stall at all", and the fix was to judge a
+frame when EITHER its step or its neighbourhood is meaningful — which works,
+because a one-frame stall sits between two large steps. But the denominator is
+a median over `SNAP_WINDOW = 3` frames either side, so **a still run longer
+than that window makes the median still as well**, and both sides fall under
+the band together. The detector that was repaired to see a stall of one frame
+cannot see a stall of ten.
+
+**BUT TACTICS NEVER SAMPLES THEM.** The contract gives a consumer 0.9 s of
+wind-up and 0.5 s of follow-through around the declared moment. `deflect_high`
+declares `contact` at frame 39, so the last frame any board can sample is 69,
+and the freeze starts at 77. **It reaches a coach and a grader. It does not
+reach a board.**
+
+### What is NOT new here, and it is worth saying
+
+`docs/WRIST_AND_PACE.md:151` already states in bold that the frame count "HAS
+NO NOTE ANYWHERE", and this section already computed the window arithmetic for
+one drill. **A first draft of this measurement presented "nothing authors this"
+as a discovery. It is not one — it is the same lane's own finding from the
+night before.** What is added is the scope, the third number, and the sweep
+that proves the cause.
 
 ### What is not settled
 
@@ -2463,25 +2712,278 @@ A first version of this entry said the `up: 0.0` target lands at 106.5 cm,
 called that 26 cm below her shoulders, and asked whether the anchor or the note
 describing it was wrong.
 
-**The anchor is `c_spine3`, and it sits within a millimetre of 126.3 cm.** Her
-shoulder midpoint at frame 0 is 132.86, so it is about **6.5 cm** below her
-shoulders, which is where a chest is.
+**The anchor is `c_spine3`, and it sits at 126.403 cm.** Her shoulder midpoint
+at frame 0 is 132.86, so it is **6.5 cm** below her shoulders, which is where a
+chest is.
 
-**TWO QUANTITIES SIT THERE AND THIS ENTRY QUOTES ONE OF THEM.** The SOLVED
-frame-0 `c_spine3` reads **126.324**. The stance frame's anchor is the REST
-`c_spine3` placed into the trunk frame, which is what
-`stance.place(up=0, ahead=4)` returns and what the engine's launch actually
-aims at; the review reads it as **126.403**. Inverting the engine's own
-vertical velocity gives 126.32 on the chest pass and 126.27 on the overhead,
-but that inversion uses a run computed from the solved anchor and so cannot
-separate the two. **They differ by less than a millimetre and nothing here
-turns on which is used — but the number must say which it is**, which the
-first version of this section did not.
+**TWO QUANTITIES SIT THERE AND AN EARLIER VERSION OF THIS ENTRY QUOTED THE
+WRONG ONE.** Measured on `aa3f244`, by the calls `solve_movement` itself makes
+at `possession_solve.py:138-174`:
+
+```python
+zeros = np.zeros(len(character.parameter_transform.names))
+rest  = finger_wrap.spread_fingers(character, zeros, method.every_side)
+rp    = movement_engine.joint_positions(character, rest)   # c_spine3 y = 134.832
+arm   = motion_track.arm_length(rp, index)                 # 52.6801
+placed0 = movement_engine.trunk_frame(track, 0.0, rp, index, arm, track.turn_at(0.0))
+```
+
+`movement_engine.py:213` sets `chest = place(rest_positions[c_spine3])`, with
+the root dropped by `hip_drop_at(0.0)` — 0.1003 leg lengths, 8.43 cm on both
+passes. That gives **`placed0.chest = (0, 126.403, −3.713)`**, and
+`stance.place(ball.launch.target)` returns **`(0, 126.403, 207.008)`**: the
+`up: 0.0` leaves the height untouched, and so does the turn matrix.
+
+| quantity | chest pass | overhead pass | does the launch read it? |
+|---|---|---|---|
+| the trunk PLACEMENT, `placed0.chest[1]` | **126.403** | **126.403** | **yes** |
+| the SOLVED chest, `points[0][c_spine3][1]` | 126.3242 | 126.3170 | **no** |
+
+**`solve_launch(launch_from, stance.place(target), 600)` reproduces the
+engine's own `launch_velocity[1]` — 71.4690 and −39.3721 — to 0.000000, and
+only with 126.403.** The solver moves the chest 0.08 cm off the placement over
+the solve, and `stance_frame` never reads the solved value.
+
+So the earlier 126.32 was **the wrong quantity, not a rounding**. It was
+reached by inverting the engine's velocity, which could not detect the error
+because the inversion fed the solved anchor back into its own run. Reading the
+placement directly settles it, which is what the guard below now does.
 
 The ball files say `up: 0.0` puts the receiver's hands "at the height of this
 athlete's chest, where the stance frame is anchored". **That is accurate.**
 The 106.5 was mine, and it was the ball's height fifty centimetres PAST the
 target while it was still falling.
+
+## The Blender job anchored the ball to a landmark it did not transmit
+
+`ball.fromShouldersInArms` is an offset from the shoulder MIDPOINT, and the job
+never said where that midpoint was. A consumer had to guess. **The rendering
+lane's guess was to leave the shoulder girdle at rest**, because nothing in the
+job asked it to move — so every figure this project has rendered placed the
+ball from a girdle that never moved.
+
+Found by the rendering lane on 2026-09-04. Measured on `cc2c20a`.
+
+### The girdle moves on every drill
+
+Midpoint travel relative to the pelvis, over the whole clip:
+
+| drill | travel | | drill | travel |
+|---|---|---|---|---|
+| `overhead_pass` | **8.45 cm** | | `chest_pass` | 2.21 |
+| `deflect_high` | 5.02 | | `two_hand_snatch_pull_in` | 2.14 |
+| `hooks_jump_pull_in` | 4.09 | | `two_hand_snatch_straight_back` | 2.02 |
+| `hooks_outside_hand` | 3.00 | | `two_hand_catch_chest` | 1.98 |
+| `one_hand_snatch_to_other_hand` | 2.40 | | `bounce_pass` | 1.93 |
+| | | | `double_foot_landing` | 1.77 |
+
+**31 of the 48 graded phases sit more than a centimetre from the neutral
+girdle**, and the re-render is the whole library rather than the four drills a
+first reading suggested.
+
+Three definitions that count needs, because a count is only as good as what it
+counted:
+
+- **The girdle position is the shoulder midpoint taken from `root`**, the MHR
+  pelvis joint. `root` is the landmark on this side of the boundary, and the
+  rendering rig has no bone of that name — refer to the residual below.
+- **The neutral girdle is `chest_pass/ready`**, which sits at
+  `[0.0020, 48.8246, 2.4622]` cm from `root`. It is one graded phase of the 48
+  and not an average of them, chosen because it is the phase closest to a
+  standing athlete.
+- **A phase is measured on ONE frame**, the frame `round(at_phase x
+  (frames - 1))` clamped to the clip, which is the frame `build` renders that
+  phase at. So these are 48 frames and not 48 spans of frames.
+- **The 48 is the library of `cc2c20a`, which held ELEVEN drills and 1084
+  frames.** The count is a measurement of that library and does not move when a
+  drill is added. `netball_one_hand_high_pass` arrived on 2026-09-04 and took
+  the library to twelve drills and 1180 frames; nothing above was re-counted
+  for it, and the ratio is what the entry is about.
+
+### A withdrawn number, recorded because it is the fault this field is about
+
+An earlier version of the table above gave the rendering rig's
+shoulder-above-pelvis as **0.8759** of this athlete's. That figure is
+withdrawn. It is **42.7689 / 48.8246 = 0.87597**, truncated — the rendering
+rig's REST torso over
+this athlete's POSED shoulder height at `chest_pass/ready`. Two rigs, one at
+rest and one posed, one measured in three axes and one vertical, under a single
+label. The rendering lane says it never produced that number and is right: its
+two ratios are 0.9215 for the arms and 0.861484 for the rest torsos.
+
+The 2.23 cm is unaffected, because it never came from the ratio. It is
+`48.8246 x (48.547 / 52.680) - 42.7689 = 2.2252`, and its inputs are now
+written beside it.
+
+**A WIDTH RANGE IS THE WRONG STATISTIC AND A FIRST VERSION OF THIS USED IT.**
+It read 0.65 to 1.05 cm on seven drills and set them aside. Width is one axis of
+three: the overhead's width ranges 5.63 cm while its midpoint travels 8.45, and
+`bounce_pass` moves almost entirely FORE AND AFT — 2.46 to 0.54 cm ahead of the
+pelvis with the vertical barely changing — so on a width-and-height check **it
+would have read as the cleanest drill in the library and shipped**.
+
+### The field took four attempts, and each was killed by a measurement
+
+| attempt | what killed it |
+|---|---|
+| absolute metres | the job is normalised; `radiusM` is the only absolute, because a netball is one size on every body and a shoulder is not. It raised the consumer's ball ~6 cm on EVERY frame, including the ones that pass today |
+| arm lengths | a shoulder-above-pelvis distance is a TORSO quantity. The two rigs' arms are 52.680 and 48.547 cm, a ratio of 0.9215; their rest torsos are 49.6456 and 42.7689, a ratio of 0.8615. An arm divisor is therefore 6.5 per cent wrong on a torso span, and this athlete's 48.8246 cm shoulder height at `chest_pass/ready` resolves to 45.00 cm on a rig whose own rest torso is 42.7689 — **2.23 cm** out against a 1 cm rule |
+| a torso-normalised POSITION | failed on **all 48** phases by 1.1 to 5.8 cm, including phases where both girdles are neutral and nothing is wrong. A divisor scales and cannot translate |
+| a displacement from the WORLD | carries the root, which is never at its rest position. It read **30.97 cm** on the landing drill, against a girdle that moves 1.77 |
+
+What ships is a **pelvis-relative displacement from rest, in units of each
+body's own rest torso**. It cancels every constant — landmark convention,
+neutral posture, build — reads zero at rest by construction, and carries the one
+thing that was missing.
+
+### The grip fix moved the problem up a level rather than removing it
+
+`_grip`'s docstring already knew shoulder width mattered: it records that
+sending shoulder directions closed this athlete's grip from 19.0 cm between the
+wrists to 12.1 and put both hands in front of the ball. The fix was to place the
+ball first and the hands on it. **So the hands became anchored to the ball, and
+the ball stayed anchored to shoulders nobody sent.**
+
+### Two guards of this field were measured on eleven drills and spent on twelve
+
+Both were found on 2026-09-04, when `netball_one_hand_high_pass` merged and the
+suite was run on the merged tree. Neither is a defect in that drill, and the
+field itself was untouched by both.
+
+**A COVERAGE GUARD THAT COUNTED INSTEAD OF COVERING.** The anchor check ended
+with `assertEqual(checked, 1084)`, written to prove it reads the whole library
+rather than a sample. It read `1180 != 1084` the moment a 96-frame drill
+arrived — a red suite caused by a correct new drill and by the guard. **Any new
+drill would have fired it**, so it was a tripwire on library growth wearing a
+coverage guard's name. It now takes its population from `library()` and each
+drill's span from its own clip, and holds a FLOOR rather than a total: the
+drills covered must equal the library's list, each drill's frames must be
+exactly `range(0, its clip length)`, and the cover must not shrink below what
+the field was proved on. A drill's author satisfies it by adding the drill.
+
+**A ROUNDING BOUND WITH LESS MARGIN THAN IT LOOKED.** The end-to-end ball check
+first shipped against one unit in the last place, 1e-6 torso lengths, and
+passed at 9.2583e-07 — 8 per cent to spare. On twelve drills it reads
+**9.3398e-07**. One drill consumed a tenth of the remaining margin, so the
+library sat a few drills from a red suite with nothing wrong in it.
+
+The correct bound is not one unit and never was. That check composes **two
+roundings in two different units** — the girdle shift in torso lengths and
+`fromShouldersInArms` in arm lengths — so its exact per-coordinate maximum is
+`0.5e-6 x (1 + arm / torso) = 1.031e-6` torsos on this athlete. The measured
+worst passed one unit by alignment, not by margin. The guard now holds 2e-6 as
+a stated ceiling above that derivation.
+
+**Both are the same shape as the rest of this ledger**: a quantity measured in
+one regime and spent in another. Here the regime is the library itself — a
+count and a bound both measured on eleven drills and spent on every drill that
+would ever be added.
+
+### A residual this does NOT fix, bounded and left open
+
+The two rigs' rest poses are not quite the same posture. MHR's rest shoulders
+sit **−0.0648** torso lengths ahead of its `root`; MPFB's sit **−0.0062** ahead
+of its `pelvis` — a 0.059-torso gap, about **2.5 cm** fore-and-aft on the
+consumer's rig.
+
+**Nothing here can separate a landmark convention from a posture difference**:
+that rig has no `root` bone at all, and this lane has no MPFB rig. So the
+displacement removes the 8.45 cm of variation and leaves a constant of about
+2.5 cm in one axis. **No figure should be described as accurate to better than
+2.5 cm fore-and-aft until a landmark comparison closes it**, which is a
+separate piece of work and is not done here.
+## A one-handed release is far less determined than a two-handed one
+
+Added 2026-09-04 by the content lane while authoring `netball_one_hand_high_pass`,
+the library's first one-handed pass. **This is an open row and not a defect in
+anything shipped.** It cost that drill one checkpoint and moved another, both
+recorded there.
+
+**THE CONTROLLED COMPARISON.** One lever, the release carry's `up`, swept over
+the same nine values from 1.24 to 0.60 torso lengths, on all four passes,
+reading the WORKING arm's elbow at frame 76 and counting pose jumps over 5 cm.
+A "pose jump" is the largest distance any single joint moves between one sweep
+point and the next.
+
+| drill | `hands` | jumps over 5 cm | largest jump | measure monotone | largest single-step change |
+|---|---|---|---|---|---|
+| **`netball_one_hand_high_pass`** | **right** | **4** | **21.87 cm** | **no** | **20.28 degrees** |
+| `netball_overhead_pass` | both | 1 | 7.50 cm | yes | 15.48 degrees |
+| `netball_bounce_pass` | both | 2 | 7.01 cm | no | 17.72 degrees |
+| `netball_chest_pass` | both | 1 | 5.21 cm | no | 9.95 degrees |
+
+**Two to four times the jumps, and a largest jump three times the worst of the
+other three.**
+
+**THE MONOTONE COLUMN IS COMPUTED, NOT JUDGED.** A first version of this table
+called the bounce and chest passes "nearly" monotone; both compute `False`. The
+distinction that matters is the SIZE of the reversal against the 5 degree
+threshold: the chest pass's largest is 0.48 degrees and the bounce pass's are
+0.36, 0.43, 0.47 and **5.92**. So the chest pass is progressive within the noise
+floor, the bounce pass has one real reversal, and the one-handed drill has a
+20.28 degree single-step change. "Nearly" hid all three of those apart.
+
+**IT IS NOT CONFINED TO ONE LEVER, AND IT IS NOT CONFINED TO ONE END OF ONE.**
+The same drill's release carry `ahead` maps four solutions between 0.90 and
+0.70, separated by jumps of 19.85, 18.06 and 18.67 cm, with continuous regions
+between them as narrow as 0.03 torso lengths — about 1.6 cm of authoring space.
+
+**And it alternates at the other end too.** Swept at 0.02 from 1.08 to 1.36,
+the values 1.14, 1.18, 1.28 and 1.30 read a different solution from their
+immediate neighbours — elbow 54.82, 54.49, 53.80, 53.72 with the shoulder near
+100, against roughly 64 and 120 either side — with `r_lowarm` moving 21.67 to
+22.19 cm between neighbours. **Six jumps over 5 cm in that range alone.** So the
+continuous region around the authored point is **0.80 to 1.12**, not the wider
+span a first version of this row claimed.
+
+**HOW THE FIRST VERSION GOT IT WRONG IS THE MORE USEFUL HALF.** It said the
+region ran unbroken from 0.80 to at least 1.34, read off a FOUR-POINT sweep at
+0.92 / 1.06 / 1.20 / 1.34. Every one of those four happened to land on the same
+solution, so the sampling stepped straight over the alternation. **A coarse
+sweep through an alternating region returns a smooth curve**, which is the same
+sampling trap this row exists to describe, made while describing it. Found by
+the reviewer of `00c370a` and reproduced on the same engine.
+
+**WHAT IT COST.** A first draft of that drill authored its release carry at
+`ahead` 0.78, inside one of those narrow basins. Three graded readings depended
+on which solution the solve reached. **Stated against what SHIPPED**, since that
+is the comparison a reader wants: the shipped 0.96 reads release elbow 64.63,
+release shoulder 128.48 and follow-through shoulder 100.24, while the withdrawn
+0.78 read 49.68, 112.01 and 86.63. (The figures 65.29, 133.58 and 102.47 are
+0.80's, the point immediately beside the withdrawn one; they are what exposed
+the boundary, not what shipped.)
+
+The carry was moved to 0.96, **inside the continuous region 0.80 to 1.12** set
+out above, and the shipped pose is stable: sweeping `ahead` from 0.90 to 1.02
+moves the release elbow 0.49 degrees in total, and sweeping `up` from 1.24 to
+1.08 moves it 0.26.
+
+**AND IT COST A CHECKPOINT.** A follow-through shoulder checkpoint was authored
+and DELETED before shipping, because no stable lever could move it out of its
+band. Four were tried: the release carry's `up` (span 20.81, never crosses, and
+a 20.57 cm jump inside it), its `ahead` (span 4.78, under the threshold), its
+`across` (span 6.99, never crosses) and the lift carry's `up` (**span 0.00** —
+no effect at all). The only lever that crossed the band was the release phase,
+and it oscillated 100.24, 100.24, 85.44, 110.54, 128.44 with jumps of 19.97,
+22.97 and 19.06 cm. That drill's `deletedCheckpointNote` holds the evidence.
+
+**A HYPOTHESIS, AND EXPLICITLY NOT A DIAGNOSIS.** Nothing here tests it. Two
+hands on the ball constrain both arms and the trunk between them; one hand
+leaves the free arm and the trunk rotation with nothing asking anything of
+them, so the solve has more equally good answers. The free arm's ELBOW on that
+drill moves **0.00 degrees over all 96 frames** and its shoulder moves 4.38,
+which is consistent with the hypothesis and is not evidence for it. (A first
+version of this line said "the free arm moves 0.00 degrees", which is the elbow
+reading stated of the whole arm.)
+
+**HOW IT RELATES TO THE ROWS BELOW.** "The lower body has no stable solution"
+records the same shape below the hips, on every drill. This row says the UPPER
+body shows it too once a hand comes off the ball. They may be one finding or
+two; deciding that is engine work.
+
+**WHAT IS NOT PROPOSED HERE.** Any change to the solve. Testing the hypothesis
+and deciding whether a one-handed technique should carry an additional
+constraint belongs to the movement lane and needs a ruling first.
 
 ## The lower body has no stable solution
 
@@ -2841,3 +3343,146 @@ open question as the entry above, and the candidates listed there are the
 candidates here. **NOT PROPOSED: constraining the solve.** This entry adds an
 instrument and changes no engine behaviour.
 
+
+## The alignment ranked a sync clap above every real catch
+
+Found 2026-09-04 while looking for the clap Marius said Erin used to sync the
+two cameras. It is in the front recording, twice, and it has been in our own
+records since 2 September under the wrong name.
+
+**Repetitions 0 and 8 of `spikes/video-annotations/ball-in-frame-0.1.json`,
+annotated "gesture", ARE THE CLAPS.** Measured on the front view:
+
+| | hands together | front audio above 4 kHz |
+|---|---|---|
+| repetition 0 | **5.867 s**, wrists 0.249 shoulder widths apart | **x26.5** over its local floor, at 5.800 s |
+| repetition 8 | **17.900 s**, wrists 0.266 apart | **x29.1** over its local floor, at 17.835 s |
+
+**THE COUNT IN AN EARLIER VERSION OF THIS ENTRY WAS FALSE.** It said "only
+seven frames in 785 fall under 0.5". **Fifty-five do.** Seven was a count of
+local minima after a separation rule, printed as a count of frames, and the
+deepest frame in the whole clip — 0.236 at 18.300 s — was not among the seven
+named. Corrected from a committed run of `spikes/video_clap_evidence.py`:
+
+| reading | value |
+|---|---|
+| frames read | 785 |
+| median separation | 0.94 shoulder widths |
+| **frames under 0.5** | **55** |
+| in stretches | **5** |
+| local minima | **12** |
+| deepest | 0.236 at 18.300 s |
+
+The five stretches are 5.833–6.033 (7 frames), 17.833–19.000 (36),
+21.000–21.067 (3), 22.300–22.400 (4) and 22.833–22.967 (5).
+
+**THE IDENTIFICATION DOES NOT REST ON THE COUNT. IT RESTS ON A COINCIDENCE.**
+Her hands come together often, because she talks with them; the room has many
+loud moments. What is rare is the two at once. Of the **twelve** hands-together
+minima, **exactly two** carry a broadband attack within 100 ms — 5.867 s with
+x26.5, and 17.900 s with x29.1. **The other ten carry nothing at all.** The
+result is not delicate about the 100 ms: it holds unchanged for any window
+between 0.067 and 0.230 s. Those
+two are the two repetitions the annotation had already singled out as containing
+no ball.
+
+The long 17.833–19.000 stretch contains the second clap AND the deepest frame
+that follows it, which is consistent with the annotation's own reading of
+repetition 8: she claps, then stands and talks with her hands clasped at her
+chest.
+
+### Why this matters more than the sync question
+
+**Repetition 0 scored 0.02369 on the whole-curve warp distance against 0.06093
+for the next best — BEST OF TWELVE — and rank 1 of 8 drills on both scorings.**
+
+The elbow curve of a woman clapping fits the catch reference better than any
+real catch in the set, and no scoring in the alignment can tell the difference.
+The informative scoring placed it fifth of twelve, which is luck rather than
+detection: it ranks the drill first either way.
+
+This is the blind spot the ball-in-frame condition was built for, and it now has
+a name. The gate asked eleven questions and none of them was "is this a catch".
+The condition refuses repetitions 0 and 8 already; what is new is knowing WHY
+the best-scoring repetition in the set is not a catch, which is a stronger
+statement than "a frame strip shows her gesturing".
+
+### What it does not settle
+
+**Nothing about the camera offset.** The clap is in the front and cannot be
+found in the side. The front's four broadband spikes include a distinctive pair
+0.175 s apart at 26.240 and 26.415 s, and no offset in ±6 s places that pair
+anywhere in the side track, whose only gap under half a second is 0.235 s. A
+randomly generated side track of 17 spikes matches the front's four as well as
+the real one does in **12 per cent** of 2000 trials, so the best alignment is
+not a reading.
+
+**THE NULL IS REPRODUCIBLE.** Python `random.seed(0)`, 2000 trials; each trial
+draws 17 times uniformly from 0 to 28 s as a fake side track, scans offsets from
+−6 to +6 s in 0.02 s steps, and counts a front spike as matched when it lands
+within 50 ms of a fake spike. The real side track scores 3 of 4; 12 per cent of
+the fake ones score 3 or more. The front's four spikes are 5.800, 17.835, 26.240
+and 26.415 s.
+
+Either the side camera's microphone never registered the claps — its strongest
+event is x24 against the front's x44, and it may be several metres away — or the
+two files do not contain the same instant. **The audio cannot separate those two
+readings**, and until a person does, the by-eye 1.0 s stands as the only measured
+offset.
+
+**AND A CORROBORATOR THIS LANE OFFERED IS WITHDRAWN.** A wrist-height scan was
+reported as peaking at −0.967 s, agreeing with the recorded −1.000. Three of its
+eight input moments had no provenance — they were picked inside annotated
+windows where no catch time was ever read — and removing them moves the peak to
++2.4167 s, a swing of 3.383 s. The reading was carried by the unprovenanced
+points and is withdrawn. Refer to "A fifth instrument, and a sixth that is
+withdrawn" in
+`docs/VIDEO_CAPTURE_FINDINGS.md`, where all eight moments are now named with
+their provenance.
+
+### Where the numbers come from
+
+`spikes/video_clap_evidence.py`, committed with this entry, and every figure
+above is from `python video_clap_evidence.py 0.1`. **It exists because the first
+version of this finding was published from a detector that lived in one
+session's scratchpad.** An independent reviewer could not re-measure any of it,
+reconstructed the detector by hand, and got 25.4 where this says 26.5 and counts
+from zero to twenty-seven depending on the rule guessed. A number nobody else
+can regenerate is not a measurement, whatever it happens to be.
+
+Every parameter is a named constant with its reason: the 4 kHz band, 5 ms
+blocks, a median floor over the preceding 0.5 s stopping 10 ms short, an attack
+ratio of 0.5, a 0.15 s separation between reported spikes and a x8 bar.
+
+**THE SPIKE COUNTS ARE CONDITIONAL ON THE SEPARATION CONSTANT, and that is
+stated rather than left for a reader to discover.** A reported spike is a
+CLUSTER: anything within 150 ms of one is inside it, not beside it. Sweeping
+the constant on session 1.0:
+
+| separation | front spikes | side spikes |
+|---|---|---|
+| 0.05 s | 5 | 17 |
+| 0.10 s | 4 | 17 |
+| **0.15 s (used)** | **4** | **17** |
+| 0.20 s | 3 | 17 |
+| 0.30 s | 3 | 16 |
+
+**At 0.05 s the terminal cluster is THREE — 26.240, 26.355 and 26.415 — and at
+0.20 s the pair merges into one.** So "a pair 0.175 s apart" is a statement
+about this constant as much as about the recording, and the third event between
+them is real and merged rather than absent. The constant is now pinned by a test
+that fails if it moves in either direction; before that, sweeping it changed
+three published counts and no test noticed at any value.
+
+**THE COINCIDENCE WINDOW HAS A STATED MARGIN.** "Exactly two of twelve" holds
+for every window from **0.067 s to 0.230 s**. Below 0.067 nothing pairs at all;
+at 0.232 a third minimum joins. The 0.100 s used sits inside that plateau with
+33 ms below it and 130 ms above. A claim with an unstated window is a threshold
+nobody can check.
+
+### The instruction it produced
+
+Section 18 of `docs/VIDEO_CAPTURE_FINDINGS.md`: the clap must be **in frame for
+both cameras**, not merely audible, and both files must be opened on the day to
+confirm that each one heard and saw it. A clap that only one camera records is
+worth nothing, and this session spent a morning proving that the hard way.

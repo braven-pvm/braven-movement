@@ -108,7 +108,9 @@ def minimal(**extra) -> dict:
 # return, AND a launch DISAPPEARING from a pass, where the derivation sends the
 # ball backwards over her shoulder. Both are the same silent class of fault.
 AUTHORS_A_LAUNCH = {
+    "netball_bounce_pass.ball.json",
     "netball_chest_pass.ball.json",
+    "netball_one_hand_high_pass.ball.json",
     "netball_overhead_pass.ball.json",
 }
 

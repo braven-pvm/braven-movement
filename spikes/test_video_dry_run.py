@@ -32,8 +32,12 @@ from video_dry_run import (
     condition,
     graded_measures,
     instrument_readings,
+    ADDRESSABLE_KEYFRAME_SECONDS,
+    RELEASE_FRAME_RATE,
+    assemble,
     judge_capture,
     judge_measure,
+    judge_open_questions,
     missing_artefacts,
     phase_bound_degrees,
     reading,
@@ -703,6 +707,238 @@ class RenderTest(unittest.TestCase):
 
         self.assertEqual(text.count("**the units agree** —"), 1)
 
+
+
+
+def open_questions(front=None, side=None, **both) -> list[dict]:
+    """The open-question conditions for a capture whose source blocks say this.
+
+    `both` sets the same field on the two views, which is the ordinary case.
+    `front` and `side` set them apart, which is how the two-view behaviour is
+    tested — and session 1.0 is exactly a case where they differ.
+    """
+    return judge_open_questions({
+        "front": {"source": {**both, **(front or {})}},
+        "side": {"source": {**both, **(side or {})}},
+    }, MOVEMENT)
+
+
+def named(rows: list[dict], name: str) -> dict:
+    return next(row for row in rows if row["name"] == name)
+
+
+class TheOpenQuestionsAreAskedSeparately(unittest.TestCase):
+    """The conditions that decide whether a shoot can answer what the ENGINE
+    has not settled — NOT whether a coach may see a number.
+
+    The separation is the whole point of the group, so it is tested first and
+    by name. Everything else here is a single-fault mutation of one reading.
+    """
+
+    def test_the_open_questions_are_not_in_the_grading_verdict(self):
+        # EXACT, not approximate: the grading verdict must equal the verdict of
+        # the capture conditions and the measure conditions and nothing else.
+        # Asserting only that the names are absent would still pass a version
+        # that folded in a group whose conditions all happened to pass.
+        #
+        # AND THE FIXTURE MUST CONTAIN A FAILING ROW. Without one every open
+        # question here reads unmeasured, so a version folding in only the
+        # `passes is False` rows would fold in nothing and survive. 30 fps is
+        # session 1.0's own reading and it FAILS the release condition.
+        bundle = good()
+        for view in ("front", "side"):
+            bundle[view].setdefault("source", {})["framesPerSecondMeasured"] = 30.0
+        document = assemble(bundle, "0.1", MOVEMENT)
+        states = {row["passes"]
+                  for row in document["openQuestions"]["conditions"]}
+        self.assertIn(False, states, "the fixture must hold a FAILING row")
+        self.assertIn(None, states, "and an unmeasured one")
+        grading = judge_capture(bundle, MOVEMENT) + [
+            row for name in graded_measures(MOVEMENT)
+            for row in judge_measure(bundle, MOVEMENT, name)]
+
+        self.assertEqual(document["verdict"], verdict(grading))
+        self.assertFalse(document["openQuestions"]["canAnswer"])
+        for row in document["openQuestions"]["conditions"]:
+            self.assertNotIn(row["name"], document["verdict"]["blockedBy"])
+
+    def test_a_capture_that_answers_them_still_needs_the_grading_conditions(self):
+        # And the converse, so the separation is proved in both directions: a
+        # 240 fps camera does not excuse a missing calibration.
+        bundle = good(calibration=None)
+        for view in ("front", "side"):
+            bundle[view].setdefault("source", {}).update(
+                {"framesPerSecondMeasured": 240.0,
+                 "keyframeIntervalSecondsMeasured": 0.5})
+        document = assemble(bundle, "0.1", MOVEMENT)
+
+        self.assertIn("calibration", document["verdict"]["blockedBy"])
+        self.assertTrue(
+            named(document["openQuestions"]["conditions"],
+                  "the release is resolved")["passes"])
+
+    # --- the release, one fault at a time
+
+    def test_thirty_frames_a_second_cannot_see_the_release(self):
+        row = named(open_questions(framesPerSecondMeasured=30.0),
+                    "the release is resolved")
+
+        self.assertIs(row["passes"], False)
+        self.assertEqual(row["reading"], 30.0)
+
+    def test_sixty_is_still_short_of_the_bar(self):
+        # 60 fps matches the engine's own track and is STILL not enough: the
+        # bar is set by the athlete's measured ramp, not by the engine's
+        # sampling. A test at 30 alone would pass a version that compared
+        # against 60.
+        row = named(open_questions(framesPerSecondMeasured=60.0),
+                    "the release is resolved")
+
+        self.assertIs(row["passes"], False)
+
+    def test_the_bar_itself_passes(self):
+        row = named(open_questions(framesPerSecondMeasured=RELEASE_FRAME_RATE),
+                    "the release is resolved")
+
+        self.assertIs(row["passes"], True)
+
+    def test_no_frame_rate_recorded_is_unmeasured_not_failed(self):
+        row = named(open_questions(), "the release is resolved")
+
+        self.assertIsNone(row["passes"])
+        self.assertIsNone(row["reading"])
+
+    # --- the keyframe interval, which is a SEPARATE fault from the frame rate
+
+    # --- both views, because one unreachable view loses the frame
+
+    def test_the_slower_camera_decides_the_frame_rate(self):
+        # A fast front and a slow side is not a fast capture: the hand speed
+        # needs the pair, because one image gives a projection and a projection
+        # is a lower bound. A version reading only the front passes this.
+        row = named(open_questions(front={"framesPerSecondMeasured": 240.0},
+                                   side={"framesPerSecondMeasured": 30.0}),
+                    "the release is resolved")
+
+        self.assertIs(row["passes"], False)
+        self.assertEqual(row["reading"], 30.0)
+
+    def test_one_view_recording_nothing_leaves_it_unmeasured(self):
+        row = named(open_questions(front={"framesPerSecondMeasured": 240.0}),
+                    "the release is resolved")
+
+        self.assertIsNone(row["passes"])
+
+    def test_session_one_point_zero_is_the_case_that_put_this_here(self):
+        # The front camera keyframes every second and the SIDE every ten. The
+        # fault was on the side file, so a condition reading only the front
+        # would have missed the reading it exists for.
+        row = named(open_questions(front={"keyframeIntervalSecondsMeasured": 1.0},
+                                   side={"keyframeIntervalSecondsMeasured": 10.0}),
+                    "the release moment is addressable")
+
+        self.assertIs(row["passes"], False)
+        self.assertEqual(row["reading"], 10.0)
+
+    def test_a_ten_second_gop_puts_the_frame_out_of_reach(self):
+        # The side file of session 1.0, exactly: three keyframes across twenty
+        # seconds. It could run at 240 fps and still fail this.
+        rows = open_questions(framesPerSecondMeasured=240.0,
+                              keyframeIntervalSecondsMeasured=10.0)
+
+        self.assertIs(named(rows, "the release is resolved")["passes"], True)
+        self.assertIs(named(rows, "the release moment is addressable")["passes"],
+                      False)
+
+    def test_a_one_second_gop_is_what_the_front_camera_did(self):
+        row = named(
+            open_questions(
+                keyframeIntervalSecondsMeasured=ADDRESSABLE_KEYFRAME_SECONDS),
+            "the release moment is addressable")
+
+        self.assertIs(row["passes"], True)
+
+    def test_nothing_writes_the_keyframe_interval_yet(self):
+        # Honest today and reachable tomorrow: no tool in this repository
+        # records it, so it reads unmeasured on every real set. The two tests
+        # above prove the reading is used once something writes it.
+        row = named(open_questions(framesPerSecondMeasured=30.0),
+                    "the release moment is addressable")
+
+        self.assertIsNone(row["passes"])
+
+    # --- the floor
+
+    def test_the_floor_has_no_bar_because_the_engine_has_no_floor(self):
+        row = named(open_questions(framesPerSecondMeasured=240.0),
+                    "the floor is in view")
+
+        self.assertEqual(row["thresholdKind"], "unavailable")
+        self.assertIsNone(row["threshold"])
+        self.assertIsNone(row["passes"])
+
+    def test_the_floor_condition_says_the_ratio_must_be_measured(self):
+        row = named(open_questions(), "the floor is in view")
+
+        self.assertIn("MEASURED", row["why"])
+        self.assertIn("never typed", row["why"])
+
+    # --- what "cannot answer" means, which is two different states
+
+    def test_a_capture_that_does_everything_asked_can_answer_them(self):
+        # A permanently unaskable row must not sink the answer: counting the
+        # floor condition made this a constant False, so the report told a
+        # 240 fps capture that it could answer nothing.
+        bundle = good()
+        for view in ("front", "side"):
+            bundle[view].setdefault("source", {}).update(
+                {"framesPerSecondMeasured": 240.0,
+                 "keyframeIntervalSecondsMeasured": 0.5})
+        opened = assemble(bundle, "0.1", MOVEMENT)["openQuestions"]
+
+        self.assertTrue(opened["canAnswer"])
+
+    def test_the_unaskable_question_is_named_rather_than_dropped(self):
+        opened = assemble(good(), "0.1", MOVEMENT)["openQuestions"]
+
+        self.assertEqual(opened["cannotBeAsked"], ["the floor is in view"])
+
+    def test_a_failing_askable_row_still_says_it_cannot_answer(self):
+        bundle = good()
+        for view in ("front", "side"):
+            bundle[view].setdefault("source", {}).update(
+                {"framesPerSecondMeasured": 30.0,
+                 "keyframeIntervalSecondsMeasured": 0.5})
+        opened = assemble(bundle, "0.1", MOVEMENT)["openQuestions"]
+
+        self.assertFalse(opened["canAnswer"])
+
+    def test_the_report_separates_the_two_states(self):
+        bundle = good()
+        for view in ("front", "side"):
+            bundle[view].setdefault("source", {}).update(
+                {"framesPerSecondMeasured": 240.0,
+                 "keyframeIntervalSecondsMeasured": 0.5})
+        text = render(assemble(bundle, "0.1", MOVEMENT))
+
+        self.assertIn("can answer the ones that can be asked", text)
+        self.assertIn("CANNOT BE ASKED AT ALL", text)
+
+    # --- the group as a whole
+
+    def test_every_threshold_declares_its_kind(self):
+        for row in open_questions(framesPerSecondMeasured=30.0):
+            self.assertIn(
+                row["thresholdKind"],
+                ("measured", "derived", "chosen", "unavailable"), row["name"])
+
+    def test_the_report_carries_the_group(self):
+        document = assemble(good(), "0.1", MOVEMENT)
+        text = render(document)
+
+        self.assertIn("## The open questions", text)
+        self.assertIn("the release is resolved", text)
+        self.assertIn("This capture cannot answer them.", text)
 
 if __name__ == "__main__":
     unittest.main()

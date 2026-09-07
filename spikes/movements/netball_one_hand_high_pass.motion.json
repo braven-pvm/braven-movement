@@ -1,0 +1,64 @@
+{
+  "movementId": "netball_one_hand_high_pass",
+  "frames": 96,
+  "framesPerSecond": 60,
+  "rateNote": "60 frames per second, matching the rest of the library.",
+  "notes": "Hand positions are fractions of arm length, measured from the chest. across is HALF THE SEPARATION between the hands, up is above the chest, ahead is in front. Refer to handKeyNote: across is not a lateral position, and this drill is the first in the library where that distinction matters. The library's fourth drill that STARTS with the ball, and the FIRST that sends it away with one hand.",
+  "orderNote": "The manual's three numbered steps are in this order and the phases follow them: 'Pull the ball up as high as arm can go' comes FIRST (2672), then 'Give a small step, and with wrist and hands pass the ball' (2673), then 'Keep hand behind the ball and fingers up' (2674), which is a hold that applies throughout rather than a step in time. She lifts, then steps and passes.",
+  "handKeyNote": "THESE HAND KEYS DO NOT DRIVE THE HANDS. In a possession solve the hands are placed by the grip around the ball, and the ball is placed by the technique's afterContact keys. netball_bounce_pass proved this by moving these keys four ways and watching a graded measure change by 0.00 degrees. They are authored honestly anyway, because the file is read by people and a key that lied about where her hand is would mislead the next author.\n\nAND 'across' HERE IS A HALF-SEPARATION, NOT A LATERAL POSITION. motion_track.hand_targets_from_track gives the LEFT hand +across and the RIGHT hand -across, so the value is how far apart the hands are and a NEGATIVE value crosses her arms. A first draft of this file used negative values here, borrowing the sign convention from the technique file's afterContact, where across IS a signed lateral position. test_motion_track.HandednessTest caught it. The two files use the same word for two different quantities, and this drill is the first where the difference bites, because it is the first that wants the ball off the midline at all. THE LATERAL PLACEMENT LIVES IN THE TECHNIQUE FILE, where the lift carry's across is -0.20 torso lengths, toward the throwing shoulder.\n\nSO across IS 0.22 AT EVERY KEY, WHICH IS A STATEMENT THIS TRACK CANNOT MAKE HONESTLY. The motion track is symmetric by construction: it describes one pair of hands held apart, and it has no way to say that ONE hand is on the ball and the other is doing nothing. The file that says so is the technique's hands='right'. The separation is left at the library's usual 0.22 rather than invented, because any value here is equally unused by the solve and a made-up number would only look meaningful.",
+  "stance": {
+    "hipDropFraction": 0.1003,
+    "note": "The same hip drop the other three passes start from. The manual gives this block no stance cue, so nothing argues for changing it.",
+    "unitNote": "Stance is measured in leg lengths, not arm lengths. hipDrop, the foot placements and the root travel were all written in arm lengths, which made them depend on the wrong limb: two athletes of the same height with the same legs, differing only in reach, came out with knees 5 degrees apart. Every stance number here was multiplied by 0.626885, the reference athlete's arm over her leg, so her poses are exactly what they were and only other bodies change."
+  },
+  "keys": [
+    {
+      "atPhase": 0.0,
+      "name": "ready",
+      "across": 0.22,
+      "up": 0.04,
+      "ahead": 0.36,
+      "hipDrop": 0.1003,
+      "note": "Ball held at the chest. The manual gives this block no catch line, unlike the overhead pass, so the opening pose is carried from the other passes rather than quoted."
+    },
+    {
+      "atPhase": 0.35,
+      "name": "lift",
+      "across": 0.22,
+      "up": 1.4,
+      "ahead": 0.22,
+      "hipDrop": 0.1003,
+      "note": "The manual's step 1. The ball goes up on the RIGHT side, which this file cannot express: the lateral placement is the technique file's lift carry at across -0.20 torso lengths. What this key carries is the height and the reach."
+    },
+    {
+      "atPhase": 0.55,
+      "name": "step",
+      "across": 0.22,
+      "up": 1.36,
+      "ahead": 0.4,
+      "hipDrop": 0.1003,
+      "rootAhead": 0.09,
+      "note": "The manual's step 2, 'Give a small step'. The root travels forward. SMALL is the manual's own word and its warning 'Don't give a too big step (shortening own 3ft)' is the reason: a big step costs her the three feet of space the rules give her. THE STEP LENGTH HAS NO MEASURE and nothing grades it."
+    },
+    {
+      "atPhase": 0.8,
+      "name": "release",
+      "across": 0.22,
+      "up": 1.22,
+      "ahead": 0.78,
+      "hipDrop": 0.1003,
+      "rootAhead": 0.14,
+      "note": "The ball leaves. The hand has come through and forward off the peak."
+    },
+    {
+      "atPhase": 1.0,
+      "name": "follow_through",
+      "across": 0.22,
+      "up": 0.9,
+      "ahead": 0.92,
+      "hipDrop": 0.1003,
+      "rootAhead": 0.14,
+      "note": "The arm continues after the ball. The manual describes no follow-through for this block, so this is NOT A QUOTE. NOTHING IS GRADED AT THIS PHASE: a follow-through checkpoint was authored and deleted before shipping because no stable lever could move it out of its band. Refer to the definition's deletedCheckpointNote."
+    }
+  ]
+}

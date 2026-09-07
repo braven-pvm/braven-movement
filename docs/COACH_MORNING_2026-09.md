@@ -384,6 +384,94 @@ band is yours; the measurement is all we have.
 readings sit 16 to 32 degrees inside the same band, and nothing about the
 technique, which the other ten checkpoints show does not change with the ball.
 
+## 12. The bounce pass exists, and its bounce does not
+
+Added 2026-09-02 with `netball_bounce_pass`, the library's eleventh drill.
+
+**What she can see.** The throw: the ball taken to the side, the knees bent, the
+arm driving down and forward, the release low, the follow-through. Graded on six
+checkpoints.
+
+**What is missing from it, and why she should be told before she watches.** The
+engine has no floor. The ball leaves her hands on a path aimed at the right spot
+on the court and then keeps going in a straight parabola; the clip ends 0.268 s
+before it would land. So **the drill shows a bounce pass with no bounce.**
+
+**What was deliberately NOT graded.** Two of the manual's five steps — the
+bounce point "approximately 1m in front of receiver" and "keep ball low" — have
+no instrument, and no angle was substituted for them. This library has twice
+authored a checkpoint for a manual cue and withdrawn it, so the two are recorded
+as gaps instead.
+
+**The question for her.** Is a drill that teaches the THROW of a bounce pass
+useful to a coach while the bounce is absent, or does it wait for the floor? The
+content is honest either way; the choice is whether an incomplete drill helps
+more than it misleads.
+
+**One number for the same conversation.** The library throws every pass at
+600 cm/s, which has no source. On this drill that constant makes the ball travel
+UPWARD to reach the floor: it needs +95.37 cm/s of vertical, and the throw is
+only downward above 735 cm/s. **A bounce pass is driven at the floor, not lobbed
+at it.** The speed was left at 600 rather than invented afresh. (The figures are
+computed over the flight's true span, 350.5 cm from a release at 111.7 cm, which
+is the floor point 4.00 m from her chest less the 49.5 cm the ball is already
+ahead of it.)
+
+## 13. The one hand high pass, and the cue it does not grade
+
+Added 2026-09-04 with `netball_one_hand_high_pass`, the library's twelfth drill,
+its fourth pass and **its first one-handed pass**.
+
+**What she can see.** The ball taken up on one arm to the top of its reach, a
+step, the release, and the arm coming through. Graded on five checkpoints: four
+on the RIGHT arm, because the right is the working arm, and the fifth the same
+left-knee stance reading every drill in the library carries.
+
+**THE CUE THE DRILL IS NAMED FOR IS NOT GRADED, and she should be told before
+she watches.** The manual's step 1 is *"Pull the ball up as high as arm can
+go"*. That is a height, and nothing in the engine reads a height in
+centimetres. **No angle was substituted for it.** The nearest available proxy
+reads arm fold and hand placement as well as height, and it is least trustworthy
+exactly where this drill lives, above the crown. So the cue is recorded as a
+gap.
+
+**The number she is not being shown, in case she wants it.** The ball reaches
+**199.95 cm** at its highest. Her crown is at 163.4 cm and her shoulder at
+131.3. The overhead pass peaks at 184.4 cm, so this drill carries the ball
+**15.5 cm higher** — which is the difference between the manual's two
+sentences, *"as high as arm can go"* and *"into the air above your head"*. Those
+figures are measured and reported; none of them is graded.
+
+**A question for her.** Is a drill whose defining cue is ungraded useful to
+her, when everything else in it grades cleanly? The alternative was to grade
+step 1 on the proxy and tell her the number is partly about where her hands
+are. The engine work to measure height properly is queued.
+
+**A second question, about a name.** Braven Tactics' clip vocabulary has four
+pass names: `chest-pass`, `shoulder-pass`, `lob` and `bounce-pass`. This drill
+is exported as `one-hand-high-pass`, which is **not** in that list, so no board
+can select it. **It was deliberately NOT filed under `shoulder-pass`**, the one
+unclaimed slot: this drill releases the ball **59.3 cm above the shoulder**,
+against 47.6 for the overhead pass and 9.6 for the chest pass, and a pass
+released nearly 60 cm over the shoulder is not a shoulder pass. (Those three
+are the ball centre at the release frame measured against the shoulder **as it
+stands at frame 0**. Against the shoulder at the release frame itself, which
+rises as the arm goes up, they are 51.9, 39.8 and 6.3. The ordering and the
+conclusion are the same either way; the inputs are stated because a height
+without its reference point is what this project keeps having to correct.)
+**Does
+`shoulder-pass` instead name the manual's 1 HAND LOW WIDE or 1 HAND WIDE
+block?** Neither is authored yet, so the slot can still be given to whichever
+she means.
+
+**One thing this drill settles that was open.** The lob needed a parent. The
+manual's lob block reuses **two of this block's three steps word for word**,
+and its own step 1 names its permitted parents as *"1 Hand high/wide or double
+hand"*. The library now holds two of the three, including the one whose wording
+the lob actually copies. **Which parent the lob rides is still hers to decide**
+and stays open in `docs/LOB_AUTHORING_BRIEF.md`; this drill only removes the
+reason the question could not be asked.
+
 ## Three items with no engine evidence
 
 These are on the agenda and this document has nothing to add to them.
