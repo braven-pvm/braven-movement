@@ -60,7 +60,9 @@ MINIMUM_MEANINGFUL_BAND_DEGREES = 5.0
 # not arithmetic. THEY AGREE AT THE CENTIMETRE AND NOT MORE CLOSELY: 19.61
 # against 18.68 is a 0.93 mm spread, about 5 per cent of either, and both round
 # to 2.0. An earlier version of this comment said "within a tenth of a
-# millimetre", which overstated two readings that differ by nine times that. A floor exists to keep noise out of coaching, so the wide
+# millimetre", which overstated two readings that differ by nine times that.
+#
+# A floor exists to keep noise out of coaching, so the wide
 # side is the safe side, and both shipped centimetre bands (6.0 and 14.0) clear
 # it either way, which keeps this a fix rather than a retune.
 #
@@ -199,6 +201,15 @@ def read_band(
                 f"name the unit it is in; use {' and '.join(BAND_FIELDS[unit])}"
             )
     low, high = BAND_FIELDS[spelled]
+    # THE PRESENCE TEST ABOVE READS THE `minimum` KEY ONLY, so a half pair --
+    # a `minimumCentimetres` with no maximum -- reaches here and would die on
+    # a bare KeyError naming neither the drill nor the phase. Refused is
+    # right; unattributable is not.
+    if high not in checkpoint:
+        raise MovementDefinitionError(
+            f"{movement_id}/{phase_name}/{measure}: half a band. {low} is "
+            f"present and {high} is not"
+        )
     return float(checkpoint[low]), float(checkpoint[high])
 
 
@@ -235,9 +246,10 @@ class Checkpoint:
 
         The stored field is still called `minimum_degrees` and holds
         centimetres for a length, which is the same fault one layer in. The
-        rename reaches 45 call sites across 13 modules, so it is its own unit
-        of work; these two names exist so that nothing written from here on
-        has to spell a length "degrees".
+        rename reaches 48 call sites across 13 modules as this branch leaves
+        it -- 45 before the pack that added these two names and the band field
+        -- so it is its own unit of work. These names exist so that nothing
+        written from here on has to spell a length "degrees".
         """
         return self.minimum_degrees
 
