@@ -1,4 +1,8 @@
-"""Where the 21 degrees between the lift and the side view comes from.
+"""Where the disagreement between the lift and the side view comes from.
+
+RE-TITLED 2026-09-07. This said "the 21 degrees", and 21 was measured on two
+files that are not a pair. On the real pair it is 4.4 degrees against a
+projection floor of 3.2. Refer to the ladder below.
 
 THE REPROJECTION COMPARISON THAT WAS ASKED FOR CANNOT ANSWER THIS, and the
 reason is in the lift's own method note. It is not a triangulation. The front
@@ -13,18 +17,30 @@ WHICH READING OF `up` BUILDS THE 3D DECIDES THE ANSWER, AND THE OBVIOUS CHOICE
 IS WRONG. The lift measures `up` twice, once per camera. Averaging the two is
 the better ESTIMATE of where the arm was, and it is the wrong 3D for THIS test,
 because the comparison is against the side view and a mean-up 3D borrows half
-its `up` from that same view. Measured on 730 frames:
+its `up` from that same view.
 
-    up taken from   shares with the side view   median disagreement
-    front only      nothing                            21.2 deg
-    mean of both    half of the up                     12.8
-    side only       all of the up                       3.8
+RE-MEASURED 2026-09-07 ON THE PAIR THAT IS ACTUALLY A PAIR. The table that
+stood here (21.2 / 12.8 / 3.8 deg on 730 frames) was measured on
+`front 0.1.mp4` against `side 0.1.mp4`, which are NOT two views of one take;
+refer to the mislabel finding in `docs/VIDEO_CAPTURE_FINDINGS.md`. Those three
+numbers are VOID. On `front 0.1.mp4` + `side 0.2.mp4`, 763 frame pairs:
 
-A ladder, and at the bottom rung the disagreement equals the projection floor
-exactly: with `up` from the side, the two quantities share two of three
-coordinates and only the definitional difference is left. So the default here
-is `front`, the view NOT being compared against. Choosing `mean` reports a
-better agreement bought by asking the instrument about itself.
+    up taken from   shares with the side view   median   projection floor
+    front only      nothing                     4.4 deg        3.2 deg
+    mean of both    half of the up              2.6            2.8
+    side only       all of the up               2.5            2.5
+
+THE LADDER SURVIVES AND IT IS MUCH SHORTER. The ordering still holds, and the
+bottom rung still equals the projection floor exactly, which is the check that
+says the arithmetic is right: with `up` from the side, the two quantities share
+two of three coordinates and only the definitional difference is left. What
+changed is the top rung. Nineteen of the old 21.2 degrees were the wrong
+pairing, not the depth scale.
+
+So the default here is still `front`, the view NOT being compared against.
+Choosing `mean` reports a better agreement bought by asking the instrument
+about itself. But read the front row against its own floor before calling any
+of it error: 4.4 against 3.2 leaves about a degree, not twenty-one.
 
 Two jobs, and one number cannot do both: a best estimate of the pose, and a
 test of whether two views agree.
@@ -106,31 +122,45 @@ def up_of(row: dict) -> float:
     return 0.5 * (row["upFrontMetres"] + row["upSideMetres"])
 lift = json.loads(ARGUMENTS.lift.read_text(encoding="utf-8"))
 side = json.loads(ARGUMENTS.view.read_text(encoding="utf-8"))
-offset = float(lift["syncApplied"]["offsetSecondsToReference"])
 
-# The lift's rows, gathered per frame time.
-by_time = {}
+# THIS SCRIPT USED TO READ `offsetSecondsToReference` AND CRASHED ON EVERY
+# ARTEFACT THE LIFT NOW WRITES. That field was removed on 2026-09-07, because
+# the two cameras' frame periods differ by 11 microseconds and an offset in
+# seconds therefore drifts across the clip: two such offsets had already been
+# withdrawn from this material. The measurement is a FRAME COUNT. The field was
+# removed from the writer and this reader was not found, because nothing ran
+# it. `git grep` finds it in two seconds and nobody ran that either.
+applied = lift["syncApplied"]
+if "offsetSecondsToReference" in applied:
+    raise SystemExit(
+        "this lift artefact carries the withdrawn `offsetSecondsToReference`. "
+        "Re-run video_lift_3d.py --pair to write a current one.")
+frame_offset = int(applied["frameOffsetToReference"])
+
+# THE MAPPING IS BY FRAME INDEX, EXACTLY. The lift row carries the front frame
+# index and the side frame index it was paired with, so no nearest-time match
+# with a tolerance is needed here; a tolerance is what let a frame be paired
+# with its neighbour when a time landed between two.
+by_index = {}
 for row in lift["rows"]:
-    by_time.setdefault(row["ptsSeconds"], {})[row["name"]] = row
+    by_index.setdefault(row["frameIndex"], {})[row["name"]] = row
 
-# The side view's own frames, by its own clock.
-side_frames = {
-    round(frame["ptsSeconds"], 4): {
-        mark["name"]: mark for mark in frame.get("landmarks", [])
-    }
+side_by_index = {
+    frame["frameIndex"]: {mark["name"]: mark
+                          for mark in frame.get("landmarks", [])}
     for frame in side["frames"] if frame.get("detected")
 }
-side_times = sorted(side_frames)
 
 
-def nearest_side(local_seconds):
-    best = min(side_times, key=lambda t: abs(t - local_seconds))
-    return (best, side_frames[best]) if abs(best - local_seconds) < 0.034 else (None, None)
+def side_frame_of(front_index: int):
+    """The side frame the lift paired with this front frame, by index."""
+    return side_by_index.get(front_index + frame_offset)
 
 
 rows = []
-for when in sorted(by_time):
-    marks = by_time[when]
+for front_index in sorted(by_index):
+    marks = by_index[front_index]
+    when = marks[next(iter(marks))]["ptsSeconds"]
     if not all(name in marks for name in ARM):
         continue
     # 3D from the lift. `up` is measured twice; take the mean, and keep the
@@ -144,8 +174,7 @@ for when in sorted(by_time):
     if lifted is None:
         continue
 
-    local = when - offset
-    stamp, seen = nearest_side(local)
+    seen = side_frame_of(front_index)
     if seen is None or not all(name in seen for name in ARM):
         continue
     flat = angle(
@@ -226,8 +255,8 @@ for index in range(0, len(ordered), size):
 # GEOMETRY, before any error is involved.
 floor = []
 floor_shares = []
-for when in sorted(by_time):
-    marks = by_time[when]
+for front_index in sorted(by_index):
+    marks = by_index[front_index]
     if not all(name in marks for name in ARM):
         continue
     def whole(name):

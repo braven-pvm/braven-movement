@@ -1,205 +1,205 @@
 {
- "schemaVersion": "video-event-ledger-1",
- "set": "0.1",
- "readBy": "the video-readiness lane, 2026-09-07, from contact sheets built by video_event_ledger.py",
- "readUtc": "2026-09-07",
- "resolutionSeconds": 0.267,
- "method": "Every 8th frame of each view, selected BY INDEX from the container's pts list and never by seeking, tiled into contact sheets and read by eye. An event's time is therefore the sampled frame nearest it, so each is accurate to about one sample, 0.267 s. THAT IS COARSE ON PURPOSE AND IT IS ENOUGH: the question is whether ONE constant offset maps one view's sequence onto the other's, and the disagreement below is many times the resolution. If a fit had been found at this resolution it would then have needed refining to frame-exactness.",
- "views": {
-  "front": {
-   "file": "front 0.1.mp4",
-   "frames": 866,
-   "usableToSeconds": 25.7,
-   "note": "Hands EMPTY at her hips from 0.0 to 8.5 s, then a first catch of a ball arriving from off-frame. A second empty stretch runs 17.3 to 20.0 s and holds the second clap. The camera is picked up at 26.1 s and the frame goes dark.",
-   "events": [
-    {
-     "frameIndex": 176,
-     "seconds": 5.8667,
-     "kind": "clap"
+  "schemaVersion": "video-event-ledger-1",
+  "set": "0.1",
+  "readBy": "the video-readiness lane, 2026-09-07, from contact sheets built by video_event_ledger.py",
+  "readUtc": "2026-09-07",
+  "resolutionSeconds": 0.267,
+  "method": "Every 8th frame of each view, selected BY INDEX from the container's pts list and never by seeking, tiled into contact sheets and read by eye. An event's time is therefore the sampled frame nearest it, so each is accurate to about one sample, 0.267 s. THAT IS COARSE ON PURPOSE AND IT IS ENOUGH: the question is whether ONE constant offset maps one view's sequence onto the other's, and the disagreement below is many times the resolution. If a fit had been found at this resolution it would then have needed refining to frame-exactness.",
+  "views": {
+    "front": {
+      "file": "front 0.1.mp4",
+      "frames": 866,
+      "usableToSeconds": 25.7,
+      "note": "Hands EMPTY at her hips from 0.0 to 8.5 s, then a first catch of a ball arriving from off-frame. A second empty stretch runs 17.3 to 20.0 s and holds the second clap. The camera is picked up at 26.1 s and the frame goes dark.",
+      "events": [
+        {
+          "frameIndex": 176,
+          "seconds": 5.8667,
+          "kind": "clap"
+        },
+        {
+          "frameIndex": 274,
+          "seconds": 9.1333,
+          "kind": "catch"
+        },
+        {
+          "frameIndex": 344,
+          "seconds": 11.4667,
+          "kind": "catch"
+        },
+        {
+          "frameIndex": 408,
+          "seconds": 13.6,
+          "kind": "catch"
+        },
+        {
+          "frameIndex": 456,
+          "seconds": 15.2,
+          "kind": "catch"
+        },
+        {
+          "frameIndex": 504,
+          "seconds": 16.8,
+          "kind": "catch"
+        },
+        {
+          "frameIndex": 536,
+          "seconds": 17.8667,
+          "kind": "clap"
+        },
+        {
+          "frameIndex": 608,
+          "seconds": 20.2667,
+          "kind": "catch"
+        },
+        {
+          "frameIndex": 664,
+          "seconds": 22.1333,
+          "kind": "catch"
+        },
+        {
+          "frameIndex": 728,
+          "seconds": 24.2667,
+          "kind": "catch"
+        }
+      ]
     },
-    {
-     "frameIndex": 274,
-     "seconds": 9.1333,
-     "kind": "catch"
-    },
-    {
-     "frameIndex": 344,
-     "seconds": 11.4667,
-     "kind": "catch"
-    },
-    {
-     "frameIndex": 408,
-     "seconds": 13.6,
-     "kind": "catch"
-    },
-    {
-     "frameIndex": 456,
-     "seconds": 15.2,
-     "kind": "catch"
-    },
-    {
-     "frameIndex": 504,
-     "seconds": 16.8,
-     "kind": "catch"
-    },
-    {
-     "frameIndex": 536,
-     "seconds": 17.8667,
-     "kind": "clap"
-    },
-    {
-     "frameIndex": 608,
-     "seconds": 20.2667,
-     "kind": "catch"
-    },
-    {
-     "frameIndex": 664,
-     "seconds": 22.1333,
-     "kind": "catch"
-    },
-    {
-     "frameIndex": 728,
-     "seconds": 24.2667,
-     "kind": "catch"
+    "side": {
+      "file": "side 0.1.mp4",
+      "frames": 863,
+      "usableToSeconds": 26.4,
+      "note": "A first catch at 8.26 of a ball fed from the front camera's side, held, then RELEASED UPWARD at 8.53 and caught again at 9.86. SHE IS NOT HANDLING A BALL WITHOUT PAUSE THROUGH 17.06-19.73 — an earlier version of this note said so and the contact sheet refutes it: she releases at about 17.5 and her hands are empty from 17.59 to 18.39 before catching at 18.53. What survives, and what matters, is that NO EMPTY STRETCH IN THIS VIEW AFTER 8.26 s LASTS MUCH OVER A SECOND, while the front stands empty for 2.7 s. She walks off at 26.4 s.",
+      "events": [
+        {
+          "frameIndex": 248,
+          "seconds": 8.2634,
+          "kind": "catch"
+        },
+        {
+          "frameIndex": 256,
+          "seconds": 8.53,
+          "kind": "release"
+        },
+        {
+          "frameIndex": 296,
+          "seconds": 9.8628,
+          "kind": "catch"
+        },
+        {
+          "frameIndex": 352,
+          "seconds": 11.7287,
+          "kind": "catch"
+        },
+        {
+          "frameIndex": 416,
+          "seconds": 13.8611,
+          "kind": "catch"
+        },
+        {
+          "frameIndex": 472,
+          "seconds": 15.7271,
+          "kind": "catch"
+        },
+        {
+          "frameIndex": 512,
+          "seconds": 17.0599,
+          "kind": "catch"
+        },
+        {
+          "frameIndex": 560,
+          "seconds": 18.6592,
+          "kind": "catch"
+        },
+        {
+          "frameIndex": 640,
+          "seconds": 21.3248,
+          "kind": "catch"
+        },
+        {
+          "frameIndex": 696,
+          "seconds": 23.1908,
+          "kind": "catch"
+        },
+        {
+          "frameIndex": 752,
+          "seconds": 25.0567,
+          "kind": "catch"
+        }
+      ]
     }
-   ]
   },
-  "side": {
-   "file": "side 0.1.mp4",
-   "frames": 863,
-   "usableToSeconds": 26.4,
-   "note": "A first catch at 8.26 of a ball fed from the front camera's side, held, then RELEASED UPWARD at 8.53 and caught again at 9.86. SHE IS NOT HANDLING A BALL WITHOUT PAUSE THROUGH 17.06-19.73 \u2014 an earlier version of this note said so and the contact sheet refutes it: she releases at about 17.5 and her hands are empty from 17.59 to 18.39 before catching at 18.53. What survives, and what matters, is that NO EMPTY STRETCH IN THIS VIEW AFTER 8.26 s LASTS MUCH OVER A SECOND, while the front stands empty for 2.7 s. She walks off at 26.4 s.",
-   "events": [
+  "fit": {
+    "fits": false,
+    "bestOffsetSeconds": 0.2583,
+    "matchedEvents": 3,
+    "spanSeconds": 5.333,
+    "nullPercentileMatches": 4,
+    "nullTrials": 500,
+    "anchors": [
+      {
+        "kind": "catch",
+        "frontSeconds": 11.4667,
+        "sideSeconds": 11.7287,
+        "errorSeconds": -0.0037
+      },
+      {
+        "kind": "catch",
+        "frontSeconds": 13.6,
+        "sideSeconds": 13.8611,
+        "errorSeconds": -0.0028
+      },
+      {
+        "kind": "catch",
+        "frontSeconds": 16.8,
+        "sideSeconds": 17.0599,
+        "errorSeconds": -0.0016
+      }
+    ],
+    "why": "a sync needs two anchors at least 10.0 s apart and the best offset spans 5.333 s; a RANDOM side ledger of the same shape explains 4 events at the 99th percentile, so 3 is not better than chance"
+  },
+  "verdict": "NOT A SYNCHRONOUS PAIR — AND NOW EXPLAINED",
+  "fitSweep": [
     {
-     "frameIndex": 248,
-     "seconds": 8.2634,
-     "kind": "catch"
+      "toleranceSeconds": 0.0333,
+      "bestOffsetSeconds": 0.2583,
+      "matchedEvents": 3,
+      "chanceCeiling": 4,
+      "spanSeconds": 5.333,
+      "fits": false
     },
     {
-     "frameIndex": 256,
-     "seconds": 8.53,
-     "kind": "release"
+      "toleranceSeconds": 0.1,
+      "bestOffsetSeconds": 0.2583,
+      "matchedEvents": 3,
+      "chanceCeiling": 5,
+      "spanSeconds": 5.333,
+      "fits": false
     },
     {
-     "frameIndex": 296,
-     "seconds": 9.8628,
-     "kind": "catch"
+      "toleranceSeconds": 0.2,
+      "bestOffsetSeconds": -1.0083,
+      "matchedEvents": 4,
+      "chanceCeiling": 6,
+      "spanSeconds": 15.133,
+      "fits": false
     },
     {
-     "frameIndex": 352,
-     "seconds": 11.7287,
-     "kind": "catch"
+      "toleranceSeconds": 0.267,
+      "bestOffsetSeconds": 0.525,
+      "matchedEvents": 6,
+      "chanceCeiling": 6,
+      "spanSeconds": 15.133,
+      "fits": false
     },
     {
-     "frameIndex": 416,
-     "seconds": 13.8611,
-     "kind": "catch"
-    },
-    {
-     "frameIndex": 472,
-     "seconds": 15.7271,
-     "kind": "catch"
-    },
-    {
-     "frameIndex": 512,
-     "seconds": 17.0599,
-     "kind": "catch"
-    },
-    {
-     "frameIndex": 560,
-     "seconds": 18.6592,
-     "kind": "catch"
-    },
-    {
-     "frameIndex": 640,
-     "seconds": 21.3248,
-     "kind": "catch"
-    },
-    {
-     "frameIndex": 696,
-     "seconds": 23.1908,
-     "kind": "catch"
-    },
-    {
-     "frameIndex": 752,
-     "seconds": 25.0567,
-     "kind": "catch"
+      "toleranceSeconds": 0.4,
+      "bestOffsetSeconds": 0.6583,
+      "matchedEvents": 8,
+      "chanceCeiling": 7,
+      "spanSeconds": 15.133,
+      "fits": true
     }
-   ]
-  }
- },
- "fit": {
-  "fits": false,
-  "bestOffsetSeconds": 0.2583,
-  "matchedEvents": 3,
-  "spanSeconds": 5.333,
-  "nullPercentileMatches": 4,
-  "nullTrials": 500,
-  "anchors": [
-   {
-    "kind": "catch",
-    "frontSeconds": 11.4667,
-    "sideSeconds": 11.7287,
-    "errorSeconds": -0.0037
-   },
-   {
-    "kind": "catch",
-    "frontSeconds": 13.6,
-    "sideSeconds": 13.8611,
-    "errorSeconds": -0.0028
-   },
-   {
-    "kind": "catch",
-    "frontSeconds": 16.8,
-    "sideSeconds": 17.0599,
-    "errorSeconds": -0.0016
-   }
   ],
-  "why": "a sync needs two anchors at least 10.0 s apart and the best offset spans 5.333 s; a RANDOM side ledger of the same shape explains 4 events at the 99th percentile, so 3 is not better than chance"
- },
- "verdict": "NOT A SYNCHRONOUS PAIR \u2014 AND NOW EXPLAINED",
- "fitSweep": [
-  {
-   "toleranceSeconds": 0.0333,
-   "bestOffsetSeconds": 0.2583,
-   "matchedEvents": 3,
-   "chanceCeiling": 4,
-   "spanSeconds": 5.333,
-   "fits": false
-  },
-  {
-   "toleranceSeconds": 0.1,
-   "bestOffsetSeconds": 0.2583,
-   "matchedEvents": 3,
-   "chanceCeiling": 5,
-   "spanSeconds": 5.333,
-   "fits": false
-  },
-  {
-   "toleranceSeconds": 0.2,
-   "bestOffsetSeconds": -1.0083,
-   "matchedEvents": 4,
-   "chanceCeiling": 6,
-   "spanSeconds": 15.133,
-   "fits": false
-  },
-  {
-   "toleranceSeconds": 0.267,
-   "bestOffsetSeconds": 0.525,
-   "matchedEvents": 6,
-   "chanceCeiling": 6,
-   "spanSeconds": 15.133,
-   "fits": false
-  },
-  {
-   "toleranceSeconds": 0.4,
-   "bestOffsetSeconds": 0.6583,
-   "matchedEvents": 8,
-   "chanceCeiling": 7,
-   "spanSeconds": 15.133,
-   "fits": true
-  }
- ],
- "why": "The two files NAMED 0.1 are not a pair, and the reason is not a discontinuity or a drop: THE FILE NAMES ARE WRONG. `front 0.1.mp4` pairs with `side 0.2.mp4` at a constant frame offset of -5, established on two ball-into-hands anchors 11.03 s apart and checked on a third event. That is why no offset fits the labelled pair at any tolerance a sync could use: at one frame the best explains 3 of 10 events against a chance ceiling of 4.\n\nTHE SEQUENCE SAID SO BEFORE THE ARITHMETIC DID. The front stands empty-handed from 17.3 to 20.0 s and claps at 17.87 while the side handles a ball continuously from 17.06 to 19.73. No offset reconciles a pause with continuous play \u2014 and `side 0.2.mp4` DOES contain that pause, at 17.33 to 19.73, which is what identified it.\n\nRefer to PAIRS in spikes/video_keypoints.py.",
- "resolutionNote": "Events are read on a grid of every eighth frame, so their times are multiples of 8 frames \u2014 EXCEPT the front's first catch at index 274, which is not. That one was pinned to its contact frame afterwards, when it became an anchor, and it is left at its true index rather than pushed back onto the grid: an anchor's value is that it is exact. The other rows are grid samples and are accurate to about one sample, 0.267 s."
+  "why": "The two files NAMED 0.1 are not a pair, and the reason is not a discontinuity or a drop: THE FILE NAMES ARE WRONG. `front 0.1.mp4` pairs with `side 0.2.mp4` at a constant frame offset of -5, established on two ball-into-hands anchors 11.03 s apart and checked on a third event. That is why no offset fits the labelled pair at any tolerance a sync could use: at one frame the best explains 3 of 10 events against a chance ceiling of 4.\n\nTHE SEQUENCE SAID SO BEFORE THE ARITHMETIC DID. The front stands empty-handed from 17.3 to 20.0 s and claps at 17.87, and `side 0.1.mp4` has no comparable gap: its longest empty stretch after 8.26 s is about 0.8 s, from 17.59 to 18.39. (This sentence used to say the side handles a ball CONTINUOUSLY through 17.06-19.73; the contact sheet refutes that and the note on the side view says so. The conclusion is unchanged and now rests on the durations.) No offset reconciles a 2.7 s pause with a view whose gaps are all about a second — and `side 0.2.mp4` DOES contain that pause, at 17.33 to 19.73, which is what identified it.\n\nRefer to PAIRS in spikes/video_keypoints.py.",
+  "resolutionNote": "Events are read on a grid of every eighth frame, so their times are multiples of 8 frames — EXCEPT the front's first catch at index 274, which is not. That one was pinned to its contact frame afterwards, when it became an anchor, and it is left at its true index rather than pushed back onto the grid: an anchor's value is that it is exact. The other rows are grid samples and are accurate to about one sample, 0.267 s."
 }

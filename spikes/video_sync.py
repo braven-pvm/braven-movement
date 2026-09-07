@@ -95,9 +95,12 @@ class Offset:
         side 8.25 - 1.000 = 7.25            wrong by twice the offset
 
     So ADD this number to a timestamp in the SECOND file to reach the first
-    file's clock. It is therefore identical to the schema's
-    `offsetSecondsToReference` for the second view, in seconds rather than
-    milliseconds, with the first file as the reference.
+    file's clock. That is the sign convention the schema's former
+    `offsetSecondsToReference` used, with the first file as the reference.
+    **THE FIELD NO LONGER EXISTS** (removed 2026-09-07: two offsets in seconds
+    were published from this material and both were withdrawn). The schema's
+    sync is a FRAME offset, `frameOffsetToReference`, added to a frame INDEX.
+    The sign convention here is unchanged and is all that is being compared.
 
     An earlier version of this docstring said the opposite — subtract, and
     positive means later in the second file. Both halves were wrong, and

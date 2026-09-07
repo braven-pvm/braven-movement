@@ -143,6 +143,20 @@ PAIRS = {
 # from the top as a self toss; at the second, the side catches two-handed and
 # the front one-handed.
 #
+# **THAT ATTEMPT CANNOT BE RE-READ, AND SO IT IS NOT EVIDENCE.** No frame index
+# and no timestamp of any of the four frames tried was written down, here or
+# anywhere else in the tree. "77 and 75" therefore cannot be checked, corrected
+# or reproduced by anyone, including me: it is a recollection of a reading, not
+# a reading. It is kept above because it is what was done, and it is labelled
+# here because a number without its inputs must not be quoted as a result.
+#
+# It changes nothing about the conclusion, which does not rest on it: the
+# pairing of these two files is UNKNOWN, and it would still be unknown if the
+# attempt had never happened. What replaces the attempt is the fine event
+# ledger of `front 0.2.mp4`, which is a queued unit and is NOT done; refer to
+# `spikes/video-annotations/event-ledger-0.2.json`, which records NOT READ with
+# its reason.
+#
 # THE SECOND ANCHOR WAS FOUND BY LOOKING WHERE THE FIRST PREDICTED ONE, and a
 # catch found where an offset predicted a catch is not evidence in a clip of
 # catches. That is how -0.7295 was published.
@@ -178,7 +192,10 @@ def paired_files(name: str) -> tuple[str, str, int] | None:
     return None
 
 
-def frame_offset_of(sync: dict) -> int:
+PTS_TOLERANCE_SECONDS = 0.0005
+
+
+def frame_offset_of(sync: dict, frames: list | None = None) -> int:
     """The frame offset of a sync block, WITH ITS OWN ANCHORS CHECKED.
 
     Every consumer must run this check, and the check must live in ONE place.
@@ -188,7 +205,16 @@ def frame_offset_of(sync: dict) -> int:
     mutation has failed is a guard nobody has checked.
 
     It RAISES rather than asserting. `assert` disappears under `python -O`, and
-    this is a check on data, not on a programming mistake."""
+    this is a check on data, not on a programming mistake.
+
+    TWO CHECKS, AND THE SECOND NEEDS THE FRAMES. The index arithmetic is the
+    measurement and holds on its own. But the schema tells a consumer to assert
+    `other_pts[referenceIndex + frameOffsetToReference] == otherSeconds`, and
+    this only compared integers, so the schema sentence was not true of the code
+    it described. Pass `frames` (the other file's own frame list) and the row's
+    recorded `otherSeconds` is checked against the frame it actually names.
+    That is what catches an index pair copied correctly into a block whose
+    seconds came from somewhere else."""
     offset = int(sync["frameOffsetToReference"])
     for row in sync["anchors"] + sync["checks"]:
         if row["otherIndex"] != row["referenceIndex"] + offset:
@@ -197,6 +223,19 @@ def frame_offset_of(sync: dict) -> int:
                 f"offset of {offset}: {row['event']} has reference index "
                 f"{row['referenceIndex']} and other index {row['otherIndex']}, "
                 f"a difference of {row['otherIndex'] - row['referenceIndex']}.")
+        if frames is None or "otherSeconds" not in row:
+            continue
+        index = row["referenceIndex"] + offset
+        if not 0 <= index < len(frames):
+            raise SystemExit(
+                f"{row['event']}: index {index} is outside the paired file, "
+                f"which has {len(frames)} frames.")
+        found = float(frames[index]["ptsSeconds"])
+        if abs(found - float(row["otherSeconds"])) > PTS_TOLERANCE_SECONDS:
+            raise SystemExit(
+                f"{row['event']}: the block says frame {index} of the paired "
+                f"file is at {row['otherSeconds']} s, and that frame is at "
+                f"{found:.4f} s. The indices and the seconds disagree.")
     return offset
 
 
@@ -476,7 +515,10 @@ def _sync_block(view: str, set_id: str, measured: bool, sync: dict) -> dict:
             "`front 0.1.mp4` pairs with `side 0.2.mp4`, measured at a constant "
             "frame offset. The remaining two files were tried against each "
             "other under the same rule and failed it — two targeted anchors "
-            "gave frame differences of 77 and 75, and the events did not match "
+            "gave frame differences of 77 and 75 (RECORDED WITHOUT THEIR "
+            "INPUTS: no frame index or time of the four frames tried was "
+            "written down, so that reading cannot be re-done and is not "
+            "evidence), and the events did not match "
             "in kind. Do not pair this file with anything on a clock. Refer to "
             "PAIRING_UNKNOWN in video_keypoints.py and to "
             "spikes/video-annotations/event-ledger-<set>.json."

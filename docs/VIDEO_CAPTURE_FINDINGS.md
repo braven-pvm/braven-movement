@@ -28,9 +28,14 @@ across all 13 frames in that window. An earlier draft said "122 to 126" from a
 printout sampling every third frame, which understated the peak by 5 degrees.
 
 **The shape is right. The numbers are not.** Two independent readings of that
-same elbow, from the same footage, disagree by a median of 21 degrees. Nothing
-in the analysis fixes that, because the information needed is not in the
-footage.
+same elbow disagree by a median of **4.4 degrees** against a geometric floor of
+3.2, so about **1.2 degrees** is unexplained.
+
+**THAT USED TO SAY 21 DEGREES, AND 21 WAS THE MISLABEL.** The two files
+compared were `front 0.1.mp4` and `side 0.1.mp4`, which are not two views of
+one take. Re-measured 2026-09-07 on `front 0.1.mp4` + `side 0.2.mp4`, 763 frame
+pairs: median 4.4, 90th 11.6 (it was 63.1). Nineteen of the twenty-one degrees
+were the pairing. Refer to "The elbow angle" below.
 
 **A shape cannot become a number without a calibration reference in frame.**
 That, and a clap. Neither is sufficient on its own — nothing tested explains
@@ -193,16 +198,24 @@ files that are not a pair.
 | overhead catch | 605 / 20.1667 | 600 / 19.9920 | **5** |
 | second clap (a check) | 534 / 17.8000 | 529 / 17.6264 | **5** |
 
-**What identified it was the pause.** Front 0.1 stands empty-handed from 17.3 to
-20.0 s; `side 0.1.mp4` handles a ball continuously there, and **`side 0.2.mp4`
-has the pause**, at 17.33 to 19.73.
+**What identified it was the pause.** Front 0.1 stands empty-handed from 17.3
+to 20.0 s. `side 0.1.mp4` has no comparable gap there, and **`side 0.2.mp4` has
+the pause**, at 17.33 to 19.73.
+
+*Stated exactly, because an earlier version overstated it and the contact sheet
+refuted it: `side 0.1.mp4` is NOT handling a ball without pause through that
+stretch. She releases at about 17.5 and her hands are empty from 17.59 to 18.39
+before catching at 18.53. What holds is that no empty stretch in that view after
+8.26 s lasts much over a second, while the front stands empty for 2.7 s.*
 
 **The source files are NOT renamed.** They are Marius's assets, every path in
 the tree points at them, and the renaming is his decision. The mapping is
 recorded in `PAIRS` in `spikes/video_keypoints.py` and consumers read that.
 
 **`front 0.2.mp4` and `side 0.1.mp4` are PAIRING UNKNOWN.** Two targeted anchors
-gave frame differences of 77 and 75, and the events do not match in kind — a fed
+gave frame differences of 77 and 75 — **a reading recorded without its inputs,
+so it cannot be re-done and is not evidence; no frame index or time of any of
+the four frames tried was written down** — and the events do not match in kind, a fed
 pass against a self toss, two-handed against one-handed. The second was found by
 looking where the first predicted one, and **a catch found where an offset
 predicted a catch is not evidence in a clip of catches**. No elimination
@@ -226,6 +239,37 @@ SHORTER than the video span** — by 50 to 67 ms, an ordinary tail. That rules o
 one thing only: video frames dropped and renumbered, which would leave the audio
 longer. **It does not rule out much else, and it did not need to** — the
 mislabel explains what the durations were being asked about.
+
+### The pairing drift, which looked like a clock rate and was not
+
+An earlier pack reported that pairing the two catch sequences in order gives
+offsets that walk steadily, at rates of 12.6, 16.0 and 13.7 per cent depending
+on which shift is used. **Those three numbers were quoted from a scratch log
+and no committed code produced them, so nobody could re-derive them.**
+`pairing_drift` in `spikes/video_event_ledger.py` does, and
+`test_video_event_ledger.py` pins all three.
+
+Front catch i paired with side catch i+shift, on the committed ledger of
+session 0.1:
+
+| shift | pairs | first offset | last offset | rate |
+|---|---|---|---|---|
+| 0 | 8 | −0.8699 s | −2.9419 s | **−16.0 %** |
+| 1 | 8 | +0.7295 s | −1.0759 s | **−13.7 %** |
+| 2 | 8 | +2.5954 s | +0.7900 s | **−12.6 %** |
+
+The sign is a convention (side minus front here); the magnitudes are the point.
+
+**THE TWO CLOCKS DIFFER BY 0.04 PER CENT.** A walk of 12 to 16 per cent is
+three orders of magnitude too large to be a clock rate, and what it actually
+measures is the COUNT MISMATCH: the front has 8 catches and the side has 10
+over roughly the same span, so pairing them in order stretches one sequence
+against the other and the residual walks by construction. A control of two
+equal-length, equally spaced sequences gives exactly 0.0 per cent, which is the
+test that says the arithmetic is not the cause.
+
+**It is an artefact of the pairing, and the pairing was the fault.** Read
+forward: the two files are not two views of one take.
 
 ### The first two-view residual measured on files that are a pair
 
@@ -267,6 +311,27 @@ separate methods had already returned peak-to-sidelobe near 1.0, and the
 mislabel then explained the failures without it. It is recorded here as
 deliberately not done rather than quietly skipped.
 
+**AND THE AUDIO OF THE TWO FILES THAT ARE A PAIR DOES NOT OBVIOUSLY AGREE WITH
+THE FRAME OFFSET.** Recorded as an observation, not as a result. With the
+pairing known, the independent review of 6001efd ran the short check on
+`front 0.1.mp4` + `side 0.2.mp4`: 8 kHz mono, envelope cross-correlation over
+8.5 to 25.5 s. The 20 ms envelope prefers **-0.100 s** (0.505) over -0.170 s
+(0.295), with lobes at -0.18/-0.19 (0.380) and -0.02 (0.395); the 100 ms
+envelope 0.668 at -0.100 against 0.603 at -0.170. Peak to sidelobe about 1.3,
+which is the regime the earlier packs called "no peak". Per-event impact peaks
+give -0.178 s at the first catch and -0.129 s at the overhead catch.
+
+**This does not touch the frame anchors, which were confirmed on the frames
+themselves.** The frames are the measurement; the audio is a second instrument
+that disagrees by a few tens of milliseconds, most likely an audio-to-video
+skew inside one or both files (the side track has irregular gaps).
+
+**THE REQUIREMENT IT CREATES:** the audio cannot be quoted as agreeing with the
+frame offset, and any future use of audio between these two files must FIRST
+measure each file's own audio-to-video skew, from an impact that is visible on
+video in that same file. Until that is done, an audio offset between two files
+is two unknown skews plus the thing being measured.
+
 | offset | grade it claimed | withdrawn |
 |---|---|---|
 | **+1.0 s** | two visual events matched by eye | 2026-09-07 |
@@ -282,8 +347,20 @@ with her arms at her sides. I checked that pairing myself and it is dead.
 
 **And the first offset was NOT wrong in the way I said it was.** I wrote that it
 "paired a hold with a catch and had the sign backwards". It paired the first FED
-catch in each view, two and four frames after contact — corresponding moments.
-That sentence is withdrawn with the rest.
+catch in each view: corresponding moments. That sentence is withdrawn with the
+rest.
+
+*The frame counts in this paragraph were wrong too, and are corrected here.
+It said "two and four frames after contact". Against the ledger's own catch
+times, the +1.0 s example's two timestamps sit at:*
+
+    front  9.25 - 9.1333 = +0.1167 s = +3.5 frames AFTER the catch
+    side   8.25 - 8.2634 = -0.0134 s = -0.4 frames, that is BEFORE it
+
+*One is three and a half frames late and the other is a fraction of a frame
+early. The point the paragraph makes survives, because both land on the same
+event; the two counts did not come from the ledger and should not have been
+written as though they had.*
 
 **WHY BOTH SURVIVED THEIR OWN CHECKS.** Her toss cycle is **1.866 s** — the mean gap between the ten catches of `side 0.1.mp4` from 8.26 s to 25.06 s, which is (25.06 − 8.26) ÷ 9 — so the
 movement is periodic and a wrong offset lands on a catch exactly as a right one
@@ -294,8 +371,9 @@ evidence, whatever its frame precision.
 **WHAT THE LEDGER SAYS.** Every catch, release and clap in each view of set 0.1
 was read from contact sheets built at every eighth frame, selected by index and
 never by seeking, and recorded in
-`spikes/video-annotations/event-ledger-0.1.json`. No constant offset maps one
-sequence onto the other better than chance:
+`spikes/video-annotations/event-ledger-0.1.json`. **At any tolerance a sync
+could use, no constant offset maps one sequence onto the other better than
+chance.** At 0.400 s, which is twelve frames and is not a sync, one does:
 
 | tolerance | best offset | events matched | chance ceiling | fits |
 |---|---|---|---|---|
@@ -303,7 +381,16 @@ sequence onto the other better than chance:
 | 0.100 s | +0.2583 s | 3 | 5 | no |
 | 0.200 s | −1.0083 s | 4 | 6 | no |
 | 0.267 s | +0.5250 s | 6 | 6 | no |
-| 0.400 s | +0.6583 s | 8 | 7 | marginal |
+| 0.400 s | +0.6583 s | 8 | 7 | **yes** |
+
+**THE LAST ROW SAYS `fits: true` AND THIS TABLE USED TO RELABEL IT
+"marginal".** The instrument's verdict is written into the ledger; a document
+that softens it is editing a measurement. What makes that row worthless is not
+that 8 against 7 is close, it is that 0.400 s is TWELVE FRAMES: at that
+tolerance a "match" spans most of the 1.866 s toss cycle, so the fit is
+matching the periodicity, not the take. The honest statement is the one above
+the table — no offset fits at any tolerance a sync could use — and the row is
+left as the instrument reported it.
 
 The chance ceiling is the 99th percentile of 500 trials against a randomly
 generated side ledger of the same shape. Only at 0.400 s — twelve frame periods,
@@ -311,9 +398,14 @@ far looser than any sync claim — does the real data reach one event above
 chance.
 
 **AND THE ARITHMETIC IS NOT THE EVIDENCE. THE SEQUENCE IS.** The front stands
-EMPTY-HANDED from 17.3 to 20.0 s and claps at 17.87. The side handles a ball
-CONTINUOUSLY from 17.06 to 19.73. No offset reconciles a 2.7 second pause with
-continuous play. The front has 8 catches between 9.1 and 24.3 s; the side has 10
+EMPTY-HANDED from 17.3 to 20.0 s and claps at 17.87. **`side 0.1.mp4` has no
+comparable gap:** its longest empty stretch after 8.26 s is about 0.8 s, from
+17.59 to 18.39. No offset reconciles a 2.7 second pause with a view whose gaps
+are all about a second.
+
+*This said "the side handles a ball CONTINUOUSLY from 17.06 to 19.73". That was
+overstated and the contact sheet refutes it; the conclusion is unchanged and
+now rests on the durations rather than on a claim of no pause at all.* The front has 8 catches between 9.1 and 24.3 s; the side has 10
 between 8.3 and 25.1 s, and their intervals do not correspond.
 
 **Whether the two files are one take with a discontinuity, two takes, or a
@@ -332,15 +424,30 @@ than of noise. The clap is what settles it, which is why it is instruction 1.
 
 ### 2. A calibration reference in frame
 
-Two independent readings of the same elbow disagree by a median of 21 degrees
-(90th 63°). Four explanations were raised and all four were refuted — the table
-is further down, under the elbow angle.
+Two independent readings of the same elbow disagree by a median of **4.4
+degrees** (90th 11.6), against a projection floor of 3.2 that is pure geometry.
 
-**So the case for a calibration reference is not that it fixes a known cause.**
-Nothing tested explains that 21 degrees. The case is that without a known
-object in shot, the depth axis has to be scaled by matching a body length
-between two cameras at unknown distances with unknown lenses, and there is no
-way to check that scale at all — not to confirm it, and not to rule it out.
+**THE 21 DEGREES THIS SECTION USED TO ARGUE FROM WAS THE MISLABEL.** Four
+explanations were raised for it and all four were refuted; a fifth was never
+raised, and it was the whole of it. The two files were not a pair. Re-measured
+on the pair, the unexplained part is about 1.2 degrees.
+
+**SO THE CASE FOR A CALIBRATION REFERENCE IS NOW MUCH WEAKER THAN IT WAS, and
+it is stated here at its real strength rather than at the strength a void
+number gave it.** It does not rest on an unexplained 21 degrees any more,
+because there is no unexplained 21 degrees. What remains:
+
+- The depth scale is still unverifiable. Without a known object in shot, the
+  `across` axis is scaled by matching a body length between two cameras at
+  unknown distances with unknown lenses, and there is no way to confirm that
+  scale or to rule it out.
+- The disagreement still tracks the axis that scale governs. On the real pair
+  the correlation of the gap with the arm's extent along `across` is **+0.490**
+  (with its share of the arm, +0.524), while with the file's own up-residual it
+  is +0.165. The prediction the depth-scale hypothesis makes still holds; it
+  now governs about a degree instead of twenty.
+- A calibration reference is what makes a future capture COMPARABLE to this
+  one, which is a separate reason and is unaffected by any of this.
 
 The deeper reason is comparison. A calibration reference makes a future
 measurement **like-for-like**, and the absence of one is why this disagreement
@@ -862,56 +969,87 @@ same landmark:
 circular and is not a measure of accuracy.** It is the most quotable number here
 and it means the least. Read the shoulders and the knees.
 
-### The elbow angle: nothing tested explains the disagreement
+### The elbow angle: the fifth candidate nobody raised was the pairing
 
-Two independent readings of the same left elbow — one from the 3D lift, one
-from the side view alone — differ by a **median of 21.2 degrees**, 90th 63.1.
-This is measured on 730 frames, five fewer than the residual table's 735,
-because it additionally requires shoulder, elbow and wrist all visible in
-**both** views rather than one landmark at a time.
+**RE-MEASURED 2026-09-07 ON THE FILES THAT ARE ACTUALLY A PAIR.** Everything
+below the rule was measured on `front 0.1.mp4` against `side 0.1.mp4`, and
+those two are not two views of one take. The numbers in that version are VOID.
+What follows is `front 0.1.mp4` + `side 0.2.mp4`, mapped by frame index at a
+constant offset of -5, 763 frame pairs, run with
+`scripts/compare_lift_against_view.py --up front`.
 
-**It is a symmetric spread, not a constant offset.** The signed median is
-+1.6 degrees, taking the lift's angle minus the side view's. Those two point at different causes and only the second would
-suggest a fixable bias.
+Two independent readings of the same left elbow, one from the 3D lift and one
+from the side view alone, differ by a **median of 4.4 degrees**, 90th 11.6,
+worst 108.4. Measured on 763 frame pairs, which requires shoulder, elbow and
+wrist visible in **both** views rather than one landmark at a time.
 
-**About 5.0 degrees of it is geometry rather than error.** A 3D angle and a
-side-view 2D angle are not the same quantity: the side camera cannot see the
-across axis, so it reads the arm projected into its own plane. That floor was
-isolated by taking the same 3D and dropping `across` — no second instrument
-enters, so nothing else can be blamed. It is about a quarter of the 21.
+| | mislabelled (void) | the real pair |
+|---|---|---|
+| median | 21.2 deg | **4.4 deg** |
+| 90th | 63.1 | **11.6** |
+| signed median | +1.6 | **-2.3** (the lift reads tighter) |
+| projection floor, median | 5.0 | **3.2** |
+| frame pairs | 730 | **763** |
 
-**Four explanations were raised and all four were refuted**, two by each lane,
-and each lane killed one of its own:
+**ABOUT 3.2 DEGREES OF THE 4.4 IS GEOMETRY RATHER THAN ERROR.** A 3D angle and
+a side-view 2D angle are not the same quantity: the side camera cannot see the
+`across` axis, so it reads the arm projected into its own plane. That floor is
+isolated by taking the same 3D and dropping `across`, so no second instrument
+enters and nothing else can be blamed. **The unexplained part is about 1.2
+degrees, not 21.** The ladder in the script's own docstring closes the same way:
+with `up` taken from the side view, the disagreement is 2.5 and the floor is
+2.5, exactly, which is the check that says the arithmetic is right.
 
-| candidate | test | verdict |
+**FOUR EXPLANATIONS WERE RAISED, ALL FOUR WERE REFUTED, AND THE ANSWER WAS A
+FIFTH THAT NOBODY RAISED.** This is the most useful thing in this document.
+
+| candidate | test, on the void pairing | verdict then |
 |---|---|---|
 | sync uncertainty | does not grow with speed above 1 m/s | refuted |
 | projection alignment | correlation +0.088, flat across every band | refuted |
-| depth scale error | banding is U-shaped, not monotonic rising | refuted |
+| depth scale error | banding U-shaped, not monotonic rising | refuted |
 | camera foreshortening | banding also U-shaped | refuted |
 
-**Nothing tested explains the 21 degrees.** No fifth candidate is offered here:
-a report that ends on an untested hypothesis reads as an explanation, and there
-is not one.
+The fifth candidate is that the two files were not a pair, and it accounts for
+nineteen of the twenty-one degrees. It was never raised because both files were
+labelled `0.1` and a shared label was read as a shared take. **A name is not a
+correspondence.** The four tests were sound and their verdicts were about a
+quantity that did not exist.
 
-**What that refutation is worth, stated honestly.** These are correlations
-against a quantity whose median is 21 degrees with a wide spread. That gives
-good power to refute an effect that DOMINATES and poor power to exclude one
-contributing a few degrees. None of the four is ruled out as a minor
-contributor, and this data cannot distinguish "small effect" from "none". The
-case is bounded, not closed.
+**AND ONE OF THE FOUR REVERSES ON THE REAL PAIR.** The depth-scale hypothesis
+predicts that the disagreement grows with the arm's extent along `across`, the
+axis only the front camera sees. On the void pairing the banding was U-shaped
+and the hypothesis was refuted. On the real pair:
+
+    correlation of |gap| with across extent   +0.490
+    correlation of |gap| with across share    +0.524
+    correlation of |gap| with up-residual     +0.165
+
+The prediction holds. The depth scale is not refuted; it is the leading
+explanation of what little is left, and it governs about a degree rather than
+twenty. The U-shape that refuted it was a property of the wrong pairing.
+
+**What the old refutation was worth, and it is worth restating.** Those were
+correlations against a quantity whose median was 21 degrees with a wide spread:
+good power to refute an effect that DOMINATES, poor power to exclude one
+contributing a few degrees. That caveat was written down at the time and it was
+the correct caveat. It did not help, because the fault was not a small effect
+being missed; it was the quantity itself.
 
 **A correlation quoted without the exact definition of both quantities is not a
 measurement.** The two lanes computed the same refutation on identical frames
 and got +0.023 and +0.140 — a six-fold difference, caused by one taking the
 larger across-extent of the two arm SEGMENTS and the other the shoulder-to-wrist
-span. Neither wrote the choice down. The refutation survives all four readings
-taken, and the discrepancy is the sharper lesson: it is the same fault as a
-number quoted without its instrument.
+span. Neither wrote the choice down. The discrepancy is the sharper lesson: it
+is the same fault as a number quoted without its instrument.
 
-**One unexplained fact, recorded without a story.** Every banding either lane
-has tried is U-shaped — worst at both extremes of the range, best in the
-middle. Nobody can say why.
+**~~One unexplained fact, recorded without a story. Every banding either lane
+has tried is U-shaped, worst at both extremes of the range, best in the middle.
+Nobody can say why.~~ IT IS EXPLAINED: the U-shape was the wrong pairing.** On
+the real pair the across-extent banding rises 4.0, 5.5, 4.0, 2.6, 7.2 degrees
+across five equal-sized bands, which is noisy rather than U-shaped, and the
+correlation is +0.490. The fact was real and the story is that a fact measured
+on a quantity that does not exist needs no explanation of its own.
 
 ### Where the sync uncertainty bites
 

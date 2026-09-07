@@ -3974,7 +3974,10 @@ readings**, and until a person does, no offset stands at all. **CORRECTED
 2026-09-07: an earlier version of this line said "the by-eye 1.0 s stands as the
 only measured offset". It does not.** That offset and a later −0.7295 s are both
 withdrawn, and an event ledger over the whole clip finds no constant offset that
-beats chance — refer to `spikes/video-annotations/event-ledger-0.1.json`. Set
+beats chance AT ANY TOLERANCE A SYNC COULD USE (at 0.400 s, twelve frames, one
+does: 8 matched against a ceiling of 7, and at that width a match spans most of
+the 1.866 s toss cycle) — refer to
+`spikes/video-annotations/event-ledger-0.1.json`. Set
 0.1 is not a synchronous pair and is unusable for two-view work.
 
 **AND A CORROBORATOR THIS LANE OFFERED IS WITHDRAWN.** A wrist-height scan was
@@ -4116,6 +4119,13 @@ Every call raised `UnboundLocalError`. It survived because the test read the
 exit code and not the reason, and because the shell pipeline it was tried in
 reported the exit code of `tail`.
 
+**AND IT WAS MINE, hours old, not six days.** The pack first recorded this
+among the faults that "did not come from the change", and the independent
+review checked the commits: it is not at 9455a8c, and the first repair
+7f2a99e introduced it. So the repair for one fault created another of the same
+family in the same file, and the test written to hold the first was too weak to
+catch the second. Two of the four faults in this entry are mine, not one.
+
 **The engine's reference curves changed shape and TWO readers did not.**
 `reference-curves.json` is at schema version 2, where a curve is
 `{"unit": ..., "values": [...]}` rather than a bare list, so that
@@ -4126,16 +4136,25 @@ it, deliberately and in writing. Two others were not:
 - `video_elbow_curve.py` iterated the curve, collected the dictionary's KEYS,
   and raised a numpy type error on the strings `"unit"` and `"values"`.
 - `video_phase_align.py` did the same in TWO places, and the worse of the two
-  is silent. `rank_against_library` skips a curve with fewer than two points.
-  The mapping has two keys, so it PASSED that guard and carried the two words
-  into the ranking across the whole library, which the module's own docstring
-  calls the guard on the whole method.
+  defeats a guard. `rank_against_library` skips a curve with fewer than two
+  points. The mapping has two keys, so it PASSED that guard and carried the two
+  words into the ranking across the whole library, which the module's own
+  docstring calls the guard on the whole method.
+
+  **THE GUARD PASSED SILENTLY; THE CALL THEN CRASHED.** This entry said the
+  fault "is SILENT", and that overstates it: three lines past the guard the
+  warp raises, so no ranking was ever produced with the words in it. What is
+  silent is the guard, and that is the part worth remembering, because a guard
+  that accepts two strings as two data points is a guard that would also accept
+  them if the arithmetic below it happened to tolerate strings.
 
 Proven by reading the exported file:
 
 ```
 LINE 531 SHAPE:
   what it collects: ['unit', 'values']  len 2  passes len<2 guard: True
+  then rank_against_library raised, from inside the warp three lines later:
+      ValueError: could not convert string to float: np.str_('unit')
 LINE 568 SHAPE:
    ValueError: could not convert string to float: 'unit'
 ```
@@ -4144,9 +4163,11 @@ LINE 568 SHAPE:
 fixture builds the reference as a bare list: **the mock had drifted from its
 producer, so it tested nothing but itself.**
 
-That is the sharper form of the rule. The first fault was mine and one commit
-old. These were not mine, they were six days old, and every suite in the
-repository had run over them while they were broken.
+That is the sharper form of the rule. Two of these four are mine and hours old,
+and two are not mine and were six days old, and every suite in the repository
+had run over those two while they were broken. **Count the list before writing
+the sentence above it**: the first version of this paragraph said one was mine
+and three were not, and the review counted.
 
 The shape now lives in `spikes/reference_curves.py` with no heavy imports.
 `export_reference_curves.py` takes its version number from there, and all three

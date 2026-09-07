@@ -9,11 +9,13 @@ readers were left behind. The spikes suite was 786 tests and green. Running
 sync block and asserted on the mock, so a removed field survived a green suite
 and a push. A consumer nothing executes is a consumer nobody has checked.
 
-Writing this file then found two more faults in the same blind spot, and
-neither was caused by the change it was written for:
+Writing this file then found two more faults in the same blind spot:
 
 1. `video_elbow_curve.py` compared `side` against `front` on a line ABOVE the
-   one that loads `front`. Every call raised UnboundLocalError.
+   one that loads `front`. Every call raised UnboundLocalError. THIS ONE WAS
+   MINE, hours old: the first repair introduced it. The pack first filed it
+   among the faults that did not come from the change, and the review checked
+   the commits and corrected the dating.
 2. `reference-curves.json` went to schema version 2, where a curve became
    `{"unit": ..., "values": [...]}` instead of a bare list. The elbow curve
    still iterated it, so it built an array of the words "unit" and "values",
@@ -34,7 +36,7 @@ import unittest
 from pathlib import Path
 
 from video_keypoints import (PAIRING_UNKNOWN, PAIRS, frame_offset_of,
-                             pair_slug)
+                             load_keypoints, pair_slug)
 
 SPIKES = Path(__file__).resolve().parent
 OUTPUT = SPIKES / "poc-output" / "video"
@@ -146,6 +148,47 @@ class TheAnchorCheckIsHeldWhereAMutationCanReachIt(unittest.TestCase):
 
         self.assertIn("a catch", str(raised.exception))
 
+    def frames(self, count=210, period=0.033322):
+        return [{"frameIndex": i, "ptsSeconds": round(i * period, 4)}
+                for i in range(count)]
+
+    def block_with_seconds(self, other_seconds):
+        block = self.block(-5)
+        block["anchors"][0]["otherSeconds"] = other_seconds
+        block["checks"] = []
+        return block
+
+    def test_with_the_frames_it_checks_the_seconds_the_row_records(self):
+        """THE CHECK THE SCHEMA STATES, which the code did not do. It compared
+        integers only, so a block whose indices are right and whose seconds
+        came from somewhere else passed."""
+        frames = self.frames()
+        right = frames[100]["ptsSeconds"]
+
+        self.assertEqual(frame_offset_of(self.block_with_seconds(right),
+                                         frames), -5)
+
+    def test_seconds_that_belong_to_a_different_frame_are_refused(self):
+        frames = self.frames()
+        wrong = frames[104]["ptsSeconds"]
+
+        with self.assertRaises(SystemExit) as raised:
+            frame_offset_of(self.block_with_seconds(wrong), frames)
+
+        self.assertIn("disagree", str(raised.exception))
+
+    def test_a_row_pointing_past_the_end_of_the_paired_file_is_refused(self):
+        with self.assertRaises(SystemExit) as raised:
+            frame_offset_of(self.block_with_seconds(3.3322), self.frames(50))
+
+        self.assertIn("outside the paired file", str(raised.exception))
+
+    def test_without_the_frames_the_index_check_still_runs(self):
+        """A caller that has no frame list still gets the arithmetic check.
+        The seconds check is the addition, not a replacement."""
+        with self.assertRaises(SystemExit):
+            frame_offset_of(self.block(-4))
+
     def test_the_real_pair_in_PAIRS_satisfies_its_own_offset(self):
         """The recorded pairing must pass its own check. If this ever fails,
         the sync block in the writer contradicts itself."""
@@ -153,6 +196,67 @@ class TheAnchorCheckIsHeldWhereAMutationCanReachIt(unittest.TestCase):
             with self.subTest(pair=key):
                 self.assertEqual(frame_offset_of(pair),
                                  pair["frameOffsetToReference"])
+
+
+class TheWrittenArtefactsStillAgreeWithTheTable(unittest.TestCase):
+    """NOTHING HELD THE ARTEFACTS TO `PAIRS`, and the gap was visible in a
+    mutation. With the offset in `PAIRS` changed to -4 both consumers still ran
+    to exit 0, because they read the offset out of a WRITTEN keypoint file and
+    that file still said -5. So a changed table plus un-restamped artefacts
+    gives a green suite and a lift computed on the old offset.
+
+    These need the footage, because they read what the writer wrote."""
+
+    def setUp(self):
+        if not keypoints_present():
+            self.skipTest("the keypoint artefacts are not present")
+
+    def artefact(self, video_name):
+        return load_keypoints(video_name)
+
+    def test_each_paired_file_carries_the_offset_the_table_states(self):
+        for key, pair in PAIRS.items():
+            with self.subTest(pair=key):
+                side = self.artefact(pair["otherFile"])
+
+                self.assertEqual(side["sync"]["frameOffsetToReference"],
+                                 pair["frameOffsetToReference"],
+                                 "the artefact is stale; re-run --restamp")
+                self.assertEqual(side["sync"]["pairedWith"],
+                                 pair["referenceFile"])
+
+    def test_each_anchor_and_check_in_the_artefact_equals_the_table(self):
+        """Not only the offset. A row could be edited in the file alone."""
+        for key, pair in PAIRS.items():
+            with self.subTest(pair=key):
+                side = self.artefact(pair["otherFile"])
+                for kind in ("anchors", "checks"):
+                    written = [(r["event"], r["referenceIndex"], r["otherIndex"])
+                               for r in side["sync"][kind]]
+                    table = [(r["event"], r["referenceIndex"], r["otherIndex"])
+                             for r in pair[kind]]
+
+                    self.assertEqual(written, table)
+
+    def test_the_artefacts_own_anchors_hold_against_its_own_frames(self):
+        """The check the schema states, run on the file rather than the table:
+        the frame each row names must carry the seconds the row records."""
+        for key, pair in PAIRS.items():
+            with self.subTest(pair=key):
+                side = self.artefact(pair["otherFile"])
+
+                found = frame_offset_of(side["sync"], side["frames"])
+
+                self.assertEqual(found, pair["frameOffsetToReference"])
+
+    def test_an_unpaired_file_claims_no_offset_at_all(self):
+        for name in PAIRING_UNKNOWN:
+            with self.subTest(file=name):
+                sync = self.artefact(name)["sync"]
+
+                self.assertFalse(sync.get("measured"))
+                self.assertIsNone(sync.get("frameOffsetToReference"))
+                self.assertIsNone(sync.get("pairedWith"))
 
 
 class EveryConsumerRefusesASetThatIsNotAPair(unittest.TestCase, RefusalMixin):
@@ -178,7 +282,14 @@ class EveryConsumerRefusesASetThatIsNotAPair(unittest.TestCase, RefusalMixin):
         let front 0.2 be lifted against side 0.2 and wrote the artefact."""
         self.refused(run("video_lift_3d.py", "--set", "0.2"))
 
-        self.assertFalse((OUTPUT / "lift-3d-0.2.json").exists(),
+        # THE NAME MATTERS. This used to assert on `lift-3d-0.2.json`, which no
+        # code path writes: `--set 0.2` slugs to `set_0.2`. The mutant that
+        # lifted two unpaired files wrote `lift-3d-set_0.2.json` and the
+        # assertion stayed inert; only the exit code failed the test. A glob
+        # names nothing, so nothing escapes it.
+        stray = [p.name for p in OUTPUT.glob("lift-3d-*.json")
+                 if not p.name.endswith(f"-{pair_slug(THE_PAIR)}.json")]
+        self.assertEqual(stray, [],
                          "a lift was written for two files that are not a pair")
 
 
@@ -186,34 +297,72 @@ class TheRealPairRunsAndItsAnchorsAreAsserted(unittest.TestCase):
     """The reachable pass, for BOTH consumers. Without it every refusal above
     proves only that a script can exit 1, which a syntax error also achieves.
     The elbow curve proves the point: it had no passing path at all, and two
-    crashes lived behind its refusals until this class ran it."""
+    crashes lived behind its refusals until this class ran it.
+
+    THE ORDER MATTERS AND THAT IS WHY THE RUNS ARE IN setUpClass. unittest runs
+    a class's methods in alphabetical order, and the elbow curve READS the lift's
+    artefact. With one method per run, `test_the_elbow_curve_runs` and
+    `test_both_artefacts` sorted BEFORE `test_the_lift_runs`, so on a poc-output
+    holding only the keypoint files this class failed three tests on the first
+    run, one on the second, and passed only on the third. It was green here only
+    because both artefacts already existed from earlier runs by hand: the class
+    was reading its own leftovers. That is exactly "the run owns the working
+    tree", turned on the test itself.
+
+    So the pair-named artefacts are DELETED first, then the lift and the elbow
+    curve are run once each, in order, and the three tests read those two
+    results. The pass is proven from a clean state rather than from a survivor.
+    """
+
+    lift = None
+    elbow = None
+
+    @classmethod
+    def setUpClass(cls):
+        if not keypoints_present():
+            return
+        slug = pair_slug(THE_PAIR)
+        for stem in ("lift-3d", "elbow-curve"):
+            (OUTPUT / f"{stem}-{slug}.json").unlink(missing_ok=True)
+        cls.lift = run("video_lift_3d.py", "--pair", THE_PAIR)
+        cls.elbow = run("video_elbow_curve.py", "--pair", THE_PAIR)
 
     def setUp(self):
         if not keypoints_present():
             self.skipTest("the keypoint artefacts are not present")
 
     def test_the_lift_runs_on_the_established_pair(self):
-        found = run("video_lift_3d.py", "--pair", THE_PAIR)
+        found = type(self).lift
 
         self.assertEqual(found.returncode, 0, found.stdout + found.stderr)
         self.assertIn("usable frame pairs", found.stdout)
 
     def test_the_elbow_curve_runs_on_the_established_pair(self):
-        found = run("video_elbow_curve.py", "--pair", THE_PAIR)
+        """It ran AFTER the lift, from a state where no lift artefact existed
+        until the lift wrote one. A pass here is a pass on the pair, not on a
+        file left behind by an earlier run."""
+        found = type(self).elbow
 
         self.assertEqual(found.returncode, 0, found.stdout + found.stderr)
         self.assertIn("LEFT elbow", found.stdout)
 
-    def test_both_artefacts_are_named_for_the_pair_not_for_a_set(self):
-        """A set-named artefact is a claim about a pairing that is not true."""
-        slug = pair_slug(THE_PAIR)
+    def test_no_artefact_is_named_for_a_SET_rather_than_for_the_pair(self):
+        """A set-named artefact is a claim about a pairing that is not true.
+
+        THIS ASSERTION USED TO BE INERT. It named `lift-3d-0.2.json`, and no
+        code path writes that: a `--set 0.2` label slugs to `set_0.2`, so the
+        mutant that lifted two unpaired files wrote `lift-3d-set_0.2.json` and
+        sailed past the check. The glob names nothing, so nothing can be missed.
+        """
+        wanted = f"-{pair_slug(THE_PAIR)}.json"
         for stem in ("lift-3d", "elbow-curve"):
             with self.subTest(stem=stem):
-                self.assertTrue((OUTPUT / f"{stem}-{slug}.json").exists())
-                for set_id in ("0.1", "0.2"):
-                    self.assertFalse(
-                        (OUTPUT / f"{stem}-{set_id}.json").exists(),
-                        "an artefact of the mislabelled pairing survives")
+                self.assertTrue((OUTPUT / f"{stem}{wanted}").exists())
+
+                stray = [p.name for p in OUTPUT.glob(f"{stem}-*.json")
+                         if not p.name.endswith(wanted)]
+                self.assertEqual(stray, [],
+                                 "an artefact not named for the pair exists")
 
 
 if __name__ == "__main__":

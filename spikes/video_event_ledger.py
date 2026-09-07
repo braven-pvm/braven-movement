@@ -11,7 +11,7 @@ sides.
 
 BOTH FAILURES HAVE ONE SHAPE. A single moment that looks alike in two views is
 not evidence, because the movement is periodic: she catches and tosses about
-every 1.9 seconds, so a wrong offset lands on a catch just as a right one does.
+every 1.866 seconds (the mean of nine gaps between ten catches), so a
 The check that passed the second offset — "both views show a catch 15 s later" —
 matched a POSTURE inside that period.
 
@@ -56,14 +56,22 @@ TOLERANCE_SECONDS = 1.0 / 30.0
 # of cycles wrong, which is exactly how -0.7295 survived its own check.
 ANCHOR_GAP_SECONDS = 10.0
 
-# AND THE ANCHOR RULE IS NOT ENOUGH ON ITS OWN. Measured with THIS module on
-# the committed ledger of session 0.1, 500 trials at seed 0: a randomly
-# generated side ledger of the same size satisfies "two anchors ten seconds
-# apart" 43 per cent of the time at one-frame tolerance and 85 per cent at a
-# quarter second. (An earlier comment said 48 and 88, from a scratch version
-# that no longer exists; these come from `null_matches` and `_best_match` as
-# they stand and can be re-run.) With ten events in each view and a search over twelve
-# seconds of offsets, coincidence is the normal case rather than the exception.
+# AND THE ANCHOR RULE IS NOT ENOUGH ON ITS OWN. Measured by
+# `anchor_rule_null_rate` below, on the committed ledger of session 0.1, 500
+# trials at seed 0: a randomly generated side ledger of the same size satisfies
+# "two matched events ten seconds apart" **43.2 per cent** of the time at
+# one-frame tolerance and **83.2 per cent** at a quarter second. With ten events
+# in each view and a search over twelve seconds of offsets, coincidence is the
+# normal case rather than the exception.
+#
+# THOSE TWO FIGURES HAVE NOW BEEN WRONG TWICE, IN TWO DIFFERENT PAIRS, and both
+# times because no committed code produced them. The first pair was 48 and 88,
+# from a scratch script that no longer exists. The second was 43 and 85, which
+# named `null_matches` and `_best_match` as the source and said it "can be
+# re-run" - but neither function applies the anchor rule, so nothing in the
+# tree computed the quantity at all. `anchor_rule_null_rate` does, and
+# `test_video_event_ledger.py` runs it and pins both numbers. Commit the
+# instrument with its numbers.
 #
 # So a fit must also BEAT ITS OWN NULL. The side ledger is randomised inside the
 # span its real events occupy, the best match count is taken each time, and the
@@ -204,6 +212,86 @@ def null_matches(front: list[dict], side: list[dict], tolerance: float,
         best = _best_match(front, fake, tolerance)
         counts.append(len(best[2]) if best else 0)
     return counts
+
+
+def pairing_drift(front: list[dict], side: list[dict],
+                  shift: int) -> dict | None:
+    """Pair front catch i with side catch i+shift, and fit a rate to the gaps.
+
+    WHY THIS IS HERE. Pairing the two catch sequences in order produces
+    offsets that walk steadily, and a steady walk looks exactly like a CLOCK
+    RATE difference: one camera running fast. The numbers are large, +12.6,
+    +16.0 and +13.7 per cent depending on which shift is used.
+
+    THE CLOCKS DIFFER BY 0.04 PER CENT. A 12 to 16 per cent walk is three
+    orders of magnitude too big to be a rate, and what it actually measures is
+    the COUNT MISMATCH: the front has 8 catches and the side has 10 over
+    roughly the same span, so pairing them in order stretches one sequence
+    against the other and the residual walks by construction. It is an artefact
+    of the pairing, not a property of the cameras.
+
+    The three rates were quoted in a review and in no committed code, so nobody
+    could re-derive them. They are here now, and the test pins all three.
+    """
+    if len(front) < 2:
+        return None
+    pairs = [(front[i]["seconds"], side[i + shift]["seconds"])
+             for i in range(len(front)) if 0 <= i + shift < len(side)]
+    if len(pairs) < 2:
+        return None
+    offsets = [b - a for a, b in pairs]
+    xs = [a for a, _ in pairs]
+    mean_x = sum(xs) / len(xs)
+    mean_y = sum(offsets) / len(offsets)
+    bottom = sum((x - mean_x) ** 2 for x in xs)
+    if bottom == 0:
+        return None
+    slope = sum((x - mean_x) * (y - mean_y)
+                for x, y in zip(xs, offsets)) / bottom
+    return {"shift": shift, "pairs": len(pairs),
+            "firstOffsetSeconds": round(offsets[0], 4),
+            "lastOffsetSeconds": round(offsets[-1], 4),
+            "ratePerCent": round(slope * 100.0, 1)}
+
+
+def anchor_rule_null_rate(front: list[dict], side: list[dict],
+                          tolerance: float = TOLERANCE_SECONDS,
+                          anchor_gap: float = ANCHOR_GAP_SECONDS,
+                          trials: int = NULL_TRIALS,
+                          seed: int = NULL_SEED) -> float:
+    """How often a RANDOM side ledger satisfies the ANCHOR RULE ALONE.
+
+    THIS FUNCTION EXISTS BECAUSE THE NUMBERS IT PRODUCES WERE QUOTED WITHOUT
+    IT, TWICE, AND WERE WRONG BOTH TIMES. A docstring said 48 and 88, from a
+    scratch script that no longer exists. A comment then said 43 and 85 and
+    named `null_matches` and `_best_match` as the source, which was not true:
+    neither of those applies the anchor rule, so no committed code computed the
+    quantity. Run here, the figures are **43.2** and **83.2** per cent. A number
+    nobody else can regenerate is not a measurement, and naming two functions
+    that do not compute it is worse than naming none.
+
+    It is the anchor rule ALONE, deliberately: the rule as it was BEFORE it had
+    to beat its own null. That is the thing whose weakness is being reported.
+    """
+    counts_ok = 0
+    import random
+    rng = random.Random(seed)
+    lo = min(r["seconds"] for r in side)
+    hi = max(r["seconds"] for r in side)
+    for _ in range(trials):
+        fake = sorted(({"kind": r["kind"], "seconds": rng.uniform(lo, hi)}
+                       for r in side), key=lambda r: r["seconds"])
+        best = _best_match(front, fake, tolerance)
+        if not best:
+            continue
+        matched = best[2]
+        if len(matched) < 2:
+            continue
+        span = (max(m["frontSeconds"] for m in matched)
+                - min(m["frontSeconds"] for m in matched))
+        if span >= anchor_gap:
+            counts_ok += 1
+    return counts_ok / trials
 
 
 def fits_one_offset(front: list[dict], side: list[dict],

@@ -178,7 +178,7 @@ so a constant frame offset shows as a time offset that DRIFTS, from −0.1704 s 
 the first anchor to −0.1746 s eleven seconds later. That is an eighth of a frame
 and it is real. Two offsets in seconds have been published from this material
 and both were withdrawn; the field that carried them, `offsetSecondsToReference`,
-is gone so that nothing reads one by habit.
+is gone from the writer, the schema and every consumer in `spikes/`.
 
 | field | what it is |
 |---|---|
@@ -197,7 +197,7 @@ gives a frame difference of **4** where everything else gives 5, and it is
 recorded in `setAside` rather than resolved by picking the frame that agrees.
 
 **TWO ANCHORS, AT LEAST TEN SECONDS APART, OR NO SYNC IS WRITTEN.** One anchor
-is always satisfiable. The athlete's toss cycle is 1.90 s, so a wrong offset
+is always satisfiable. The athlete's toss cycle is 1.866 s, so a wrong offset
 lands on a catch exactly as a right one does — which is how −0.7295 s survived
 its own check for three days.
 
@@ -220,7 +220,16 @@ it was not unique and the pairing was one cycle out. Refer to
 `spikes/video-annotations/event-ledger-0.1.json`.
 
 **`offsetSecondsToReference` NO LONGER EXISTS.** It carried two offsets that
-were both withdrawn, and it is removed so that nothing reads one by habit.
+were both withdrawn.
+
+**"REMOVED SO THAT NOTHING READS ONE BY HABIT" WAS WRITTEN HERE AND WAS NOT
+TRUE.** `git grep` found two readers in `scripts/` on the day it was written:
+`compare_lift_against_view.py` raised `KeyError` on every lift artefact, and
+`keypoint_overlay.py` read the absent field on a file whose sync IS measured,
+got None, and refused with "carries no measured offset" -- a false reason for a
+file that has one. Both were repaired on 2026-09-07 and both are now tested.
+**A field is removed from the writer by editing the writer; it is removed from
+the tree by grepping for its readers and RUNNING each one.**
 
 `frameOffsetToReference` replaces it and is added to a frame INDEX in this file
 to reach the paired file's index. On load, assert on the indices:

@@ -220,7 +220,9 @@ def main(argv: list[str]) -> int:
 
     print(
         "\nADD this offset to a side-file timestamp to reach the front file's\n"
-        "clock, the same convention as the schema's offsetSecondsToReference.\n"
+        "clock. That is the sign convention the schema's FORMER\n"
+        "offsetSecondsToReference used; THE FIELD NO LONGER EXISTS and the\n"
+        "schema's sync is a FRAME offset added to a frame INDEX.\n"
         "Worked on set 0.1, WITHDRAWN 2026-09-07 and kept for the sign\n"
         "convention alone: the first catch was recorded at 8.25 s in the side\n"
         "file and 9.25 in the front, and 8.25 + 1.000 = 9.25. THE FILE NAMES\n"

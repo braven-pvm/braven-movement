@@ -329,13 +329,53 @@ file is the boundary, and its shape is settled in
 - **There IS a clap, and the audio route still failed.** Corrected 2026-09-04;
   this line used to read "there is no clap". The front recording carries two, at
   5.800 s and 17.835 s. No offset between the two tracks reproduces, so the
-  **THERE IS NO OFFSET IN USE.** Corrected 2026-09-07: this bullet named the
-  first ball catch matched by eye, about 9.25 s front against 8.25 s side. That
-  and a later -0.7295 s are both withdrawn, and an event ledger over the whole
-  clip finds NO constant offset that beats chance — the front stands
-  empty-handed from 17.3 to 20.0 s while the side handles a ball throughout.
-  Refer to `spikes/video-annotations/event-ledger-0.1.json`. **Set 0.1 is not
-  usable for two-view work.**
+  **THERE IS AN OFFSET, AND IT IS BETWEEN FILES YOU WOULD NOT EXPECT.**
+  Corrected twice on 2026-09-07. This bullet first named the first ball catch
+  matched by eye, about 9.25 s front against 8.25 s side; then a -0.7295 s;
+  both are withdrawn. It then said "THERE IS NO OFFSET IN USE", written on the
+  morning of the day one was established, and that is withdrawn too.
+
+  **THE FILE NAMES ARE WRONG.** `front 0.1.mp4` pairs with `side 0.2.mp4`, not
+  with `side 0.1.mp4`. No constant offset maps `front 0.1.mp4` onto
+  `side 0.1.mp4`, and the reason is that they are not two views of one take:
+  the front stands empty-handed from 17.3 to 20.0 s, and it is `side 0.2.mp4`
+  that has that pause, at 17.33 to 19.73.
+
+  **WHAT TO USE, EXACTLY:**
+
+      the pair            front 0.1.mp4  +  side 0.2.mp4
+      the measurement     frameOffsetToReference = -5
+      what -5 means       side_index = front_index - 5
+      the table           PAIRS in spikes/video_keypoints.py
+      unpaired            front 0.2.mp4 and side 0.1.mp4 have NO established
+                          partner. No elimination argument is made.
+
+  **IT IS A FRAME COUNT AND NOT A DURATION, and that is not pedantry.** The two
+  cameras' frame periods differ by 11 microseconds (33.3330 against 33.3220 ms),
+  so the same pairing reads -0.1704 s at the first anchor and -0.1746 s eleven
+  seconds later. An offset in seconds drifts; the index arithmetic cannot.
+  **To place a front frame in the side file, subscript: `side["frames"][i - 5]`.
+  Do not convert -5 to seconds and search by time.** If you need a time, read
+  it off the frame you landed on: `side["frames"][i - 5]["ptsSeconds"]`.
+
+  Do NOT rename the source files. The mapping is recorded; the renaming is
+  Marius's decision.
+
+  **THE TWO TOOLS IN `scripts/` THAT TOUCH THIS, and what each does now:**
+
+      scripts/compare_lift_against_view.py   FIXED 2026-09-07. It read the
+          removed `offsetSecondsToReference` and raised KeyError on every lift
+          artefact. It now reads `syncApplied.frameOffsetToReference` and maps
+          by `frameIndex`, which the lift's rows now carry.
+      scripts/keypoint_overlay.py            REFUSES, truthfully. It cannot
+          consume a frame offset yet. On `side 0.2.mp4` it used to return None
+          and refuse with "carries no measured offset" — a false reason for a
+          file whose sync IS measured. It now names the frame offset and the
+          partner and tells you to draw the view alone with `--local`. Teaching
+          it the frame mapping is the rendering lane's call.
+
+  Refer to `spikes/video-annotations/event-ledger-0.1.json` for the ledger the
+  mislabel was found with.
 - The sample is a **self-fed toss and catch** and matches none of the eight
   drills.
 - `front 0.1` degrades from **25.700 s**: sharpness is 87 percent of baseline
@@ -358,7 +398,10 @@ which is exactly where a consumer trips.
     This material: --offset -1.0 and offsetSecondsToReference +1.0 both put
     the front at 9.25 s and the side at 8.25 s. **THAT EXAMPLE IS WITHDRAWN
     (2026-09-07) and is kept only to show the SIGN CONVENTION, which is
-    unchanged. No offset is measured for set 0.1.**
+    unchanged. No offset is measured between the two files LABELLED 0.1,
+    because they are not a pair; the measured pairing is front 0.1.mp4 with
+    side 0.2.mp4 at a FRAME offset of -5, and no seconds figure is stored for
+    it at all.**
 
 Neither is wrong and either alone is unambiguous. `keypoint_overlay.py`
 asserts the direction against the file's own worked example on load, so a sign

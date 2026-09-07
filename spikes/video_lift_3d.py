@@ -36,7 +36,9 @@ say. Sweeping the offset from -5.0 to +3.0 s moves the median residual only 14.8
 to 16.0 mm, so it never measured sync quality and cannot bound it. What it does
 measure is not established.
 
-    pixi run python video_lift_3d.py --set 0.1
+    pixi run python video_lift_3d.py --pair "front 0.1 + side 0.2"
+
+Every --set refuses: no set's two same-named files are a pair.
 """
 
 from __future__ import annotations
@@ -142,7 +144,7 @@ def main(argv: list[str]) -> int:
     # from this material. The index arithmetic cannot drift.
     # THE CHECK THE SCHEMA TELLS EVERY CONSUMER TO RUN, on integers, and it
     # lives with the writer so that one mutation can fail both consumers.
-    frame_offset = frame_offset_of(side["sync"])
+    frame_offset = frame_offset_of(side["sync"], side["frames"])
 
     front_limit = front["source"].get("usableToSeconds")
     side_limit = side["source"].get("usableToSeconds")
@@ -182,7 +184,7 @@ def main(argv: list[str]) -> int:
     torso_metres = float(np.median(torso_front)) * front_metres_per_pixel
     side_metres_per_pixel = torso_metres / float(np.median(torso_side))
 
-    print(f"set {arguments.set_id}: {len(pairs)} usable frame pairs\n")
+    print(f"{label}: {len(pairs)} usable frame pairs\n")
     print("SCALE, from the athlete's own measurements")
     print(f"  shoulder width      {SHOULDER_WIDTH_METRES:.3f} m "
           f"(wingspan 1.82 minus twice the 0.77 reach)")
@@ -213,6 +215,13 @@ def main(argv: list[str]) -> int:
             up_front = -(a["yPixel"] - f_zero) * front_metres_per_pixel
             up_side = -(b["yPixel"] - s_zero) * side_metres_per_pixel
             rows.append({
+                # THE FRAME INDEX, so a consumer can re-do the pairing exactly.
+                # Without it a reader has only a time, and a time forces a
+                # nearest-match with a tolerance, which is what the frame
+                # mapping exists to remove. `scripts/compare_lift_against_view.py`
+                # reads this and the sync's frame offset, and subscripts.
+                "frameIndex": record["frameIndex"],
+                "sideFrameIndex": mate["frameIndex"],
                 "ptsSeconds": record["ptsSeconds"],
                 "name": name,
                 "upFrontMetres": round(up_front, 4),

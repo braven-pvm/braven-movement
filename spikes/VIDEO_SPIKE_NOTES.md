@@ -222,25 +222,40 @@ anthropometry at all.
     front   2.0176 mm per pixel   (median shoulder span 138.8 px)
     side    3.1817 mm per pixel   (median torso 163.5 px, torso 0.520 m)
 
-### The residual, on 735 frame pairs and 5088 landmark readings
+### The residual, on 767 frame pairs and 5622 landmark readings
 
-| | median | 90th | worst |
-|---|---|---|---|
-| all landmarks | **15.0 mm** | 146.4 mm | 535.7 mm |
+**VOID BELOW THE RULE, AND REPLACED. The table that stood here (735 pairs,
+5088 readings, median 15.0 mm) was measured on `front 0.1.mp4` against
+`side 0.1.mp4`, and those two files are not a pair.** Refer to the mislabel
+finding in `docs/VIDEO_CAPTURE_FINDINGS.md`. Re-measured on
+`front 0.1.mp4` + `side 0.2.mp4`, mapped by frame index at -5:
+
+| | median | mean | 90th | worst |
+|---|---|---|---|---|
+| all landmarks | **20.0 mm** | 29.4 mm | 64.0 mm | 209.2 mm |
+| *the void pairing* | *15.0* | *49.8* | *146.4* | *535.7* |
 
 | landmark | readings | median | 90th |
 |---|---|---|---|
-| left shoulder | 735 | 14.2 | 39.8 |
-| right shoulder | 735 | 17.3 | 46.0 |
-| left knee | 442 | 13.4 | 27.2 |
-| left elbow | 734 | 65.8 | 193.7 |
-| left ankle | 199 | 90.2 | 125.5 |
-| left wrist | 731 | 140.9 | 336.4 |
-| left hip, right hip | 735 | 3.7 | 8.5 |
+| left shoulder | 767 | 16.3 | 34.4 |
+| right shoulder | 767 | 22.3 | 50.3 |
+| left elbow | 766 | 41.5 | 73.6 |
+| left wrist | 764 | 42.3 | 74.5 |
+| right wrist | 16 | 35.0 | 68.6 |
+| left knee | 677 | 27.6 | 40.9 |
+| left ankle | 234 | 126.5 | 196.3 |
+| right ankle | 97 | 47.9 | 146.9 |
+| left hip, right hip | 767 | 4.4 | 9.8 |
 
-**The hips are the vertical origin of both views, so their 3.7 mm is nearly
-circular and is not a measure of accuracy.** The shoulders and the knees are
-the honest readings: **13 to 17 mm**.
+**THE MEDIAN GOT WORSE AND EVERY OTHER FIGURE GOT MUCH BETTER, and that is the
+lesson.** The median was never measuring the pairing: most of the clip is the
+athlete standing still, where any pairing agrees, so it reports how much of the
+clip is static. The TAIL was the instrument, and it sat unread in the same JSON
+the whole time.
+
+**The hips are the vertical origin of both views, so their 4.4 mm is nearly
+circular and is not a measure of accuracy.** The shoulders and the knees are the
+honest readings: **16 to 28 mm**.
 
 The right-side landmarks barely appear — 28 readings for the right wrist, 14
 for the right ankle — because the side camera sees her in profile and the far

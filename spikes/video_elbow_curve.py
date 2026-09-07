@@ -20,7 +20,10 @@ a passer, so the ball arrives with a speed and direction she must answer. This
 is the same JOINT doing a SIMILAR SHAPE. It is never the same drill, and no
 number here grades anything.
 
-    pixi run python video_elbow_curve.py --set 0.1
+    pixi run python video_elbow_curve.py --pair "front 0.1 + side 0.2"
+
+Every --set refuses: no set's two same-named files are a pair.
+Run video_lift_3d.py on the same pair first; this reads its artefact.
 """
 
 from __future__ import annotations
@@ -129,7 +132,7 @@ def main(argv: list[str]) -> int:
     # withdrawn from this material.
     # THE CHECK THE SCHEMA TELLS EVERY CONSUMER TO RUN, on integers, and it
     # lives with the writer so that one mutation can fail both consumers.
-    frame_offset = frame_offset_of(side["sync"])
+    frame_offset = frame_offset_of(side["sync"], side["frames"])
 
 
     limit = front["source"].get("usableToSeconds")
