@@ -2,7 +2,8 @@
 
 Sectioned by lane. The rendering and modelling lane owns the athlete a person
 looks at; the movement lane owns the engine, the anatomy, the solver and the
-grading. An entry belongs to whichever lane can fix it.
+grading; the video and footage lane owns the recordings and what is cut from
+them. An entry belongs to whichever lane can fix it.
 
 # Rendering and modelling
 
@@ -4405,3 +4406,204 @@ disappear when data improves.
 remaining two files were tried and FAILED, two targeted anchors gave 77 and
 75". Both halves went stale the moment pair 2 was established at -78 — those
 ARE the two files. The note read the established pairs out of the table now.
+
+# Video and footage
+
+The footage lane owns the recordings, the pairing between two cameras, and the
+clips and stills cut from them for a coaching page. It is neither the rig nor
+the engine, so its entries live here.
+
+## The section cutter and its posters
+
+Found 7 and 8 September 2026, building `spikes/video_section_cuts.py`: the
+four sections of Erin's page cut from both camera views, and the poster frame
+each one shows before it plays. Every fault below was found by an instrument
+rather than by reading, and every one is a way a check agreed with the thing
+it was checking.
+
+### The PSNR floor was measured in one regime and spent in another
+
+The first version asked whether each clip frame matched the source frame it
+claims above a floor of 36 dB. That floor came from ONE section-view —
+`catch-rep01` front, the section with the most motion — where a correct pair
+scores 39.9 dB at worst and a wrong-by-one pair 33.2 at best. Re-measured
+across all four sections and both views, 440 frames:
+
+    section-view          n  right min  wrong-by-one max  separation
+    catch-rep01 front    55      39.90             33.17       +6.73
+    catch-rep01 side     55      39.86             35.27       +4.59
+    release-rep09 front  56      39.91             35.62       +4.29
+    release-rep09 side   56      40.86             40.10       +0.76
+    hold-rep09 front     62      39.96             37.97       +2.00
+    hold-rep09 side      62      40.91             40.63       +0.28
+    ready-between front  47      39.95             38.01       +1.94
+    ready-between side   47      41.21             41.50       -0.29
+
+On five of the eight a wrong-by-one frame passes 36 dB. On `ready-between`
+side the best WRONG frame beats the worst RIGHT frame, so the populations
+overlap and no absolute floor can separate them there at all. That section is
+her stance between repetitions, nearly still, on the softer camera: when
+nothing moves, the neighbour frame is nearly the frame.
+
+**The criterion is relative now.** Frame k must be closer to source frame
+`start+k` than to both neighbours — three numbers measured the same way in the
+same regime, needing no constant calibrated anywhere. The same 440 frames
+support it, and the smallest winning margin is 1.14 dB, on `ready-between`
+side. `RELATIVE_MARGIN_DB` is 1.0 and `MEASURED_MIN_MARGIN_DB` records 1.14,
+which a test reads back.
+
+This is the same fault as `footHeightGapCm` and the arm constants: a number
+taken under one condition and spent under another. The condition here is how
+much the picture moves, and it is exactly what varies between sections.
+
+### Agreement with another instrument is not correctness
+
+The clips reproduced an earlier instrument's cuts exactly: eight clips, 440
+frames, zero differing. That was presented as proof they were right. It is
+not. Both tools took the same windows and the same frame offset, so a wrongly
+mapped index would have produced the same 440 agreeing rows.
+
+**What answers the question is a comparison against the SOURCE, through a
+different mechanism.** The cut uses `trim=start_frame:end_frame`, whose end is
+exclusive. The check selects source frames with `select='between(n,a,b)'`,
+inclusive at both ends, sharing no arithmetic with it. Checking trim with trim
+agrees with itself.
+
+And a shifted window keeps its frame count, so every count assertion passes
+while every frame is wrong. Only a test that NAMES the frame sees it: frame 0
+against `start` and against `start - 1`, the last frame against `end` and
+against `end + 1`.
+
+### The side clip was guarded only through a file outside git
+
+Every source check cut its own clip, so the side path of `cut_section` was
+never driven. The one test that saw a side clip compared it against an
+artefact at an absolute, gitignored path present on one machine, and skipped
+everywhere else. Three mutations survived on any other machine: the side clip
+cut from the FRONT file, the side window shifted by one, and the output frame
+rate changed from 30 to 25.
+
+**Fixed by moving the comparison into the repository.** 440 per-frame sha256
+digests of that earlier instrument's clips are committed under
+`spikes/video-annotations/section-cuts/pair1/`, compared element by element,
+with no `skipTest` inside the loop. `PROVENANCE.md` beside them names the
+eight clips by their own file sha256 and states what the comparison proves:
+reproduction, not correctness.
+
+### The poster pins are decoded pixels, and they are tied to an ffmpeg build
+
+Each section shows one still before it plays. The eight already on Erin's page
+were rendered from the recordings at `-q:v 3`; rendering the same frames from
+the tool at the same setting gives byte-identical files, both views, four
+sections, measured before the setting was written down.
+
+**The pinned digest is of the DECODED pixels, not the file.** A different
+quality setting changes every byte while showing the same picture, and the
+wrong frame re-encoded at the same setting changes nothing a file hash would
+notice. The manifest carries both hashes, because a swapped file and a wrong
+instant are different questions.
+
+**The poster pins can fail on the right frame if ffmpeg changes.** They were
+taken on `ffmpeg 8.1.2-full_build-www.gyan.dev`. H.264 decoding is exact, so
+the CLIP digests are a property of the recordings; JPEG decoding is not
+normatively bit-exact and the mjpeg encoder's transform can differ between
+builds. A different build could therefore fail
+`test_every_poster_matches_the_digest_committed_for_it` on the correct frame,
+with a message saying the poster shows a different frame. The build is
+recorded beside the poster table so that is diagnosable in one look.
+
+### A refusal that had already written a file
+
+`posters()` checked each index inside the render loop, so an index outside the
+side recording refused only after the FRONT poster was on disk. Measured: with
+front index 4, which maps to side index −1 at this pair's offset of −5,
+
+    refused: the side poster index -1 is outside that recording
+    left behind: ['refusal-probe-front-poster.jpg']
+
+A section half written, and a manifest that never mentions it because the
+manifest is written last. This was the second time in two days: `proof_sheet`
+created its scratch directory before judging its argument. **A refusal that
+still writes to disk is not a refusal.** Both indices are checked before
+either render now, and a test asserts the output directory is empty
+afterwards.
+
+### A reason keyed by section name rather than bound to its subject
+
+Each section carries a sentence saying why it exists, and each poster a
+sentence saying why that frame is the one. `main` looked them up by section
+NAME and passed them whatever window or poster the caller gave. Measured on
+the real command line:
+
+    --section catch-rep01=258:262        posterFrontIndex None, and the
+                                         sentence written for frame 276
+    --section catch-rep01=258:262@260    poster 260, and the same sentence,
+                                         which describes frame 276
+    --section other=258:262@260          no sentences
+
+A reason for a poster that does not exist, and a reason describing a frame
+nobody cut. Both read in the manifest as though somebody had chosen them.
+`reasons_for()` binds the section's reason to the window and the poster's
+reason to the poster, and returns an empty string otherwise.
+
+### A mutation driver that would have reported a survivor it never ran
+
+Two mutations quote a loop header plus the line below it, because the header
+alone occurs three times in the file. Moving the poster index check out of the
+render loop leaves two loops under the same header, one checking and one
+drawing, and the line below moved with it. Measured on the patched text before
+the change was committed:
+
+    OLD anchor after the patch: 1 occurrence  (the CHECK loop)
+    NEW anchor after the patch: 1 occurrence  (the RENDER loop)
+    the bare loop header alone: 3 occurrences
+
+An un-re-aimed driver would not have complained. It would have matched once,
+applied cleanly, mutated the bounds check instead of the render, and reported
+a completed run — and that experiment passes every poster test, so it would
+have come back a SURVIVOR and sent somebody hunting a hole that does not
+exist.
+
+The day before, a reviewer's mutation stopped applying to the same file
+because new code repeated the shape it targeted. That one matched TWICE and
+the driver refused: loud, and safe. **A count of two is a safety net. A count
+of one after a refactor is not a vindication; it is only a failure to
+complain.**
+
+### Two coaching observations, and they are Marius's call
+
+Both posters are the indices the page already ships, and both are recorded
+here rather than changed.
+
+- `release-rep09` at front index 619 is the fastest instant in its window. The
+  ball and both hands are smeared with motion blur. It is a true picture of
+  the release and a poor still.
+- `ready-between` at front index 560 shows her standing square to the camera
+  with her hands together in front of her chest. The section is named "the
+  arm-span ready" and the frame shows no arm span.
+
+Moving either is one number in `PAIR1_SECTIONS` and a re-pin of two digests.
+
+### The rules that came out of it
+
+1. Measure a threshold across every case it will be spent on, not one.
+2. Prefer a comparison between numbers measured in the same regime to a
+   constant calibrated in one of them.
+3. When a check agrees with another instrument, ask what the two share. If
+   they share inputs or arithmetic, it is a reproduction test; label it, and
+   build the one that does not share.
+4. Select the thing under test by one mechanism and the thing you check it
+   against by a different one.
+5. A shifted window keeps its frame count. Name the frame.
+6. A guard that reads an artefact outside git protects one machine.
+7. Pin what a thing SHOWS, not the bytes it is stored in, and record the tool
+   version when the decoder is not bit-exact.
+8. A refusal must write nothing. Check every argument before the first write.
+9. Bind a description to what it describes, never to a name.
+10. Re-run a mutation set on the change it was written against, and require
+    each string to match exactly once. A string that still matches once after
+    a refactor may be matching the wrong place.
+11. Ask what a mutation set CANNOT reach; that is where the untested line is.
+12. An exit code of 1 is not a failing test. Read the summary line and the
+    named tests.
+
