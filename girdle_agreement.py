@@ -149,3 +149,48 @@ def refuse_unless_agreed(report: dict, label: str) -> None:
         f"{report['toleranceMm']:.4f} mm tolerance. Per axis: "
         f"{[round(v, 4) for v in report['perAxisMm']]}."
     )
+
+
+OUT_OF_REACH = "out of reach"
+
+# How far past the anatomy's own limit a miss may sit before it stops being a
+# reach and starts being a defect in the aim. MEASURED, not chosen: across all
+# 102 shoulder targets in the twelve drills, the miss exceeded the reachable
+# minimum by at most 0.0001 mm. This is a hundred times that, and still a
+# thousand times under the ten-millimetre rule the figures are judged by.
+REACH_TOLERANCE_MM = 0.01
+
+
+def reachable_miss_mm(target, pivot, bone_length: float) -> float:
+    """The smallest miss the anatomy allows, in millimetres.
+
+    A bone rotates about its head and does not stretch, so its far end lands on
+    a sphere. A target off that sphere costs at least the difference between
+    the target's distance and the bone's length, however well it is aimed.
+
+    This exists so a receipt can separate two things one number would merge: an
+    aim this lane got wrong, and a reach this rig does not have. The engine's
+    clavicle is 20.4 percent longer relative to its torso than this rig's
+    (0.35553 against 0.29530 torso lengths), so 97 of 102 transmitted shoulder
+    targets sit OUTSIDE this rig's reach. That is anatomy, and posing it away
+    would mean stretching a bone to hit a number.
+    """
+    reach = sum((t - p) ** 2 for t, p in zip(target, pivot)) ** 0.5
+    return abs(reach - bone_length) * 1000.0
+
+
+def classify(offset_mm: float, reachable_mm: float,
+             tolerance_mm: float = REACH_TOLERANCE_MM,
+             agree_mm: float = TOLERANCE_M * 1000.0) -> str:
+    """Name what a miss IS: agreement, a reach limit, or a defect.
+
+    A miss that matches the anatomy's own limit is OUT_OF_REACH and is not a
+    defect. A miss BEYOND that limit means the aim itself failed, and it must
+    never be reported as anatomy: that would retire a real defect behind a
+    true-sounding excuse.
+    """
+    if offset_mm <= agree_mm:
+        return AGREES
+    if offset_mm - reachable_mm <= tolerance_mm:
+        return OUT_OF_REACH
+    return DISAGREES

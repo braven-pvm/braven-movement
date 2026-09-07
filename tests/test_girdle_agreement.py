@@ -17,6 +17,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from girdle_agreement import (  # noqa: E402
     AGREES,
+    OUT_OF_REACH,
+    classify,
+    reachable_miss_mm,
     DISAGREES,
     ROUNDING_M,
     TOLERANCE_M,
@@ -254,3 +257,64 @@ class PelvisRelativeTest(unittest.TestCase):
         as_absolute = resolve(step, absolute_rest, REST_TORSO_M)
 
         self.assertGreater(abs(as_absolute[1] - as_span[1]), 0.9)
+
+
+class ReachTest(unittest.TestCase):
+    """A bone that cannot stretch is not a defect in the aim.
+
+    The engine's clavicle is 20.4 percent longer relative to its torso than
+    this rig's, so 97 of 102 transmitted shoulder targets sit outside this
+    rig's reach. Merging that with a bad aim under one word would either hide a
+    real defect or report anatomy as one.
+    """
+
+    PIVOT = (0.0, 0.0, 0.0)
+    BONE = 0.126298  # this rig's clavicle, metres
+
+    def test_a_target_on_the_sphere_costs_nothing(self):
+        self.assertAlmostEqual(
+            0.0, reachable_miss_mm((self.BONE, 0.0, 0.0), self.PIVOT, self.BONE),
+            places=9)
+
+    def test_a_target_beyond_the_sphere_costs_the_difference(self):
+        """25.5 mm is the real figure at `chest_pass/ready`."""
+        target = (self.BONE + 0.0255, 0.0, 0.0)
+
+        self.assertAlmostEqual(
+            25.5, reachable_miss_mm(target, self.PIVOT, self.BONE), places=6)
+
+    def test_a_target_INSIDE_the_sphere_also_costs_the_difference(self):
+        """5 of the 102 targets are nearer than the clavicle is long.
+
+        An absolute value, not a signed one: a bone cannot shorten either.
+        """
+        target = (self.BONE - 0.0255, 0.0, 0.0)
+
+        self.assertAlmostEqual(
+            25.5, reachable_miss_mm(target, self.PIVOT, self.BONE), places=6)
+
+    def test_a_miss_that_matches_the_anatomy_is_OUT_OF_REACH(self):
+        self.assertEqual(OUT_OF_REACH, classify(25.531, 25.531))
+
+    def test_a_miss_BEYOND_the_anatomy_is_a_DEFECT_and_not_anatomy(self):
+        """The guard that stops "out of reach" retiring a real defect.
+
+        If the aim itself failed, the miss exceeds what the bone explains, and
+        calling that anatomy would be a true-sounding excuse for a bug.
+        """
+        self.assertEqual(DISAGREES, classify(25.531, 1.0))
+
+    def test_a_reached_target_still_AGREES(self):
+        self.assertEqual(AGREES, classify(0.0, 0.0))
+        self.assertEqual(AGREES, classify(0.005, 0.0))
+
+    def test_the_reach_tolerance_sits_far_under_the_figures_rule(self):
+        """Stated as a relationship so an edit to either end is caught.
+
+        The measured excess over the reachable minimum was 0.0001 mm across all
+        102 targets. The figures are judged at 10 mm.
+        """
+        from girdle_agreement import REACH_TOLERANCE_MM
+
+        self.assertGreater(REACH_TOLERANCE_MM, 0.0001)
+        self.assertLess(REACH_TOLERANCE_MM, 10.0 / 100.0)

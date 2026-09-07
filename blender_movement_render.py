@@ -39,6 +39,15 @@ from render_receipt import render_outcome  # noqa: E402
 # project writes, and the shape `archive_receipts.py` reads. It is cached
 # for the life of the process, so every receipt of one run names one build.
 from build_stamp import generated_from  # noqa: E402
+# The girdle rule lives apart from Blender so it can be tested without it.
+from girdle_agreement import (  # noqa: E402
+    AGREES,
+    OUT_OF_REACH,
+    UNAVAILABLE,
+    agreement,
+    classify,
+    reachable_miss_mm,
+)
 from reference_pose_config import (  # noqa: E402
     DEFAULT_CONFIG_PATH,
     load_reference_catch_config,
@@ -262,6 +271,131 @@ def reset_pose(rig, basis: dict) -> None:
     bpy.context.view_layer.update()
 
 
+GIRDLE_FIELD = "shoulderShiftFromRestInTorsos"
+
+
+
+def rest_girdle(rig) -> dict:
+    """The rest geometry the transmitted girdle shift is resolved against.
+
+    READ THIS WHILE THE RIG IS AT REST. `pose_phase` calls it on the line after
+    `reset_pose`, which is the only moment in a pose when the rest values are
+    readable without a second reset.
+
+    `torso` is the MAGNITUDE of the pelvis to shoulder-midpoint span and not
+    its vertical component. The two agree to 8 microns on this rig, because its
+    rest torso is almost vertical, and on another body they need not.
+    """
+    pelvis = world_head(rig, "pelvis")
+    shoulders = {
+        side: world_head(rig, f"upperarm_{side}") for side in ("l", "r")
+    }
+    midpoint = (shoulders["l"] + shoulders["r"]) / 2.0
+    return {
+        "pelvis": pelvis,
+        "offset": {side: shoulders[side] - pelvis for side in ("l", "r")},
+        "torso": (midpoint - pelvis).length,
+        # The clavicle's own length. It is the RADIUS of everything the girdle
+        # can reach, because the bone rotates about its sternal end and does
+        # not stretch.
+        "clavicle": {
+            side: (shoulders[side] - world_head(rig, f"clavicle_{side}")).length
+            for side in ("l", "r")
+        },
+    }
+
+
+def pose_girdle(rig, phase: dict, rest: dict) -> dict:
+    """Put the shoulder girdle where the solve put it, and report the fit.
+
+    Until 2026-09-04 this renderer never posed a clavicle. It held one girdle
+    for all 43 graded phases of ten drills while the engine's travelled 8.45 cm
+    inside the overhead pass alone, and the ball is placed from the shoulder
+    midpoint, so the ball carried the whole of that error. 15 of 43 figures
+    passed a one-centimetre rule.
+
+    The job now sends each shoulder's displacement from its OWN rest position,
+    pelvis-relative on both sides of the subtraction, over its own rest torso.
+    Resolving it here is a within-rig operation: this rig's rest girdle, this
+    rig's rest torso, this rig's posed pelvis. Nothing of the other body's
+    geometry enters, which is why the two rigs' 2.5 cm rest-posture difference
+    cannot leak in.
+
+    THE CLAVICLE ROTATES AND DOES NOT STRETCH, so the shoulder lands on a
+    sphere about the clavicle's own head and a target off that sphere cannot be
+    reached. The residual is MEASURED and reported rather than forced. Scaling
+    a clavicle to hit a number would invent an anatomy no solve produced, which
+    is the fault this whole field exists to remove.
+
+    A phase with no field leaves the girdle at rest and reports `unavailable`.
+    It must never read as agreement: the defect this replaces was a missing
+    landmark behaving like a satisfied one.
+    """
+    shift = phase.get(GIRDLE_FIELD)
+    if shift is None:
+        return {
+            "verdict": UNAVAILABLE,
+            "restTorsoM": round(rest["torso"], 6),
+            "worstOffsetMm": None,
+            "sides": {},
+        }
+
+    pelvis = world_head(rig, "pelvis")
+    wanted = {
+        side: pelvis + rest["offset"][side] + Vector(shift[side]) * rest["torso"]
+        for side in ("l", "r")
+    }
+    for side in ("l", "r"):
+        # The reference module's `pose_shoulder_girdle` is this same call per
+        # side. It is made directly here because each side's residual is
+        # measured separately, and a girdle can change WIDTH as well as move.
+        rotate_bone_toward(
+            rig, f"clavicle_{side}", f"upperarm_{side}", wanted[side]
+        )
+    bpy.context.view_layer.update()
+
+    sides, worst, excess = {}, 0.0, 0.0
+    for side in ("l", "r"):
+        rendered = world_head(rig, f"upperarm_{side}")
+        report = agreement(tuple(rendered), tuple(wanted[side]))
+        # THE SMALLEST MISS THE ANATOMY ALLOWS. The shoulder lands on a sphere
+        # of the clavicle's length about the clavicle's head, so a target off
+        # that sphere costs at least the difference in radius. Reporting this
+        # beside the miss separates two things a single number would merge: an
+        # aim this lane got wrong, and a reach this rig does not have.
+        pivot = world_head(rig, f"clavicle_{side}")
+        reachable = reachable_miss_mm(
+            tuple(wanted[side]), tuple(pivot), rest["clavicle"][side]
+        )
+        over = report["offsetMm"] - reachable
+        worst = max(worst, report["offsetMm"])
+        excess = max(excess, over)
+        sides[side] = {
+            "verdict": classify(report["offsetMm"], reachable),
+            "offsetMm": round(report["offsetMm"], 4),
+            "reachableMissMm": round(reachable, 4),
+            "beyondReachableMm": round(over, 4),
+            "perAxisMm": [round(value, 4) for value in report["perAxisMm"]],
+            "shiftInTorsos": shift[side],
+        }
+    verdicts = {entry["verdict"] for entry in sides.values()}
+    if verdicts == {AGREES}:
+        verdict = AGREES
+    elif verdicts <= {AGREES, OUT_OF_REACH}:
+        # The aim is exact and the bone is too short. That is this rig's
+        # anatomy, not a defect in the resolution, and it must not read as one.
+        verdict = OUT_OF_REACH
+    else:
+        verdict = "disagrees"
+    return {
+        "verdict": verdict,
+        "restTorsoM": round(rest["torso"], 6),
+        "worstOffsetMm": round(worst, 4),
+        "worstBeyondReachableMm": round(excess, 4),
+        "sides": sides,
+    }
+
+
 def pose_stance(rig, stance: dict, foot_baseline: dict) -> dict:
     """Place the feet from the job, and keep them flat on the floor.
 
@@ -315,7 +449,15 @@ def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
                finger_curl_degrees: dict, knuckle_limits: dict | None = None,
                body=None):
     reset_pose(rig, basis)
+    # THE RIG IS AT REST ON THIS LINE AND NOWHERE LATER, so the girdle's rest
+    # geometry is read here and passed forward.
+    rest = rest_girdle(rig)
     stance = pose_stance(rig, phase["stance"], foot_baseline)
+    # The girdle moves BEFORE the ball is placed and before the arms are aimed,
+    # because the ball is placed from the shoulder midpoint and every arm is
+    # aimed from its own shoulder. Posing it afterwards would move the
+    # shoulders out from under targets already computed.
+    girdle = pose_girdle(rig, phase, rest)
 
     # The ball is placed from the body, and it is the one absolute size in the
     # scene. A grip on it cannot be carried across as a direction from the
@@ -405,6 +547,11 @@ def pose_phase(rig, phase: dict, limits: dict, basis: dict, foot_baseline: dict,
         # a non-holding phase "short", which reads as a defect and is not one.
         "holding": bool(grip),
         "stance": stance,
+        # Whether this rig actually followed the transmitted girdle, and by how
+        # far it missed. A figure whose girdle did not follow is a figure whose
+        # ball is in the wrong place, because the ball is placed from the
+        # shoulder midpoint.
+        "girdle": girdle,
         "arms": arms,
         "hands": hands,
     }
