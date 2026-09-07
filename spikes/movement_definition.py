@@ -51,13 +51,16 @@ MINIMUM_MEANINGFUL_BAND_DEGREES = 5.0
 #
 # THE FLOOR IS 2.0 cm, AND IT CARRIES THE SAME SAFETY MARGIN THE DEGREES FLOOR
 # HAS. Two readings of that margin, taken from different statistics of the one
-# study, agree to within a tenth of a millimetre:
+# study, land 0.93 mm apart and round to the same centimetre:
 #
 #     over the 95th percentile   5.0 / 3.89 = 1.285   x 14.53 mm = 18.68 mm
 #     over the propagated mean   5.0 / 1.53 = 3.268   x  6.00 mm = 19.61 mm
 #
 # They share no numerator and no denominator, so the agreement is evidence and
-# not arithmetic. A floor exists to keep noise out of coaching, so the wide
+# not arithmetic. THEY AGREE AT THE CENTIMETRE AND NOT MORE CLOSELY: 19.61
+# against 18.68 is a 0.93 mm spread, about 5 per cent of either, and both round
+# to 2.0. An earlier version of this comment said "within a tenth of a
+# millimetre", which overstated two readings that differ by nine times that. A floor exists to keep noise out of coaching, so the wide
 # side is the safe side, and both shipped centimetre bands (6.0 and 14.0) clear
 # it either way, which keeps this a fix rather than a retune.
 #
@@ -77,9 +80,13 @@ MINIMUM_MEANINGFUL_BAND_DEGREES = 5.0
 #                       16.5  mm     was then WRITTEN as "1.6 cm", which is a
 #                                    third number and is guarded as one
 #
-# That is the fault class this ledger has recorded twelve times, appearing in
-# the derivation of the threshold meant to prevent it. Tests assert the shipped
-# constant is neither number.
+# That is this project's recurring fault class, appearing in the derivation of
+# the threshold meant to prevent it. `segment_measures` calls it the
+# units-across-a-boundary fault and counts six; `docs/KNOWN_ISSUES.md` names
+# instances up to a sixth. An earlier version of this comment said "twelve
+# times", which is a count from a lane's own notes and not from anything in
+# this repository -- a number without its inputs, in the comment that exists to
+# insist on them. Tests assert the shipped constant is none of the three.
 #
 # WHAT IS MISSING IS NAMED RATHER THAN INVENTED: there is no coach's figure for
 # a meaningful height difference. This floor therefore protects against noise
@@ -285,10 +292,15 @@ class MovementDefinition:
             # makes the comparison unit-free and asks the question that
             # matters: how many meaningful steps did this checkpoint move?
             #
-            # INERT IN TODAY'S LIBRARY AND REAL IN THE CODE. The only mixed
-            # phases are the landing's, where `footHeightGapCm` moves
-            # 0.01, 0.00 and 0.01 cm against degrees moving 1.92, 0.13 and
-            # 25.07, so the raw maximum happens to pick the angle every time.
+            # INERT IN TODAY'S LIBRARY AND REAL IN THE CODE, measured ON
+            # THE POSSESSION PATH, which is the one `build_library` uses for
+            # this drill. The only mixed phases are `netball_double_foot_
+            # landing`'s, graded at frames 54, 89 and 109 of 110. Across those
+            # three transitions `footHeightGapCm` moves 0.01, 0.00 and 0.01 cm
+            # while the angles move 1.92, 0.13 and 25.07, so the raw maximum
+            # happens to pick the angle every time. The gap's largest value
+            # anywhere in the clip is 1.22 cm, at frame 30, which no phase
+            # grades.
             widest, measure, scale = None, None, None
             if previous is not None:
                 for checkpoint in phase.checkpoints:

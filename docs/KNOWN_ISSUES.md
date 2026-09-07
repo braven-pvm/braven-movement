@@ -214,10 +214,14 @@ three times as far as the evidence requires before a phase counted as distinct.
 **THREE. The widest-moving checkpoint of a phase was chosen across units.**
 `separation` maximised raw values, so a phase grading a length and an angle
 together picked whichever number was larger, which is not a question with an
-answer. **Real in the code and INERT in the library**: the only mixed phases
-are the landing's, where `footHeightGapCm` moves 0.01, 0.00 and 0.01 cm at the
-three graded transitions against angles moving 1.92, 0.13 and 25.07, so the
-raw maximum happened to pick the angle every time. Fixed anyway, because a
+answer. **Real in the code and INERT in the library**, and the reading names
+its path and its frames because a first reviewer read a different path. Taken
+on the POSSESSION path, which `build_library` uses for this drill: the only
+mixed phases are `netball_double_foot_landing`'s, graded at frames 54, 89 and
+109 of 110. Across those three transitions `footHeightGapCm` moves 0.01, 0.00
+and 0.01 cm while the angles move 1.92, 0.13 and 25.07, so the raw maximum
+picked the angle every time. The gap's largest value anywhere in the clip is
+1.22 cm at frame 30, which no phase grades. Fixed anyway, because a
 defect that today's numbers happen to hide is still a defect, and the numbers
 that hide it belong to the library rather than to the code. The winner
 is now chosen in units of each measure's own floor, which asks how many
@@ -255,8 +259,8 @@ round number. It does not pin the constant to 2.0 and does not claim to. An
 earlier slack of 0.5 cm admitted 2.3, which no rounding explains.
 
 **The floor carries the same safety margin the degrees floor has**, and two
-readings of that margin, from different statistics of the one study, agree to
-within a tenth of a millimetre:
+readings of that margin, from different statistics of the one study, land
+0.93 mm apart and round to the same centimetre:
 
 | the margin, read as | arithmetic | floor |
 |---|---|---|
@@ -264,7 +268,10 @@ within a tenth of a millimetre:
 | over the propagated mean | 5.0 / 1.53 = 3.268, x 6.00 mm | 19.61 mm |
 
 They share no numerator and no denominator, so the agreement is evidence and
-not arithmetic. **Both ratios are post-hoc and the import is deliberate**: 5.0
+not arithmetic. **They agree at the centimetre and not more closely**: 19.61
+against 18.68 is a 0.93 mm spread, about 5 per cent of either, and both round
+to 2.0. An earlier version of this row said "within a tenth of a millimetre",
+which overstated two readings that differ by nine times that. **Both ratios are post-hoc and the import is deliberate**: 5.0
 was a clinical figure first, so 1.285 and 3.268 describe the margin the degrees
 floor turned out to have rather than a rule anyone applied. The length floor
 imports it knowingly, because the clinical half has no length counterpart.
@@ -289,10 +296,17 @@ found that before a reader did.
 
 The first was written into a draft of this branch. The second was ruled by the
 orchestrator on 2026-09-07 and withdrawn by it the same hour, once the lane
-showed that the ratio came from an output. **That is this ledger's own fault
-class appearing inside the derivation of the threshold meant to prevent it**,
-and it is recorded here for that reason rather than for the 0.4 cm. Tests
-assert the shipped constant is neither number.
+showed that the ratio came from an output. **That is this project's recurring
+fault class appearing inside the derivation of the threshold meant to prevent
+it**, and it is recorded here for that reason rather than for the 0.4 cm.
+Tests assert the shipped constant is none of the three.
+
+**ON "TWELVE TIMES", WHICH THIS SECTION USED TO SAY.** That count came from a
+lane's own notes, not from this ledger or from anything else in the repository.
+`segment_measures.py` counts six of the units-across-a-boundary form, and the
+highest ordinal any row here uses is a sixth instance. A reader could not check
+twelve, which makes it a number without its inputs — in the section that exists
+to insist on them. It is withdrawn.
 
 **WHAT IS MISSING IS NAMED RATHER THAN INVENTED.** This floor protects against
 noise and nothing else. A coach's figure for a meaningful height difference
