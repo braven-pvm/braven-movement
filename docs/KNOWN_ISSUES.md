@@ -60,6 +60,24 @@ rig at its own rest girdle. Do NOT try it by removing the field: a missing field
 is refused before the hands are posed, so the run stops with the refusal
 instead.
 
+MEASURED 2026-09-07, `docs/FLEXION_AXIS_PAPER.md`. Across all twelve drills,
+216 asserted knuckle readings: 208 of 208 on the eleven that pose already turn
+about the axis the guard names, and the only four that do not are this hand of
+this phase. The axis is not carried by the job, which never says which component
+is flexion; it is a constant in `blender_mpfb_reference_catch.py:437` whose own
+comment says nothing checked it.
+
+The cause is measured and separates cleanly. The flexion turns the finger toward
+the BALL, so the ball's position relative to the hand decides which axis carries
+it. Every gripping phase of the eleven puts the ball 41.8 to 46.6 degrees off
+the finger line; this hold puts it 110.9 degrees off, more than a right angle
+BEHIND where the fingers point. No overlap.
+
+The paper carries the options and rules on none. It also records a fourth
+possibility the brief did not list: the POSE may be the defect rather than the
+axis, because a grip 65 degrees outside the range every other hold occupies may
+be a target this rig cannot honestly hold. That is the movement lane's grip.
+
 ## One failing phase aborted the whole library render
 
 **Status: FIXED 2026-09-07. Owner: the rendering lane.**
