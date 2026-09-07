@@ -477,6 +477,23 @@ def solve_movement(
         entry["ballState"] = frame.state
         entry["holdingTheBall"] = frame.holding
         entry["handsOnTheBall"] = len(frame.sides)
+        # THE BALL CENTRE ABOVE THE COURT, and ONLY WHILE SHE HOLDS IT.
+        #
+        # y = 0 is the court, which `netball_bounce_pass.ball.json` states
+        # independently. NOT the rest ankle the foot heights use: that sits
+        # 7.3886 cm up, and a ball height measured from it reads 192.56 where
+        # the drill's own note says 199.95.
+        #
+        # OMITTED ONCE THE BALL IS GONE, because after release the column
+        # measures a projectile and not the athlete. On
+        # `netball_overhead_pass` the follow_through phase reads the ball
+        # 33.42 cm BELOW the working wrist, still falling; on
+        # `netball_one_hand_high_pass` the release phase at frame 76 already
+        # has no hand on the ball. A checkpoint on a flying ball grades the
+        # parabola, so the key is absent rather than misleading, the way
+        # `grip` is absent when no hand is on the ball.
+        if frame.holding:
+            entry["ballHeightCm"] = round(float(frame.centre[1]), 2)
         measurements.append(entry)
 
     seconds = time.perf_counter() - started

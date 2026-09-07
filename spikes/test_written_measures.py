@@ -21,7 +21,12 @@ from __future__ import annotations
 
 import unittest
 
-from segment_measures import MEASURE_UNITS, STATE_COLUMNS, unit_of
+from segment_measures import (
+    MEASURE_UNITS,
+    POSSESSION_ONLY,
+    STATE_COLUMNS,
+    unit_of,
+)
 
 try:  # pragma: no cover - the import is the check
     import pymomentum  # noqa: F401
@@ -116,12 +121,54 @@ class EveryWrittenKeyIsAccountedFor(unittest.TestCase):
             only_in_plain, [],
             "the plain solver writes something the possession solver does not",
         )
-        # The ball columns are the possession solver's alone and are expected.
+        # THE ASYMMETRY IS NAMED, NOT WAIVED. A ball measure exists on one
+        # path and not the other, which is real and correct: a drill without a
+        # ball cannot grade one. So the extras must be state columns or
+        # measures the table declares POSSESSION_ONLY, and nothing else. The
+        # contract was widened for `ballHeightCm` rather than the guard
+        # weakened, because "the possession solver may write anything extra"
+        # would guard nothing at all.
         self.assertEqual(
-            sorted(set(only_in_possession) - STATE_COLUMNS), [],
+            sorted(set(only_in_possession) - STATE_COLUMNS - POSSESSION_ONLY), [],
             f"{only_in_possession} is written only by the possession solver "
-            "and is not a state column, so a drill without a ball would be "
-            "graded on a measure nothing wrote for it",
+            "and is neither a state column nor declared POSSESSION_ONLY, so a "
+            "drill without a ball would be graded on a measure nothing wrote "
+            "for it",
+        )
+
+    def test_every_possession_only_measure_is_declared_and_written(self) -> None:
+        """Guards the widened contract from both ends.
+
+        A name in POSSESSION_ONLY that no solver writes is a licence nothing
+        uses, and a name with no declared unit is the gap this module exists
+        for, moved one table across.
+        """
+        self.assertTrue(POSSESSION_ONLY, "POSSESSION_ONLY is empty")
+        written = {
+            key for row in self.rows_from_the_possession_solve() for key in row
+        }
+        for measure in sorted(POSSESSION_ONLY):
+            with self.subTest(measure=measure):
+                self.assertIn(measure, MEASURE_UNITS)
+                self.assertIn(
+                    measure, written,
+                    f"{measure} is declared possession-only and the "
+                    "possession solver never wrote it",
+                )
+
+    def test_no_possession_only_measure_reaches_the_plain_writer(self) -> None:
+        """The other direction, which the set difference above cannot see.
+
+        If the plain solver ever wrote `ballHeightCm`, `only_in_possession`
+        would simply not contain it and the guard above would pass while a
+        ball-less drill carried a ball measure.
+        """
+        plain = {key for row in self.rows_from_the_plain_solve() for key in row}
+        trespassing = sorted(plain & POSSESSION_ONLY)
+        self.assertEqual(
+            trespassing, [],
+            f"the plain solver writes {trespassing}, which is declared "
+            "possession-only. A drill with no ball has no ball height.",
         )
 
     def test_a_length_is_among_them_or_this_guards_only_angles(self) -> None:
@@ -135,6 +182,68 @@ class EveryWrittenKeyIsAccountedFor(unittest.TestCase):
             f"only {sorted(lengths)} are lengths, so this guard is watching "
             "almost nothing of what it was written for",
         )
+
+
+@unittest.skipUnless(SOLVER, "needs pymomentum, which lives in the pixi environment")
+class TheBallHeightIsAboveTheCourt(unittest.TestCase):
+    """The zero, and the frames the column exists on.
+
+    A height is only as good as what it is measured above, and this engine
+    already carries a second, different zero: the three foot heights read from
+    the REST ANKLE, which sits 7.3886 cm up. Reading a ball from that zero
+    gives 192.56 where the drill's own note says 199.95.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from movement_engine import load_character
+        from possession_solve import solve_movement
+
+        cls.result = solve_movement(load_character(), WITH_A_BALL)
+
+    def test_it_is_the_ball_centre_in_world_height(self) -> None:
+        """Compared against the solve's own ball, not against a constant."""
+        frames = self.result["possession"].frames
+        checked = 0
+        for number, row in enumerate(self.result["measurements"]):
+            if "ballHeightCm" not in row:
+                continue
+            self.assertAlmostEqual(
+                row["ballHeightCm"], float(frames[number].centre[1]), places=2,
+                msg=f"frame {number} is not the ball's world height",
+            )
+            checked += 1
+        self.assertGreater(checked, 50, "almost no frame carried the column")
+
+    def test_it_is_not_measured_from_the_ankle_the_foot_heights_use(self):
+        """The mutation this measure was most likely to ship with.
+
+        `leftFootHeightCm` reads from the rest `l_foot`. Copying that zero
+        here would be silent: every number stays plausible and every one is
+        7.39 cm low.
+        """
+        from movement_engine import joint_positions, load_character
+
+        rest = joint_positions(load_character(), self.result["identity"])
+        ankle = float(rest[self.result["index"]["l_foot"]][1])
+        self.assertGreater(ankle, 1.0, "the ankle zero is not distinguishable")
+        row = next(r for r in self.result["measurements"] if "ballHeightCm" in r)
+        frames = self.result["possession"].frames
+        number = self.result["measurements"].index(row)
+        self.assertNotAlmostEqual(
+            row["ballHeightCm"],
+            float(frames[number].centre[1]) - ankle, places=2,
+        )
+
+    def test_it_is_absent_exactly_when_no_hand_is_on_the_ball(self) -> None:
+        """After release the column would measure a parabola."""
+        frames = self.result["possession"].frames
+        released = 0
+        for number, row in enumerate(self.result["measurements"]):
+            with self.subTest(frame=number):
+                self.assertEqual("ballHeightCm" in row, bool(frames[number].holding))
+            released += 0 if frames[number].holding else 1
+        self.assertGreater(released, 5, "no released frame, so this guards nothing")
 
 
 if __name__ == "__main__":  # pragma: no cover
