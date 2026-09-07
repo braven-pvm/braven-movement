@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import subprocess
 import tempfile
 import unittest
 import unittest.mock as mock
@@ -114,7 +115,8 @@ class TheSideWindowIsDerivedAndNeverGiven(unittest.TestCase):
 
         names = set(inspect.signature(cuts.cut_section).parameters)
 
-        self.assertEqual(names, {"files", "name", "start", "end", "out_dir", "what"})
+        self.assertEqual(names, {"files", "name", "start", "end", "out_dir",
+                                 "what", "poster", "poster_what"})
 
     def test_every_real_pair_maps_a_window_by_its_own_offset(self):
         for key, pair in PAIRS.items():
@@ -320,9 +322,10 @@ class EveryClipCutSectionWritesHoldsTheFramesItClaims(unittest.TestCase):
         # tests never ran at all. Carried into setUp instead, where it becomes
         # one failure per test and the rest of the module still reports.
         try:
-            for name, first, last, why in cuts.PAIR1_SECTIONS:
-                cls.entries[name] = cuts.cut_section(cls.files, name, first,
-                                                     last, cls.out, what=why)
+            for s in cuts.PAIR1_SECTIONS:
+                cls.entries[s.name] = cuts.cut_section(
+                    cls.files, s.name, s.start, s.end, cls.out, what=s.what,
+                    poster=s.poster, poster_what=s.posterWhat)
         except SystemExit as refused:
             cls.refusal = str(refused)
 
@@ -338,10 +341,12 @@ class EveryClipCutSectionWritesHoldsTheFramesItClaims(unittest.TestCase):
             self.fail(f"cutting the four sections refused: {self.refusal}")
 
     def windows(self, name):
-        for section, first, last, _ in cuts.PAIR1_SECTIONS:
-            if section == name:
-                side_first, side_last = cuts.side_window(self.files, first, last)
-                return {"front": (first, last), "side": (side_first, side_last)}
+        for s in cuts.PAIR1_SECTIONS:
+            if s.name == name:
+                side_first, side_last = cuts.side_window(self.files, s.start,
+                                                         s.end)
+                return {"front": (s.start, s.end),
+                        "side": (side_first, side_last)}
         raise AssertionError(name)
 
     def test_every_frame_of_every_clip_beats_both_of_its_neighbours(self):
@@ -508,7 +513,7 @@ class EveryClipCutSectionWritesHoldsTheFramesItClaims(unittest.TestCase):
     def test_every_entry_carries_the_reason_its_section_exists(self):
         """It used to live only in the source table, asserted on its length and
         consumed by nothing. A coach reading the manifest can see it now."""
-        reasons = {name: why for name, _, _, why in cuts.PAIR1_SECTIONS}
+        reasons = {s.name: s.what for s in cuts.PAIR1_SECTIONS}
         for name, entry in self.entries.items():
             with self.subTest(section=name):
                 self.assertEqual(entry["what"], reasons[name])
@@ -526,6 +531,110 @@ class EveryClipCutSectionWritesHoldsTheFramesItClaims(unittest.TestCase):
 
                     self.assertEqual(len(digests), entry["frames"])
                     self.assertEqual(digests, cuts.frame_digests(clip))
+
+    def test_every_poster_is_the_frame_ITS_TABLE_ROW_NAMES(self):
+        """The indices come back from the render loop, not from a sum done
+        afterwards. The side index is checked against one computed here from
+        the pair table, so the two are not the same arithmetic twice."""
+        for s in cuts.PAIR1_SECTIONS:
+            entry = self.entries[s.name]
+            with self.subTest(section=s.name):
+                self.assertEqual(entry["posterFrontIndex"], s.poster)
+                self.assertEqual(entry["posterSideIndex"],
+                                 s.poster + self.files["offset"])
+
+    def test_every_poster_matches_the_digest_committed_for_it(self):
+        """The eight posters already on Erin's page, pinned as the DECODED
+        pixels of each JPEG. The file bytes are not the thing to pin: a
+        different quality setting changes every byte while showing the same
+        picture, and re-encoding the same wrong frame changes none of them."""
+        missing = []
+        for s in cuts.PAIR1_SECTIONS:
+            entry = self.entries[s.name]
+            for view in ("front", "side"):
+                pinned = cuts.reference_digests("pair1", s.name,
+                                                f"{view}-poster")
+                if pinned is None:
+                    missing.append(f"{s.name}-{view}")
+                    continue
+                with self.subTest(section=s.name, view=view):
+                    self.assertEqual(len(pinned), 1)
+                    self.assertEqual(entry["posters"][view]["frameDigest"],
+                                     pinned[0],
+                                     "this poster shows a different frame "
+                                     "from the one committed for it")
+        self.assertEqual(missing, [],
+                         "no digests are committed for these posters")
+
+    def test_a_poster_ONE_FRAME_LATER_is_a_different_picture(self):
+        """THE COMPARISON MUST HAVE THE RESOLUTION TO SEE THE LIKELY ERROR.
+        Pinning a digest proves nothing unless a neighbouring frame would fail
+        it, and the section this pack learned that on is nearly still. Checked
+        on every section and both views."""
+        scratch = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, scratch, ignore_errors=True)
+        for s in cuts.PAIR1_SECTIONS:
+            later = cuts.posters(self.files, f"{s.name}-later", s.poster + 1,
+                                 scratch)
+            for view in ("front", "side"):
+                with self.subTest(section=s.name, view=view):
+                    self.assertNotEqual(
+                        cuts.frame_digests(later["files"][view])[0],
+                        self.entries[s.name]["posters"][view]["frameDigest"],
+                        "the next frame hashes the same as this one, so the "
+                        "pinned digest cannot tell them apart")
+
+    def test_the_poster_comes_from_the_RECORDING_and_not_from_the_clip(self):
+        """A poster taken out of the clip is a re-encode of a re-encode, and
+        it is addressed by a DIFFERENT NUMBER: frame `poster - start` of the
+        clip rather than frame `poster` of the recording. Rendered here with
+        the same JPEG settings, so a difference in the digest is a difference
+        in the pixels rather than in the encoder."""
+        scratch = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, scratch, ignore_errors=True)
+        for s in cuts.PAIR1_SECTIONS:
+            for view in ("front", "side"):
+                clip = self.out / self.entries[s.name][view]["file"]
+                inside = s.poster - s.start
+                out = scratch / f"{s.name}-{view}-from-the-clip.jpg"
+                subprocess.run(
+                    ["ffmpeg", "-v", "error", "-y", "-i", str(clip),
+                     "-vf", rf"select='eq(n\,{inside})'",
+                     "-fps_mode", "passthrough", "-frames:v", "1",
+                     "-q:v", str(cuts.POSTER_QUALITY), str(out)], check=True)
+
+                with self.subTest(section=s.name, view=view):
+                    self.assertNotEqual(
+                        cuts.frame_digests(out)[0],
+                        self.entries[s.name]["posters"][view]["frameDigest"],
+                        "the poster hashes the same as the same frame taken "
+                        "out of the clip, so nothing here says which file it "
+                        "came from")
+
+    def test_the_manifest_carries_each_poster_by_name_and_by_two_hashes(self):
+        """The file hash finds a poster swapped in the directory. The frame
+        digest finds a poster that shows the wrong instant. Neither answers
+        the other's question."""
+        for s in cuts.PAIR1_SECTIONS:
+            entry = self.entries[s.name]
+            for view in ("front", "side"):
+                with self.subTest(section=s.name, view=view):
+                    written = entry["posters"][view]
+                    on_disk = self.out / written["file"]
+
+                    self.assertTrue(on_disk.exists())
+                    self.assertEqual(written["file"],
+                                     f"{s.name}-{view}-poster.jpg")
+                    self.assertEqual(written["sha256"], cuts.sha256(on_disk))
+                    self.assertEqual(written["frameDigest"],
+                                     cuts.frame_digests(on_disk)[0])
+
+    def test_every_entry_carries_the_reason_ITS_POSTER_is_the_one(self):
+        """It lives in the table, and a coach reads the manifest."""
+        for s in cuts.PAIR1_SECTIONS:
+            with self.subTest(section=s.name):
+                self.assertEqual(self.entries[s.name]["posterWhat"],
+                                 s.posterWhat)
 
     def test_every_clip_matches_the_digests_committed_for_it(self):
         """THE EARLIER INSTRUMENT'S CLIPS, PINNED IN GIT. This comparison used
@@ -563,16 +672,16 @@ class TheFourSectionsOfPair1AreNamedInTheTool(unittest.TestCase):
 
     def test_the_four_windows_are_the_ones_that_were_cut(self):
         self.assertEqual(
-            [(n, a, b) for n, a, b, _ in cuts.PAIR1_SECTIONS],
+            [(s.name, s.start, s.end) for s in cuts.PAIR1_SECTIONS],
             [("catch-rep01", 258, 312), ("release-rep09", 598, 653),
              ("hold-rep09", 654, 715), ("ready-between", 538, 584)])
 
     def test_every_window_carries_what_the_section_is_for(self):
         """A window with no reason attached is a number somebody will change."""
-        for name, _, _, why in cuts.PAIR1_SECTIONS:
-            with self.subTest(section=name):
-                self.assertIn("section", why)
-                self.assertGreater(len(why), 30)
+        for s in cuts.PAIR1_SECTIONS:
+            with self.subTest(section=s.name):
+                self.assertIn("section", s.what)
+                self.assertGreater(len(s.what), 30)
 
 
 class TheBarSitsBetweenAMeasurementAndZero(unittest.TestCase):
@@ -624,6 +733,62 @@ class TheBarSitsBetweenAMeasurementAndZero(unittest.TestCase):
         self.assertEqual(cuts.frames_out_of_alignment(rows), [])
 
 
+class EveryPosterIsAFrameInsideItsOwnWindow(unittest.TestCase):
+    """THE POSTER IS THE ONLY FRAME A COACH IS CERTAIN TO SEE. It is what the
+    page shows before she presses play, and on a page of eight clips most of
+    them are never played at all. A poster from outside its window shows a
+    moment the clip never reaches, and nothing about the page looks wrong.
+    """
+
+    def files(self, offset=-5, front_frames=900, side_frames=1000):
+        return {"offset": offset, "pairKey": "test",
+                "front": {"name": "front.mp4", "pts": [0.0] * front_frames},
+                "side": {"name": "side.mp4", "pts": [0.0] * side_frames}}
+
+    def test_every_poster_index_lies_inside_its_window(self):
+        for s in cuts.PAIR1_SECTIONS:
+            with self.subTest(section=s.name):
+                self.assertGreaterEqual(s.poster, s.start)
+                self.assertLessEqual(s.poster, s.end)
+
+    def test_every_section_says_why_its_poster_is_the_one(self):
+        """A frame index with no reason beside it is a number somebody will
+        change, and this one is a coaching choice rather than a measurement.
+        The reason must also be its OWN sentence: repeating the section's
+        reason says nothing about which frame was picked out of the window."""
+        for s in cuts.PAIR1_SECTIONS:
+            with self.subTest(section=s.name):
+                self.assertGreater(len(s.posterWhat), 30)
+                self.assertNotEqual(s.posterWhat, s.what)
+
+    def test_a_poster_outside_its_window_refuses_at_either_end(self):
+        for outside in (257, 313):
+            with self.subTest(poster=outside):
+                with self.assertRaises(SystemExit) as refusal:
+                    cuts.check_poster("t", 258, 312, outside)
+
+                self.assertIn("outside the window", str(refusal.exception))
+
+    def test_the_window_EDGES_are_allowed_as_posters(self):
+        """Inclusive at both ends, like the window itself. Without this the
+        check could be `start < poster < end` and the refusals above would
+        still pass, while the first and last frames of every clip became
+        illegal posters."""
+        for edge in (258, 312):
+            with self.subTest(poster=edge):
+                self.assertEqual(cuts.check_poster("t", 258, 312, edge), edge)
+
+    def test_cut_section_refuses_a_poster_before_it_writes_anything(self):
+        """A refusal that has already cut two clips and drawn a sheet is not
+        a refusal. The fixture has no file paths at all, so reaching the cut
+        would raise something other than this."""
+        with self.assertRaises(SystemExit) as refusal:
+            cuts.cut_section(self.files(), "t", 258, 312, Path("nowhere"),
+                             poster=313)
+
+        self.assertIn("outside the window", str(refusal.exception))
+
+
 class TheCommandLineRefusesBeforeItCuts(unittest.TestCase):
 
     def test_a_section_without_a_window_refuses(self):
@@ -636,9 +801,31 @@ class TheCommandLineRefusesBeforeItCuts(unittest.TestCase):
         with self.assertRaises(SystemExit):
             cuts.parse_section("catch-rep01=8.6:10.4")
 
-    def test_a_window_is_read_as_two_front_indices(self):
+    def test_a_window_is_read_as_two_front_indices_and_maybe_a_poster(self):
+        """No poster reads as None, not as a frame in the middle. A default
+        poster would sit in a manifest as though somebody had chosen it."""
         self.assertEqual(cuts.parse_section("catch-rep01=258:312"),
-                         ("catch-rep01", 258, 312))
+                         ("catch-rep01", 258, 312, None))
+        self.assertEqual(cuts.parse_section("catch-rep01=258:312@276"),
+                         ("catch-rep01", 258, 312, 276))
+
+    def test_pair1_sections_carries_every_window_AND_every_poster(self):
+        """A ROUND TRIP THROUGH THE REAL PARSER, not a match on the strings.
+        `--pair1-sections` writes its own arguments, and dropping the poster
+        from them would take the poster off every shipped section while every
+        poster test, which calls cut_section directly, went on passing."""
+        built = cuts.pair1_arguments()
+
+        self.assertEqual(len(built), len(cuts.PAIR1_SECTIONS))
+        for text, s in zip(built, cuts.PAIR1_SECTIONS):
+            with self.subTest(section=s.name):
+                self.assertEqual(cuts.parse_section(text),
+                                 (s.name, s.start, s.end, s.poster))
+
+    def test_a_poster_that_is_not_a_whole_number_refuses(self):
+        """Seconds, for example. The windows are indices and so is this."""
+        with self.assertRaises(SystemExit):
+            cuts.parse_section("catch-rep01=258:312@9.2")
 
     def test_main_cuts_the_window_it_is_given_and_writes_the_manifest(self):
         """`main` had no test at all: the arguments, the section list and the

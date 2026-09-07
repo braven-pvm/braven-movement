@@ -39,6 +39,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
@@ -58,6 +59,13 @@ PROOF_INSTANTS = 6
 # stands far enough back that 150 px is not enough; refer to the contact sheet
 # in video_event_ledger.py, which learnt this the same way.
 PROOF_TILE_WIDTH = 420
+
+# THE POSTER'S JPEG QUALITY, and it is not a taste. The eight posters already
+# on Erin's page were rendered at `-q:v 3` by the instrument that built that
+# page. Rendering here at the same setting produces the same file, so the
+# posters this tool writes can be pinned against the ones a coach has already
+# seen. Measured before it was chosen: byte-identical, both views.
+POSTER_QUALITY = 3
 
 
 def sha256(path: Path) -> str:
@@ -433,9 +441,74 @@ def proof_sheet(files: dict, name: str, start: int, end: int,
             "sideIndices": drawn["side"]}
 
 
+def check_poster(name: str, start: int, end: int, poster: int) -> int:
+    """The poster must be a frame the clip actually holds, both edges allowed.
+
+    THE POSTER IS THE ONLY FRAME A COACH IS CERTAIN TO SEE: the page shows it
+    before she presses play, and on a page of eight clips most are never
+    played at all. One from outside the window shows a moment the clip never
+    reaches, and nothing on the page looks wrong.
+    """
+    if not start <= poster <= end:
+        raise SystemExit(
+            f"{name}: the poster index {poster} is outside the window "
+            f"{start}..{end}. A coach sees the poster before the clip plays, "
+            "so a poster from outside the clip shows a moment the clip never "
+            "reaches.")
+    return poster
+
+
+def posters(files: dict, name: str, index: int, out_dir: Path) -> dict:
+    """The one frame a coach sees before pressing play, both views.
+
+    RENDERED FROM THE RECORDINGS, NOT FROM THE CLIPS. A poster taken out of
+    the clip would be a re-encode of a re-encode, and worse, it would be
+    addressed by a DIFFERENT NUMBER -- frame `index - start` of the clip
+    rather than frame `index` of the recording. Two numbering schemes for one
+    instant is how this pack published a side window nobody had measured.
+
+    The frame is selected the way the proof sheet selects its tiles, by index
+    and not by a timestamp: `select='eq(n,index)'`. Nothing seeks.
+
+    Returns the indices it ACTUALLY DREW, taken from the loop rather than
+    recomputed afterwards, and the file it wrote for each view.
+    """
+    offset = files["offset"]
+    drawn: dict[str, int] = {}
+    made: dict[str, Path] = {}
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for view, mapped in (("front", index), ("side", index + offset)):
+        if not 0 <= mapped < len(files[view]["pts"]):
+            raise SystemExit(
+                f"{name}: the {view} poster index {mapped} is outside that "
+                f"recording, which holds {len(files[view]['pts'])} frames")
+        out = out_dir / f"{name}-{view}-poster.jpg"
+        subprocess.run(
+            ["ffmpeg", "-v", "error", "-y", "-i", str(files[view]["path"]),
+             "-vf", rf"select='eq(n\,{mapped})'",
+             "-fps_mode", "passthrough", "-frames:v", "1",
+             "-q:v", str(POSTER_QUALITY), str(out)], check=True)
+        if not out.exists():
+            raise SystemExit(
+                f"{name}: ffmpeg wrote no {view} poster for index {mapped}")
+        drawn[view] = mapped
+        made[view] = out
+    return {"frontIndex": drawn["front"], "sideIndex": drawn["side"],
+            "files": made}
+
+
 def cut_section(files: dict, name: str, start: int, end: int,
-                out_dir: Path, what: str = "") -> dict:
-    """One section, both views, with its proof sheet and its manifest entry."""
+                out_dir: Path, what: str = "", poster: int | None = None,
+                poster_what: str = "") -> dict:
+    """One section, both views, with its proof sheet, its poster and its
+    manifest entry.
+
+    `poster` is a FRONT index inside the window, or None for a section that
+    has no poster. It is checked BEFORE anything is written, because a
+    refusal that has already cut two clips is not a refusal.
+    """
+    if poster is not None:
+        check_poster(name, start, end, poster)
     first, last = check_window(files, start, end)
     front_clip = out_dir / f"{name}-front.mp4"
     side_clip = out_dir / f"{name}-side.mp4"
@@ -451,6 +524,8 @@ def cut_section(files: dict, name: str, start: int, end: int,
             "with different frame counts do not play in lockstep.")
 
     sheet = proof_sheet(files, name, start, end, out_dir / f"{name}-proof.png")
+    shown = (posters(files, name, poster, out_dir)
+             if poster is not None else None)
     front_pts, side_pts = files["front"]["pts"], files["side"]["pts"]
     return {
         "section": name,
@@ -478,6 +553,20 @@ def cut_section(files: dict, name: str, start: int, end: int,
         "proofSheet": sheet["path"].name,
         "proofFrontIndices": sheet["frontIndices"],
         "proofSideIndices": sheet["sideIndices"],
+        # WHY THIS FRAME IS THE ONE A COACH SEES FIRST. None, and not a
+        # middle-of-the-window default, when no poster was named: a poster
+        # index nobody chose is a number somebody will later defend.
+        "posterWhat": poster_what,
+        "posterFrontIndex": shown["frontIndex"] if shown else None,
+        "posterSideIndex": shown["sideIndex"] if shown else None,
+        "posters": {
+            view: {"file": shown["files"][view].name,
+                   "sha256": sha256(shown["files"][view]),
+                   # The DECODED pixels, by the same instrument that keys the
+                   # clips. The file hash moves when an encoder setting moves;
+                   # this one moves only when the picture does.
+                   "frameDigest": frame_digests(shown["files"][view])[0]}
+            for view in ("front", "side")} if shown else None,
     }
 
 
@@ -515,29 +604,76 @@ def manifest_for(files: dict, sections: list[dict]) -> dict:
 # not, and neither will the next camera be. An index is what `trim` takes and
 # what the pair table maps; a second has to be converted by somebody, and this
 # repository has already withdrawn two measurements that were converted.
+class Section(NamedTuple):
+    """One section of a coaching page.
+
+    The fields are named because there are six of them now and two are frame
+    indices. A six-tuple unpacked by position is a place where somebody will
+    one day put the poster where the window end belongs, and both are numbers
+    in the same range, so nothing would complain.
+    """
+
+    name: str
+    start: int
+    end: int
+    what: str
+    poster: int
+    posterWhat: str
+
+
 PAIR1_SECTIONS = (
-    ("catch-rep01", 258, 312,
-     "section 1, the hand mirror: her hands meeting the ball"),
-    ("release-rep09", 598, 653,
-     "section 5, the release moment: the ball leaving her hands"),
-    ("hold-rep09", 654, 715,
-     "section 7, the elbow dial: the pull-in reaching her chest"),
-    ("ready-between", 538, 584,
-     "section 6, the arm-span ready: her stance between repetitions"),
+    Section("catch-rep01", 258, 312,
+            "section 1, the hand mirror: her hands meeting the ball",
+            276,
+            "the ball held at head height with a hand either side of it, "
+            "which is the mirror the section is named for"),
+    Section("release-rep09", 598, 653,
+            "section 5, the release moment: the ball leaving her hands",
+            619,
+            "the ball leaving her hands; this is the fastest instant in the "
+            "window, so the still carries motion blur on the ball and on both "
+            "hands"),
+    Section("hold-rep09", 654, 715,
+            "section 7, the elbow dial: the pull-in reaching her chest",
+            673,
+            "the ball arriving in front of her chest at the end of the "
+            "pull-in, with her face turned to the camera"),
+    Section("ready-between", 538, 584,
+            "section 6, the arm-span ready: her stance between repetitions",
+            560,
+            "her stance between repetitions, standing square to the camera "
+            "with her hands together in front of her chest"),
 )
 
 
-def parse_section(text: str) -> tuple[str, int, int]:
-    """`name=start:end`, both FRONT indices, inclusive."""
+def pair1_arguments() -> list[str]:
+    """`--pair1-sections` as the strings a caller could have typed.
+
+    It is a function so that a test can put them back through
+    `parse_section` and get the table's own numbers out again. Built inline
+    inside `main`, the poster could be dropped from every shipped section and
+    nothing would run the line that dropped it.
+    """
+    return [f"{s.name}={s.start}:{s.end}@{s.poster}" for s in PAIR1_SECTIONS]
+
+
+def parse_section(text: str) -> tuple[str, int, int, int | None]:
+    """`name=start:end`, or `name=start:end@poster`, all FRONT indices.
+
+    The window is inclusive at both ends. The poster is optional: a section
+    cut in passing does not need one, and a DEFAULT poster would be a frame
+    nobody chose, sitting in a manifest as though somebody had.
+    """
     try:
         name, window = text.split("=", 1)
+        window, _, poster = window.partition("@")
         start, end = window.split(":", 1)
-        return name, int(start), int(end)
+        return name, int(start), int(end), int(poster) if poster else None
     except ValueError:
         raise SystemExit(
-            f"cannot read section {text!r}. Give it as name=start:end, with "
-            "both numbers FRONT frame indices, for example "
-            "catch-rep01=258:312.")
+            f"cannot read section {text!r}. Give it as name=start:end, or "
+            "name=start:end@poster, with every number a FRONT frame index, "
+            "for example catch-rep01=258:312@276.")
 
 
 def main(argv: list[str]) -> int:
@@ -553,8 +689,7 @@ def main(argv: list[str]) -> int:
     arguments = parser.parse_args(argv[1:])
     wanted = list(arguments.section)
     if arguments.pair1_sections:
-        wanted += [f"{name}={start}:{end}"
-                   for name, start, end, _ in PAIR1_SECTIONS]
+        wanted += pair1_arguments()
     if not wanted:
         raise SystemExit("give at least one --section NAME=START:END, or "
                          "--pair1-sections")
@@ -568,20 +703,27 @@ def main(argv: list[str]) -> int:
     print(f"  side index = front index {files['offset']:+d}\n")
 
     arguments.out.mkdir(parents=True, exist_ok=True)
-    # The reason each named section exists, so it can travel into the manifest.
-    reasons = {name: why for name, _, _, why in PAIR1_SECTIONS}
+    # The reasons each named section exists, and why its poster is the frame
+    # a coach sees first, so both travel into the manifest.
+    known = {s.name: s for s in PAIR1_SECTIONS}
     sections = []
     for text in wanted:
-        name, start, end = parse_section(text)
+        name, start, end, poster = parse_section(text)
+        named = known.get(name)
         entry = cut_section(files, name, start, end, arguments.out,
-                            what=reasons.get(name, ""))
+                            what=named.what if named else "",
+                            poster=poster,
+                            poster_what=named.posterWhat if named else "")
         sections.append(entry)
         print(f"  {name:14s} front {entry['front']['indexStart']}.."
               f"{entry['front']['indexEnd']} "
               f"({entry['front']['ptsStart']:.3f}-{entry['front']['ptsEnd']:.3f}s)"
               f"  side {entry['side']['indexStart']}..{entry['side']['indexEnd']} "
               f"({entry['side']['ptsStart']:.3f}-{entry['side']['ptsEnd']:.3f}s)"
-              f"  {entry['frames']} frames")
+              f"  {entry['frames']} frames"
+              + (f"  poster {entry['posterFrontIndex']}/"
+                 f"{entry['posterSideIndex']}" if entry["posters"]
+                 else "  no poster"))
 
     where = arguments.out / "manifest.json"
     where.write_text(
