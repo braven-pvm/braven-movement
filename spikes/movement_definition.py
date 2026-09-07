@@ -550,9 +550,17 @@ class MovementAssessment:
                         "measure": result.checkpoint.measure,
                         "measured": round(result.measured, 2),
                         "band": [
-                            result.checkpoint.minimum_degrees,
-                            result.checkpoint.maximum_degrees,
+                            result.checkpoint.minimum,
+                            result.checkpoint.maximum,
                         ],
+                        # THE UNIT TRAVELS WITH THE PAIR. `band` was two bare
+                        # numbers, so a receipt consumer had exactly the
+                        # problem the coach sentence had before it named the
+                        # measure's unit: three of these rows are centimetres
+                        # and the rest are degrees, and nothing in the file
+                        # said which. ADDITIVE -- `band` is unchanged, so a
+                        # reader taking `tuple(row["band"])` is unaffected.
+                        "unit": unit_of(result.checkpoint.measure),
                         "verdict": result.verdict,
                         "cue": result.checkpoint.cue,
                     }

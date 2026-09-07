@@ -30,7 +30,9 @@ sys.path.insert(0, str(SPIKE_DIR))
 from build_stamp import generated_from  # noqa: E402
 from isb_angles import AAOS_LIMITS  # noqa: E402
 from movement_definition import (  # noqa: E402
+    MINIMUM_MEANINGFUL_BAND,
     MINIMUM_MEANINGFUL_BAND_DEGREES,
+    minimum_meaningful_band,
 )
 from motion_track import describe, load_motion  # noqa: E402
 from movement_engine import (  # noqa: E402
@@ -219,7 +221,18 @@ def build_one(character, movement_id: str, variant: str | None = None) -> dict:
         # before it. A checkpoint that cannot fail is not a check, and it
         # inflates the score above.
         "phaseSeparation": {
-            "thresholdDegrees": MINIMUM_MEANINGFUL_BAND_DEGREES,
+            # ONE SCALAR CANNOT DESCRIBE A PER-UNIT THRESHOLD. This field was
+            # `thresholdDegrees`, a single number, written into every receipt
+            # while the verdict beside it is now taken against the floor of
+            # each measure's OWN unit. A centimetre winner judged at 2.0 was
+            # described by a receipt saying the threshold was 5 degrees.
+            #
+            # The whole table is written rather than one value, and each phase
+            # row carries the threshold actually applied to it, so a reader
+            # never has to know which unit a measure is in to check the
+            # verdict. Nothing read `thresholdDegrees`; the rename is safe and
+            # was checked by search before it was made.
+            "thresholdsByUnit": dict(MINIMUM_MEANINGFUL_BAND),
             "phases": [
                 {
                     "phase": item.phase,
@@ -227,6 +240,14 @@ def build_one(character, movement_id: str, variant: str | None = None) -> dict:
                     if item.moved is None
                     else round(item.moved, 2),
                     "measure": item.measure,
+                    "threshold": (
+                        None if item.measure is None
+                        else minimum_meaningful_band(item.measure)[0]
+                    ),
+                    "unit": (
+                        None if item.measure is None
+                        else minimum_meaningful_band(item.measure)[1]
+                    ),
                     "distinguishable": item.distinguishable,
                 }
                 for item in separation
@@ -336,10 +357,17 @@ def main() -> int:
             for item in receipt["phaseSeparation"]["phases"]:
                 if item["distinguishable"]:
                     continue
+                named = (
+                    "" if item["unit"] is None else f" {item['unit']}"
+                )
+                threshold = (
+                    MINIMUM_MEANINGFUL_BAND_DEGREES
+                    if item["threshold"] is None else item["threshold"]
+                )
                 print(
                     f"     [{item['phase']}] cannot fail: its checkpoints move "
-                    f"{item['movedFromPrevious']} from the phase before, under "
-                    f"the {MINIMUM_MEANINGFUL_BAND_DEGREES:.0f} threshold"
+                    f"{item['movedFromPrevious']}{named} from the phase "
+                    f"before, under the {threshold:g}{named} threshold"
                 )
         if met != checks:
             for phase, rows in coaching["phases"].items():
@@ -364,7 +392,13 @@ def main() -> int:
             values = [row["readings"].get(name) for row in rows]
             if any(value is None for value in values):
                 continue
-            if max(values) - min(values) < MINIMUM_MEANINGFUL_BAND_DEGREES:
+            # EACH MEASURE AGAINST ITS OWN FLOOR. This filter held every
+            # spread to 5 degrees, so a centimetre spread had to be five
+            # times its own threshold to be shown, and the heading below
+            # called it degrees. Latent while no variant drill grades a
+            # length, and wrong the moment one does.
+            floor, _ = minimum_meaningful_band(name)
+            if max(values) - min(values) < floor:
                 continue
             moved.setdefault(mid, []).append(
                 {
@@ -377,7 +411,7 @@ def main() -> int:
             )
     for mid, rows in moved.items():
         labels = [str(row["variant"]) for row in varied[mid]]
-        print(f"\nwhat the ball changes on {mid}, in degrees:")
+        print(f"\nwhat the ball changes on {mid}, each in its own unit:")
         print("  " + f"{'checkpoint':44s} " + " ".join(f"{n:>8s}" for n in labels))
         for row in rows:
             print(
@@ -385,9 +419,12 @@ def main() -> int:
                 + " ".join(f"{row['byVariant'][n]:8.2f}" for n in labels)
             )
         rest = len(varied[mid][0]["readings"]) - len(rows)
+        floors = ", ".join(
+            f"{floor:g} {unit}" for unit, floor in sorted(MINIMUM_MEANINGFUL_BAND.items())
+        )
         print(
-            f"  the other {rest} checkpoints move less than "
-            f"{MINIMUM_MEANINGFUL_BAND_DEGREES:.0f} degrees across every ball."
+            f"  the other {rest} checkpoints move less than their own "
+            f"threshold across every ball ({floors})."
         )
 
     (OUTPUT / "index.json").write_text(

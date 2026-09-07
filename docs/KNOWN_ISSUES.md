@@ -491,7 +491,29 @@ coach-facing fact — the engine may not be able to fail the landing's defining
 cue — so it goes to the content lane's agenda for a coach's view, which the
 orchestrator carries.
 
-### Four more sites, found and NOT fixed here
+### Four more sites — ALL FOUR FIXED on 2026-09-07
+
+**They are kept here rather than deleted**, because the row's value is the
+shape: four places where one unit's threshold or one unit's silence was spent
+on measures of two units, all latent, all in code that had been read many
+times. What each was is below; what each is now:
+
+- **`build_library.py:222`** writes `thresholdsByUnit`, the whole table, and
+  every phase row carries the `threshold` and `unit` actually applied to it. A
+  reader no longer has to know a measure's unit to check its verdict.
+- **`build_library.py:338-343`** prints the phase's own threshold and unit.
+- **`build_library.py:367`** filters each spread against its own measure's
+  floor, and the heading says "each in its own unit" rather than "in degrees".
+- **`MovementAssessment.to_receipt`** writes `unit` beside `band`. **Additive**:
+  `band` is unchanged, so a consumer taking `tuple(row["band"])` is unaffected,
+  and two tests do exactly that.
+
+**The consumers were checked before the schema moved.** `thresholdDegrees` was
+read by nothing outside the writer, so the rename is safe; `band` is read as a
+pair in two tests, which is why the unit is a sibling key and not a change to
+the pair.
+
+*The original row follows.*
 
 **Owner: the movement lane. Queued after Pack B, the height measure.**
 
