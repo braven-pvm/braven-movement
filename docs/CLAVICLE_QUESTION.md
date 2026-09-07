@@ -11,8 +11,15 @@ than one that shows where it was wrong.
 
 ## The central number, which the first draft never stated
 
-**The two rigs' rest clavicles point 32.72 degrees apart** — a chord of
-7.11 cm. Measured by the review on the rendering rig against this engine's.
+**The two rigs' rest clavicles point 32.72 degrees apart.** The chord depends
+on WHICH bone it is swept on and so is given with its bone: **7.12 cm at the
+rig's clavicle, 9.94 cm at the engine's**. An earlier draft wrote "a chord of
+7.11 cm" with no bone named, which is a length without its inputs in the row
+that exists to insist on them. Computed by the review from the rendering lane's
+own committed
+landmark table (`scripts/landmark_comparison.py`, re-measured in
+`REVIEW-rendering-0b2495c.md`) against this engine's rest pose. It is not a
+fresh measurement of that rig, and the table it rests on is.
 
 That is a **larger** rest difference than the ~2.5 cm fore-and-aft posture gap
 already recorded against this field, and it was recorded nowhere. It is the
@@ -30,6 +37,11 @@ independent rebuild agreeing to 0.018 mm:
 | how many lie on the rig's clavicle sphere | **none** |
 | worst residual, the ruled TORSO divisor | **52.09 mm** |
 | worst residual, a CLAVICLE divisor | **31.03 mm** |
+
+The probe reads 52.09 and 31.03; the review's independent rebuild reads 52.11
+and 31.05 on the same targets, agreeing to 0.0181 mm on all 96 receipts. Both
+pairs appear below where each instrument is quoted, and **the 0.02 mm between
+them is four-decimal landmark rounding**, not a disagreement.
 | the two clavicle-to-torso ratios | 0.35553 against 0.29530 |
 
 **The sender.** `scripts/engine_clavicle.py`, and the pivot figure is **per
@@ -76,7 +88,9 @@ worst** — against today's worst anchor error of 20.45 mm.
 the handoff has it, at `HANDOFF_RENDERING.md:148-152`, it says the opposite: a
 **POSE** crosses this boundary as **geometry**, because a rotation only means
 something against the rest pose it was measured in and the two rigs do not
-share one; a **RANGE OF MOTION** crosses as a rotation. `knuckleLimitsDegrees`
+share one; a **RANGE OF MOTION** crosses as a rotation about the anatomical
+axis. (That is a faithful truncation of the rule, not a quotation; read it
+there.) `knuckleLimitsDegrees`
 is a range of motion. This field is a pose.
 
 So a rotation from rest would carry the **32.72 degrees in every frame**, which
@@ -111,8 +125,14 @@ the transmitted direction.
 - **It is two fields as well** — a direction and the sternal end's position —
   and the second is the same field option A needs, so the pivot travel is
   answered for both or for neither.
-- **The 32.72 degrees does not travel with it**, because nothing is measured
-  from a rest pose the two rigs do not share.
+- **IT HAS A COST AT REST, AND IT IS THE SAME 32.72 DEGREES.** A WORLD
+  direction is not measured from anybody's rest pose, so nothing is carried
+  across from this rig's — but the consumer must then turn its own rest
+  clavicle **32.72 degrees to meet it, in every frame including a standing
+  one**. `zero at rest` is lost: the field would put `clavicleTurnedDegrees` at
+  32.72 with the athlete standing still. An earlier draft said "the 32.72 does
+  not travel with it", which is true of the arithmetic and misleading about the
+  pose.
 
 ## The turned drill, which dominates every worst number
 
@@ -132,12 +152,23 @@ The rotation from rest, per drill, in the world and in the review's trunk frame
 reads **12.2 degrees** in the trunk frame, which this lane reproduced exactly
 from the review's definition.
 
-**The two frames answer different questions and neither is "the" rotation.**
-The world frame contains the athlete's turn and lean; the trunk frame removes
-them and so raises the other drills' maxima, because a shoulder still in the
-world moves relative to a trunk that leans. **A rotation transmitted in the
-world frame would ask the consumer for 65 degrees; in a trunk frame the
-library's demand is at most 37.**
+**THE TRUNK COLUMN IS NOT WHAT AN EARLIER DRAFT SAID IT WAS, and the reason is
+a finding of its own.** That draft explained the other drills' higher maxima as
+the trunk's LEAN. It is not the lean: the frame is pinned to the HIP LINE, and
+**the solver yaws the pelvis on every drill, including the square ones** — 10.5
+to 24.5 degrees, and `chest_pass` sits at 15.7 on all 96 frames with its feet
+symmetric to 0.002 cm and its shoulders to 0.01. The column is therefore the
+world angle **plus or minus that yaw**, raising one side and lowering the other,
+and at the 37.03 target the lean is 1.99 degrees. The yaw is recorded as an
+engine finding in `KNOWN_ISSUES.md`, owned by this lane.
+
+**So "in a trunk frame the library's demand is at most 37" is withdrawn.** It
+offered a frame **the job does not carry and the consumer cannot resolve**, and
+the number in it was contaminated by an unmeasured pelvis rotation. What holds
+is narrower: a rotation transmitted in the WORLD frame would ask the consumer
+for 65 degrees at that target, and any frame-relative alternative needs a
+**trunk-orientation field** the job does not have. That field is now on the
+needs list below.
 
 **And the consumer already wrenches its clavicle 68.33 degrees at that target**
 (`clavicleTurnedDegrees` in that receipt, the ledger's missing instrument). So
@@ -152,9 +183,17 @@ so is its removal from Marius's list, because the options it chose between were
 not the right ones: D was missing, A was costed as one field when it is two,
 and the precedent was cited backwards.
 
-What a recommendation now needs: the pivot-position field priced once, since A
-and D both need it; the turned drill measured on its own; and a decision on
-whether the 32.72 degrees is a difference to remove or a difference to respect.
+What a recommendation now needs:
+
+- **the pivot-position field priced once**, since A and D both need it;
+- **a trunk-orientation field priced**, if any frame-relative option is to be
+  considered at all, because the job carries no frame and the consumer cannot
+  resolve one;
+- **the turned drill measured on its own**, and the pelvis yaw settled first,
+  since it contaminates every frame-relative number;
+- **a decision on whether the 32.72 degrees is a difference to REMOVE or to
+  RESPECT** — with D's rest cost on the table, because D moves that difference
+  out of the arithmetic and into the consumer's standing pose.
 
 ## What the review removed from the first draft, and why it matters
 
@@ -178,12 +217,19 @@ same target with the review's own frame definition, this lane reproduces 12.2
 exactly. The error was comparing two different quantities under one
 description, which is the fault this whole ledger is about.
 
-**A frame was invented where an instrument already existed.** Before that, this
-lane built its own pelvis frame from the hip line and rebuilt it per frame; it
-made every drill *wider*, which is the opposite of what removing a turn does,
-because a hip frame does not remove a trunk turn and a per-frame rebuild
-injects the trunk's lean. `trunkTurnDegrees` is a measure this engine already
-writes and is exactly the quantity.
+**A frame was invented, and then MISDIAGNOSED TWICE.** This lane first built a
+pelvis frame from the hip line and rebuilt it per frame; it made every drill
+*wider*. The first diagnosis was "a hip frame does not remove a trunk turn and
+a per-frame rebuild injects the lean". **Both halves are wrong**, and the frame
+the paper now uses is the same hip-pinned frame: the hips themselves turn 53.6
+degrees at `hooks_outside_hand` frame 0, so a hip frame removes a great deal of
+turn, and the widening is the **pelvis yaw** above, not the lean.
+
+**And `trunkTurnDegrees` is not the instrument that draft claimed either.** It
+is the AUTHORED track value, `track.turn_at(phase)`, not a measurement of the
+solved pose — which is exactly why it reads 0.0 on drills whose solved pelvis is
+yawed 15.7 degrees. It is the right quantity for "what was the athlete asked to
+do" and the wrong one for "what did the solver produce".
 
 ## The instruments
 
@@ -193,6 +239,20 @@ writes and is exactly the quantity.
   prints the frame count it visited.
 - `scripts/clavicle_divisor_probe.py` — the consumer's residuals, by the
   rendering lane.
+- `scripts/engine_targets.py` then `scripts/consumer_residuals.py` — a SECOND,
+  independent pair, written by the review of `dae979a` and committed here with
+  its attribution. They print the figures this paper quotes that no instrument
+  produced before: **32.72 degrees** and its two chords, **52.11 / 31.05**
+  against the probe's 52.09 / 31.03, and the **54.72 mm** with the pivot travel
+  removed that refuted the decomposition. Run stage one first; it writes
+  `engine_targets.json` for stage two.
+
+**Their clone path was a defect and is fixed, not carried.** Both arrived
+pointing at the reviewer's own tree. The first attempt to fix that here failed
+silently and the pipeline ran against the other tree, writing its results into
+this one; the numbers looked right, which is the danger. The path is derived
+from the file's location now, the edit that set it asserted before writing, and
+the figures above were re-measured from this repository afterwards.
 
 The 102 count is reached by two instruments reading **one source**, the engine's
 own definitions; the first draft called that "counted independently", which

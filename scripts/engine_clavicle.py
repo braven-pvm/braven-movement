@@ -8,11 +8,16 @@ skeleton.
 
     pixi run --frozen -- python -B engine_clavicle.py
 
-IT ALSO ANSWERS THE SENDER'S HALF OF THE CLAVICLE QUESTION.
+IT ALSO PRINTS THE SENDER'S FIGURES THE DECISION PAPER QUOTES.
 `scripts/clavicle_divisor_probe.py` measures the CONSUMER: 102 transmitted
-shoulder targets, none of them on the rendering rig's clavicle sphere. The
-question that decides between the options is about the SENDER -- does the
-engine's own shoulder stay on its own sphere? -- and it is answered below.
+shoulder targets, none of them on the rendering rig's clavicle sphere.
+
+AN EARLIER VERSION OF THIS DOCSTRING PROMISED MORE THAN THE CODE DELIVERS. It
+said the question was whether the engine's own shoulder stays on its own sphere,
+"and it is answered below". It is not a question: `l_uparm`'s parent IS
+`l_clavicle`, so the distance is fixed by the rig's topology and would read the
+same for any bone on either rig. `geometry()` says so and this docstring no
+longer promises otherwise.
 """
 
 import sys
@@ -176,10 +181,28 @@ def geometry() -> None:
           f"worst {graded_only[-1]:.2f} cm")
     print(f"  pivot travel over all {len(every)} frame-sides: "
           f"median {every[len(every) // 2]:.2f} cm, worst {every[-1]:.2f} cm")
-    print(f"  THE TWO FRAMES ANSWER DIFFERENT QUESTIONS. The world frame "
-          f"contains the athlete's")
-    print(f"  turn and lean; the trunk frame removes them and so RAISES the "
-          f"other drills' maxima.")
+    print("  THE TWO FRAMES ANSWER DIFFERENT QUESTIONS, and the trunk column "
+          "is NOT the lean.")
+    print("  It is pinned to the HIP LINE, and the solver yaws the pelvis on "
+          "every drill, so the")
+    print("  column is the world angle PLUS OR MINUS that yaw. Refer to the "
+          "pelvis yaw below.")
+    print(f"  90th percentile over the graded targets: "
+          f"{graded_only[int(0.9 * len(graded_only))]:.2f} cm; "
+          f"{sum(1 for d in graded_only if d > 2.5)} targets exceed 2.5 cm")
+
+    # THE FRAME COUNT AGAINST ITS SOURCE. Printing what was visited says
+    # nothing about what was there to visit; a drill that failed to solve would
+    # lower both numbers together if only one were printed.
+    import json as _json
+    expected = 0
+    for path in sorted(Path(MOVEMENT_DIR).glob("*.motion.json")):
+        expected += int(_json.loads(path.read_text(encoding="utf-8"))["frames"])
+    files = len(list(Path(MOVEMENT_DIR).glob("*.motion.json")))
+    print(f"  frames visited {visited}; the motion files declare {expected} "
+          f"across {files} drills"
+          + ("" if visited == expected else "  <-- THEY DISAGREE"))
+
     if failed:
         print()
         print("  DRILLS THAT DID NOT REPORT, named rather than skipped:")
@@ -187,6 +210,76 @@ def geometry() -> None:
             print(f"    {line}")
 
 
+def pelvis_yaw() -> None:
+    """Is the solved pelvis facing where the drill says?
+
+    FOUND TWICE INDEPENDENTLY on 2026-09-07: by this lane while rebuilding the
+    clavicle paper, and by that paper's independent review, which named it as
+    the reason a hip-pinned frame moved the numbers. Its `review_hips.py` is
+    the review's instrument; this is the movement lane's, and it prints the raw
+    joints so nothing is inferred.
+
+    THE MEASURE THIS ENGINE ALREADY HAS IS NOT THIS ONE. `trunkTurnDegrees` is
+    `track.turn_at(phase)`, the AUTHORED value, so it reads 0.0 on drills whose
+    solved pelvis is yawed about 15 degrees. Nothing else reads the difference.
+    """
+    from movement_engine import library
+
+    character = load_character()
+
+    def flat_hip_line(pose, index):
+        line = pose[index["l_upleg"]] - pose[index["r_upleg"]]
+        flat = np.array([line[0], 0.0, line[2]])
+        return flat / np.linalg.norm(flat)
+
+    print()
+    print("THE SOLVED PELVIS YAW, against the AUTHORED turn beside it.")
+    print(f"    {'drill':32s} {'pelvis yaw':>18s} {'authored':>9s}")
+    for movement_id in sorted(library()):
+        try:
+            result = solve_movement(character, movement_id)
+        except Exception as problem:
+            print(f"    {movement_id:32s} DID NOT SOLVE: "
+                  f"{type(problem).__name__}")
+            continue
+        index, points = result["index"], result["points"]
+        rest = joint_positions(character, result["identity"])
+        at_rest = flat_hip_line(rest, index)
+        yaws = []
+        for pose in points:
+            here = flat_hip_line(pose, index)
+            yaws.append(float(np.degrees(np.arctan2(
+                float(np.cross(at_rest, here)[1]), float(np.dot(at_rest, here))
+            ))))
+        authored = max(
+            abs(float(row["trunkTurnDegrees"])) for row in result["measurements"]
+        )
+        print(f"    {movement_id.replace('netball_', ''):32s} "
+              f"{min(yaws):8.2f} to {max(yaws):6.2f} {authored:9.1f}")
+
+    # THE RAW JOINTS ON ONE SQUARE DRILL, so the yaw is read and not inferred.
+    result = solve_movement(character, "netball_chest_pass")
+    index, points = result["index"], result["points"]
+    rest = joint_positions(character, result["identity"])
+    root = points[0][index["root"]]
+    print()
+    print("    netball_chest_pass frame 0, from the root, in centimetres:")
+    for label, pose, origin in (
+        ("rest ", rest, rest[index["root"]]), ("posed", points[0], root)
+    ):
+        left = pose[index["l_upleg"]] - origin
+        right = pose[index["r_upleg"]] - origin
+        print(f"      {label} l_upleg {np.round(left, 3)}  "
+              f"r_upleg {np.round(right, 3)}")
+    for side in ("l", "r"):
+        foot = points[0][index[f"{side}_foot"]] - root
+        arm = points[0][index[f"{side}_uparm"]] - root
+        print(f"      {side}_foot {np.round(foot, 2)}   "
+              f"{side}_uparm {np.round(arm, 2)}")
+    print("    The feet and the shoulders are symmetric; the hip line is not.")
+
+
 if __name__ == "__main__":
     main()
     geometry()
+    pelvis_yaw()

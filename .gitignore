@@ -12,3 +12,6 @@ __pycache__/
 /spikes/pixi.lock
 /spikes/poc-output/
 /out/
+
+# Stage one of the consumer-residual pipeline writes this for stage two.
+/scripts/engine_targets.json

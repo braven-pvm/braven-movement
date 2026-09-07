@@ -3362,6 +3362,50 @@ one regime and spent in another. Here the regime is the library itself — a
 count and a bound both measured on eleven drills and spent on every drill that
 would ever be added.
 
+### A square drill solves with a yawed pelvis, and nothing measures it
+
+Found 2026-09-07 by the movement lane while rebuilding the clavicle paper, and
+by the independent review of the same tip. **An engine finding with an owner,
+unmeasured until now.**
+
+`netball_chest_pass` frame 0 solves with its feet symmetric to **0.002 cm** and
+its shoulders symmetric to **0.01 cm**, and its HIP LINE turned **15.7 degrees**
+from rest — the same at all 96 frames. At rest the two hip joints are mirror
+images to the micron; posed, the left sits 1.72 cm behind the root and the right
+2.71 cm ahead.
+
+**It is on every drill, and the sign differs between them:**
+
+| drill | pelvis yaw | authored turn |
+|---|---|---|
+| `chest_pass`, `two_hand_catch_chest`, `hooks_jump_pull_in` | +15.4 to +15.9 | 0.0 |
+| `double_foot_landing`, `snatch_pull_in`, `straight_back` | **−15.9 to −15.5** | 0.0 |
+| `deflect_high` | −18.4 to −12.2 | 0.0 |
+| `one_hand_snatch_to_other_hand` | +10.5 to +15.9 | 0.0 |
+| `overhead_pass`, `one_hand_high_pass` | +15.4 to +25.0 | 0.0 |
+| `hooks_outside_hand` | +19.6 to +60.7 | 48.0 |
+
+**NOTHING MEASURES IT.** `trunkTurnDegrees` is the AUTHORED track value,
+`track.turn_at(phase)`, and not a measurement of the solved pose. So the
+receipts say the turn is 0.0 on eleven drills whose solved pelvis is yawed by
+about 15 degrees, and no checkpoint, curve or gate reads the difference.
+
+**This is the shape the ledger already carries twice**: a solver absorbing
+something into a freedom nothing measures, and a name that describes an
+authored input while a reader takes it for an output. It is the left-right
+tripwire's cousin — that one asks whether the hands have crossed, and this asks
+whether the pelvis is facing where the drill says.
+
+**What is NOT claimed.** Whether the yaw is wrong is not established here. A
+pelvis may legitimately rotate under a pass, and no coach has been asked. What
+is established is that it is **unmeasured**, that it is present where the
+authored turn is zero, and that it **contaminates every frame-relative number**
+taken from a hip-pinned frame — which is how it was found, in a column of the
+clavicle paper that an earlier draft explained as trunk lean.
+
+**Owner: the movement lane.** Queued: a solved-pose turn measure beside the
+authored one, so the two can disagree visibly.
+
 ### The field sends a POSITION for a joint that has none
 
 Raised by the rendering lane on 2026-09-07: its rendered girdle sits about
@@ -3392,6 +3436,15 @@ divisor, which buys 40 per cent and keeps the shape; consumer-side projection,
 which is the status quo written down; and a transmitted clavicle DIRECTION plus
 the sternal end's position, which is what the handoff's own precedent points at
 (`arms.direction`) and which the first draft did not contain.
+
+**The turned drill dominates every worst number and is treated on its own.**
+`hooks_outside_hand/facing_away` right, frame 0, is the worst target for the
+residual, the pivot travel and the rotation, and it is the library's ONLY drill
+with an authored turn. Its 65.5-degree rotation is a world-frame angle
+containing that turn; the same target reads 12.2 in a trunk frame. **And the
+consumer already wrenches its clavicle 68.33 degrees there** — the receipt's
+`clavicleTurnedDegrees`, which no instrument in this repository reads. None of
+the four options addresses that, and the paper says so.
 
 **Three faults of this lane's own reasoning are recorded in the paper** rather
 than quietly replaced: a measurement that was a tautology (`l_uparm`'s parent
