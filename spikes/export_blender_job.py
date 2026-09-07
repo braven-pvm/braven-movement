@@ -200,11 +200,31 @@ def _hand(points, index, side: str) -> dict:
     }
 
 
+def blender_arm(points, index, side: str = "l") -> float:
+    """The arm length, shoulder to elbow to wrist, IN BLENDER METRES.
+
+    `motion_track.arm_length` is the same span in the rig's centimetres. This
+    one divides the metre-valued spans this job sends, so it is measured in the
+    frame those spans are measured in. Two names because they are two numbers,
+    a hundred apart.
+
+    It was written inline in two places. One of them is the divisor under
+    `grip`, which a guard could only rebuild by restating the formula — and a
+    guard that restates a formula agrees with itself rather than with the code.
+    """
+    shoulder = to_blender(points[index[f"{side}_uparm"]])
+    elbow = to_blender(points[index[f"{side}_lowarm"]])
+    wrist = to_blender(points[index[f"{side}_wrist"]])
+    return float(
+        np.linalg.norm(elbow - shoulder) + np.linalg.norm(wrist - elbow)
+    )
+
+
 def _arm(points, index, side: str) -> dict:
     shoulder = to_blender(points[index[f"{side}_uparm"]])
     elbow = to_blender(points[index[f"{side}_lowarm"]])
     wrist = to_blender(points[index[f"{side}_wrist"]])
-    arm = np.linalg.norm(elbow - shoulder) + np.linalg.norm(wrist - elbow)
+    arm = blender_arm(points, index, side)
     reach = wrist - shoulder
     return {
         # Where the hand is, as a direction and a fraction of this athlete's
@@ -213,6 +233,48 @@ def _arm(points, index, side: str) -> dict:
         "reachFraction": round(float(np.linalg.norm(reach) / arm), 6),
         "pole": [round(float(v), 6) for v in _pole(shoulder, elbow, wrist)],
     }
+
+
+
+def rest_torso(rest_points, index) -> float:
+    """The distance from the pelvis to the shoulder midpoint, at REST.
+
+    The unit the shoulder positions cross in, and the counterpart of the leg
+    length `_stance` computes: each body derives it from its OWN rest pose, so
+    nothing has to be told what it is and the two sides cannot disagree about
+    a number neither transmitted.
+
+    IT IS A TORSO LENGTH AND NOT AN ARM LENGTH, which was measured rather than
+    assumed. A shoulder-above-pelvis distance is a torso quantity, and the
+    first ruling for this field said arm lengths, as everything else in the job
+    uses. Four lengths decide it, and each is named with the rig it came from:
+
+        this athlete's arm          52.680 cm    the rendering rig's  48.547
+        this athlete's rest torso   49.6456      the rendering rig's  42.7689
+
+    The two ratios are 0.9215 for the arms and 0.8615 for the rest torsos, so
+    an arm divisor is 6.5 per cent wrong on a torso span. Sent as arms, this
+    athlete's 48.8246 cm shoulder height at `chest_pass/ready` resolves to
+    45.00 cm on a rig whose own rest torso is 42.7689 — 2.23 cm out, against a
+    rule of 1 cm, on the very phase the field exists to protect. A torso
+    divisor gives 0.71 cm in the other direction, which is a girdle slightly
+    compressed from rest at neutral on one body reading as slightly compressed
+    on the other.
+
+    AN EARLIER VERSION OF THIS DOCSTRING SAID "its shoulder-above-pelvis is
+    0.8759" AND THAT NUMBER IS WITHDRAWN. It is 42.7689 / 48.8246 = 0.87597,
+    truncated: the rendering rig's REST torso over this athlete's POSED
+    shoulder height. Two
+    rigs, one at rest and one posed, one measured in three axes and one
+    vertical — a single label over two quantities, which is the fault this
+    whole field exists to fix. The rendering lane does not recognise the
+    figure, and is right not to. The 2.23 cm never depended on it.
+    """
+    pelvis = to_blender(rest_points[index["root"]])
+    middle = np.stack(
+        [to_blender(rest_points[index[f"{side}_uparm"]]) for side in ("l", "r")]
+    ).mean(axis=0)
+    return float(np.linalg.norm(middle - pelvis))
 
 
 def _stance(points, index) -> dict:
@@ -267,25 +329,94 @@ def _grip(points, index, centre, radius: float, arm: float, sides) -> dict:
     return grip
 
 
-def phase_job(result, index, frame: int, method) -> dict:
+def phase_job(result, index, frame: int, method, rest_points) -> dict:
     points = result["points"][frame]
     held = result["possession"].frames[frame]
 
     shoulders = np.stack(
         [to_blender(points[index[f"{side}_uparm"]]) for side in ("l", "r")]
     ).mean(axis=0)
-    shoulder = to_blender(points[index["l_uparm"]])
-    elbow = to_blender(points[index["l_lowarm"]])
-    arm = (np.linalg.norm(elbow - shoulder)
-           + np.linalg.norm(to_blender(points[index["l_wrist"]]) - elbow))
+    arm = blender_arm(points, index)
     centre = to_blender(held.centre)
     radius = float(result["radiusCm"]) / 100.0
+    torso = rest_torso(rest_points, index)
 
     job = {
         "frame": int(frame),
         "arms": {side: _arm(points, index, side) for side in ("l", "r")},
         "hands": {side: _hand(points, index, side) for side in ("l", "r")},
         "stance": _stance(points, index),
+        # THE ANCHOR `fromShouldersInArms` IS MEASURED FROM, which this job did
+        # not transmit until 2026-09-04. A consumer was told where the ball sits
+        # relative to the shoulder midpoint and never told where that midpoint
+        # is, so it had to guess — and the rendering lane's guess was to leave
+        # the shoulder girdle at rest, because nothing in the job asked it to
+        # move.
+        #
+        # THE GIRDLE MOVES ON EVERY DRILL, AND A WIDTH RANGE CANNOT SEE IT.
+        # The midpoint travels 8.45 cm relative to the pelvis within
+        # `netball_overhead_pass`, 5.02 within `netball_deflect_high`, and 1.77
+        # on the quietest drill in the library. 31 of the 48 graded phases sit
+        # more than a centimetre from the neutral girdle, so the re-render is
+        # the whole library and not the loudest few drills.
+        #
+        # AN EARLIER VERSION OF THIS COMMENT QUOTED A WIDTH RANGE AND SET SEVEN
+        # DRILLS ASIDE AT 0.65 TO 1.05 cm. Width is one axis of three.
+        # `netball_bounce_pass` moves almost entirely FORE AND AFT — 2.46 to
+        # 0.54 cm ahead of the pelvis, with the width barely changing — so on a
+        # width check that drill reads as the CLEANEST in the library and
+        # ships. That is why this field sends two positions.
+        #
+        # `_grip` below already knew shoulder width mattered — it records that
+        # sending shoulder directions closed this athlete's grip from 19.0 cm
+        # between the wrists to 12.1 — and fixed it by placing the ball first
+        # and the hands on it. THAT MOVED THE PROBLEM UP A LEVEL RATHER THAN
+        # REMOVING IT: the hands became anchored to the ball, and the ball
+        # stayed anchored to shoulders nobody sent.
+        #
+        # A DISPLACEMENT FROM REST, NOT A POSITION, and that took three
+        # attempts. Metres failed because every position in this job is
+        # normalised and only `radiusM` is absolute. Arm lengths failed
+        # because a shoulder-above-pelvis distance is a TORSO quantity and an
+        # arm divisor put the rendering rig's neutral 2.23 cm out. And a
+        # torso-normalised POSITION failed on all 48 phases, 1.1 to 5.8 cm,
+        # including the phases where both girdles are neutral and nothing is
+        # wrong — because a divisor SCALES and cannot TRANSLATE, and the two
+        # rigs carry a constant offset between where MHR puts `root` and where
+        # MPFB puts `pelvis`: +2.46 cm ahead here against −0.26 there.
+        #
+        # A displacement cancels every constant — landmark convention, neutral
+        # posture, build — reads zero at rest by construction, and carries the
+        # one thing that was actually missing, which is that this girdle MOVES
+        # and the consumer's does not.
+        #
+        # AND IT IS PELVIS-RELATIVE ON BOTH SIDES OF THE SUBTRACTION. The
+        # solved root is never at its rest position — 8.4 cm off at every ready
+        # phase and 37 cm at the landing's approach — so a displacement taken
+        # from the world would carry the whole body's travel into a field about
+        # the shoulder girdle. The guard below caught exactly that: it read
+        # 0.6239 torso lengths, 30.97 cm, on `netball_double_foot_landing`
+        # frame 0, against the 5.7 to 7.4 cm the girdle actually moves.
+        #
+        # ADDITIVE. Nothing else in the job changes, so a consumer that ignores
+        # this field renders exactly as it did before.
+        "shoulderShiftFromRestInTorsos": {
+            side: [
+                round(float(v), 6)
+                for v in (
+                    (
+                        to_blender(points[index[f"{side}_uparm"]])
+                        - to_blender(points[index["root"]])
+                    )
+                    - (
+                        to_blender(rest_points[index[f"{side}_uparm"]])
+                        - to_blender(rest_points[index["root"]])
+                    )
+                )
+                / torso
+            ]
+            for side in ("l", "r")
+        },
         "ball": {
             # Absolute in metres, because a netball is a netball. Where it sits
             # is relative, because that depends on the body holding it.
@@ -310,12 +441,13 @@ def build(character, movement_id: str, every: int = 0) -> dict:
     method = load_technique(technique_path(movement_id))
     result = solve_movement(character, movement_id)
     index = result["index"]
+    rest_points = joint_positions(character, result["identity"])
     frames = len(result["points"])
 
     phases = []
     for phase in definition.phases:
         frame = max(0, min(frames - 1, round(phase.at_phase * (frames - 1))))
-        job = phase_job(result, index, frame, method)
+        job = phase_job(result, index, frame, method, rest_points)
         job["name"] = phase.name
         phases.append(job)
 
@@ -324,7 +456,7 @@ def build(character, movement_id: str, every: int = 0) -> dict:
     frames_out = []
     if every > 0:
         for frame in range(0, frames, every):
-            frames_out.append(phase_job(result, index, frame, method))
+            frames_out.append(phase_job(result, index, frame, method, rest_points))
 
     return {
         "schemaVersion": 1,

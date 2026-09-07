@@ -1013,6 +1013,11 @@ def assemble(evidence: dict, set_id: str, movement: str) -> dict:
             # `canAnswer` is about the questions a capture CAN be asked, and
             # `cannotBeAsked` names the ones no capture can settle while the
             # engine lacks the thing they are about.
+            # `askable` cannot be empty while this group holds a derived and a
+            # chosen condition, so the emptiness guard never fires TODAY. It
+            # stays because without it an all-unavailable group would report
+            # canAnswer TRUE — `all()` of nothing is true — which is the one
+            # wrong answer this field must never give.
             "canAnswer": bool(askable) and all(
                 row["passes"] is True for row in askable),
             "cannotBeAsked": [row["name"] for row in open_questions

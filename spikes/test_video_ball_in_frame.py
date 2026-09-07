@@ -311,6 +311,47 @@ class TheCommittedAnnotationForSessionOne(unittest.TestCase):
         self.assertIn("leaves the TOP of the frame", rows[2])
         self.assertIn("not a gesture", rows[2])
 
+    def test_the_two_gestures_are_named_as_the_sync_claps(self):
+        """Identified 2026-09-04. Repetitions 0 and 8 are Erin's sync claps,
+        and repetition 0 is the one that scored best of twelve. A row that
+        knows what it is is worth more than a row that knows what it is not."""
+        rows = {r["index"]: r["evidence"] for r in self.document["repetitions"]}
+
+        for index in (0, 8):
+            self.assertIn("SYNC CLAP", rows[index])
+        self.assertIn("5.800", rows[0])
+        self.assertIn("17.835", rows[8])
+        self.assertIn("0.02369", self.document["note"])
+
+    def test_no_prose_in_this_file_can_move_a_verdict(self):
+        """THE ANNOTATION IS DATA THE GATE READS, so an edit to it has to be
+        provably inert. `judge` reads index, ballVisible, cause and
+        marginFrames, and through `check_windows` it also reads startSeconds
+        and endSeconds — that is the whole list. Every other field is for a
+        person.
+
+        This mutates EVERY prose field — the per-row evidence and all six
+        top-level notes — and requires the verdict to come back identical. A
+        version that started reading the evidence, or that folded a note into
+        the detail line, fails here rather than in a coach's report."""
+        import copy
+
+        rows = sorted(self.document["repetitions"], key=lambda r: r["index"])
+        windows = [{"window": {"startSeconds": r["startSeconds"],
+                               "endSeconds": r["endSeconds"]}} for r in rows]
+        before = judge(self.document, windows)
+
+        mutated = copy.deepcopy(self.document)
+        for row in mutated["repetitions"]:
+            row["evidence"] = "MUTATED, and no verdict may notice."
+        for field in ("annotatedBy", "method", "note", "seekWarning",
+                      "marginNote", "causeNote"):
+            if field in mutated:
+                mutated[field] = "MUTATED, and no verdict may notice."
+        after = judge(mutated, windows)
+
+        self.assertEqual(before, after)
+
     def test_the_causes_are_recorded_for_every_blocking_row(self):
         rows = {r["index"]: r for r in self.document["repetitions"]}
 
