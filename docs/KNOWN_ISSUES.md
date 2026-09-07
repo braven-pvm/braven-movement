@@ -513,6 +513,24 @@ read by nothing outside the writer, so the rename is safe; `band` is read as a
 pair in two tests, which is why the unit is a sibling key and not a change to
 the pair.
 
+### Two more `band` writers, found by that search and NOT fixed
+
+**Owner: the movement lane. Queued.** Neither is the receipt, so neither was in
+this pack's scope, and they are two different faults rather than one repeated.
+
+- **`export_manual_page.py:102`** writes `{"measure", "band": [min, max]}` —
+  the same bare pair the receipt had, and this one is COACH-FACING. It is the
+  larger of the two for that reason.
+- **`hand_orientation.py:235`** writes `"band": None` with a `REPORTED`
+  verdict, so there is no band to carry a unit and it is NOT the band fault.
+  Its fault is the declaration gap in a third writer: its six measures —
+  `leftFingerUpDegrees`, `leftThumbToBallDegrees`, `leftThumbUpDegrees` and
+  the three right-hand names — are **none of them in `MEASURE_UNITS`**, so
+  `unit_of` raises for every one. They end in "Degrees", which is exactly the
+  suffix rule `unit_of` refuses to apply, and `test_written_measures` does not
+  reach them because it covers the two solvers' measurement rows and this is a
+  reporter.
+
 *The original row follows.*
 
 **Owner: the movement lane. Queued after Pack B, the height measure.**
