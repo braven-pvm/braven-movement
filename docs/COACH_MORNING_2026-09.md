@@ -1,22 +1,32 @@
 # The coach morning: what to ask, and the evidence behind each question
 
 **Items 1 to 9 were re-measured on `ac240b2` with a clean tree.** Items 10 and
-above were added later, as each drill was authored, and **each states its own
-date and build** — do not read the `ac240b2` line as covering them. Where an
-older document gives a different number, both are shown with the build each was
-read on. Nothing in this document changes any code.
+above were added later, as each drill was authored, and **each names the commit
+its own figures were read on** — do not read the `ac240b2` line as covering
+them. Where an older document gives a different number, both are shown with the
+build each was read on. Nothing in this document changes any code.
+
+**An earlier version of that sentence said each item states its own date AND
+BUILD. Only one of the six did.** The dates were there and five of the six named
+no commit at all, which is the second time a framing sentence in this document
+has been disproved by the list beneath it. Every item from 10 onward now carries
+a hash.
 
 The questions are for Erin and Marius. They are written to be answerable by a
 coach watching the athlete, not by reading a number. Where the engine has an
 opinion it is stated as a measurement and never as a recommendation.
 
 **Fifteen numbered items.** One, item 7, is STRUCK, because it was raised on a
-measurement the solver read from a second solution for that drill. The rest
-carry engine evidence. Three further items at the end carry none, and say so.
+measurement the solver read from a second solution for that drill. **Twelve
+carry engine measurements. Items 8 and 10 do not**, and neither claims to: item
+8 names the constant that follows from item 2's answer, and item 10 compares two
+written vocabularies. Three further items at the end carry no evidence either,
+and say so.
 
 **Items 10 to 15 were added as the pass family was authored** and are the newest
-part of this agenda: the vocabulary mismatch, a band floor, and then one item
-per pass drill plus two that are about the family rather than any one drill.
+part of this agenda: the vocabulary mismatch, a band floor, **an item for two of
+the four passes** — the bounce and the 1 hand high, the two with something a
+coach must rule on — and two items about the family rather than any one drill.
 
 **One section of item 2 is withdrawn, and the withdrawal is written out rather
 than tidied away.** The elbow-width question is unchanged; what was wrong was a
@@ -324,7 +334,7 @@ frame.
 
 ## 10. Which passes does the board need, and which does the manual teach?
 
-Added 2026-09-02 by the content lane, with the first two passes authored.
+Added 2026-09-02 by the content lane, with the first two passes authored, in `fcb7ca1`. Its content is two written vocabularies rather than engine figures, so the commit is where the item was added rather than where a number was read.
 
 **THE TWO LISTS DO NOT MATCH, AND NEITHER IS WRONG.**
 
@@ -403,7 +413,7 @@ technique, which the other ten checkpoints show does not change with the ball.
 
 ## 12. The bounce pass exists, and its bounce does not
 
-Added 2026-09-02 with `netball_bounce_pass`, the library's eleventh drill.
+Added 2026-09-02 with `netball_bounce_pass`, the library's eleventh drill. **Figures read on `431bf3a`**, that drill's pack as it merged.
 
 **What she can see.** The throw: the ball taken to the side, the knees bent, the
 arm driving down and forward, the release low, the follow-through. Graded on six
@@ -439,7 +449,7 @@ ahead of it.)
 ## 13. The one hand high pass, and the cue it does not grade
 
 Added 2026-09-04 with `netball_one_hand_high_pass`, the library's twelfth drill,
-its fourth pass and **its first one-handed pass**.
+its fourth pass and **its first one-handed pass**. **Figures read on `6228b3d`**, that drill's pack as it merged.
 
 **What she can see.** The ball taken up on one arm to the top of its reach, a
 step, the release, and the arm coming through. Graded on five checkpoints: four
@@ -492,7 +502,7 @@ reason the question could not be asked.
 
 ## 14. The one-handed pass is harder for the engine to place than a two-handed one
 
-Added 2026-09-04 with `netball_one_hand_high_pass`. **This is not a question
+Added 2026-09-04 with `netball_one_hand_high_pass`. **Figures read on `6228b3d`**, the same pack, and the table below is the one in `docs/KNOWN_ISSUES.md`. **This is not a question
 about her coaching. It is a warning about how much to trust one frame of one
 drill**, and it is here because she is the person who will look at the pose.
 
@@ -524,7 +534,11 @@ not a check.
 **A guess at the reason, and it is only a guess.** Two hands on the ball hold
 both arms and the trunk between them. One hand leaves the other arm and the
 trunk with nothing asked of them, so the engine has more equally good answers to
-choose from. **Nothing has tested that.** It is engine work and it is queued.
+choose from. **Nothing has tested that.** It is engine work and **it waits on a
+ruling**, which is what `docs/KNOWN_ISSUES.md` says of it: constraining the
+solve "belongs to the movement lane and needs a ruling first". An earlier
+version of this line said the work was queued, which promised more than the
+ledger does.
 
 **What is asked of her.** Only this: when a one-handed pose looks slightly wrong
 to her, say so even if the numbers are inside their bands. On this family the
@@ -534,7 +548,7 @@ numbers are less able to see a wrong pose than usual.
 
 ## 15. Every pass clip stops before the ball arrives
 
-Added 2026-09-04. **A question about the clips a board plays, not about her
+Added 2026-09-04, **read on `56e70a3`** and re-measured since on `b214bc4` with the same result. **A question about the clips a board plays, not about her
 grading**, and it applies to the whole pass family rather than to one drill.
 
 **All four pass clips are built the same way**: 96 frames at 60 a second, 1.60
@@ -545,12 +559,23 @@ the chest, overhead, bounce and 1 hand high passes.
 **On three of them the ball reaches its target before the clip ends. On the
 bounce pass it never does.** Measured against a last frame of 95:
 
-| clip | ball reaches its target | margin |
-|---|---|---|
-| 1 hand high | frame 91 | 4 frames |
-| chest | frame 93 | 2 frames |
-| overhead | frame 94 | **1 frame** |
-| **bounce** | **never** | **0.268 s short of the court** |
+| clip | ball reaches its target | exact crossing | margin |
+|---|---|---|---|
+| 1 hand high | frame 91 | 90.94 | 4 frames |
+| chest | frame 93 | 92.09 | 2 frames |
+| overhead | frame 94 | 93.67 | **1 frame** |
+| **bounce** | **never** | — | **0.268 s short of the court** |
+
+**That 0.268 s with its inputs, because a time without them is what this
+document keeps having to correct.** The ball leaves at frame 76 with 350.5 cm
+still to travel to its floor point, and at the library's 600 cm/s that takes
+0.5842 s. The clip holds 0.3167 s. The difference is **0.2676 s**, which the
+table rounds to 0.268.
+
+**"Reaches its target" means the first WHOLE FRAME at or past it**, because a
+clip plays frames and not fractions. The middle column is where the ball
+actually crosses, between frames. The chest pass crosses at 92.09 and is
+reported at 93; that is the convention and not a rounding error.
 
 **So a board playing the bounce pass shows a throw and a ball that never lands**
 — the point item 12 makes about that drill. What is new here is that **the
