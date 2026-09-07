@@ -88,12 +88,14 @@ with `ball_track.solve_launch`. Refer to `docs/LOB_AUTHORING_BRIEF.md`.
 authoring `netball_bounce_pass`, and CORRECTED: a first version of this entry
 used the wrong release height and the wrong span. The release is at **111.7 cm**
 at the ball centre — 142.4 is the CHEST pass's — and the floor point is 4.00 m
-from her CHEST, which is **350.5 cm from the release**, not 400.0.
+from her CHEST, which is **350.3 cm from the release**, not 400.0.
 
 Recomputed on the true geometry: at 600 cm/s the solved vertical is
-**+95.37 cm/s**, so the ball rises to 116.3 cm before it falls. A free fall from
-111.7 cm takes 0.477 s, so the throw is only downward above **735 cm/s**, and
+**+95.15 cm/s**, so the ball rises to 116.3 cm before it falls. A free fall from
+111.7 cm takes 0.477 s, so the throw is only downward above **734 cm/s**, and
 600 is **0.82** of that.
+
+**WHERE THESE FIGURES COME FROM, AND WHERE THE OLD ONES CAME FROM.** Every number in this section is now read from `possession._launch_toward`, the one place the engine states the world point it is aiming at, on `933f612`. **Until 2026-09-07 they came from a floor point rebuilt by hand** — the `c_spine3` joint at frame 0, plus the authored offset times the arm length — which sits **0.27 cm** from the point the engine actually uses. That reconstruction looked like arithmetic and was a measurement. No conclusion moves; the figures do, in the third and fourth decimal.
 
 **A bounce pass is driven at the floor, not lobbed at it.** This is the most
 concrete of the constant's faces so far: the other two are arguable readings of

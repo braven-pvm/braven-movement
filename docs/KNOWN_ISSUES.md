@@ -573,7 +573,7 @@ ball first reaches its own launch target, against a last frame of 95.
 |---|---|---|
 | `netball_chest_pass` | frame 93 | **completes inside the clip** |
 | `netball_overhead_pass` | frame 94 | **completes inside the clip** |
-| `netball_bounce_pass` | never | **0.268 s short** |
+| `netball_bounce_pass` | never | **0.267 s short** |
 
 **CORRECTED, AND THE FIRST VERSION OF THIS ROW WAS WRONG.** It said all three
 were truncated. Only the bounce pass is: the other two land with two and one
@@ -582,7 +582,7 @@ without measuring the other two, which is the same shape as the finding above
 it.
 
 The bounce pass makes it concrete. Aimed at a floor point 4.00 m from her chest,
-which is 350.5 cm from a release at 111.7 cm, the ball reaches the court at
+which is 350.3 cm from a release at 111.7 cm, the ball reaches the court at
 **0.584 s**, which is **1.84 times** the flight the clip contains. A consumer
 playing that clip sees the throw and a ball that never lands.
 
