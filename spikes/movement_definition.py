@@ -60,7 +60,9 @@ MINIMUM_MEANINGFUL_BAND_DEGREES = 5.0
 # not arithmetic. THEY AGREE AT THE CENTIMETRE AND NOT MORE CLOSELY: 19.61
 # against 18.68 is a 0.93 mm spread, about 5 per cent of either, and both round
 # to 2.0. An earlier version of this comment said "within a tenth of a
-# millimetre", which overstated two readings that differ by nine times that. A floor exists to keep noise out of coaching, so the wide
+# millimetre", which overstated two readings that differ by nine times that.
+#
+# A floor exists to keep noise out of coaching, so the wide
 # side is the safe side, and both shipped centimetre bands (6.0 and 14.0) clear
 # it either way, which keeps this a fix rather than a retune.
 #
@@ -122,6 +124,95 @@ class MovementDefinitionError(ValueError):
     pass
 
 
+# THE BAND FIELDS, ONE PAIR PER UNIT.
+#
+# A checkpoint's bounds are in the unit of the measure it grades, and until now
+# the file said "Degrees" whatever that unit was. `footHeightGapCm` is a length
+# and its three shipped checkpoints hold their bounds in `minimumDegrees`. The
+# ledger has carried that as "Centimetres are stored in a field called degrees"
+# since it was found.
+#
+# A NAME THAT DOES NOT SAY WHAT IT HOLDS IS HOW `fingerBaseDeviation` CAME TO
+# BOUND A FLEXION AXIS, and that cost a day. So the spelling now carries the
+# unit, and `read_band` refuses a pair whose unit is not the measure's -- in
+# BOTH directions, because a degrees measure carrying centimetre bounds is the
+# same fault wearing the other hat.
+BAND_FIELDS: dict[str, tuple[str, str]] = {
+    DEGREES: ("minimumDegrees", "maximumDegrees"),
+    CENTIMETRES: ("minimumCentimetres", "maximumCentimetres"),
+}
+
+# THE CHECKPOINTS THAT STILL SPELL A CENTIMETRE BAND IN DEGREES FIELDS.
+#
+# Exactly three, all on one drill, and they are the reason this list exists
+# rather than a straight refusal. They live in `spikes/movements/`, which is
+# GATE 4: a change there is a key retune whose proposal goes to Marius with its
+# evidence before anything is edited. Renaming their two keys changes no number
+# any checkpoint reads, so it may well be ruled a correction rather than a
+# retune -- but that is his ruling and not this lane's, and the alternative was
+# to ship a loader that cannot read the shipped library.
+#
+# IT IS A LIST THAT MUST ONLY SHRINK. A test pins its size and asserts every
+# entry is a real checkpoint on a real drill, so it cannot quietly grow, and a
+# new centimetre checkpoint anywhere else is refused. It reaches zero when the
+# ruling lands.
+BANDS_AWAITING_A_GATE_FOUR_RULING: frozenset[tuple[str, str, str]] = frozenset({
+    ("netball_double_foot_landing", "flight", "footHeightGapCm"),
+    ("netball_double_foot_landing", "land", "footHeightGapCm"),
+    ("netball_double_foot_landing", "absorb", "footHeightGapCm"),
+})
+
+
+def read_band(
+    checkpoint: Mapping[str, object],
+    movement_id: str,
+    phase_name: str,
+) -> tuple[float, float]:
+    """Return a checkpoint's bounds, refusing a spelling that is not its unit.
+
+    Four ways to be wrong, and each raises rather than guessing:
+    neither pair present, both pairs present, a pair whose unit is not the
+    measure's, and a measure with no declared unit at all.
+    """
+    measure = str(checkpoint["measure"])
+    unit = unit_of(measure)
+    present = [
+        found for found, (low, _) in BAND_FIELDS.items() if low in checkpoint
+    ]
+    if not present:
+        wanted = " and ".join(BAND_FIELDS[unit])
+        raise MovementDefinitionError(
+            f"{movement_id}/{phase_name}/{measure}: no band. It is measured "
+            f"in {unit}, so it wants {wanted}"
+        )
+    if len(present) > 1:
+        raise MovementDefinitionError(
+            f"{movement_id}/{phase_name}/{measure}: two bands, in "
+            f"{' and '.join(sorted(present))}. A checkpoint has one band and "
+            "the file cannot say which is meant"
+        )
+    spelled = present[0]
+    if spelled != unit:
+        excused = (movement_id, phase_name, measure)
+        if excused not in BANDS_AWAITING_A_GATE_FOUR_RULING:
+            raise MovementDefinitionError(
+                f"{movement_id}/{phase_name}/{measure}: the band is spelled "
+                f"in {spelled} and the measure is in {unit}. A bound must "
+                f"name the unit it is in; use {' and '.join(BAND_FIELDS[unit])}"
+            )
+    low, high = BAND_FIELDS[spelled]
+    # THE PRESENCE TEST ABOVE READS THE `minimum` KEY ONLY, so a half pair --
+    # a `minimumCentimetres` with no maximum -- reaches here and would die on
+    # a bare KeyError naming neither the drill nor the phase. Refused is
+    # right; unattributable is not.
+    if high not in checkpoint:
+        raise MovementDefinitionError(
+            f"{movement_id}/{phase_name}/{measure}: half a band. {low} is "
+            f"present and {high} is not"
+        )
+    return float(checkpoint[low]), float(checkpoint[high])
+
+
 @dataclass(frozen=True)
 class Checkpoint:
     """One thing a coach checks, with the band that counts as correct."""
@@ -148,6 +239,24 @@ class Checkpoint:
             )
         if not self.cue.strip():
             raise MovementDefinitionError(f"{self.measure}: a coaching cue is required")
+
+    @property
+    def minimum(self) -> float:
+        """The lower bound, in the measure's own unit.
+
+        The stored field is still called `minimum_degrees` and holds
+        centimetres for a length, which is the same fault one layer in. The
+        rename reaches 48 call sites across 13 modules as this branch leaves
+        it -- 45 before the pack that added these two names and the band field
+        -- so it is its own unit of work. These names exist so that nothing
+        written from here on has to spell a length "degrees".
+        """
+        return self.minimum_degrees
+
+    @property
+    def maximum(self) -> float:
+        """The upper bound, in the measure's own unit."""
+        return self.maximum_degrees
 
     def assess(self, value: float) -> "CheckpointResult":
         if value < self.minimum_degrees:
@@ -467,6 +576,20 @@ def definition_files(folder: Path) -> list[Path]:
     )
 
 
+def _checkpoint(
+    checkpoint: Mapping[str, object], movement_id: str, phase_name: str
+) -> Checkpoint:
+    """One checkpoint, with its band read in the unit its measure declares."""
+    low, high = read_band(checkpoint, movement_id, phase_name)
+    return Checkpoint(
+        measure=str(checkpoint["measure"]),
+        minimum_degrees=low,
+        maximum_degrees=high,
+        cue=str(checkpoint["cue"]),
+        why=str(checkpoint["why"]),
+    )
+
+
 def load(path: Path) -> MovementDefinition:
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     return MovementDefinition(
@@ -479,12 +602,8 @@ def load(path: Path) -> MovementDefinition:
                 name=str(phase["name"]),
                 at_phase=float(phase["atPhase"]),
                 checkpoints=tuple(
-                    Checkpoint(
-                        measure=str(checkpoint["measure"]),
-                        minimum_degrees=float(checkpoint["minimumDegrees"]),
-                        maximum_degrees=float(checkpoint["maximumDegrees"]),
-                        cue=str(checkpoint["cue"]),
-                        why=str(checkpoint["why"]),
+                    _checkpoint(
+                        checkpoint, str(data["movementId"]), str(phase["name"])
                     )
                     for checkpoint in phase["checkpoints"]
                 ),
