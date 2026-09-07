@@ -58,6 +58,21 @@ Rendering the same frames here at the same `-q:v 3` produces BYTE-IDENTICAL
 files, measured on both views before the setting was written into the tool.
 That is why `POSTER_QUALITY` is 3 and not a number chosen for looking round.
 
+## The build these poster pins were taken on
+
+`ffmpeg version 8.1.2-full_build-www.gyan.dev`
+
+IT MATTERS FOR THE POSTERS AND NOT FOR THE CLIPS. H.264 decoding is exact, so
+the clip digests above are a property of the recordings. JPEG is not: the
+standard allows a tolerance in the inverse transform, and the mjpeg encoder's
+own transform can differ between builds. A different ffmpeg could therefore
+fail `test_every_poster_matches_the_digest_committed_for_it` on the RIGHT
+frame, with a message saying the poster shows a different frame from the one
+committed for it.
+
+That has not happened. The version is written here so that if it ever does,
+the first thing anybody checks is the build rather than the frame.
+
 ## How to read them again
 
 ```bash

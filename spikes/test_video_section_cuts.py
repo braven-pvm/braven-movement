@@ -328,6 +328,13 @@ class EveryClipCutSectionWritesHoldsTheFramesItClaims(unittest.TestCase):
                     poster=s.poster, poster_what=s.posterWhat)
         except SystemExit as refused:
             cls.refusal = str(refused)
+        except Exception as broken:
+            # NOT ONLY REFUSALS. `cut_section` refuses with SystemExit, but
+            # what it calls can fail otherwise: ffmpeg exiting non-zero raises
+            # CalledProcessError, and that reported as ONE error with these
+            # seventeen tests unrun. Same treatment, so a broken fixture reads
+            # as a failure per test rather than as a class that vanished.
+            cls.refusal = f"{type(broken).__name__}: {broken}"
 
     @classmethod
     def tearDownClass(cls):
@@ -533,9 +540,14 @@ class EveryClipCutSectionWritesHoldsTheFramesItClaims(unittest.TestCase):
                     self.assertEqual(digests, cuts.frame_digests(clip))
 
     def test_every_poster_is_the_frame_ITS_TABLE_ROW_NAMES(self):
-        """The indices come back from the render loop, not from a sum done
-        afterwards. The side index is checked against one computed here from
-        the pair table, so the two are not the same arithmetic twice."""
+        """The reported indices are the ones the render loop used.
+
+        AND THAT IS ALL THIS PROVES. `s.poster + self.files["offset"]` here is
+        the same arithmetic as `index + offset` in the loop, so a report
+        recomputed from the request passes this test unchanged -- the review
+        of this pack ran exactly that mutation and it survived. What catches a
+        wrong frame is the pinned decoded digest below, which comes from the
+        picture rather than from the request."""
         for s in cuts.PAIR1_SECTIONS:
             entry = self.entries[s.name]
             with self.subTest(section=s.name):
@@ -566,23 +578,28 @@ class EveryClipCutSectionWritesHoldsTheFramesItClaims(unittest.TestCase):
         self.assertEqual(missing, [],
                          "no digests are committed for these posters")
 
-    def test_a_poster_ONE_FRAME_LATER_is_a_different_picture(self):
+    def test_EITHER_neighbouring_frame_is_a_different_picture(self):
         """THE COMPARISON MUST HAVE THE RESOLUTION TO SEE THE LIKELY ERROR.
         Pinning a digest proves nothing unless a neighbouring frame would fail
-        it, and the section this pack learned that on is nearly still. Checked
-        on every section and both views."""
+        it, and the section this pack learned that on is nearly still.
+
+        BOTH DIRECTIONS. A poster shifted earlier is exactly as likely as one
+        shifted later, and the first version of this test rendered `poster + 1`
+        only -- so nothing showed that `poster - 1` could be told apart at
+        all. Sixteen comparisons: four sections, two views, two neighbours."""
         scratch = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, scratch, ignore_errors=True)
         for s in cuts.PAIR1_SECTIONS:
-            later = cuts.posters(self.files, f"{s.name}-later", s.poster + 1,
-                                 scratch)
-            for view in ("front", "side"):
-                with self.subTest(section=s.name, view=view):
-                    self.assertNotEqual(
-                        cuts.frame_digests(later["files"][view])[0],
-                        self.entries[s.name]["posters"][view]["frameDigest"],
-                        "the next frame hashes the same as this one, so the "
-                        "pinned digest cannot tell them apart")
+            for shift in (-1, +1):
+                beside = cuts.posters(self.files, f"{s.name}{shift:+d}",
+                                      s.poster + shift, scratch)
+                for view in ("front", "side"):
+                    with self.subTest(section=s.name, view=view, shift=shift):
+                        self.assertNotEqual(
+                            cuts.frame_digests(beside["files"][view])[0],
+                            self.entries[s.name]["posters"][view]["frameDigest"],
+                            "the neighbouring frame hashes the same as this "
+                            "one, so the pinned digest cannot tell them apart")
 
     def test_the_poster_comes_from_the_RECORDING_and_not_from_the_clip(self):
         """A poster taken out of the clip is a re-encode of a re-encode, and
@@ -758,8 +775,10 @@ class EveryPosterIsAFrameInsideItsOwnWindow(unittest.TestCase):
         reason says nothing about which frame was picked out of the window."""
         for s in cuts.PAIR1_SECTIONS:
             with self.subTest(section=s.name):
-                self.assertGreater(len(s.posterWhat), 30)
-                self.assertNotEqual(s.posterWhat, s.what)
+                self.assertGreater(len(s.posterWhat.strip()), 30)
+                self.assertNotEqual(s.posterWhat.strip(), s.what.strip(),
+                                    "the poster's reason is the section's "
+                                    "reason with whitespace on it")
 
     def test_a_poster_outside_its_window_refuses_at_either_end(self):
         for outside in (257, 313):
@@ -777,6 +796,27 @@ class EveryPosterIsAFrameInsideItsOwnWindow(unittest.TestCase):
         for edge in (258, 312):
             with self.subTest(poster=edge):
                 self.assertEqual(cuts.check_poster("t", 258, 312, edge), edge)
+
+    def test_a_refused_poster_pair_leaves_NO_HALF_of_itself_behind(self):
+        """The side index is checked before the FRONT poster is rendered. It
+        used not to be, so a side index outside the recording refused with a
+        front poster already on disk: a section half written, and a manifest
+        that never mentions it because the manifest is written at the end.
+
+        Front index 4 maps to side index -1 at this pair's offset, so the
+        front is renderable and the side is not."""
+        if not (cuts.SAMPLES / PAIRS[THE_PAIR]["referenceFile"]).exists():
+            self.skipTest("the session 1.0 recordings are not on this machine")
+        out = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, out, ignore_errors=True)
+        files = cuts.resolve(THE_PAIR)
+        self.assertEqual(files["offset"], -5)
+
+        with self.assertRaises(SystemExit) as refusal:
+            cuts.posters(files, "refused", 4, out)
+
+        self.assertIn("outside that recording", str(refusal.exception))
+        self.assertEqual(sorted(p.name for p in out.glob("*")), [])
 
     def test_cut_section_refuses_a_poster_before_it_writes_anything(self):
         """A refusal that has already cut two clips and drawn a sheet is not
@@ -827,6 +867,43 @@ class TheCommandLineRefusesBeforeItCuts(unittest.TestCase):
         with self.assertRaises(SystemExit):
             cuts.parse_section("catch-rep01=258:312@9.2")
 
+    def test_a_TRAILING_at_sign_refuses_rather_than_reading_as_no_poster(self):
+        """m6. `a=1:2@` used to parse to None, so a section somebody meant to
+        give a poster shipped without one and the manifest recorded None as
+        though that had been the choice. No poster and an empty poster are
+        different things."""
+        with self.assertRaises(SystemExit) as refusal:
+            cuts.parse_section("catch-rep01=258:312@")
+
+        self.assertIn("no poster index", str(refusal.exception))
+
+    def test_each_reason_is_bound_to_the_thing_it_describes(self):
+        """m2, THE THREE CASES THE REVIEW MEASURED ON THE REAL COMMAND LINE.
+        The reasons used to be keyed by section NAME, so a different window
+        collected the sentence written for the table's window, and a different
+        poster collected the sentence that describes frame 276."""
+        named = {s.name: s for s in cuts.PAIR1_SECTIONS}["catch-rep01"]
+        cases = {
+            "the table's own window and poster":
+                ((named.start, named.end, named.poster),
+                 (named.what, named.posterWhat)),
+            "a known name, a different window, no poster":
+                ((258, 262, None), ("", "")),
+            "a known name, a different window, a different poster":
+                ((258, 262, 260), ("", "")),
+            "the table's window with somebody else's poster":
+                ((named.start, named.end, 260), (named.what, "")),
+            "a short window that still holds the table's poster":
+                ((270, 280, named.poster), ("", named.posterWhat)),
+        }
+        for label, ((start, end, poster), expected) in cases.items():
+            with self.subTest(case=label):
+                self.assertEqual(
+                    cuts.reasons_for(named, start, end, poster), expected)
+
+    def test_an_unknown_section_gets_no_reasons_at_all(self):
+        self.assertEqual(cuts.reasons_for(None, 258, 312, 276), ("", ""))
+
     def test_main_cuts_the_window_it_is_given_and_writes_the_manifest(self):
         """`main` had no test at all: the arguments, the section list and the
         manifest write were exercised by hand only, and a tool nobody runs in
@@ -857,6 +934,55 @@ class TheCommandLineRefusesBeforeItCuts(unittest.TestCase):
             with self.subTest(view=view):
                 self.assertTrue((out / entry[view]["file"]).exists())
                 self.assertEqual(len(entry[view]["frameDigests"]), 5)
+
+    def test_main_writes_the_poster_it_was_given_on_the_command_line(self):
+        """m1: `parse_section` to `cut_section(poster=...)` inside `main` was
+        driven by one test that passed no poster. Two mutations of that
+        hand-off survived the whole module: `poster=None` and
+        `poster_what=""`. This is the same shape as P09, one line further
+        down, and the same fix -- run it."""
+        if not (cuts.SAMPLES / PAIRS[THE_PAIR]["referenceFile"]).exists():
+            self.skipTest("the session 1.0 recordings are not on this machine")
+        out = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, out, ignore_errors=True)
+        offset = PAIRS[THE_PAIR]["frameOffsetToReference"]
+
+        code = cuts.main(["video_section_cuts.py", "--pair", THE_PAIR,
+                          "--section", "t=258:262@260", "--out", str(out)])
+
+        self.assertEqual(code, 0)
+        entry = json.loads(
+            (out / "manifest.json").read_text(encoding="utf-8"))["sections"][0]
+
+        self.assertEqual(entry["posterFrontIndex"], 260)
+        self.assertEqual(entry["posterSideIndex"], 260 + offset)
+        for view in ("front", "side"):
+            with self.subTest(view=view):
+                self.assertTrue((out / entry["posters"][view]["file"]).exists())
+
+    def test_main_gives_a_KNOWN_section_the_reason_written_for_its_poster(self):
+        """The other half of m1, and the proof that m2's binding survives the
+        real command line: a known name, a short window that still holds its
+        table poster, and the sentence that describes that frame."""
+        if not (cuts.SAMPLES / PAIRS[THE_PAIR]["referenceFile"]).exists():
+            self.skipTest("the session 1.0 recordings are not on this machine")
+        out = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, out, ignore_errors=True)
+        named = {s.name: s for s in cuts.PAIR1_SECTIONS}["catch-rep01"]
+
+        code = cuts.main(["video_section_cuts.py", "--pair", THE_PAIR,
+                          "--section", "catch-rep01=270:280@276",
+                          "--out", str(out)])
+
+        self.assertEqual(code, 0)
+        entry = json.loads(
+            (out / "manifest.json").read_text(encoding="utf-8"))["sections"][0]
+
+        self.assertEqual(entry["posterFrontIndex"], named.poster)
+        self.assertEqual(entry["posterWhat"], named.posterWhat)
+        # The WINDOW is not the table's, so the section's reason is not the
+        # table's either. Two fields, two questions.
+        self.assertEqual(entry["what"], "")
 
     def test_main_refuses_when_no_section_is_named(self):
         """Without this the tool writes an empty manifest and exits 0, which

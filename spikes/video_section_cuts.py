@@ -470,18 +470,30 @@ def posters(files: dict, name: str, index: int, out_dir: Path) -> dict:
     The frame is selected the way the proof sheet selects its tiles, by index
     and not by a timestamp: `select='eq(n,index)'`. Nothing seeks.
 
+    `-fps_mode passthrough` is INERT for a single selected frame -- measured,
+    with and without, to identical bytes -- and it stays because the side file
+    is variable-rate and the flag says so. `proof_sheet` spells the same thing
+    `-vsync 0`, which is the old name for it; neither is changed here, because
+    a measurement taken on this command is not evidence about that one.
+
     Returns the indices it ACTUALLY DREW, taken from the loop rather than
     recomputed afterwards, and the file it wrote for each view.
     """
     offset = files["offset"]
     drawn: dict[str, int] = {}
     made: dict[str, Path] = {}
-    out_dir.mkdir(parents=True, exist_ok=True)
+    # BOTH INDICES BEFORE EITHER RENDER. Checked inside the loop, a side
+    # index outside the recording refuses only once the FRONT poster is on
+    # disk, and a refusal that has already written a file is not a refusal.
+    # That is the fault this pack fixed in `proof_sheet` and I rebuilt here.
     for view, mapped in (("front", index), ("side", index + offset)):
         if not 0 <= mapped < len(files[view]["pts"]):
             raise SystemExit(
                 f"{name}: the {view} poster index {mapped} is outside that "
                 f"recording, which holds {len(files[view]['pts'])} frames")
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for view, mapped in (("front", index), ("side", index + offset)):
         out = out_dir / f"{name}-{view}-poster.jpg"
         subprocess.run(
             ["ffmpeg", "-v", "error", "-y", "-i", str(files[view]["path"]),
@@ -646,6 +658,29 @@ PAIR1_SECTIONS = (
 )
 
 
+def reasons_for(named: "Section | None", start: int, end: int,
+                poster: int | None) -> tuple[str, str]:
+    """The section's reason and the poster's reason, each bound to the thing
+    it describes rather than to the section NAME.
+
+    THEY WERE KEYED BY NAME, which is the fault this pack names everywhere
+    else: an artefact keyed by a name rather than by its content. Measured on
+    the real command line before this was written --
+    `--section catch-rep01=258:262` collected the reason written for the
+    window 258..312 and set it beside `posterFrontIndex: None`, a reason for a
+    poster that does not exist; `--section catch-rep01=258:262@260` collected
+    the sentence that describes frame 276 and put it on frame 260. Both read
+    in the manifest as though somebody had chosen them.
+
+    An empty string is the honest answer for a window or a poster nobody has
+    written a sentence about.
+    """
+    if named is None:
+        return "", ""
+    return (named.what if (start, end) == (named.start, named.end) else "",
+            named.posterWhat if poster == named.poster else "")
+
+
 def pair1_arguments() -> list[str]:
     """`--pair1-sections` as the strings a caller could have typed.
 
@@ -666,9 +701,16 @@ def parse_section(text: str) -> tuple[str, int, int, int | None]:
     """
     try:
         name, window = text.split("=", 1)
-        window, _, poster = window.partition("@")
+        window, at, poster = window.partition("@")
         start, end = window.split(":", 1)
-        return name, int(start), int(end), int(poster) if poster else None
+        if at and not poster:
+            # NO POSTER AND AN EMPTY POSTER ARE DIFFERENT THINGS. Read as
+            # None, a section somebody meant to give a poster ships without
+            # one, and the manifest says None as though that was the choice.
+            raise SystemExit(
+                f"section {text!r} ends in @ with no poster index after it. "
+                "Leave the @ off for a section with no poster.")
+        return name, int(start), int(end), int(poster) if at else None
     except ValueError:
         raise SystemExit(
             f"cannot read section {text!r}. Give it as name=start:end, or "
@@ -709,11 +751,9 @@ def main(argv: list[str]) -> int:
     sections = []
     for text in wanted:
         name, start, end, poster = parse_section(text)
-        named = known.get(name)
+        what, poster_what = reasons_for(known.get(name), start, end, poster)
         entry = cut_section(files, name, start, end, arguments.out,
-                            what=named.what if named else "",
-                            poster=poster,
-                            poster_what=named.posterWhat if named else "")
+                            what=what, poster=poster, poster_what=poster_what)
         sections.append(entry)
         print(f"  {name:14s} front {entry['front']['indexStart']}.."
               f"{entry['front']['indexEnd']} "
