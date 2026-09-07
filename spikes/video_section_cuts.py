@@ -173,93 +173,176 @@ def frame_count(path: Path) -> int:
     return int(out.strip().rstrip(","))
 
 
-def frame_digests(path: Path) -> list[str]:
+def frame_digests(path: Path, algorithm: str = "sha256") -> list[str]:
     """A hash per DECODED frame, so two clips can be compared on what they
     show rather than on their bytes. Two encodes of the same frames differ in
-    bytes for reasons that have nothing to do with the pictures."""
+    bytes for reasons that have nothing to do with the pictures.
+
+    `-fps_mode passthrough` because without it ffmpeg may resample a
+    variable-rate input on the way out, and then the hashes describe frames
+    that were invented rather than frames that were recorded. Harmless on the
+    constant-rate clips this is normally pointed at, and a trap the first time
+    somebody points it at the side recording.
+    """
     out = subprocess.run(
-        ["ffmpeg", "-v", "error", "-i", str(path), "-map", "0:v", "-f",
-         "framehash", "-hash", "md5", "-"],
+        ["ffmpeg", "-v", "error", "-i", str(path), "-map", "0:v",
+         "-fps_mode", "passthrough", "-f", "framehash", "-hash", algorithm,
+         "-"],
         capture_output=True, text=True, check=True).stdout
     return [line.rsplit(",", 1)[-1].strip()
             for line in out.splitlines() if not line.startswith("#")]
 
 
-# THE FLOOR, AND WHERE IT COMES FROM. A clip is re-encoded, so its frames are
-# not bit-identical to the source and equality is the wrong test. Measured on
-# `catch-rep01` of pair 1, front view, 55 frames:
+# The per-frame digests of the clips an earlier instrument produced, committed
+# so the comparison lives IN THE REPOSITORY. They used to be read from an
+# absolute path outside git, which meant the only test that exercised the side
+# clip skipped on every machine but one -- and two mutations of the side path,
+# cutting it from the front file and shifting it by one, survived everywhere
+# else.
+REFERENCE_DIGESTS = SPIKE_DIR / "video-annotations" / "section-cuts"
+
+
+def reference_digests(pair_folder: str, name: str, view: str) -> list[str] | None:
+    """The pinned digests for one clip, or None if none are committed."""
+    path = REFERENCE_DIGESTS / pair_folder / f"{name}-{view}.sha256"
+    if not path.exists():
+        return None
+    return [line.strip() for line in
+            path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+# WHY THERE IS NO ABSOLUTE FLOOR HERE ANY MORE.
 #
-#     clip frame k against source frame start+k     min 39.9 dB, median 41.6
-#     the same clip against start+k-1               max 33.2 dB
-#     the same clip against start+k+1               max 33.1 dB
-#     two frames out, either way                    max 30.1 dB
+# A first version of this file compared each clip frame against the source
+# frame it claims and required a PSNR above 36 dB. That threshold was measured
+# on ONE section-view -- catch-rep01 front, the section with the most motion --
+# where a right pair scores 39.9 dB at worst and a wrong-by-one pair 33.2 at
+# best. Six decibels apart, so 36 sat between them.
 #
-# Six decibels separate the worst correct pair from the best wrong one. The
-# floor is 36, which sits between them with margin on both sides, and it is a
-# CHOSEN threshold on a measured separation rather than a number that looked
-# round.
-PSNR_FLOOR_DB = 36.0
+# THE FLOOR WAS THEN SPENT ON ALL EIGHT SECTION-VIEWS, AND IT DOES NOT HOLD.
+# Re-measured across every section and both views, 440 frames:
+#
+#   section-view            n  right min  wrong-by-one max  separation
+#   catch-rep01 front      55      39.90             33.17       +6.73
+#   catch-rep01 side       55      39.86             35.27       +4.59
+#   release-rep09 front    56      39.91             35.62       +4.29
+#   release-rep09 side     56      40.86             40.10       +0.76
+#   hold-rep09 front       62      39.96             37.97       +2.00
+#   hold-rep09 side        62      40.91             40.63       +0.28
+#   ready-between front    47      39.95             38.01       +1.94
+#   ready-between side     47      41.21             41.50       -0.29
+#
+# On five of the eight, a wrong-by-one frame passes 36 dB. On the last one the
+# best WRONG frame beats the worst RIGHT frame and the two populations overlap,
+# so no absolute floor can exist there at all: `ready-between` is her stance
+# between repetitions, nearly still, on the softer camera, and WHEN NOTHING
+# MOVES THE NEIGHBOUR FRAME IS VERY NEARLY THE FRAME.
+#
+# That is this repository's oldest fault wearing new clothes: a constant
+# measured in one regime and spent in another. The regime is how much the
+# picture moves, and it is exactly the regime that varies between sections.
+#
+# THE CRITERION IS RELATIVE INSTEAD, and the same 440 frames support it: on
+# every one of them the right source frame scores higher than BOTH of its
+# neighbours, and the smallest winning margin anywhere is 1.14 dB, on
+# ready-between side. `RELATIVE_MARGIN_DB` is set below that, and the sweep
+# test reports the margin it actually finds so a future encoder change moves a
+# number in the log rather than silently disabling the check.
+RELATIVE_MARGIN_DB = 1.0
+
+# The smallest margin measured across all eight section-views, kept so a test
+# can assert the headroom has not been eaten.
+MEASURED_MIN_MARGIN_DB = 1.14
 
 
-def clip_against_source(files: dict, view: str, clip: Path,
-                        start: int, end: int) -> list[float]:
-    """Per-frame PSNR of a clip against THE SOURCE FRAMES IT CLAIMS TO HOLD.
+def _decoded_frames(path: Path, out_dir: Path, select: str | None = None) -> list:
+    """Every frame of `path` (or of `select`) as files, decoded once.
 
-    WHY THIS EXISTS AND WHAT IT ANSWERS THAT NOTHING ELSE DOES. Comparing this
-    tool's clips against clips made by another instrument proves only that the
-    two agree: if both mapped an index wrongly, every frame would still match.
-    This compares a clip against the recording itself.
-
-    THE SOURCE FRAMES ARE SELECTED BY A DIFFERENT FILTER FROM THE ONE UNDER
-    TEST. The cut uses `trim=start_frame:end_frame`, whose end is exclusive and
-    whose off-by-one at either edge is the fault this tool exists to prevent.
-    The comparison uses `select='between(n,start,end)'`, which is inclusive at
-    both ends and shares no arithmetic with it. Checking trim with trim would
-    agree with itself.
+    `-fps_mode passthrough` so a variable-rate source is not resampled into a
+    different set of pictures on the way out.
     """
-    import tempfile
+    out_dir.mkdir(parents=True, exist_ok=True)
+    command = ["ffmpeg", "-v", "error", "-y", "-i", str(path)]
+    if select is not None:
+        command += ["-vf", select]
+    command += ["-fps_mode", "passthrough", str(out_dir / "f-%05d.png")]
+    subprocess.run(command, check=True)
+    return sorted(out_dir.glob("*.png"))
+
+
+def _psnr(a, b) -> float:
     import numpy as np
     from PIL import Image
 
+    with Image.open(a) as first, Image.open(b) as second:
+        u = np.asarray(first.convert("RGB"), dtype=np.float64)
+        v = np.asarray(second.convert("RGB"), dtype=np.float64)
+    error = float(np.mean((u - v) ** 2))
+    return float("inf") if error == 0 else 10.0 * float(np.log10(255.0 ** 2 / error))
+
+
+def clip_alignment(files: dict, view: str, clip: Path,
+                   start: int, end: int) -> list[dict]:
+    """For every frame of a clip: how well it matches the source frame it
+    claims, AND how well it matches that frame's two neighbours.
+
+    WHY BOTH NEIGHBOURS AND NOT A THRESHOLD. Re-encoding moves pixels, so
+    equality is the wrong test; but an absolute threshold is calibrated on how
+    much the picture MOVES, and that varies from section to section. In a still
+    stretch the neighbour frame is very nearly the frame, and a threshold set on
+    a moving section passes a wrong frame there. Asking whether frame k is
+    CLOSER to `start+k` than to `start+k-1` and `start+k+1` needs no such
+    constant: it is a comparison between three numbers measured the same way in
+    the same regime.
+
+    THE SOURCE FRAMES ARE SELECTED BY A DIFFERENT MECHANISM FROM THE CUT. The
+    cut uses `trim=start_frame:end_frame`, whose end is exclusive and whose
+    off-by-one at either edge is the fault this tool exists to prevent. This
+    decodes the source with `select='between(n,a,b)'`, inclusive at both ends.
+    Checking trim with trim would agree with itself.
+    """
+    import shutil
+    import tempfile
+
     scratch = Path(tempfile.mkdtemp())
     try:
-        clip_dir, source_dir = scratch / "clip", scratch / "source"
-        clip_dir.mkdir()
-        source_dir.mkdir()
-        subprocess.run(
-            ["ffmpeg", "-v", "error", "-y", "-i", str(clip), "-vsync", "0",
-             str(clip_dir / "f-%05d.png")], check=True)
-        subprocess.run(
-            ["ffmpeg", "-v", "error", "-y", "-i", str(files[view]["path"]),
-             "-vf", f"select='between(n\\,{start}\\,{end})'", "-vsync", "0",
-             str(source_dir / "f-%05d.png")], check=True)
-        made = sorted(clip_dir.glob("*.png"))
-        wanted = sorted(source_dir.glob("*.png"))
-        if len(made) != len(wanted):
+        made = _decoded_frames(clip, scratch / "clip")
+        first_wanted, last_wanted = max(0, start - 1), end + 1
+        source = _decoded_frames(
+            files[view]["path"], scratch / "source",
+            rf"select='between(n\,{first_wanted}\,{last_wanted})'")
+        if len(made) != end - start + 1:
             raise SystemExit(
-                f"the clip holds {len(made)} frames and the source window "
-                f"{start}..{end} holds {len(wanted)}")
-        found = []
-        for a, b in zip(made, wanted):
-            u = np.asarray(Image.open(a).convert("RGB"), dtype=np.float64)
-            v = np.asarray(Image.open(b).convert("RGB"), dtype=np.float64)
-            error = float(np.mean((u - v) ** 2))
-            found.append(float("inf") if error == 0
-                         else 10.0 * float(np.log10(255.0 ** 2 / error)))
-        return found
+                f"the clip holds {len(made)} frames and the window "
+                f"{start}..{end} asks for {end - start + 1}")
+        # Where `start` sits inside the decoded source range.
+        origin = start - first_wanted
+        rows = []
+        for k, frame in enumerate(made):
+            row = {"clipFrame": k, "sourceIndex": start + k}
+            for label, shift in (("at", 0), ("before", -1), ("after", +1)):
+                position = origin + k + shift
+                row[label] = (_psnr(frame, source[position])
+                              if 0 <= position < len(source) else None)
+            neighbours = [row["before"], row["after"]]
+            measured = [n for n in neighbours if n is not None]
+            row["margin"] = (min(row["at"] - n for n in measured)
+                             if measured and row["at"] != float("inf")
+                             else float("inf"))
+            rows.append(row)
+        return rows
     finally:
-        import shutil
         shutil.rmtree(scratch, ignore_errors=True)
 
 
-def frames_below_floor(scores: list[float],
-                       floor: float = PSNR_FLOOR_DB) -> list[int]:
-    """Which frames of a clip are not the source frames they claim to be."""
-    return [n for n, value in enumerate(scores) if value < floor]
+def frames_out_of_alignment(rows: list[dict],
+                            margin: float = RELATIVE_MARGIN_DB) -> list[int]:
+    """Which frames are not closer to what they claim than to a neighbour."""
+    return [row["clipFrame"] for row in rows if row["margin"] < margin]
 
 
 def proof_sheet(files: dict, name: str, start: int, end: int,
-                destination: Path, instants: int = PROOF_INSTANTS) -> Path:
+                destination: Path, instants: int = PROOF_INSTANTS) -> dict:
     """Front above side at the SAME mapped instant, `instants` times across the
     window, every tile labelled with its index and its own pts.
 
@@ -270,22 +353,31 @@ def proof_sheet(files: dict, name: str, start: int, end: int,
     """
     from PIL import Image, ImageDraw
 
+    # THE CHECK COMES FIRST. A refused sheet used to leave its scratch
+    # directory behind, because the directory was made before the argument was
+    # judged: a refusal that still writes to disk is not a refusal.
+    if instants < 2:
+        raise SystemExit("a proof sheet needs at least two instants")
+
     scratch = destination.parent / f"_raw-{name}"
     if scratch.exists():
         for stale in scratch.glob("*.png"):
             stale.unlink()
     scratch.mkdir(parents=True, exist_ok=True)
-
-    if instants < 2:
-        raise SystemExit("a proof sheet needs at least two instants")
     span = end - start
     wanted = [start + round(i * span / (instants - 1)) for i in range(instants)]
 
     offset = files["offset"]
     columns = []
+    # THE INDICES THIS LOOP ACTUALLY USES, collected as it draws. Recomputing
+    # them afterwards from the offset gives a report that agrees with the
+    # request rather than with the picture, and a tile taken at the wrong
+    # index then passes every check.
+    drawn: dict[str, list[int]] = {"front": [], "side": []}
     for n, index in enumerate(wanted):
         pair_images = []
         for view, mapped in (("front", index), ("side", index + offset)):
+            drawn[view].append(mapped)
             out = scratch / f"{view}-{n:02d}.png"
             subprocess.run(
                 ["ffmpeg", "-v", "error", "-y", "-i", str(files[view]["path"]),
@@ -316,6 +408,7 @@ def proof_sheet(files: dict, name: str, start: int, end: int,
             pen.text((x + 4, y + 4), f"{view} idx {index}  t={seconds:.4f}s",
                      fill="black")
             sheet.paste(image, (x, y + band))
+            image.close()
             tiles += 1
     if tiles != 2 * instants:
         raise SystemExit(f"expected {2 * instants} tiles and drew {tiles}")
@@ -324,11 +417,24 @@ def proof_sheet(files: dict, name: str, start: int, end: int,
     for stale in scratch.glob("*.png"):
         stale.unlink()
     scratch.rmdir()
-    return destination
+    # THE INDICES IT ACTUALLY DREW, so a caller can check the pictures and not
+    # only the shape. A sheet whose side tile is taken at the UNMAPPED index,
+    # with a caption that follows the same mistake, is internally consistent
+    # and wrong -- which is the contact-sheet fault of this same pack, and it
+    # survived every test that read the sheet's width. These come from the
+    # drawing loop and not from a second sum: a report recomputed from the
+    # same inputs agrees with the request even when the tile does not.
+    if len(drawn["front"]) != instants or len(drawn["side"]) != instants:
+        raise SystemExit(
+            f"drew {len(drawn['front'])} front and {len(drawn['side'])} side "
+            f"tiles for {instants} instants")
+    return {"path": destination,
+            "frontIndices": drawn["front"],
+            "sideIndices": drawn["side"]}
 
 
 def cut_section(files: dict, name: str, start: int, end: int,
-                out_dir: Path) -> dict:
+                out_dir: Path, what: str = "") -> dict:
     """One section, both views, with its proof sheet and its manifest entry."""
     first, last = check_window(files, start, end)
     front_clip = out_dir / f"{name}-front.mp4"
@@ -348,16 +454,30 @@ def cut_section(files: dict, name: str, start: int, end: int,
     front_pts, side_pts = files["front"]["pts"], files["side"]["pts"]
     return {
         "section": name,
+        # WHY THIS SECTION EXISTS, carried into the artefact. It used to live
+        # only in the source table, where a test asserted the string was long
+        # enough and nothing else ever read it: a guard on text protecting a
+        # value nothing consumes. A coach reading the manifest can now see what
+        # the clip is for.
+        "what": what,
         "frames": wanted,
         "front": {"indexStart": start, "indexEnd": end,
                   "ptsStart": round(front_pts[start], 4),
                   "ptsEnd": round(front_pts[end], 4),
-                  "file": front_clip.name},
+                  "file": front_clip.name,
+                  # A DIGEST OF WHAT THE CLIP SHOWS. The sources are named by
+                  # full sha256 and the outputs were named only by file name, so
+                  # a clip swapped in the directory was indistinguishable from
+                  # the manifest that describes it.
+                  "frameDigests": frame_digests(front_clip)},
         "side": {"indexStart": first, "indexEnd": last,
                  "ptsStart": round(side_pts[first], 4),
                  "ptsEnd": round(side_pts[last], 4),
-                 "file": side_clip.name},
-        "proofSheet": sheet.name,
+                 "file": side_clip.name,
+                 "frameDigests": frame_digests(side_clip)},
+        "proofSheet": sheet["path"].name,
+        "proofFrontIndices": sheet["frontIndices"],
+        "proofSideIndices": sheet["sideIndices"],
     }
 
 
@@ -448,10 +568,13 @@ def main(argv: list[str]) -> int:
     print(f"  side index = front index {files['offset']:+d}\n")
 
     arguments.out.mkdir(parents=True, exist_ok=True)
+    # The reason each named section exists, so it can travel into the manifest.
+    reasons = {name: why for name, _, _, why in PAIR1_SECTIONS}
     sections = []
     for text in wanted:
         name, start, end = parse_section(text)
-        entry = cut_section(files, name, start, end, arguments.out)
+        entry = cut_section(files, name, start, end, arguments.out,
+                            what=reasons.get(name, ""))
         sections.append(entry)
         print(f"  {name:14s} front {entry['front']['indexStart']}.."
               f"{entry['front']['indexEnd']} "
