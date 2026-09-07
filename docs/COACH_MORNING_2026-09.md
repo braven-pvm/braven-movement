@@ -655,15 +655,25 @@ feet, the width of the base, where the weight goes? If the cue is right and only
 the instrument is weak, that is engine work. If the cue is not what she watches,
 the checkpoint is measuring the wrong thing well.
 
-**One thing that was wrong until this week, and is now fixed.** Until `ad7e65d`
-the code that warns "this band is too narrow to mean anything" said **degrees**
-whatever the measure was in. On a centimetre measure it would have told a reader
-that a 6 cm band was narrower than a 5 degree threshold. **No coach ever saw
-it**: the message only fires on a band narrower than the floor, and this drill's
-three bands are 14, 6 and 6 against a floor of 2 cm, so it never fired here. The
-sentence existed and was never printed. It is recorded because the same
-substitution — a length wearing an angle's unit — is the fault the ledger row
-above it exists to track.
+**TWO THINGS WERE WRONG UNTIL THIS WEEK, AND THEY ARE DIFFERENT THINGS.** Both
+were fixed in `ad7e65d`, both were real in the code, and **neither was ever
+printed for this drill** — but for two separate reasons, which is why they are
+listed apart rather than as one.
+
+- **The feedback a coach reads named every figure in degrees**, whatever its
+  unit. On this drill it would have said *"Needs less: 17 degrees against a
+  target of 0 to 14"* about a distance between two feet in centimetres. **It
+  never fired here because it only speaks when a reading falls OUTSIDE its
+  band, and all three of these read within, always.**
+- **The warning that a band is too narrow to mean anything used a degrees
+  threshold on centimetre bands.** **It never fired here because it only speaks
+  for a band narrower than the floor, and these three are 14, 6 and 6 cm wide
+  against a floor of 2 cm.**
+
+So one was silenced by the readings and the other by the bands, and a drill that
+differed in either respect would have shown a coach a length wearing an angle's
+unit. **That substitution is the fault the ledger row above exists to track**,
+which is why both are recorded here rather than left as fixed code.
 
 ## Three items with no engine evidence
 
