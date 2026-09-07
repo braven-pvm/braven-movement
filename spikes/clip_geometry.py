@@ -61,10 +61,13 @@ CLASSES = {
     # select: `bounce-pass` is in Tactics' RELEASE_KINDS, unlike `overhead-pass`.
     # THE CLIP DOES NOT CONTAIN THE BOUNCE. The engine has no floor, and the
     # release at frame 76 of 96 leaves 19 intervals at 60 fps, frame 76 to
-    # frame 95 = 0.3167 s of flight, against the 0.5842 s the ball needs to
-    # reach the court: short by 0.268 s. THE INTERVAL COUNT IS PART OF THE
+    # frame 95 = 0.3167 s of flight, against the 0.5838 s the ball needs to
+    # reach the court: short by 0.267 s. THE INTERVAL COUNT IS PART OF THE
     # FIGURE. An earlier version of this comment said 0.32 s, which is
-    # (1 - 0.80) * 1.60 and does not give 0.268 when subtracted from 0.5842.
+    # (1 - 0.80) * 1.60 and does not give 0.267 when subtracted from 0.5838.
+    # The times are read from possession._launch_toward, the engine's own aim
+    # point, on 933f612. Until 2026-09-07 they came from a floor point rebuilt
+    # by hand, 0.27 cm away, which moved them in the third decimal.
     # The baseline writes the same frame a second way, hit = 76/96 = 0.7920.
     # The count is 19 and not 20: seconds is frames/fps, a DURATION that runs
     # one frame period past the last frame at 95/60 = 1.5833 s, so a 20th

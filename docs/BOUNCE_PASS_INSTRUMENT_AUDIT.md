@@ -66,45 +66,68 @@ ground, bounce, rebound and restitution; the only hits are a horizontal
 projection in `incoming_speed_cm` and the foot-height code, neither of which
 touches the ball.
 
+**THE ORIGIN, SETTLED. Every span and every time below is measured from THE
+BALL CENTRE AT THE FIRST RELEASED FRAME to THE AIM POINT `possession._launch_toward`
+RECEIVES. That is the whole definition, it is the one this document now uses
+everywhere, and nothing here is measured from anything else.**
+
+**It is stated this bluntly because the floor figure has moved three times —
+0.584, then 0.5842, then 0.5838 — and every move was a DIFFERENT ORIGIN rather
+than a better measurement.** The contract lane re-derived its own table after
+each one. A figure that keeps stepping by small amounts is telling you its
+origin is unstated; the fix is to name the origin once, not to publish a fourth
+value. The two points above are the engine's own, so this figure cannot move
+again without the engine moving.
+
 **THE ORIGIN OF EVERY SPAN BELOW, stated once because a first draft of this
 document got it wrong.** The ball file aims its floor point **4.00 m from her
 CHEST**, which is where the stance frame is anchored and where the drill's own
 geometry is measured from: a receiver 5 m from the passer, the bounce 1 m short
 of her. The ball does not leave from her chest. It leaves 49.5 cm in front of
-it, so **the flight's own span is 350.5 cm, not 400.0**. Every figure here is
-computed on 350.5. A first draft used 400.0 and every flight number in this pack
+it, so **the flight's own span is 350.3 cm, not 400.0**. Every figure here is
+computed on 350.3. A first draft used 400.0 and every flight number in this pack
 inherited it.
 
-**Measured.** A launch aimed at that floor point, released at 111.7 cm and
-49.5 cm ahead of her chest, at the library's 600 cm/s, solved by
+**AND THE AIM POINT IS NOT EXACTLY WHERE THIS PARAGRAPH ONCE SAID.** The
+authored 4.00 m is measured in the STANCE FRAME. Read against the `c_spine3`
+joint in the solved pose at frame 0, the engine's aim point sits **399.7 cm**
+ahead of it and **0.08 cm above the floor**, not 400.0 and 0.00. Both numbers
+are true of their own origin, which is the fault this very section exists to
+warn about, made once more inside it.
+
+**WHERE THESE FIGURES COME FROM, AND WHERE THE OLD ONES CAME FROM.** Every number in this section is now read from `possession._launch_toward`, the one place the engine states the world point it is aiming at, on `933f612`. **Until 2026-09-07 they came from a floor point rebuilt by hand** — the `c_spine3` joint at frame 0, plus the authored offset times the arm length — which sits **0.27 cm** from the point the engine actually uses. That reconstruction looked like arithmetic and was a measurement. No conclusion moves; the figures do, in the third and fourth decimal.
+
+**Measured.** A launch aimed at the engine's own aim point, released at
+111.7 cm and 49.5 cm ahead of her chest, at the library's 600 cm/s, solved by
 `ball_track.solve_launch` and integrated with the engine's own formula:
 
 | t (s) | ball height (cm) | ahead of her chest (cm) |
 |---|---|---|
 | 0.00 | 111.7 | 49.5 |
-| 0.20 | 111.2 | 169.5 |
-| 0.40 | 71.4 | 289.5 |
-| 0.50 | 36.8 | 349.5 |
-| **0.60** | **−7.7** | 409.5 |
-| 1.00 | −283.4 | 649.5 |
-| 1.50 | −848.9 | 949.5 |
+| 0.20 | 111.1 | 169.5 |
+| 0.40 | 71.3 | 289.5 |
+| 0.50 | 36.7 | 349.5 |
+| **0.60** | **−7.8** | 409.5 |
+| 1.00 | −283.6 | 649.5 |
+| 1.50 | −849.2 | 949.5 |
 
-**The ball reaches the ground at 0.584 s, exactly 400.0 cm from her chest, and
+**The ball reaches the ground at 0.584 s, 399.7 cm from her chest as the
+c_spine3 joint reads at frame 0, and
 keeps falling. By 1.5 s it is 8.5 m below the court.** The aim is right; nothing
 stops the ball once it gets there, and nothing reports it.
 
 **And the clip is too short to hold the bounce.** This drill releases at
 **frame 76 of 96**, which is phase 0.80 in the definition, and the flight the
 clip then contains is **19 intervals at 60 frames per second, frame 76 to frame
-95 = 0.3167 s**. The floor is reached at 0.5842 s, **1.84 times longer than the
-clip has left, short by 0.268 s**. So even with a floor, the bounce would happen
+95 = 0.3167 s**. The floor is reached at 0.5838 s, **1.84 times longer than the
+clip has left, short by 0.267 s**. So even with a floor, the bounce would happen
 after the last frame, and the clip a board plays would show a ball still
 descending.
 
 **THE INTERVAL COUNT IS STATED BECAUSE THE FLIGHT FIGURE WAS NOT REPRODUCIBLE
 WITHOUT IT.** An earlier version of this paragraph gave the flight as 0.32 s,
 which is (1 − 0.80) × 1.60, while its shortfall and ratio were derived from
-0.3167 s. **0.5842 − 0.32 is 0.264, not 0.268**, so a reader could not get the
+0.3167 s. **0.5838 − 0.32 is 0.264, not 0.267**, so a reader could not get the
 stated shortfall from the stated flight. Nothing was measured on a stale build
 and no figure here changes; the intermediate was simply never printed. Found by
 the contract lane while reconciling its own arithmetic.

@@ -355,18 +355,56 @@ any board. That is a fact about the consumer, and not about the clip.
 
 `5d60dd2` on `cc2c20a` added `netball_bounce_pass` to `CLASSES` as
 `("pass", "bounce-pass", "release")`. From
-`docs/BOUNCE_PASS_INSTRUMENT_AUDIT.md` on the same commit:
+`docs/BOUNCE_PASS_INSTRUMENT_AUDIT.md`, quoted at **`56e70a3`** rather than at
+`cc2c20a`, because PR #79 changed what that document prints:
 
 - The engine **has no floor**. There is no floor term, no bounce and no
   restitution in `possession.py`, `ball_track.py` or `possession_solve.py`.
-- The ball reaches the ground at **0.584 s**, 400.0 cm from her chest.
+- "The ball reaches the ground at **0.584 s**, exactly 400.0 cm from her chest,
+  and keeps falling." The clause is kept because it is the point: nothing stops
+  the ball at the court, which is what "has no floor" means in practice.
+- The release sits at **frame 76 of 96**, which is phase 0.80 in the definition,
+  and the flight the clip contains is **19 intervals at 60 frames per second,
+  frame 76 to frame 95 = 0.3167 s**.
+- "The floor is reached at **0.5842 s**, **1.84 times longer than the clip has
+  left, short by 0.268 s**."
 
-- The release sits at **0.80 of a 1.60 s clip**, leaving **0.32 s of flight**.
-- The floor is reached **1.84 times later than that, short by 0.268 s**.
+**`0.3167 s` is now a quotation.** The audit printed only the rounded 0.32 s when
+this section was first written, and PR #79 (merged `56e70a3`, authored
+`62f6414`) added the interval count and the unrounded flight to it. Its own
+paragraph says why: the flight figure "was not reproducible without it", because
+0.5842 − 0.32 is 0.264 rather than the stated 0.268. That argument survives the
+floor moving: at `b9c077e` the audit makes it as "0.5838 − 0.32 is 0.264, not
+0.267", with the same 0.264 on the left.
 
-Those are the audit's own printed figures. **The unrounded 0.3167 s and
-0.2673 s used below are my reconstruction** from the frame count, not a
-quotation: the audit prints only the rounded pair.
+**The unrounded shortfall is still mine.** The audit prints it rounded, as
+0.268 s, and no unrounded form of it appears anywhere in that document. The
+table below derives it from the quoted flight and the quoted floor, and labels
+it as a derivation rather than attributing it. An earlier version of this
+section gave it as 0.2673, which came from a floor of 0.584.
+
+**The audit printed the floor in two forms at `56e70a3`, and it has since moved
+again.** At the pinned commit, one sentence gave 0.584 s with "exactly 400.0 cm
+from her chest" and another gave "The floor is reached at 0.5842 s". Neither
+corrected the other, so both strings are findable there.
+
+**At `b9c077e` (PR #84) the audit prints the floor as 0.5838 s, and the derived
+table below is computed on that.** The reason is not a re-timing. The flight's
+span was being measured from her chest, and the ball does not leave from her
+chest: it leaves 49.5 cm in front of it, so the span is **350.3 cm, not 400.0**.
+The audit says every flight number in that pack inherited the 400.0. Read
+against the `c_spine3` joint at frame 0 rather than the stance frame, the
+engine's own aim point is **399.7 cm**, and the audit names the 0.27 cm gap
+between that and the hand-rebuilt figure as "the fault this very section exists
+to warn about, made once more inside it".
+
+**So two of the quotations above are now historical, and are kept deliberately.**
+Both quoted sentences read differently at `b9c077e`: the first now says "399.7 cm
+from her chest as the `c_spine3` joint reads at frame 0", and the second says
+0.5838 s and 0.267 s. They are pinned at `56e70a3`, where they are exact, because
+this passage is the record of a correction and re-pinning them would erase what
+it corrects. **The figure 400.0 in particular is one the audit has since
+withdrawn as an error**, and nothing below derives from it.
 
 **Those figures are correct, and a first version of this section wrongly said
 they did not close.** The error is worth recording, because it was a unit
@@ -387,10 +425,31 @@ against the frame count. Nothing disagrees.
 **What differed was my arithmetic, not the audit's.** The flight left in a clip
 is measured to the LAST FRAME, not to the clip's nominal end:
 
-| reading | intervals | flight | shortfall | ratio |
+The shortfall and ratio columns are computed from the flight in the same row,
+against the floor of **0.5838 s** the audit prints at `b9c077e`. Only the flight
+figures are quoted; the audit's own shortfall there is 0.267 s.
+
+| interval count | intervals | flight | shortfall | ratio |
 |---|---|---|---|---|
-| audit: frame 76 to frame 95 | 19 | **0.3167 s** | 0.2673 | **1.844** |
-| mine: release to clip end | 20 | 0.3333 s | 0.2507 | 1.752 |
+| to frame 95, the audit's | 19 | **0.3167 s** | 0.2671 | **1.844** |
+| to the clip's end, mine | 20 | 0.3333 s | 0.2505 | 1.751 |
+
+**All four derived figures move whenever the floor moves, and this is the second
+time they have.** The unrounded values, so the movement is reproducible:
+
+| floor | 19-interval | | 20-interval | |
+|---|---|---|---|---|
+| | shortfall | ratio | shortfall | ratio |
+| 0.584 | 0.26733 | 1.84421 | 0.25067 | 1.75200 |
+| 0.5842 | 0.26753 | 1.84484 | 0.25087 | 1.75260 |
+| **0.5838** | **0.26713** | **1.84358** | **0.25047** | **1.75140** |
+
+**This time BOTH ratios cross a rounding boundary at three decimals**, where the
+previous move crossed only one: 1.845 back to 1.844, and 1.753 down to 1.751,
+which steps over 1.752 rather than to it. So both printed ratios change for a
+reason invisible in the printed figures, which is why the unrounded table is
+here. The audit's own **1.84** is unaffected at two decimals through all three
+floors, which is why nothing on its side had to change.
 
 The audit's is right. Frame 95 is the last frame that exists, so there are
 nineteen intervals of drawn flight and not twenty. My reading counted an

@@ -131,8 +131,34 @@ MEASURE_UNITS: dict[str, str] = {
     "rightShoulderElevationDegrees": DEGREES,
     "leftKneeFlexionDegrees": DEGREES,
     "rightKneeFlexionDegrees": DEGREES,
+    # THREE LENGTHS, NOT ONE. `leftFootHeightCm` and `rightFootHeightCm` were
+    # written by both solvers and declared by neither, so `unit_of` raised for
+    # two measures the engine produces on every frame of every drill. Nothing
+    # caught it: the units test asks whether every GRADED measure has a unit,
+    # and these two are written and not yet graded. The first drill to grade a
+    # foot height would have raised instead of grading it. A guard that solves
+    # a drill and diffs the WRITTEN keys against this table now covers them.
+    "leftFootHeightCm": CENTIMETRES,
+    "rightFootHeightCm": CENTIMETRES,
     "footHeightGapCm": CENTIMETRES,
 }
+
+
+# WHAT A MEASUREMENT ROW CARRIES THAT IS NOT A MEASURE.
+#
+# The solvers write these beside the measures: the phase the frame sits at, and
+# what the athlete is doing with the ball. They have no unit because they are
+# not quantities a coach grades, and they must not be added to the table above
+# to silence a guard.
+#
+# They are named so that the written-versus-declared guard can be TOTAL. That
+# guard asks whether every key a solver writes is either a declared measure or
+# a named state column, so a new key forces a decision instead of passing
+# unnoticed. Two centimetre measures were written and undeclared for weeks
+# because no guard asked the question at all.
+STATE_COLUMNS: frozenset[str] = frozenset(
+    {"phase", "ballState", "holdingTheBall", "handsOnTheBall"}
+)
 
 
 def unit_of(measure: str) -> str:
