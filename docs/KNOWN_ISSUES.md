@@ -533,10 +533,40 @@ whether the band is `None`, not the pair; and `build_library.py:378` reads
 reader missing from a consumer list is the more serious half, and the search
 that found the other writers should have found it.
 
-### Two more `band` writers, found by that search and NOT fixed
+### Two more `band` writers — BOTH FIXED on 2026-09-07
+
+Kept rather than deleted, because the pair is the point: they were found by one
+search and they are **two different faults**, not one repeated. What each was
+is below; what each is now:
+
+- **`export_manual_page.py`** formats the band in Python and passes a label.
+  `manual_page_template.html` prints it. **The template rendered
+  `${m.band[0]}-${m.band[1]}&deg;` with a hardcoded degree sign**, so a
+  centimetre band read as degrees on a page a COACH looks at — the same defect
+  as the coach sentence, in the other coach-facing surface. A template cannot
+  look a unit up and is no longer asked to; a measure with no declared unit
+  gets the numbers and no unit rather than a guessed one.
+- **`hand_orientation.py`'s six measures are declared**, all degrees. They stay
+  REPORTED and ungraded, and a guard holds them to that, so the declaration
+  cannot be read as a licence to band them: bands are coaching content and no
+  coach has seen these numbers.
+
+**The gap was invisible for a nameable reason, and there is a guard on it.**
+All six names end in "Degrees" and all six ARE degrees, so a reader applying
+the suffix rule would have been right and the table would still have been
+silent. `unit_of` refuses that rule on purpose, and a test asserts it still
+refuses.
+
+**AND MY OWN GUARD REACHED TWO WRITERS OF THREE.** `test_written_measures` was
+written to stand at the writing end of the pipe. It covers the two SOLVERS'
+measurement rows; `hand_orientation` is a third writer and it never saw it.
+`test_manual_units` now covers that writer, deriving the six names from
+`CONVENTIONS` rather than listing them.
+
+*The original row follows.*
 
 **Owner: the movement lane. Queued.** Neither is the receipt, so neither was in
-this pack's scope, and they are two different faults rather than one repeated.
+that pack's scope, and they are two different faults rather than one repeated.
 
 - **`export_manual_page.py:102`** writes `{"measure", "band": [min, max]}` —
   the same bare pair the receipt had, and this one is COACH-FACING. It is the

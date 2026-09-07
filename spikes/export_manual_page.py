@@ -45,6 +45,7 @@ SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
 
 from manual_source import for_movement, load as load_manual  # noqa: E402
+from segment_measures import unit_of
 from movement_definition import load as load_definition  # noqa: E402
 from movement_engine import definition_path  # noqa: E402
 
@@ -95,11 +96,19 @@ def build(
 ) -> dict:
     definition = load_definition(definition_path(movement_id))
     manual = for_movement(movement_id, drills)
+    # THE PAGE IS FORMATTED HERE, NOT IN THE TEMPLATE, so that the unit
+    # cannot be got wrong by a file with no way to look one up. The template
+    # printed `${m.band[0]}-${m.band[1]}&deg;` with a hardcoded degree sign,
+    # so a centimetre band -- and three shipped checkpoints hold one -- read
+    # as degrees on a page a COACH looks at. `band` is kept beside the label
+    # for any reader that wants the numbers.
     bands = {
         phase.name: [
             {
                 "measure": check.measure,
-                "band": [check.minimum_degrees, check.maximum_degrees],
+                "band": [check.minimum, check.maximum],
+                "unit": unit_of(check.measure),
+                "bandLabel": band_label(check),
             }
             for check in phase.checkpoints
         ]
@@ -158,6 +167,24 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--output", type=Path, default=OUTPUT / "manual.html")
     parser.add_argument("--view", default="quarter")
     return parser.parse_args(argv[1:])
+
+
+# HOW A BAND READS ON THE PAGE, one entry per unit.
+#
+# A degree sign is written tight against the number and a centimetre unit is
+# written with a space, which is how each is written everywhere else in this
+# repository. A measure with no declared unit gets the numbers and NO unit,
+# never a guessed one.
+BAND_SUFFIX = {"degrees": "\u00b0", "centimetres": " cm"}
+
+
+def band_label(check) -> str:
+    """The band as a coach reads it, with its own unit."""
+    try:
+        suffix = BAND_SUFFIX[unit_of(check.measure)]
+    except KeyError:
+        suffix = ""
+    return f"{check.minimum:g}\u2013{check.maximum:g}{suffix}"
 
 
 def main(argv: list[str]) -> int:

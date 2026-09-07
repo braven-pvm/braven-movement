@@ -155,6 +155,24 @@ MEASURE_UNITS: dict[str, str] = {
     # zeros, is the fault this table exists to prevent, so the two zeros are
     # named here rather than left to a reader to discover by subtracting.
     "ballHeightCm": CENTIMETRES,
+    # THE SIX HAND-ORIENTATION MEASURES, WHICH ARE REPORTED AND NOT GRADED.
+    #
+    # `hand_orientation` writes them into receipts with a REPORTED verdict and
+    # no band, because bands are coaching content and no coach has seen these
+    # numbers. Reported is not the same as unitless: the values are angles, and
+    # `unit_of` raised for all six.
+    #
+    # NOTHING CAUGHT IT, because the guard over written keys stands at the two
+    # SOLVERS' measurement rows and this is a third writer. Their names all end
+    # in "Degrees", which is exactly the suffix rule `unit_of` refuses to
+    # apply: a reader would have guessed right and the table would still have
+    # been silent.
+    "leftThumbUpDegrees": DEGREES,
+    "rightThumbUpDegrees": DEGREES,
+    "leftFingerUpDegrees": DEGREES,
+    "rightFingerUpDegrees": DEGREES,
+    "leftThumbToBallDegrees": DEGREES,
+    "rightThumbToBallDegrees": DEGREES,
 }
 
 # MEASURES ONLY ONE SOLVER CAN WRITE, AND WHY THAT IS NOT A DEFECT.
