@@ -20,7 +20,7 @@ a passer, so the ball arrives with a speed and direction she must answer. This
 is the same JOINT doing a SIMILAR SHAPE. It is never the same drill, and no
 number here grades anything.
 
-    pixi run python video_elbow_curve.py --pair "front 0.1 + side 0.2"
+    pixi run python video_elbow_curve.py --pair "front 0.1 + side 0.1"
 
 Every --set refuses: no set's two same-named files are a pair.
 Run video_lift_3d.py on the same pair first; this reads its artefact.
@@ -37,6 +37,8 @@ import numpy as np
 
 from reference_curves import curve_values
 from video_keypoints import (PAIRS, frame_offset_of, load_keypoints,
+                             pair_key_of_set,
+                             source_matches,
                              pair_slug, refuse_by_set)
 
 SPIKE_DIR = Path(__file__).resolve().parent
@@ -77,7 +79,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--set", dest="set_id", default=None)
     parser.add_argument("--pair", dest="pair_key", default=None,
                         help="a key from PAIRS in video_keypoints.py, "
-                             "for example 'front 0.1 + side 0.2'")
+                             "for example 'front 0.1 + side 0.1'")
     arguments = parser.parse_args(argv[1:])
 
     # THE REACHABLE PASS. Without --pair this script had no working path at
@@ -92,9 +94,12 @@ def main(argv: list[str]) -> int:
         label = arguments.pair_key
         front_name, side_name = pair["referenceFile"], pair["otherFile"]
     elif arguments.set_id:
-        label = f"set {arguments.set_id}"
-        front_name = f"front {arguments.set_id}.mp4"
-        side_name = f"side {arguments.set_id}.mp4"
+        key = pair_key_of_set(arguments.set_id)
+        if key is None:
+            raise SystemExit(refuse_by_set(arguments.set_id))
+        label = key
+        front_name = PAIRS[key]["referenceFile"]
+        side_name = PAIRS[key]["otherFile"]
     else:
         raise SystemExit("give --pair (preferred) or --set")
 
@@ -112,10 +117,20 @@ def main(argv: list[str]) -> int:
     front = load_keypoints(front_name)
     # THE GUARD IS "ARE THESE TWO FILES THE PAIR", NOT "IS ONE OF THEM
     # MEASURED". A first version of this check asked only whether the side file
-    # had a sync, and `side 0.2.mp4` HAS one — it is half of the real pair, with
-    # `front 0.1.mp4`. So asking for set 0.2 loaded front 0.2 against side 0.2,
+    # had a sync, and the measured side file HAS one — it is half of the real
+    # pair. So asking for the other set loaded two files that are not a pair,
     # passed, and wrote a plausible lift from two files that are not a pair.
     # That is the same fault as the offsets this pack withdraws, one level up.
+    # THE HASH FIRST, THEN THE PAIRING. An artefact whose stamped source hash
+    # does not match the file it names is describing different footage, and
+    # every check below it would be about the wrong clip. This is the check
+    # that was missing when the two side files' names were swapped and 50
+    # tests stayed green.
+    for document in (front, side):
+        agrees, why = source_matches(document)
+        if agrees is False:
+            raise SystemExit(why)
+
     if side["sync"].get("pairedWith") != front["source"]["videoFile"]:
         raise SystemExit(refuse_by_set(arguments.set_id or arguments.pair_key))
     # The lift is loaded only after the pairing holds: it exists only for a

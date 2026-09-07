@@ -205,8 +205,28 @@ class TheCommittedLedgers(unittest.TestCase):
         if found is None:
             self.skipTest("event-ledger-0.1.json is not present")
 
-        self.assertIn("FILE NAMES ARE WRONG", found["why"])
-        self.assertIn("side 0.2.mp4", found["why"])
+        # BY HASH, NOT BY NAME. This asserted on "side 0.2.mp4", and the two
+        # side names swapped on 2026-09-07: the assertion would have kept
+        # passing while meaning the other file. A ledger's identity is the
+        # sha256 of what it read.
+        self.assertIn("FILE NAMES WERE WRONG", found["why"])
+        self.assertIn("253fa551605e", found["why"], "the file it READ")
+        self.assertIn("6e8f9fb2fe03", found["why"], "the file that DOES pair")
+
+    def test_each_view_names_the_file_it_read_and_its_hash(self):
+        """THE LEDGERS CARRIED NEITHER A FILE NAME NOR A HASH. They were keyed
+        by a set id alone, so after the rename nothing in them said which
+        recording they had been read from."""
+        found = load("0.1")
+        if found is None:
+            self.skipTest("event-ledger-0.1.json is not present")
+
+        for view in ("front", "side"):
+            with self.subTest(view=view):
+                block = found["views"][view]
+
+                self.assertIn("videoFile", block)
+                self.assertRegex(block["videoSha256"], r"^[0-9a-f]{12,64}$")
 
     def test_set_one_records_the_sequence_that_settles_it(self):
         """The arithmetic is not the evidence, the sequence is: the front

@@ -21,9 +21,13 @@ its `up` from that same view.
 
 RE-MEASURED 2026-09-07 ON THE PAIR THAT IS ACTUALLY A PAIR. The table that
 stood here (21.2 / 12.8 / 3.8 deg on 730 frames) was measured on
-`front 0.1.mp4` against `side 0.1.mp4`, which are NOT two views of one take;
-refer to the mislabel finding in `docs/VIDEO_CAPTURE_FINDINGS.md`. Those three
-numbers are VOID. On `front 0.1.mp4` + `side 0.2.mp4`, 763 frame pairs:
+`front 0.1.mp4` against the 863-frame side file (253fa551605e), which are NOT
+two views of one take; refer to the mislabel finding in
+`docs/VIDEO_CAPTURE_FINDINGS.md`. Those three numbers are VOID. On
+`front 0.1.mp4` + `side 0.1.mp4` (6e8f9fb2fe03, 990 frames), 763 frame pairs:
+
+The file NAMES were corrected at source on 2026-09-07 and both readings above
+are stated by hash, because the names have moved once already.
 
     up taken from   shares with the side view   median   projection floor
     front only      nothing                     4.4 deg        3.2 deg

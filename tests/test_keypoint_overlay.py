@@ -156,23 +156,67 @@ class TheRealArtefactsRefuseForTheRightReason(unittest.TestCase):
                 self.assertNotIn("offsetSecondsToReference",
                                  self.load(name).get("sync", {}))
 
+    def side_files(self):
+        """THE TWO SIDE ARTEFACTS, FOUND BY WHAT THEY SAY, NOT BY THEIR NAMES.
+
+        These two tests named `keypoints-side-0.2.json` and
+        `keypoints-side-0.1.json` and both broke on 2026-09-07, when Marius
+        swapped the two side files' names at source and the artefacts followed
+        them. Neither refusal had changed; only the labels had. A test that
+        names a file asserts something about the naming as well as about the
+        behaviour, and only one of those two was under test here."""
+        found = {}
+        for name in ("keypoints-side-0.1.json", "keypoints-side-0.2.json"):
+            document = self.load(name)
+            measured = bool((document.get("sync") or {}).get("measured"))
+            found.setdefault("measured" if measured else "unmeasured",
+                             document)
+        return found
+
     def test_the_measured_side_file_refuses_naming_its_frame_offset(self):
-        document = self.load("keypoints-side-0.2.json")
+        document = self.side_files().get("measured")
+        if document is None:
+            self.skipTest("no side artefact carries a measured sync")
 
         with self.assertRaises(SystemExit) as refusal:
             reference_to_local(document, 9.0)
 
         message = str(refusal.exception)
         self.assertIn("HAS a measured sync", message)
-        self.assertIn("front 0.1.mp4", message)
+        self.assertIn(document["sync"]["pairedWith"], message)
 
     def test_the_unmeasured_side_file_refuses_for_the_other_reason(self):
-        document = self.load("keypoints-side-0.1.json")
+        document = self.side_files().get("unmeasured")
+        if document is None:
+            self.skipTest("both side artefacts carry a measured sync")
 
         with self.assertRaises(SystemExit) as refusal:
             reference_to_local(document, 9.0)
 
         self.assertIn("carries no measured offset", str(refusal.exception))
+
+    def test_every_artefact_agrees_with_the_file_it_names_by_hash(self):
+        """THE CHECK THAT WAS MISSING WHEN THE RENAME HAPPENED. The hash has
+        been in every artefact from the first one and nothing read it."""
+        samples = pathlib.Path("F:/Repositories/braven-movement/.assets/"
+                               "video-samples/session-1.0")
+        if not samples.exists():
+            self.skipTest("the session 1.0 recordings are not on this machine")
+        import hashlib
+        for name in ("keypoints-front-0.1.json", "keypoints-front-0.2.json",
+                     "keypoints-side-0.1.json", "keypoints-side-0.2.json"):
+            with self.subTest(artefact=name):
+                source = self.load(name)["source"]
+                path = samples / source["videoFile"]
+                if not path.exists():
+                    self.skipTest(f"{source['videoFile']} is not present")
+                digest = hashlib.sha256()
+                with path.open("rb") as handle:
+                    for block in iter(lambda: handle.read(1 << 20), b""):
+                        digest.update(block)
+
+                self.assertEqual(digest.hexdigest(), source["videoSha256"],
+                                 f"{name} names a file it was not made from")
 
 
 class SyncDirectionTest(unittest.TestCase):

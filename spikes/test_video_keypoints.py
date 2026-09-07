@@ -42,6 +42,19 @@ MOVEMENT = "netball_two_hand_snatch_pull_in"
 SAMPLES = Path("F:/Repositories/braven-movement/.assets/video-samples/session-1.0")
 
 
+# THE TESTS READ THE TABLE; THEY DO NOT NAME FILES. Every hard-coded
+# "front 0.1 + side 0.2" and "side 0.2.mp4" in this file broke on 2026-09-07,
+# when Marius swapped the two side files' names at source and the table
+# followed them. Twenty-five tests failed at once on names alone, while the
+# thing they check had not moved by a frame. A test that names a file is a
+# test that a rename can break without any measurement changing.
+THE_PAIR = next(iter(PAIRS))
+PAIR = PAIRS[THE_PAIR]
+REFERENCE_SET = PAIR["referenceFile"].split(" ", 1)[1].removesuffix(".mp4")
+OTHER_SET = PAIR["otherFile"].split(" ", 1)[1].removesuffix(".mp4")
+UNPAIRED_SET = PAIRING_UNKNOWN[1].split(" ", 1)[1].removesuffix(".mp4")
+
+
 def block(view: str = "front", set_id: str = "0.1") -> dict:
     return _sync_block(view, set_id, *_sync_inputs(view, set_id))
 
@@ -79,10 +92,11 @@ class TheMeasurementIsAFrameCount(unittest.TestCase):
     """A frame offset does not drift. A number of seconds does."""
 
     def test_the_paired_files_carry_the_frame_offset_and_its_partner(self):
-        reference, other = block("front", "0.1"), block("side", "0.2")
+        reference = block("front", REFERENCE_SET)
+        other = block("side", OTHER_SET)
 
         self.assertEqual(reference["frameOffsetToReference"], 0)
-        self.assertEqual(reference["pairedWith"], "side 0.2.mp4")
+        self.assertEqual(reference["pairedWith"], PAIR["otherFile"])
         self.assertEqual(other["frameOffsetToReference"], -5)
         self.assertEqual(other["pairedWith"], "front 0.1.mp4")
 
@@ -90,19 +104,20 @@ class TheMeasurementIsAFrameCount(unittest.TestCase):
         """`offsetSecondsToReference` is GONE. Two offsets in seconds have been
         published from this material and both were withdrawn; the field that
         carried them does not survive, so nothing can read one by habit."""
-        for view, set_id in (("front", "0.1"), ("side", "0.2"),
-                             ("front", "0.2"), ("side", "0.1")):
-            with self.subTest(view=view, set_id=set_id):
-                self.assertNotIn("offsetSecondsToReference", block(view, set_id))
+        for view in ("front", "side"):
+            for set_id in ("0.1", "0.2"):
+                with self.subTest(view=view, set_id=set_id):
+                    self.assertNotIn("offsetSecondsToReference",
+                                     block(view, set_id))
 
     def test_the_derived_seconds_say_they_are_derived_and_that_they_drift(self):
-        note = block("side", "0.2")["derivedNote"]
+        note = block("side", OTHER_SET)["derivedNote"]
 
         self.assertIn("DERIVED", note)
         self.assertIn("drift", note)
 
     def test_the_two_frame_periods_differ_which_is_why(self):
-        pair = PAIRS["front 0.1 + side 0.2"]
+        pair = PAIR
         periods = set(pair["framePeriodSeconds"].values())
 
         self.assertEqual(len(periods), 2, "if they were equal there would be "
@@ -118,7 +133,7 @@ class TheIndexArithmeticHoldsOnTheContainers(unittest.TestCase):
     """
 
     def setUp(self):
-        self.pair = PAIRS["front 0.1 + side 0.2"]
+        self.pair = PAIR
         self.reference = pts(self.pair["referenceFile"])
         self.other = pts(self.pair["otherFile"])
         if self.reference is None or self.other is None:
@@ -173,7 +188,7 @@ class TheDisagreementIsRecordedRatherThanResolved(unittest.TestCase):
     def test_the_soft_anchor_is_set_aside_with_its_frame_difference(self):
         """The FIRST clap gives 4, not 5. Calling the side one frame earlier
         would make it agree, and that is exactly why it is not an anchor."""
-        aside = PAIRS["front 0.1 + side 0.2"]["setAside"]
+        aside = PAIR["setAside"]
 
         self.assertEqual(len(aside), 1)
         self.assertEqual(aside[0]["frameDifference"], 4)
@@ -181,7 +196,7 @@ class TheDisagreementIsRecordedRatherThanResolved(unittest.TestCase):
 
     def test_the_set_aside_row_does_not_satisfy_the_arithmetic(self):
         """If it ever does, someone has changed a number to make it fit."""
-        pair = PAIRS["front 0.1 + side 0.2"]
+        pair = PAIR
         row = pair["setAside"][0]
 
         self.assertNotEqual(row["otherIndex"],
@@ -190,7 +205,7 @@ class TheDisagreementIsRecordedRatherThanResolved(unittest.TestCase):
     def test_a_clap_is_never_an_anchor(self):
         """A ball meeting hands is a one-frame transition with no judgement in
         it. A clasp is not, and both claps are checks or set aside."""
-        pair = PAIRS["front 0.1 + side 0.2"]
+        pair = PAIR
 
         for anchor in pair["anchors"]:
             self.assertIn("ball into hands", anchor["event"])
@@ -201,7 +216,9 @@ class TheDisagreementIsRecordedRatherThanResolved(unittest.TestCase):
 class WhatIsNotEstablishedSaysSo(unittest.TestCase):
 
     def test_the_other_two_files_carry_no_offset_and_no_partner(self):
-        for view, set_id in (("front", "0.2"), ("side", "0.1")):
+        unpaired = [(n.split(" ", 1)[0], n.split(" ", 1)[1].removesuffix(".mp4"))
+                    for n in PAIRING_UNKNOWN]
+        for view, set_id in unpaired:
             with self.subTest(view=view, set_id=set_id):
                 found = block(view, set_id)
 
@@ -211,15 +228,25 @@ class WhatIsNotEstablishedSaysSo(unittest.TestCase):
                 self.assertEqual(found["methodKind"], "unknown")
 
     def test_they_are_named_as_unknown_rather_than_unpaired(self):
-        self.assertEqual(set(PAIRING_UNKNOWN),
-                         {"front 0.2.mp4", "side 0.1.mp4"})
+        self.assertEqual(len(set(PAIRING_UNKNOWN)), 2)
+        for name in PAIRING_UNKNOWN:
+            with self.subTest(file=name):
+                self.assertNotIn(name, (PAIR["referenceFile"],
+                                        PAIR["otherFile"]))
 
     def test_the_note_says_the_names_are_wrong_and_not_that_a_partner_is_absent(self):
         note = block("front", "0.2")["note"]
 
         self.assertIn("NO PARTNER IS ESTABLISHED", note)
         self.assertIn("not a claim that it has none", note)
-        self.assertIn("the file names are wrong", note.lower())
+        # NOT "the file names are wrong" any more. They were, and Marius
+        # corrected them at source on 2026-09-07. What must survive is that
+        # the note says a partner is NOT ESTABLISHED rather than absent, and
+        # names the pair that IS established so nobody is left hunting.
+        self.assertIn("no partner is established", note.lower())
+        self.assertIn("not a claim that it has none", note.lower())
+        self.assertIn(PAIR["referenceFile"], note)
+        self.assertIn(PAIR["otherFile"], note)
 
     def test_no_elimination_argument_is_made_anywhere(self):
         """"There are four files, so the other two must pair" is a guess."""
@@ -249,25 +276,29 @@ class TheBlockSaysWhatWasDoneAndNotWhatWasRuledOut(unittest.TestCase):
         self.assertNotIn(self.STALE, json.dumps(found))
 
     def test_the_withdrawal_names_all_three_claims(self):
-        note = block("side", "0.2")["methodNote"]
+        note = block("side", OTHER_SET)["methodNote"]
 
         self.assertIn("no clap existed", note)
         self.assertIn("+1.0 s", note)
         self.assertIn("-0.7295", note)
-        self.assertIn("the file names are wrong", note.lower())
+        # The fourth withdrawal is the mislabel itself, and it now reads as a
+        # correction that HAS been made rather than as a fault still standing.
+        self.assertIn("renamed", note.lower())
 
     def test_every_kind_the_writer_emits_is_in_the_vocabulary(self):
-        for view, set_id in (("front", "0.1"), ("side", "0.2"),
-                             ("front", "0.2"), ("side", "0.1")):
-            with self.subTest(view=view, set_id=set_id):
-                self.assertIn(block(view, set_id)["methodKind"], METHOD_KINDS)
+        for view in ("front", "side"):
+            for set_id in ("0.1", "0.2"):
+                with self.subTest(view=view, set_id=set_id):
+                    self.assertIn(block(view, set_id)["methodKind"],
+                                  METHOD_KINDS)
 
     def test_pair_for_finds_a_file_by_name_not_by_set(self):
         """The whole point: a set id is a label and the label is wrong."""
-        key, pair = pair_for("side", "0.2")
+        key, pair = pair_for("side", OTHER_SET)
 
-        self.assertEqual(key, "front 0.1 + side 0.2")
-        self.assertEqual(pair_for("side", "0.1"), (None, None))
+        self.assertEqual(key, THE_PAIR)
+        unpaired = PAIRING_UNKNOWN[1].split(" ", 1)[1].removesuffix(".mp4")
+        self.assertEqual(pair_for("side", unpaired), (None, None))
 
 
 class TheRestampTouchesTheSyncBlockAndNothingElse(unittest.TestCase):
@@ -286,18 +317,20 @@ class TheRestampTouchesTheSyncBlockAndNothingElse(unittest.TestCase):
         path = keypoint_file({"measured": True,
                               "offsetSecondsToReference": -0.7295,
                               "worked": {"thisViewSeconds": 9.8628}},
-                             view="side", set_id="0.1")
+                             view="side", set_id=UNPAIRED_SET)
         after = restamp(path)["after"]
 
         self.assertFalse(after["measured"])
         self.assertNotIn("-0.7295", path.read_text(encoding="utf-8"))
 
     def test_a_paired_file_gains_its_frame_offset(self):
-        path = keypoint_file({"method": "stale"}, view="side", set_id="0.2")
+        path = keypoint_file({"method": "stale"}, view="side",
+                             set_id=OTHER_SET)
         after = restamp(path)["after"]
 
-        self.assertEqual(after["frameOffsetToReference"], -5)
-        self.assertEqual(after["pairedWith"], "front 0.1.mp4")
+        self.assertEqual(after["frameOffsetToReference"],
+                         PAIR["frameOffsetToReference"])
+        self.assertEqual(after["pairedWith"], PAIR["referenceFile"])
 
     def test_running_it_twice_changes_nothing_the_second_time(self):
         path = keypoint_file({"method": "stale"})

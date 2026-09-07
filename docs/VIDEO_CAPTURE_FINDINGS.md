@@ -1,5 +1,33 @@
 # What the proper shoot must do differently
 
+> **THE SOURCE FILES WERE RENAMED ON 2026-09-07, AND MUCH OF THIS DOCUMENT WAS
+> WRITTEN BEFORE THAT.** Marius swapped the two SIDE files' names at source, so
+> the labels now describe the contents. Nothing in any recording changed and no
+> measurement changed. Read every older sentence through this table, which is
+> by sha256 and is the only identity that has never moved:
+>
+> | sha256 (first 12) | frames | called before | called now |
+> |---|---|---|---|
+> | `f7faf38b5d42` | 866 | `front 0.1.mp4` | `front 0.1.mp4` |
+> | `2bdf00a3fc45` | 946 | `front 0.2.mp4` | `front 0.2.mp4` |
+> | `6e8f9fb2fe03` | 990 | **`side 0.2.mp4`** | **`side 0.1.mp4`** |
+> | `253fa551605e` | 863 | **`side 0.1.mp4`** | **`side 0.2.mp4`** |
+>
+> **The established pair is `front 0.1.mp4` + `side 0.1.mp4` at a constant
+> FRAME offset of -5**, and before the rename those same two contents were
+> written `front 0.1 + side 0.2`. The unestablished pair is now
+> `front 0.2.mp4` + `side 0.2.mp4`. The three anchors, their indices and their
+> timestamps are unchanged, because the content is unchanged.
+>
+> A file name is not an identity. Every artefact carries `source.videoSha256`,
+> and `source_matches()` in `spikes/video_keypoints.py` compares it with the
+> file on disk. **That field was written into every artefact from the first one
+> and nothing read it: the rename happened and 50 tests stayed green**, because
+> the only other identity check compares a frame index against a timestamp, and
+> the two side files carry identical timestamps at every shared index.
+
+
+
 Findings from session 1.0, the four-clip feasibility sample. Written for
 planning the real shoot.
 

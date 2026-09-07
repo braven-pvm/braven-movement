@@ -1,5 +1,33 @@
 # Handover — the rendering and modelling lane
 
+> **THE SOURCE FILES WERE RENAMED ON 2026-09-07, AND MUCH OF THIS DOCUMENT WAS
+> WRITTEN BEFORE THAT.** Marius swapped the two SIDE files' names at source, so
+> the labels now describe the contents. Nothing in any recording changed and no
+> measurement changed. Read every older sentence through this table, which is
+> by sha256 and is the only identity that has never moved:
+>
+> | sha256 (first 12) | frames | called before | called now |
+> |---|---|---|---|
+> | `f7faf38b5d42` | 866 | `front 0.1.mp4` | `front 0.1.mp4` |
+> | `2bdf00a3fc45` | 946 | `front 0.2.mp4` | `front 0.2.mp4` |
+> | `6e8f9fb2fe03` | 990 | **`side 0.2.mp4`** | **`side 0.1.mp4`** |
+> | `253fa551605e` | 863 | **`side 0.1.mp4`** | **`side 0.2.mp4`** |
+>
+> **The established pair is `front 0.1.mp4` + `side 0.1.mp4` at a constant
+> FRAME offset of -5**, and before the rename those same two contents were
+> written `front 0.1 + side 0.2`. The unestablished pair is now
+> `front 0.2.mp4` + `side 0.2.mp4`. The three anchors, their indices and their
+> timestamps are unchanged, because the content is unchanged.
+>
+> A file name is not an identity. Every artefact carries `source.videoSha256`,
+> and `source_matches()` in `spikes/video_keypoints.py` compares it with the
+> file on disk. **That field was written into every artefact from the first one
+> and nothing read it: the rename happened and 50 tests stayed green**, because
+> the only other identity check compares a frame index against a timestamp, and
+> the two side files carry identical timestamps at every shared index.
+
+
+
 Paste the block below into a fresh session. Everything after it is reference.
 
 ---
@@ -335,20 +363,32 @@ file is the boundary, and its shape is settled in
   both are withdrawn. It then said "THERE IS NO OFFSET IN USE", written on the
   morning of the day one was established, and that is withdrawn too.
 
-  **THE FILE NAMES ARE WRONG.** `front 0.1.mp4` pairs with `side 0.2.mp4`, not
-  with `side 0.1.mp4`. No constant offset maps `front 0.1.mp4` onto
-  `side 0.1.mp4`, and the reason is that they are not two views of one take:
-  the front stands empty-handed from 17.3 to 20.0 s, and it is `side 0.2.mp4`
-  that has that pause, at 17.33 to 19.73.
+  **THE FILE NAMES WERE WRONG AND HAVE BEEN CORRECTED AT SOURCE.** Before
+  2026-09-07 the two side files' names were the wrong way round, so no constant
+  offset mapped `front 0.1.mp4` onto the file then called `side 0.1.mp4`. The
+  finding was the pause: the front stands empty-handed from 17.3 to 20.0 s, and
+  the 863-frame side file does not have a gap of that length, while the
+  990-frame one has the pause at 17.33 to 19.73. Marius has since swapped the
+  names, so the 990-frame file is now `side 0.1.mp4` and pairs with
+  `front 0.1.mp4`.
 
-  **WHAT TO USE, EXACTLY:**
+  **WHAT TO USE, EXACTLY (updated for the rename of 2026-09-07):**
 
-      the pair            front 0.1.mp4  +  side 0.2.mp4
+      the pair            front 0.1.mp4 (f7faf38b5d42)
+                        + side 0.1.mp4 (6e8f9fb2fe03)
       the measurement     frameOffsetToReference = -5
       what -5 means       side_index = front_index - 5
       the table           PAIRS in spikes/video_keypoints.py
-      unpaired            front 0.2.mp4 and side 0.1.mp4 have NO established
+      unpaired            front 0.2.mp4 (2bdf00a3fc45) and
+                          side 0.2.mp4 (253fa551605e) have NO established
                           partner. No elimination argument is made.
+      check the hash      source_matches(document) compares an artefact's
+                          source.videoSha256 with the file it names. Run it
+                          before you trust a file name.
+
+  **BEFORE THE RENAME** the same pairing was written `front 0.1 + side 0.2`,
+  because the two side files' names were the wrong way round. `--set 0.1` now
+  addresses the pair correctly and runs; `--set 0.2` refuses.
 
   **IT IS A FRAME COUNT AND NOT A DURATION, and that is not pedantry.** The two
   cameras' frame periods differ by 11 microseconds (33.3330 against 33.3220 ms),
@@ -368,7 +408,8 @@ file is the boundary, and its shape is settled in
           artefact. It now reads `syncApplied.frameOffsetToReference` and maps
           by `frameIndex`, which the lift's rows now carry.
       scripts/keypoint_overlay.py            REFUSES, truthfully. It cannot
-          consume a frame offset yet. On `side 0.2.mp4` it used to return None
+          consume a frame offset yet. On the measured side file it used to
+          return None
           and refuse with "carries no measured offset" — a false reason for a
           file whose sync IS measured. It now names the frame offset and the
           partner and tells you to draw the view alone with `--local`. Teaching
@@ -400,7 +441,8 @@ which is exactly where a consumer trips.
     (2026-09-07) and is kept only to show the SIGN CONVENTION, which is
     unchanged. No offset is measured between the two files LABELLED 0.1,
     because they are not a pair; the measured pairing is front 0.1.mp4 with
-    side 0.2.mp4 at a FRAME offset of -5, and no seconds figure is stored for
+    side 0.1.mp4 at a FRAME offset of -5 (the file called side 0.2.mp4
+    before the rename), and no seconds figure is stored for
     it at all.**
 
 Neither is wrong and either alone is unambiguous. `keypoint_overlay.py`

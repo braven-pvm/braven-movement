@@ -113,7 +113,8 @@ def sync_offset(document: dict) -> float | None:
     have already been withdrawn from this material. The measurement is
     `frameOffsetToReference`, an integer, plus the name of the file it pairs
     with, and the pairing CROSSES the labelled sets: `front 0.1.mp4` pairs with
-    `side 0.2.mp4` at -5.
+    `side 0.1.mp4` at -5 (6e8f9fb2fe03; that content was called
+    `side 0.2.mp4` until Marius renamed the two side files on 2026-09-07).
 
     Until this tool takes a frame offset, it returns None for such a file. It
     returns None NAMING THE REAL REASON, which is the point: this function used

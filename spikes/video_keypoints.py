@@ -58,11 +58,17 @@ OUTPUT = SPIKE_DIR / "poc-output" / "video"
 # THIS file to reach the reference view's clock. Refer to the schema: the
 # direction is carried as a worked example because prose about it failed once.
 REFERENCE_VIEW = "front"
-# THE PAIRING IS BETWEEN FILES, NOT BETWEEN SETS, AND THE FILE NAMES ARE WRONG.
+# THE PAIRING IS BETWEEN FILES, NOT BETWEEN SETS. THE NAMES WERE WRONG AND
+# MARIUS HAS CORRECTED THEM AT SOURCE (2026-09-07).
 #
-# `front 0.1.mp4` and `side 0.2.mp4` ARE THE SAME RUN. `front 0.2.mp4` and
-# `side 0.1.mp4` are not shown to be a pair by anything measured here. The four
-# files were named as two sets and at least one of those names is wrong.
+# `front 0.1.mp4` (f7faf38b5d42) and `side 0.1.mp4` (6e8f9fb2fe03) ARE THE SAME
+# RUN. `front 0.2.mp4` (2bdf00a3fc45) and `side 0.2.mp4` (253fa551605e) are not
+# shown to be a pair by anything measured here.
+#
+# BEFORE THE RENAME the same two contents were named `front 0.1.mp4` and
+# `side 0.2.mp4`: the two SIDE files' names were swapped, and nothing else
+# moved. Every commit before ca26017 that names `side 0.2.mp4` as the partner
+# means the file now called `side 0.1.mp4`. Read the hash, never the name.
 #
 # THE SOURCE FILES ARE NOT RENAMED. They are Marius's assets, every path in the
 # tree points at them, and renaming is his decision. The mapping is recorded
@@ -82,14 +88,28 @@ REFERENCE_VIEW = "front"
 # +1.0 s (which did pair corresponding moments, contrary to what a version of
 # this file said) and -0.7295 s, which paired two DIFFERENT catches one toss
 # cycle apart. Refer to docs/KNOWN_ISSUES.md.
+# THE SOURCE FILES WERE RENAMED ON 2026-09-07 AND THIS TABLE FOLLOWED THEM.
+# Marius swapped the two side files' names at source, so the established pair,
+# whose CONTENT has not changed at all, is now written `front 0.1 + side 0.1`.
+# Before the rename the same two files were `front 0.1 + side 0.2`.
+#
+# THE FILE NAME IS NOT THE IDENTITY. Every entry names the sha256 of the file
+# it means, and `check_sources` refuses when a name and a hash disagree. That
+# check exists because the swap passed a green suite: the two side files carry
+# IDENTICAL pts at every shared index (one camera, one period), so a guard
+# built on timestamps cannot tell them apart, and the hash was written into
+# every artefact from the start and read by nothing.
 PAIRS = {
-    "front 0.1 + side 0.2": {
+    "front 0.1 + side 0.1": {
         "referenceFile": "front 0.1.mp4",
-        "otherFile": "side 0.2.mp4",
+        "referenceSha256": "f7faf38b5d42",
+        "otherFile": "side 0.1.mp4",
+        "otherSha256": "6e8f9fb2fe03",
+        "namedBeforeTheRename": "front 0.1 + side 0.2",
         # side index = front index + frameOffsetToReference
         "frameOffsetToReference": -5,
         "methodKind": "shared-event",
-        "framePeriodSeconds": {"front 0.1.mp4": 0.033333, "side 0.2.mp4": 0.033322},
+        "framePeriodSeconds": {"front 0.1.mp4": 0.033333, "side 0.1.mp4": 0.033322},
         # TWO ANCHORS, both a ball meeting hands — a transition of one frame,
         # with no judgement in it — and 11.03 s apart.
         "anchors": [
@@ -164,7 +184,12 @@ PAIRS = {
 # NO ELIMINATION ARGUMENT IS MADE. "There are four files, so the other two must
 # pair" is a guess until a ledger says so, and how many files each camera
 # produced is not recorded anywhere in this tree.
-PAIRING_UNKNOWN = ("front 0.2.mp4", "side 0.1.mp4")
+# AFTER THE RENAME these are `front 0.2.mp4` (2bdf00a3fc45) and
+# `side 0.2.mp4` (253fa551605e). The second was called `side 0.1.mp4` before
+# 2026-09-07; its content is unchanged and the pairing is still unknown.
+PAIRING_UNKNOWN = ("front 0.2.mp4", "side 0.2.mp4")
+PAIRING_UNKNOWN_SHA256 = {"front 0.2.mp4": "2bdf00a3fc45",
+                          "side 0.2.mp4": "253fa551605e"}
 
 
 def pair_for(view: str, set_id: str) -> tuple[str, dict] | tuple[None, None]:
@@ -247,7 +272,9 @@ def keypoint_file(view: str, set_id: str) -> Path:
 
 def load_keypoints(video_name: str) -> dict:
     """The keypoint file for a named VIDEO FILE, whatever set its name claims.
-    The name is only a label: `side 0.2.mp4` is the partner of `front 0.1.mp4`.
+    The name is only a label, and these labels have already changed once:
+    `side 0.1.mp4` is the partner of `front 0.1.mp4`, and before 2026-09-07
+    that same content was called `side 0.2.mp4`.
     Both consumers call this, so neither can invent a different mapping."""
     view, rest = video_name.split(" ", 1)
     path = keypoint_file(view, rest.removesuffix(".mp4"))
@@ -264,15 +291,72 @@ def pair_slug(pair_key: str) -> str:
     return pair_key.replace(" + ", "-and-").replace(" ", "_").replace(".mp4", "")
 
 
+def source_matches(document: dict) -> tuple[bool | None, str]:
+    """Does this artefact's stamped source hash match the file it names?
+
+    THE HASH WAS THERE ALL ALONG AND NOTHING READ IT. `extract` has written
+    `source.videoSha256` since the first artefact. On 2026-09-07 the two side
+    files' names were swapped at source, every artefact's name became wrong,
+    and the suite stayed GREEN across 50 tests, because:
+
+      - the container guard checks index against pts, and the two side files
+        carry IDENTICAL pts at every shared index (one camera, one period), so
+        it cannot tell them apart at all; and
+      - nothing compared the stamped hash to the file on disk.
+
+    Three-valued on purpose. `None` means the file is not on this machine,
+    which is not a failure and must not read as one.
+    """
+    source = document.get("source") or {}
+    name = source.get("videoFile")
+    stamped = source.get("videoSha256")
+    if not name or not stamped:
+        return False, "the artefact names no source file or carries no hash"
+    path = SAMPLES / name
+    if not path.exists():
+        return None, f"{name} is not on this machine"
+    found = sha256(path)
+    if found != stamped:
+        return False, (
+            f"{name} on disk is {found[:12]} and this artefact was made from "
+            f"{stamped[:12]}. THE NAME AND THE CONTENT DISAGREE. Do not "
+            "regenerate on the assumption that the file is right: on "
+            "2026-09-07 it was the NAMES that moved. Find the file whose hash "
+            f"is {stamped[:12]} and rename the artefact to match it.")
+    return True, f"{name} is {found[:12]}, as stamped"
+
+
+def pair_key_of_set(set_id: str) -> str | None:
+    """The pair key whose two files are the two files of this set, if any.
+
+    AFTER THE RENAME OF 2026-09-07 A SET CAN BE A PAIR AGAIN. Marius swapped
+    the two side files' names at source, so `front 0.1.mp4` and `side 0.1.mp4`
+    are now the established pair and set 0.1 addresses it correctly. Before the
+    rename every set was refused, because no set's two same-named files were
+    two views of one take. A blanket refusal is now WRONG for set 0.1, and
+    keeping it would refuse the one thing that works.
+
+    `--pair` stays the preferred form: it names two files and cannot be made
+    wrong by a rename. This function exists so that `--set` is answered by the
+    table rather than by an assumption in either direction.
+    """
+    want = (f"front {set_id}.mp4", f"side {set_id}.mp4")
+    for key, pair in PAIRS.items():
+        if (pair["referenceFile"], pair["otherFile"]) == want:
+            return key
+    return None
+
+
 def refuse_by_set(set_id: str) -> str:
-    """What to tell a caller that asked for a set rather than a pair."""
+    """What to tell a caller whose set is not a pair."""
     established = ", ".join(f"{p['referenceFile']} + {p['otherFile']}"
                             for p in PAIRS.values())
-    return (f"set {set_id} is not a pair. THE FILE NAMES ARE WRONG: the only "
-            f"established pairing is {established}, at a constant FRAME offset. "
+    return (f"set {set_id} is not an established pair. The only established "
+            f"pairing is {established}, at a constant FRAME offset. "
             f"{PAIRING_UNKNOWN[0]} and {PAIRING_UNKNOWN[1]} have no established "
-            "partner. Ask for a pair rather than a set; refer to PAIRS in "
-            "video_keypoints.py.")
+            "partner, and that is not a claim that they lack one. Prefer "
+            "--pair, which names two files and cannot be made wrong by a "
+            "rename; refer to PAIRS in video_keypoints.py.")
 
 
 # THE FLOOR A FRAME-PAIRED OFFSET REACHES, kept for consumers that need an
@@ -294,10 +378,11 @@ METHOD_KINDS = ("clap", "shared-event", "eye", "correlation", "unknown")
 # in this function may say. The block states WHAT WAS DONE, never what was ruled
 # out.
 SYNC_METHOD_NOTE = (
-    "WHAT THIS BLOCK CARRIES. For `front 0.1.mp4` and `side 0.2.mp4`: a "
-    "constant FRAME offset of -5, side index = front index - 5, measured on "
-    "two ball-into-hands anchors 11.03 s apart and checked on a third event. "
-    "For `front 0.2.mp4` and `side 0.1.mp4`: NO PARTNER IS ESTABLISHED, and "
+    "WHAT THIS BLOCK CARRIES. For `front 0.1.mp4` (f7faf38b5d42) and "
+    "`side 0.1.mp4` (6e8f9fb2fe03): a constant FRAME offset of -5, side index "
+    "= front index - 5, measured on two ball-into-hands anchors 11.03 s apart "
+    "and checked on a third event. For `front 0.2.mp4` (2bdf00a3fc45) and "
+    "`side 0.2.mp4` (253fa551605e): NO PARTNER IS ESTABLISHED, and "
     "that is not a claim that they lack one. Seconds are derived here and are "
     "never the measurement.\n\n"
     "WHAT IS WITHDRAWN, and why every one of them failed the same way. This "
@@ -306,10 +391,18 @@ SYNC_METHOD_NOTE = (
     "for set 0.1 as labelled, and then -0.7295 s graded 'shared event' — which "
     "named a frame in each view where a ball meets hands and they were "
     "DIFFERENT CATCHES, one toss cycle apart. THE CAUSE OF ALL THREE WAS THE "
-    "SAME: the file names are wrong, so nobody was measuring a bad offset; "
-    "everybody was measuring between two files that are not a pair. Refer to "
-    "'The alignment ranked a sync clap above every real catch' in "
-    "docs/KNOWN_ISSUES.md."
+    "SAME: the file names WERE wrong, so nobody was measuring a bad offset; "
+    "everybody was measuring between two files that are not a pair.\n\n"
+    "THE NAMES WERE RENAMED AT SOURCE ON 2026-09-07. Marius swapped the two "
+    "side files' names, so `side 0.1.mp4` now holds 6e8f9fb2fe03, which is the "
+    "file this pairing was measured on while it was called `side 0.2.mp4`. No "
+    "content changed and no measurement changed: the same three anchors give "
+    "the same frame difference of -5 and the same timestamps. Every artefact "
+    "carries `source.videoSha256`, and `source_matches` compares it against "
+    "the file on disk, because THE HASH WAS ALREADY IN EVERY ARTEFACT WHEN THE "
+    "RENAME HAPPENED AND NOTHING READ IT: the suite stayed green across 50 "
+    "tests with the two side files swapped. Refer to 'The alignment ranked a "
+    "sync clap above every real catch' in docs/KNOWN_ISSUES.md."
 )
 # The camera is picked up after this, measured per frame by the rendering lane.
 USABLE_TO = {("front", "0.1"): 25.7}
@@ -511,8 +604,8 @@ def _sync_block(view: str, set_id: str, measured: bool, sync: dict) -> dict:
         block["methodKind"] = "unknown"
         block["note"] = (
             f"NO PARTNER IS ESTABLISHED for {block['file']}. This is not a "
-            "claim that it has none. THE FILE NAMES ARE WRONG: "
-            "`front 0.1.mp4` pairs with `side 0.2.mp4`, measured at a constant "
+            "claim that it has none. The established pair is "
+            "`front 0.1.mp4` with `side 0.1.mp4`, measured at a constant "
             "frame offset. The remaining two files were tried against each "
             "other under the same rule and failed it — two targeted anchors "
             "gave frame differences of 77 and 75 (RECORDED WITHOUT THEIR "

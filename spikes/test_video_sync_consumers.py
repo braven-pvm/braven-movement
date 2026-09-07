@@ -36,7 +36,8 @@ import unittest
 from pathlib import Path
 
 from video_keypoints import (PAIRING_UNKNOWN, PAIRS, frame_offset_of,
-                             load_keypoints, pair_slug)
+                             load_keypoints, pair_key_of_set, pair_slug,
+                             source_matches)
 
 SPIKES = Path(__file__).resolve().parent
 OUTPUT = SPIKES / "poc-output" / "video"
@@ -259,38 +260,85 @@ class TheWrittenArtefactsStillAgreeWithTheTable(unittest.TestCase):
                 self.assertIsNone(sync.get("pairedWith"))
 
 
-class EveryConsumerRefusesASetThatIsNotAPair(unittest.TestCase, RefusalMixin):
-    """No set's two same-named files are a pair, so every --set must refuse.
-    These read the keypoint artefacts, so they need footage."""
+class ASetIsRefusedONLYWhenItIsNotAPair(unittest.TestCase, RefusalMixin):
+    """THIS CLASS USED TO ASSERT THAT EVERY --set REFUSES, and that was right
+    until 2026-09-07. Marius then swapped the two side files' names at source,
+    so `front 0.1.mp4` and `side 0.1.mp4` ARE now the established pair and set
+    0.1 addresses it correctly. A blanket refusal would refuse the one thing
+    that works.
+
+    So the question is not "is it a set" but "do these two files pair", which
+    is the same question the guard inside each consumer asks. The set that is
+    a pair runs; the set that is not refuses.
+    """
 
     def setUp(self):
         if not keypoints_present():
             self.skipTest("the keypoint artefacts are not present")
+        self.paired = [s for s in ("0.1", "0.2") if pair_key_of_set(s)]
+        self.unpaired = [s for s in ("0.1", "0.2") if not pair_key_of_set(s)]
 
-    def test_each_consumer_refuses_each_set_and_names_the_real_pairing(self):
+    def test_exactly_one_set_is_a_pair(self):
+        """If this changes, the two lists below stop meaning anything."""
+        self.assertEqual(len(self.paired), 1)
+        self.assertEqual(len(self.unpaired), 1)
+
+    def test_the_set_that_is_not_a_pair_is_refused_by_both_consumers(self):
         for script in CONSUMERS:
-            for set_id in ("0.1", "0.2"):
+            for set_id in self.unpaired:
                 with self.subTest(script=script, set_id=set_id):
                     said = self.refused(run(script, "--set", set_id))
 
-                    self.assertIn("front 0.1.mp4 + side 0.2.mp4", said)
-                    self.assertIn("FILE NAMES ARE WRONG", said)
+                    self.assertIn("not an established pair", said)
+                    self.assertIn(PAIRS[THE_PAIR]["referenceFile"], said)
+                    self.assertIn(PAIRS[THE_PAIR]["otherFile"], said)
 
-    def test_set_0_2_refuses_although_its_side_file_IS_measured(self):
-        """THE FAULT THE FIRST FIX HAD. `side 0.2.mp4` carries a sync, because
-        it is half of the real pair, so a guard asking only "is it measured"
-        let front 0.2 be lifted against side 0.2 and wrote the artefact."""
-        self.refused(run("video_lift_3d.py", "--set", "0.2"))
+    def test_the_refusal_no_longer_says_the_file_names_are_wrong(self):
+        """They were, and Marius corrected them. A refusal that repeats a
+        withdrawn diagnosis sends the reader to fix something already fixed."""
+        for set_id in self.unpaired:
+            with self.subTest(set_id=set_id):
+                said = self.refused(run("video_lift_3d.py", "--set", set_id))
 
-        # THE NAME MATTERS. This used to assert on `lift-3d-0.2.json`, which no
-        # code path writes: `--set 0.2` slugs to `set_0.2`. The mutant that
-        # lifted two unpaired files wrote `lift-3d-set_0.2.json` and the
-        # assertion stayed inert; only the exit code failed the test. A glob
-        # names nothing, so nothing escapes it.
-        stray = [p.name for p in OUTPUT.glob("lift-3d-*.json")
-                 if not p.name.endswith(f"-{pair_slug(THE_PAIR)}.json")]
-        self.assertEqual(stray, [],
-                         "a lift was written for two files that are not a pair")
+                self.assertNotIn("FILE NAMES ARE WRONG", said)
+
+    def test_the_set_that_IS_a_pair_runs_and_is_named_for_the_pair(self):
+        """It resolves to the PAIR KEY, so --set and --pair write one artefact
+        under one name rather than two under two."""
+        for set_id in self.paired:
+            with self.subTest(set_id=set_id):
+                found = run("video_lift_3d.py", "--set", set_id)
+
+                self.assertEqual(found.returncode, 0,
+                                 found.stdout + found.stderr)
+                self.assertIn(THE_PAIR, found.stdout)
+
+    def test_an_artefact_whose_hash_does_not_match_its_file_stops_the_run(self):
+        """THE CHECK THAT WAS MISSING WHEN THE RENAME HAPPENED. Every artefact
+        has carried `source.videoSha256` from the first one written, and
+        nothing read it: the two side files were swapped and 50 tests stayed
+        green, because the only other identity check is index-against-pts and
+        the two side files carry IDENTICAL pts at every shared index."""
+        document = load_keypoints(PAIRS[THE_PAIR]["otherFile"])
+        agrees, why = source_matches(document)
+
+        self.assertTrue(agrees, why)
+
+        document["source"]["videoSha256"] = "0" * 64
+        agrees, why = source_matches(document)
+
+        self.assertFalse(agrees)
+        self.assertIn("NAME AND THE CONTENT DISAGREE", why)
+
+    def test_a_file_absent_from_this_machine_is_unmeasured_not_failed(self):
+        """Three-valued. A runner has no footage, and that is not a fault."""
+        document = load_keypoints(PAIRS[THE_PAIR]["otherFile"])
+        document["source"]["videoFile"] = "not-a-file.mp4"
+
+        agrees, why = source_matches(document)
+
+        self.assertIsNone(agrees)
+        self.assertIn("not on this machine", why)
 
 
 class TheRealPairRunsAndItsAnchorsAreAsserted(unittest.TestCase):

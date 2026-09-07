@@ -27,7 +27,9 @@ What this cannot do
 -------------------
 
 THE 150 ms SYNC THIS PARAGRAPH ASSUMED IS WITHDRAWN (2026-09-07). The file
-names are wrong: `front 0.1.mp4` pairs with `side 0.2.mp4` at a constant FRAME
+names WERE wrong and Marius corrected them at source on 2026-09-07:
+`front 0.1.mp4` (f7faf38b5d42) pairs with `side 0.1.mp4` (6e8f9fb2fe03), which
+was called `side 0.2.mp4` when this pairing was measured, at a constant FRAME
 offset of -5, and the remaining two files have no established partner. A lift
 runs only for a pair whose sync block carries a frame offset.
 
@@ -36,7 +38,7 @@ say. Sweeping the offset from -5.0 to +3.0 s moves the median residual only 14.8
 to 16.0 mm, so it never measured sync quality and cannot bound it. What it does
 measure is not established.
 
-    pixi run python video_lift_3d.py --pair "front 0.1 + side 0.2"
+    pixi run python video_lift_3d.py --pair "front 0.1 + side 0.1"
 
 Every --set refuses: no set's two same-named files are a pair.
 """
@@ -51,6 +53,8 @@ from pathlib import Path
 import numpy as np
 
 from video_keypoints import (PAIRS, frame_offset_of, load_keypoints,
+                             pair_key_of_set,
+                             source_matches,
                              pair_slug, refuse_by_set)
 
 SPIKE_DIR = Path(__file__).resolve().parent
@@ -111,7 +115,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--set", dest="set_id", default=None)
     parser.add_argument("--pair", dest="pair_key", default=None,
                         help="a key from PAIRS in video_keypoints.py, "
-                             "for example 'front 0.1 + side 0.2'")
+                             "for example 'front 0.1 + side 0.1'")
     arguments = parser.parse_args(argv[1:])
 
     if arguments.pair_key:
@@ -124,17 +128,33 @@ def main(argv: list[str]) -> int:
         front = load_keypoints(pair["referenceFile"])
         side = load_keypoints(pair["otherFile"])
     elif arguments.set_id:
-        label = f"set {arguments.set_id}"
-        front = load("front", arguments.set_id)
-        side = load("side", arguments.set_id)
+        # A SET CAN BE A PAIR AGAIN, since the rename of 2026-09-07. When it is,
+        # it resolves to the PAIR KEY, so `--set 0.1` and `--pair "front 0.1 +
+        # side 0.1"` produce one artefact under one name rather than two.
+        key = pair_key_of_set(arguments.set_id)
+        if key is None:
+            raise SystemExit(refuse_by_set(arguments.set_id))
+        label = key
+        front = load_keypoints(PAIRS[key]["referenceFile"])
+        side = load_keypoints(PAIRS[key]["otherFile"])
     else:
         raise SystemExit("give --pair (preferred) or --set")
     # THE GUARD IS "ARE THESE TWO FILES THE PAIR", NOT "IS ONE OF THEM
     # MEASURED". A first version of this check asked only whether the side file
-    # had a sync, and `side 0.2.mp4` HAS one — it is half of the real pair, with
-    # `front 0.1.mp4`. So asking for set 0.2 loaded front 0.2 against side 0.2,
+    # had a sync, and the measured side file HAS one — it is half of the real
+    # pair. So asking for the other set loaded two files that are not a pair,
     # passed, and wrote a plausible lift from two files that are not a pair.
     # That is the same fault as the offsets this pack withdraws, one level up.
+    # THE HASH FIRST, THEN THE PAIRING. An artefact whose stamped source hash
+    # does not match the file it names is describing different footage, and
+    # every check below it would be about the wrong clip. This is the check
+    # that was missing when the two side files' names were swapped and 50
+    # tests stayed green.
+    for document in (front, side):
+        agrees, why = source_matches(document)
+        if agrees is False:
+            raise SystemExit(why)
+
     if side["sync"].get("pairedWith") != front["source"]["videoFile"]:
         raise SystemExit(refuse_by_set(arguments.set_id or arguments.pair_key))
 
