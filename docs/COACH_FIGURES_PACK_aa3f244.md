@@ -208,8 +208,9 @@ The fan is index tip to pinky tip.
 > `one_hand_snatch_to_other_hand/pull_in`. Refer to
 > `docs/FAN_AND_RELEASE_PACK.md`.
 
-Two phases show gaps above 2 cm, `hooks_outside_hand/contact` at 2.372 and
-`one_hand_snatch_to_other_hand/contact` at 2.248. Both look like the old
+Two phases show gaps above 2 cm, `hooks_outside_hand/contact` and
+`one_hand_snatch_to_other_hand/contact`, which read 2.381 and 2.233 on this
+library and 2.372 and 2.248 on `aa3f244`. Both look like the old
 right-hand defect and neither is: the job carries `grip` for the RIGHT SIDE ONLY
 on both, so one hand is closed on the ball near 6.9 cm and the other is open
 near 9.3 cm. The instrument narrowed the claim, not the drill names.
