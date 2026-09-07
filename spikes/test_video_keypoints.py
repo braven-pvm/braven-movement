@@ -219,20 +219,6 @@ class TheDisagreementIsRecordedRatherThanResolved(unittest.TestCase):
 
 class WhatIsNotEstablishedSaysSo(unittest.TestCase):
 
-    def test_the_other_two_files_carry_no_offset_and_no_partner(self):
-        if not PAIRING_UNKNOWN:
-            self.skipTest("every file has an established partner")
-        unpaired = [(n.split(" ", 1)[0], n.split(" ", 1)[1].removesuffix(".mp4"))
-                    for n in PAIRING_UNKNOWN]
-        for view, set_id in unpaired:
-            with self.subTest(view=view, set_id=set_id):
-                found = block(view, set_id)
-
-                self.assertFalse(found["measured"])
-                self.assertIsNone(found["pairedWith"])
-                self.assertIsNone(found["frameOffsetToReference"])
-                self.assertEqual(found["methodKind"], "unknown")
-
     def test_no_file_is_both_paired_and_unpaired(self):
         """PAIRING_UNKNOWN is empty now, and the invariant still has to hold:
         a file cannot appear in the pair table AND in the unpaired list."""
@@ -326,13 +312,20 @@ class TheRestampTouchesTheSyncBlockAndNothingElse(unittest.TestCase):
 
     def test_a_withdrawn_offset_is_stripped_from_an_existing_file(self):
         """How the artefacts stopped claiming -0.7295 without re-extraction."""
-        if UNPAIRED_SET is None:
-            self.skipTest("every file has an established partner")
+        # RUN ON A FABRICATED UNPAIRED FILE, NOT SKIPPED. Every real file has
+        # had a partner since 2026-09-07, so this guarded nothing and would
+        # have skipped for ever. The behaviour it holds is real: the re-stamp
+        # STRIPS a withdrawn offset from a file that already carries one, which
+        # is how the artefacts stopped claiming -0.7295 without re-extraction.
+        import unittest.mock as mock
+        import video_keypoints as module
+
         path = keypoint_file({"measured": True,
                               "offsetSecondsToReference": -0.7295,
                               "worked": {"thisViewSeconds": 9.8628}},
-                             view="side", set_id=UNPAIRED_SET)
-        after = restamp(path)["after"]
+                             view="side", set_id="9.9")
+        with mock.patch.object(module, "PAIRING_UNKNOWN", ("side 9.9.mp4",)):
+            after = restamp(path)["after"]
 
         self.assertFalse(after["measured"])
         self.assertNotIn("-0.7295", path.read_text(encoding="utf-8"))

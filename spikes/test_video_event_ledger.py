@@ -123,35 +123,58 @@ class TwoAnchorsAreNotEnoughOnTheirOwn(unittest.TestCase):
         self.assertIn("nullPercentileMatches", found)
         self.assertIn("nullTrials", found)
 
+    def matched_across_twelve_seconds(self, count=6):
+        """A fixture that matches `count` events over more than the anchor gap,
+        so `anchored` is satisfied and only the chance comparison decides."""
+        beats = [2.0 + 2.0 * i for i in range(count)]
+        front = [(t, "catch") for t in beats]
+        side = [(t + 1.5, "catch") for t in beats]
+        return [events(ledger(front, side), v) for v in ("front", "side")]
+
+    def fit_with_ceiling(self, bar, count=6):
+        """The same fixture, with the null model PATCHED so the ceiling is a
+        number I choose rather than a number the data happens to produce."""
+        import unittest.mock as mock
+        import video_event_ledger as module
+
+        front, side = self.matched_across_twelve_seconds(count)
+        with mock.patch.object(module, "null_matches",
+                               return_value=[bar] * 500):
+            return module.fits_one_offset(front, side)
+
     def test_a_count_EQUAL_to_the_chance_ceiling_does_not_fit(self):
-        """`count > bar` MUST NOT BECOME `count >= bar`, and until this test
-        existed the change passed all sixteen.
+        """`count > bar` MUST NOT BECOME `count >= bar`.
 
-        IT USED TO USE THE REAL 0.1 LEDGER, which at a quarter second explained
-        SIX events against a ceiling of SIX. Refining four of its side rows
-        frame by frame moved it to five against six, so the real data no longer
-        supplies the exact-equality case and the test would have gone green for
-        the wrong reason. It is built here instead, so the case cannot
-        disappear when a ledger improves.
+        THIS TEST HAS NOW FAILED TO EXIST TWICE, and the second time is the
+        worse one. It first used the real 0.1 ledger, which happened to explain
+        SIX events against a ceiling of SIX; refining four of that ledger's
+        rows moved it to five against six and the case vanished. It was then
+        rewritten to SEARCH fixture sizes for one that lands on the ceiling,
+        and no size did, so it called skipTest and the guard ran nowhere at
+        all. A guard that skips guards nothing, and the mutation it exists for
+        passed the suite again.
+
+        The ceiling is no longer something to be found. `null_matches` is
+        patched, so the case is constructed and cannot fail to exist.
         """
-        found = None
-        for count in range(3, 12):
-            beats = [2.0 + 2.0 * i for i in range(count)]
-            front = [(t, "catch") for t in beats]
-            side = [(t + 1.5, "catch") for t in beats]
-            r = fits_one_offset(*(events(ledger(front, side), v)
-                                  for v in ("front", "side")),
-                                tolerance=0.267)
-            if r["matchedEvents"] == r["nullPercentileMatches"]:
-                found = r
-                break
-        if found is None:
-            self.skipTest("no fixture size sits exactly on the ceiling")
+        found = self.fit_with_ceiling(bar=6, count=6)
 
+        self.assertEqual(found["matchedEvents"], 6)
+        self.assertEqual(found["nullPercentileMatches"], 6)
         self.assertEqual(found["matchedEvents"], found["nullPercentileMatches"],
                          "the fixture must sit exactly ON the ceiling")
         self.assertFalse(found["fits"],
                          "equal to chance is not better than chance")
+        self.assertIn("not better than chance", found["why"])
+
+    def test_a_count_ONE_ABOVE_the_chance_ceiling_does_fit(self):
+        """The other side of the same comparison. Without this, `count > bar`
+        could be replaced by `False` and the test above would still pass."""
+        found = self.fit_with_ceiling(bar=5, count=6)
+
+        self.assertEqual(found["matchedEvents"], 6)
+        self.assertEqual(found["nullPercentileMatches"], 5)
+        self.assertTrue(found["fits"], found["why"])
 
     def test_events_crowded_into_a_few_seconds_do_not_fit(self):
         """THE ANCHOR RULE MUST NOT BE REMOVED, and until this test existed
