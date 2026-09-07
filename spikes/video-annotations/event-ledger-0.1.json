@@ -55,10 +55,14 @@
           "readAtFrameStep": 8
         },
         {
-          "frameIndex": 608,
-          "seconds": 20.2667,
+          "frameIndex": 605,
+          "seconds": 20.1667,
           "kind": "catch",
-          "readAtFrameStep": 8
+          "readAtFrameStep": 1,
+          "coarseFrameIndex": 608,
+          "coarseSeconds": 20.2667,
+          "coarseAtFrameStep": 8,
+          "framesFromRefined": 3
         },
         {
           "frameIndex": 664,
@@ -75,7 +79,7 @@
       ],
       "videoFile": "front 0.1.mp4",
       "videoSha256": "f7faf38b5d42",
-      "readingStepNote": "READ AT EVERY EIGHTH FRAME, except the first catch at index 274, which was refined frame by frame when pair 1 was pinned. Nine of the ten indices are multiples of 8; 274 is not, and that is the refined one."
+      "readingStepNote": "READ AT EVERY EIGHTH FRAME. Nine of the ten indices are multiples of 8. TWO ROWS HAVE BEEN RE-READ AT A STEP OF ONE and are the anchors of pair 1: index 274 (the first catch) and index 605 (the overhead catch), 11.03 s apart. Their coarse readings were 274 and 608, so the second was three frames late.\n\n`frameIndex` and `seconds` always hold the FINEST reading; a coarser earlier reading keeps `coarseFrameIndex`, `coarseSeconds`, `coarseAtFrameStep` and `framesFromRefined` beside it."
     },
     "side": {
       "file": "side 0.1.mp4",
@@ -84,14 +88,14 @@
       "note": "A first catch at 8.26 of a ball fed from the front camera's side, held, then RELEASED UPWARD at 8.53 and caught again at 9.86. SHE IS NOT HANDLING A BALL WITHOUT PAUSE THROUGH 17.06-19.73 — an earlier version of this note said so and the contact sheet refutes it: she releases at about 17.5 and her hands are empty from 17.59 to 18.39 before catching at 18.53. What survives, and what matters, is that NO EMPTY STRETCH IN THIS VIEW AFTER 8.26 s LASTS MUCH OVER A SECOND, while the front stands empty for 2.7 s. She walks off at 26.4 s.",
       "events": [
         {
-          "frameIndex": 248,
-          "seconds": 8.2634,
+          "frameIndex": 246,
+          "seconds": 8.1968,
           "kind": "catch",
-          "readAtFrameStep": 8,
-          "refinedFrameIndex": 246,
-          "refinedSeconds": 8.1968,
-          "refinedAtFrameStep": 1,
-          "framesLate": 2
+          "readAtFrameStep": 1,
+          "coarseFrameIndex": 248,
+          "coarseSeconds": 8.2634,
+          "coarseAtFrameStep": 8,
+          "framesFromRefined": 2
         },
         {
           "frameIndex": 256,
@@ -112,14 +116,14 @@
           "readAtFrameStep": 8
         },
         {
-          "frameIndex": 416,
-          "seconds": 13.8611,
+          "frameIndex": 406,
+          "seconds": 13.5279,
           "kind": "catch",
-          "readAtFrameStep": 8,
-          "refinedFrameIndex": 406,
-          "refinedSeconds": 13.5279,
-          "refinedAtFrameStep": 1,
-          "framesLate": 10
+          "readAtFrameStep": 1,
+          "coarseFrameIndex": 416,
+          "coarseSeconds": 13.8611,
+          "coarseAtFrameStep": 8,
+          "framesFromRefined": 10
         },
         {
           "frameIndex": 472,
@@ -134,14 +138,14 @@
           "readAtFrameStep": 8
         },
         {
-          "frameIndex": 560,
-          "seconds": 18.6592,
+          "frameIndex": 557,
+          "seconds": 18.5593,
           "kind": "catch",
-          "readAtFrameStep": 8,
-          "refinedFrameIndex": 557,
-          "refinedSeconds": 18.5593,
-          "refinedAtFrameStep": 1,
-          "framesLate": 3
+          "readAtFrameStep": 1,
+          "coarseFrameIndex": 560,
+          "coarseSeconds": 18.6592,
+          "coarseAtFrameStep": 8,
+          "framesFromRefined": 3
         },
         {
           "frameIndex": 640,
@@ -156,20 +160,20 @@
           "readAtFrameStep": 8
         },
         {
-          "frameIndex": 752,
-          "seconds": 25.0567,
+          "frameIndex": 739,
+          "seconds": 24.6235,
           "kind": "catch",
-          "readAtFrameStep": 8,
-          "refinedFrameIndex": 739,
-          "refinedSeconds": 24.6235,
-          "refinedAtFrameStep": 1,
-          "framesLate": 13
+          "readAtFrameStep": 1,
+          "coarseFrameIndex": 752,
+          "coarseSeconds": 25.0567,
+          "coarseAtFrameStep": 8,
+          "framesFromRefined": 13
         }
       ],
       "videoFile": "side 0.2.mp4",
       "videoSha256": "253fa551605e",
       "namedBeforeTheRename": "side 0.1.mp4",
-      "readingStepNote": "READ AT EVERY EIGHTH FRAME, and that was not recorded until 2026-09-07. Every index here is a multiple of 8. A time sampled every eighth frame is not a measurement of when something happened, and a fit that consumes it as one gets a confident wrong answer: this ledger produced a NO FIT for `front 0.2.mp4` against this very file, which is a real pair at -78.\n\nAND THE ERROR IS NOT BOUNDED BY THE STEP. The four rows re-read frame by frame are late by 2, 10, 3 and 13 frames. The step explains at most 8. The reader recorded the frame where the ball was clearly HELD rather than the frame it met the hands, and sometimes took the sample after that, so `framesLate` is a measured quantity here and not a bound.\n\n`usable_for_a_fit` in video_event_ledger.py now refuses every row of this ledger at a one-frame tolerance, and says why."
+      "readingStepNote": "READ AT EVERY EIGHTH FRAME, and that was not recorded until 2026-09-07. Four rows have since been re-read frame by frame.\n\nONE CONVENTION, THE SAME AS event-ledger-front-0.2.json: `frameIndex` and `seconds` always hold the FINEST reading of a row, and `readAtFrameStep` is that reading's step. A coarser earlier reading keeps its own fields beside it: `coarseFrameIndex`, `coarseSeconds`, `coarseAtFrameStep` and `framesFromRefined`. This file used the opposite convention until the fold of 61eddab -- coarse in `frameIndex`, refined beside it -- so the two ledgers of one project disagreed about which field held the measurement, and a reader taking `frameIndex` got the fine value from one and the coarse value from the other.\n\nAND THE ERROR IS NOT BOUNDED BY THE STEP. `framesFromRefined` on the four re-read rows is 2, 10, 3 and 13. A step of eight explains at most eight. The reader recorded the frame where the ball was clearly HELD rather than the frame it met the hands, and sometimes took the sample after that, so this is a measured quantity and not a bound."
     }
   },
   "fit": {

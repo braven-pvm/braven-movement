@@ -85,7 +85,8 @@
           "coarseFrameIndex": 816,
           "framesFromRefined": -1
         }
-      ]
+      ],
+      "whyItWasHardToRead": "NOT READ, and deliberately not guessed. The front camera of set 0.2 stands far enough back that the athlete is small in frame: at every step this lane could afford to read — 0.333 s tiles at 150 px and again at 330 px — a ball HELD at the chest cannot be told from a ball being CAUGHT, because the sampled frames show isolated moments rather than the ball's arc. A ledger read at that confidence would be worse than none: it is the input to a fit test, and unreliable inputs are how the -0.7295 offset was published. Set 0.1's front camera is close enough and its ledger IS read.\n\nTO READ IT: video_event_ledger.contact_sheet with a step of 2 or 3 frames over the stretches where she handles a ball, at width 330 or more. That is a person's afternoon, not a script's minute.\n\nAND IT IS A FINDING ABOUT THE FOOTAGE, not only about this lane's budget. Shoot instruction 14 asks for the whole body in frame; set 0.2's front view meets that and is still too small for an event to be called. The next shoot needs the athlete large enough that a person can tell a catch from a hold on a contact sheet."
     },
     "side": {
       "videoFile": "side 0.2.mp4",
@@ -97,5 +98,10 @@
     }
   },
   "why": "THE PAIR IS ESTABLISHED AT A FRAME OFFSET OF -78: side index = front index - 78. Two anchors 10.37 s apart, both read frame by frame, plus a check between them; refer to PAIRS in spikes/video_keypoints.py for the indices, the timestamps and the set-aside fourth event.\n\nIT WAS NEARLY RECORDED AS A FAILURE. Read against the side rows as they stood, sampled every eighth frame and late by up to thirteen, the best of ALL correspondences spread by 10.8 frames and no offset fitted. Re-read at a step of one frame the same events give -78 three times. That is why every row here carries its reading step.",
-  "identityNote": "Both files are named by sha256. The two side files' names were swapped at source on 2026-09-07; the hash is the identity and the name is a label that has already moved once."
+  "identityNote": "Both files are named by sha256. The two side files' names were swapped at source on 2026-09-07; the hash is the identity and the name is a label that has already moved once.",
+  "supersedes": {
+    "file": "event-ledger-0.2.json",
+    "deletedOn": "2026-09-07",
+    "why": "IT DESCRIBED A FILE THAT DOES NOT EXIST. Its side block was re-keyed to 253fa551605e when the two side names were swapped, and its `frames: 990` was left behind from the file that hash no longer names: 253fa551605e has 863 frames and 990 is 6e8f9fb2fe03's count. A name moved to a new hash while its numbers stayed with the old content, which is the fault this whole pack is about, committed by the person writing the fix. It also held no events and still said the pair was 'still to be established' after it had been established at -78. Two ledgers for one pair, one of them empty and stale, is two readers on the old shape."
+  }
 }

@@ -652,19 +652,23 @@ def _sync_block(view: str, set_id: str, measured: bool, sync: dict) -> dict:
         block["pairedWith"] = None
         block["frameOffsetToReference"] = None
         block["methodKind"] = "unknown"
+        # THE ESTABLISHED PAIRS ARE READ FROM THE TABLE, NOT NAMED IN PROSE.
+        # This sentence used to hard-code one pair and then assert that "the
+        # remaining two files were tried and FAILED, two targeted anchors gave
+        # 77 and 75". Both halves went stale on 2026-09-07: a second pair was
+        # established, and it is exactly those two files, at -78. So the note
+        # was telling a reader that a measured pairing does not exist, and
+        # quoting as evidence a reading whose four frames were never written
+        # down and which was one frame from the answer.
+        established = ", ".join(f"`{p['referenceFile']}` with `{p['otherFile']}`"
+                                for p in PAIRS.values())
         block["note"] = (
             f"NO PARTNER IS ESTABLISHED for {block['file']}. This is not a "
-            "claim that it has none. The established pair is "
-            "`front 0.1.mp4` with `side 0.1.mp4`, measured at a constant "
-            "frame offset. The remaining two files were tried against each "
-            "other under the same rule and failed it — two targeted anchors "
-            "gave frame differences of 77 and 75 (RECORDED WITHOUT THEIR "
-            "INPUTS: no frame index or time of the four frames tried was "
-            "written down, so that reading cannot be re-done and is not "
-            "evidence), and the events did not match "
-            "in kind. Do not pair this file with anything on a clock. Refer to "
-            "PAIRING_UNKNOWN in video_keypoints.py and to "
-            "spikes/video-annotations/event-ledger-<set>.json."
+            "claim that it has none, and it is not a claim that anyone has "
+            f"tried. The established pairs are {established}, each at a "
+            "constant FRAME offset with its anchors in PAIRS and its events in "
+            "a committed ledger under spikes/video-annotations/. Do not pair "
+            "this file with anything on a clock until a ledger says so."
         )
         return block
 

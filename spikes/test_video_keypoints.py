@@ -251,18 +251,29 @@ class WhatIsNotEstablishedSaysSo(unittest.TestCase):
             "front 0.1.mp4", "front 0.2.mp4", "side 0.1.mp4", "side 0.2.mp4"})
 
     def test_an_unmeasured_file_would_still_say_so_honestly(self):
-        """THE NOTE THIS REPLACES IS UNREACHABLE NOW, and the guard it held is
-        still wanted. Every file has an established partner since 2026-09-07,
-        so `_sync_block` no longer emits the unmeasured note for any real file.
-        The wording is checked on the writer's own text instead, so the honest
-        form survives for the next file that has no partner yet: it must say a
-        partner is NOT ESTABLISHED rather than that it has none, and it must
-        name what IS established rather than leave the reader hunting."""
-        import inspect, video_keypoints as module
-        text = inspect.getsource(module)
+        """Every file has an established partner since 2026-09-07, so no real
+        file reaches the unmeasured note. THE GUARD IS STILL WANTED for the
+        next file that has no partner yet.
 
-        self.assertIn("NO PARTNER IS ESTABLISHED", text)
-        self.assertIn("claim that it has none", text)
+        A FIRST VERSION OF THIS TEST GREPPED THE MODULE SOURCE, which is a
+        guard on text and not on code: it would pass on the words sitting in a
+        comment while the writer emitted something else. This patches
+        `PAIRING_UNKNOWN` to a fabricated file, CALLS the writer, and reads the
+        note it actually produces."""
+        import unittest.mock as mock
+        import video_keypoints as module
+
+        with mock.patch.object(module, "PAIRING_UNKNOWN", ("side 9.9.mp4",)):
+            found = module._sync_block("side", "9.9", False,
+                                       {"file": "side 9.9.mp4"})
+
+        note = found["note"]
+        self.assertIn("NO PARTNER IS ESTABLISHED", note)
+        self.assertIn("not a claim that it has none", note)
+        self.assertIn("side 9.9.mp4", note)
+        # It must name what IS established rather than leave a reader hunting.
+        for pair in PAIRS.values():
+            self.assertIn(pair["referenceFile"], note)
 
 
 class TheBlockSaysWhatWasDoneAndNotWhatWasRuledOut(unittest.TestCase):

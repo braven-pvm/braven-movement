@@ -6,10 +6,18 @@ must be recognised, or "not a synchronous pair" means nothing.
 
 AND THE FIT TEST'S OWN FIRST VERSION WAS AS WEAK AS THE OFFSETS IT JUDGED. It
 asked only for two matched anchors ten seconds apart. Measured on session 0.1, a
-RANDOMLY GENERATED side ledger satisfies that 43.2 per cent of the time at
-one-frame tolerance and 83.2 per cent at a quarter second, measured by
-`anchor_rule_null_rate` at 500 trials and seed 0 and pinned below. (This said
-48 and 88 until 2026-09-07; those came from a scratch script nobody could run.) The rule now has to
+RANDOMLY GENERATED side ledger satisfies that 46.8 per cent of the time at
+one-frame tolerance and 85.2 per cent at a quarter second, measured by
+`anchor_rule_null_rate` at 500 trials and seed 0 and pinned below.
+
+THIS PAIR OF NUMBERS HAS NOW MOVED TWICE, and the two moves are different in
+kind. It said 48 and 88, which came from a scratch script nobody could run, and
+then 43 and 85, which named two functions that do not compute the quantity;
+both were wrong because nothing committed produced them. It then said 43.2 and
+83.2, which WERE produced by committed code, and those moved to 46.8 and 85.2
+when four rows of the ledger were re-read frame by frame. That last move is the
+instrument working: a figure computed from a ledger must move when the ledger
+is corrected. The rule now has to
 beat its own null, and the test below pins that.
 """
 
@@ -117,19 +125,33 @@ class TwoAnchorsAreNotEnoughOnTheirOwn(unittest.TestCase):
 
     def test_a_count_EQUAL_to_the_chance_ceiling_does_not_fit(self):
         """`count > bar` MUST NOT BECOME `count >= bar`, and until this test
-        existed the change passed all sixteen. Session 0.1 at a quarter second
-        is the case: it explains SIX events against a ceiling of SIX. Reading
-        that as a fit accepts a pairing of two files that are not a pair."""
-        found = load("0.1")
+        existed the change passed all sixteen.
+
+        IT USED TO USE THE REAL 0.1 LEDGER, which at a quarter second explained
+        SIX events against a ceiling of SIX. Refining four of its side rows
+        frame by frame moved it to five against six, so the real data no longer
+        supplies the exact-equality case and the test would have gone green for
+        the wrong reason. It is built here instead, so the case cannot
+        disappear when a ledger improves.
+        """
+        found = None
+        for count in range(3, 12):
+            beats = [2.0 + 2.0 * i for i in range(count)]
+            front = [(t, "catch") for t in beats]
+            side = [(t + 1.5, "catch") for t in beats]
+            r = fits_one_offset(*(events(ledger(front, side), v)
+                                  for v in ("front", "side")),
+                                tolerance=0.267)
+            if r["matchedEvents"] == r["nullPercentileMatches"]:
+                found = r
+                break
         if found is None:
-            self.skipTest("event-ledger-0.1.json is not present")
+            self.skipTest("no fixture size sits exactly on the ceiling")
 
-        r = fits_one_offset(events(found, "front"), events(found, "side"),
-                            tolerance=0.267)
-
-        self.assertEqual(r["matchedEvents"], r["nullPercentileMatches"],
+        self.assertEqual(found["matchedEvents"], found["nullPercentileMatches"],
                          "the fixture must sit exactly ON the ceiling")
-        self.assertFalse(r["fits"], "equal to chance is not better than chance")
+        self.assertFalse(found["fits"],
+                         "equal to chance is not better than chance")
 
     def test_events_crowded_into_a_few_seconds_do_not_fit(self):
         """THE ANCHOR RULE MUST NOT BE REMOVED, and until this test existed
@@ -285,14 +307,22 @@ class TheCommittedLedgers(unittest.TestCase):
         """A ledger read at a confidence the frames cannot support would be
         worse than none: it is the input to a fit test, and unreliable inputs
         are how -0.7295 was published."""
-        found = load("0.2")
+        found = load("front-0.2")
         if found is None:
-            self.skipTest("event-ledger-0.2.json is not present")
+            self.skipTest("event-ledger-front-0.2.json is not present")
 
-        self.assertEqual(found["verdict"], "NOT READ")
-        self.assertEqual(found["views"]["front"]["events"], [])
-        self.assertIsNone(found["fit"]["fits"])
-        self.assertIn("cannot be told", found["method"])
+        # THE LEDGER THIS USED TO READ IS DELETED. `event-ledger-0.2.json`
+        # described a file that does not exist: its side block was re-keyed to
+        # 253fa551605e when the two side names were swapped and its
+        # `frames: 990` was left behind from the file that hash no longer
+        # names. It also still said the pair was "still to be established"
+        # after it had been established at -78. Its one real finding, why the
+        # front camera of run 2 is hard to read, moved here.
+        self.assertIn("cannot be told", found["views"]["front"]["whyItWasHardToRead"])
+        self.assertIn("event-ledger-0.2.json", found["supersedes"]["file"])
+        self.assertIn("DOES NOT EXIST", found["supersedes"]["why"])
+        # And it now holds real events, which is what replaced NOT READ.
+        self.assertTrue(found["views"]["front"]["events"])
 
     def test_the_percentile_is_the_named_constant(self):
         self.assertEqual(NULL_PERCENTILE, 99)
@@ -319,7 +349,13 @@ class ThePairingDriftIsAnArtefactOfTheCountMismatch(unittest.TestCase):
         self.assertEqual(len(self.side), 10)
 
     def test_the_three_rates(self):
-        for shift, rate in ((0, -16.0), (1, -13.7), (2, -12.6)):
+        # RE-DERIVED 2026-09-07 after four side rows were re-read frame by
+        # frame. They were -16.0, -13.7 and -12.6 when those rows were
+        # eighth-frame samples. The rates moved because their INPUTS improved,
+        # which is what committing the instrument with its numbers is for: a
+        # figure that does not move when its ledger is corrected was never
+        # computed from it.
+        for shift, rate in ((0, -15.6), (1, -13.2), (2, -13.2)):
             with self.subTest(shift=shift):
                 found = pairing_drift(self.front, self.side, shift)
 
@@ -362,16 +398,20 @@ class TheQuotedNullRateIsProducedByCommittedCode(unittest.TestCase):
         self.front = events(self.ledger, "front")
         self.side = events(self.ledger, "side")
 
-    def test_at_one_frame_the_anchor_rule_alone_is_satisfied_43_2_per_cent(self):
+    def test_at_one_frame_the_anchor_rule_alone_is_satisfied_46_8_per_cent(self):
+        """46.8 since 2026-09-07; 43.2 before four side rows were re-read frame
+        by frame. The null is computed FROM the ledger, so correcting the
+        ledger moves it. A pinned figure that survives its input changing was
+        not measured from that input."""
         found = anchor_rule_null_rate(self.front, self.side,
                                       tolerance=TOLERANCE_SECONDS)
 
-        self.assertAlmostEqual(found, 0.432, places=3)
+        self.assertAlmostEqual(found, 0.468, places=3)
 
-    def test_at_a_quarter_second_it_is_83_2_per_cent(self):
+    def test_at_a_quarter_second_it_is_85_2_per_cent(self):
         found = anchor_rule_null_rate(self.front, self.side, tolerance=0.25)
 
-        self.assertAlmostEqual(found, 0.832, places=3)
+        self.assertAlmostEqual(found, 0.852, places=3)
 
     def test_a_wider_tolerance_can_never_lower_the_rate(self):
         """A property, not a pinned figure: the rate must be monotone in the

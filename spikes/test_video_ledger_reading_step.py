@@ -122,8 +122,14 @@ class AFitRefusesRatherThanAnsweringOnRowsItCannotUse(unittest.TestCase):
 
         self.assertIn(found["fits"], (True, False))
 
-    def test_the_committed_side_ledger_is_refused_at_one_frame(self):
-        """Not a fixture: the real file, which is why this rule exists."""
+    def test_the_committed_side_ledger_admits_only_its_refined_rows(self):
+        """Not a fixture: the real file, which is why this rule exists.
+
+        THIS TEST INVERTED when the four re-read rows were converted to the
+        single convention. It used to assert that EVERY row is refused, which
+        was true while `frameIndex` held the coarse reading on every row. Now
+        `frameIndex` holds the finest reading and four rows carry
+        `readAtFrameStep: 1`, so those four are admitted and the rest are not."""
         path = ANNOTATION_DIR / "event-ledger-0.1.json"
         if not path.exists():
             self.skipTest("event-ledger-0.1.json is not present")
@@ -131,8 +137,8 @@ class AFitRefusesRatherThanAnsweringOnRowsItCannotUse(unittest.TestCase):
 
         keep, refused = usable_for_a_fit(rows, TOLERANCE_SECONDS)
 
-        self.assertEqual(keep, [], "an eighth-frame row was admitted")
-        self.assertEqual(len(refused), len(rows))
+        self.assertEqual([r["frameIndex"] for r in keep], [246, 406, 557, 739])
+        self.assertEqual(len(refused), len(rows) - 4)
 
     def test_the_front_0_2_ledger_admits_exactly_its_refined_rows(self):
         path = ANNOTATION_DIR / "event-ledger-front-0.2.json"
@@ -143,6 +149,90 @@ class AFitRefusesRatherThanAnsweringOnRowsItCannotUse(unittest.TestCase):
         keep, _ = usable_for_a_fit(rows, TOLERANCE_SECONDS)
 
         self.assertEqual([r["frameIndex"] for r in keep], [324, 484, 635, 817])
+
+
+class EachPairIsReproducibleFromTheCommittedLedgers(unittest.TestCase):
+    """THE INSTRUMENT MUST REPRODUCE THE PAIRING, and until 2026-09-07 it could
+    not.
+
+    Both offsets were recorded as hand-typed anchors in `PAIRS` and nothing in
+    the tree could re-derive them. Worse for pair 1: `git grep 6e8f9fb2` found
+    that hash only in prose, in the pair table and in one test string, so the
+    8-of-8 result that established it had run on rows that were never
+    committed. "Commit the instrument with its numbers", violated twice.
+
+    These two tests load the COMMITTED ledgers, run the fit, and check the
+    offset against the frame offset the pair table states. If a ledger is
+    edited into disagreement with the table, or a row's reading step is
+    changed, these fail.
+    """
+
+    PERIOD = {"pair1": 0.033322, "pair2": 0.033322}
+
+    def rows(self, name, view):
+        path = ANNOTATION_DIR / name
+        if not path.exists():
+            self.skipTest(f"{name} is not present")
+        return json.loads(path.read_text(encoding="utf-8"))["views"][view]["events"]
+
+    def test_pair_1_reproduces_minus_five_frames(self):
+        front = self.rows("event-ledger-0.1.json", "front")
+        side = self.rows("event-ledger-pair1.json", "side")
+
+        found = fits_one_offset(front, side)
+
+        self.assertTrue(found["fits"], found["why"])
+        expected = -5 * self.PERIOD["pair1"]
+        self.assertAlmostEqual(found["bestOffsetSeconds"], expected,
+                               delta=self.PERIOD["pair1"],
+                               msg="the fit is more than one frame from -5")
+        self.assertGreaterEqual(found["spanSeconds"], 10.0)
+        self.assertEqual([a["frontSeconds"] for a in found["anchors"]],
+                         [9.1333, 20.1667])
+        self.assertEqual([a["sideSeconds"] for a in found["anchors"]],
+                         [8.963, 19.992])
+
+    def test_pair_2_reproduces_minus_seventy_eight_frames(self):
+        front = self.rows("event-ledger-front-0.2.json", "front")
+        side = self.rows("event-ledger-0.1.json", "side")
+
+        found = fits_one_offset(front, side)
+
+        self.assertTrue(found["fits"], found["why"])
+        expected = -78 * self.PERIOD["pair2"]
+        self.assertAlmostEqual(found["bestOffsetSeconds"], expected,
+                               delta=self.PERIOD["pair2"],
+                               msg="the fit is more than one frame from -78")
+        self.assertGreaterEqual(found["spanSeconds"], 10.0)
+        self.assertEqual([a["frontSeconds"] for a in found["anchors"]],
+                         [10.8, 16.1333, 21.1667, 27.2333])
+
+    def test_every_pair_in_the_table_has_a_ledger_that_reproduces_it(self):
+        """THE GUARD AGAINST THE NEXT HAND-TYPED PAIR. A pairing added to the
+        table without a ledger fails here by name."""
+        from video_keypoints import PAIRS
+
+        ledgers = {
+            "front 0.1 + side 0.1": ("event-ledger-0.1.json", "front",
+                                     "event-ledger-pair1.json", "side"),
+            "front 0.2 + side 0.2": ("event-ledger-front-0.2.json", "front",
+                                     "event-ledger-0.1.json", "side"),
+        }
+
+        self.assertEqual(set(PAIRS), set(ledgers),
+                         "a pair in the table has no ledger named here")
+
+    def test_the_answer_carries_the_rows_it_refused(self):
+        """A fit answered on 4 of 10 rows says nothing about the 6 it dropped
+        unless it carries them."""
+        front = self.rows("event-ledger-front-0.2.json", "front")
+        side = self.rows("event-ledger-0.1.json", "side")
+
+        found = fits_one_offset(front, side)
+
+        self.assertTrue(found["fits"])
+        self.assertTrue(found["refusedRows"],
+                        "the coarse rows were dropped silently")
 
 
 class TheContactSheetCannotCaptionAFrameWithAGuess(unittest.TestCase):

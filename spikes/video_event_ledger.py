@@ -59,8 +59,8 @@ ANCHOR_GAP_SECONDS = 10.0
 # AND THE ANCHOR RULE IS NOT ENOUGH ON ITS OWN. Measured by
 # `anchor_rule_null_rate` below, on the committed ledger of session 0.1, 500
 # trials at seed 0: a randomly generated side ledger of the same size satisfies
-# "two matched events ten seconds apart" **43.2 per cent** of the time at
-# one-frame tolerance and **83.2 per cent** at a quarter second. With ten events
+# "two matched events ten seconds apart" **46.8 per cent** of the time at
+# one-frame tolerance and **85.2 per cent** at a quarter second. With ten events
 # in each view and a search over twelve seconds of offsets, coincidence is the
 # normal case rather than the exception.
 #
@@ -308,13 +308,22 @@ def usable_for_a_fit(rows: list[dict], tolerance: float = TOLERANCE_SECONDS,
                 "not evidence of a fine one; the ledger that cost a day of "
                 "this project had none.")
             continue
-        if step * period > tolerance:
+        # COMPARED IN FRAMES, NOT IN SECONDS. This read `step * period >
+        # tolerance`, and a step-1 row was admitted at the default tolerance
+        # only because 1 * (1/30) and 1.0/30.0 are the same float. Any other
+        # spelling of a one-frame tolerance, or a period read from the file
+        # rather than assumed, would have refused every row including the
+        # frame-exact ones. The comparison is now on a frame count with an
+        # explicit epsilon, so "one frame at a one-frame tolerance" passes
+        # because it is true and not because two expressions match.
+        tolerance_frames = tolerance / period
+        if step > tolerance_frames + 1e-9:
             refused.append(
                 f"{where}: read at every {step} frames, which is "
                 f"{step * period:.4f} s, coarser than the tolerance of "
-                f"{tolerance:.4f} s. Its time cannot support a match this "
-                "fine. Re-read it frame by frame or widen the tolerance and "
-                "say so.")
+                f"{tolerance:.4f} s ({tolerance_frames:.2f} frames). Its time "
+                "cannot support a match this fine. Re-read it frame by frame "
+                "or widen the tolerance and say so.")
             continue
         keep.append(row)
     return keep, refused
@@ -332,9 +341,17 @@ def anchor_rule_null_rate(front: list[dict], side: list[dict],
     scratch script that no longer exists. A comment then said 43 and 85 and
     named `null_matches` and `_best_match` as the source, which was not true:
     neither of those applies the anchor rule, so no committed code computed the
-    quantity. Run here, the figures are **43.2** and **83.2** per cent. A number
-    nobody else can regenerate is not a measurement, and naming two functions
-    that do not compute it is worse than naming none.
+    quantity. Run here, the figures are **46.8** and **85.2** per cent.
+
+    THEY WERE 43.2 AND 83.2 UNTIL 2026-09-07, and they moved because four rows
+    of the ledger they are computed from were re-read frame by frame. That is
+    the third pair of values this comment has carried, and the first two were
+    wrong for a reason the third is not: they had no committed instrument. A
+    figure that moves when its input is corrected is being measured from that
+    input. A figure that does not is not.
+
+    A number nobody else can regenerate is not a measurement, and naming two
+    functions that do not compute it is worse than naming none.
 
     It is the anchor rule ALONE, deliberately: the rule as it was BEFORE it had
     to beat its own null. That is the thing whose weakness is being reported.
@@ -379,7 +396,7 @@ def fits_one_offset(front: list[dict], side: list[dict],
     """
     if not front or not side:
         return {"fits": False, "why": "one of the ledgers has no events",
-                "bestOffsetSeconds": None, "anchors": []}
+                "bestOffsetSeconds": None, "anchors": [], "refusedRows": []}
 
     # EVERY ROW MUST DECLARE A READING STEP FINE ENOUGH FOR THIS TOLERANCE.
     # Refer to `usable_for_a_fit`: a ledger sampled every eighth frame, with no
@@ -404,7 +421,8 @@ def fits_one_offset(front: list[dict], side: list[dict],
         return {"fits": False,
                 "why": (f"no offset within +/-{SEARCH_SECONDS} s maps any front "
                         "event onto a side event of the same kind"),
-                "bestOffsetSeconds": None, "anchors": []}
+                "bestOffsetSeconds": None, "anchors": [],
+                "refusedRows": refused_rows}
     (count, span, _), offset, matched = best
     null = sorted(null_matches(front, side, tolerance, trials))
     bar = null[min(len(null) - 1, (NULL_PERCENTILE * len(null)) // 100)]
@@ -435,6 +453,11 @@ def fits_one_offset(front: list[dict], side: list[dict],
         "resolutionSeconds": resolution,
         "errorsAreNoFinerThan": resolution,
         "anchors": matched,
+        # ON EVERY RETURN, NOT ONLY THE REFUSAL. A fit answered on 4 of 10 rows
+        # says nothing about the 6 it dropped unless it carries them: a reader
+        # who sees "4 events match" and does not see that 6 were refused for
+        # being read on a coarse grid will read the 4 as the whole ledger.
+        "refusedRows": refused_rows,
         "why": (f"{count} events match at {offset:+.4f} s across {span:.3f} s, "
                 f"against a chance ceiling of {bar}"
                 if fits else "; ".join(reason)),

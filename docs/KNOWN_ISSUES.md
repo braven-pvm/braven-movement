@@ -4311,3 +4311,97 @@ produce agreement like that.
 **The rule: a ledger records the step it was read at, on every row. A time
 sampled every eighth frame is not a measurement of when something happened, and
 without the step recorded nobody can tell the difference.**
+
+
+## Two pairings, and neither could be re-derived from the tree
+
+Found by review on 2026-09-07, in the pack that established both.
+
+Both camera pairings were recorded as hand-typed anchors in `PAIRS`, and
+nothing committed could reproduce either.
+
+**Pair 1 was worse than pair 2.** `git grep 6e8f9fb2` — the sha256 of
+`side 0.1.mp4` — found that hash only in prose, in the pair table and in one
+test string. **No committed ledger held that recording's events at all.** The
+8-of-8 fit that established the pairing had run on rows that were never
+committed. "Commit the instrument with its numbers", and the instrument was
+missing.
+
+Pair 2 could not be re-derived either: its side rows live in
+`event-ledger-0.1.json` at a reading step of eight, so `usable_for_a_fit`
+refuses every one of them and the fit returns `None`.
+
+### What was done
+
+`event-ledger-pair1.json` holds `side 0.1.mp4`'s events, read from the frames
+at a step of three over 5.0 to 25.3 s, with the two anchors re-read at a step
+of one. They were read WITHOUT taking the offset off the pair table first: a
+catch found where an offset predicted a catch is not evidence in a clip of
+catches, which is how -0.7295 s was published. The two refined anchors came out
+at side 269 against front 274 and side 600 against front 605 — **-5 twice,
+11.03 s apart** — and the front view's overhead catch was refined from its
+coarse 608 to 605 to match.
+
+Two tests now load the COMMITTED ledgers and run the fit:
+
+| pair | fits | best offset | expected | events | span |
+|---|---|---|---|---|---|
+| front 0.1 + side 0.1 | yes | -0.1750 s | -5 frames = -0.1666 | 2 | 11.03 s |
+| front 0.2 + side 0.2 | yes | -2.6083 s | -78 frames = -2.5991 | 4 | 16.43 s |
+
+Each is within one frame period of the table's frame offset. A third test
+asserts that every pair in the table has a ledger named here, so the next
+hand-typed pairing fails by name.
+
+### One convention for a refined row, because there were two
+
+`event-ledger-front-0.2.json` put the refined index in `frameIndex` with the
+coarse one beside it. `event-ledger-0.1.json` did the opposite: coarse in
+`frameIndex`, refined beside it. **Two ledgers of one project disagreed about
+which field held the measurement**, so a reader taking `frameIndex` got the
+fine value from one and the coarse value from the other. Now, everywhere:
+`frameIndex` and `seconds` hold the FINEST reading, `readAtFrameStep` is its
+step, and a coarser earlier reading keeps `coarseFrameIndex`, `coarseSeconds`,
+`coarseAtFrameStep` and `framesFromRefined`.
+
+### A ledger that described a file which does not exist
+
+`event-ledger-0.2.json`'s side block carried `videoSha256: 253fa551605e` with
+`frames: 990`. That hash names an 863-frame file; 990 is `6e8f9fb2fe03`'s
+count. **A name was re-keyed to the new content's hash while its numbers stayed
+with the old content** — the fault class of the day, committed by the person
+writing the fix for it. It also still said the pair was "still to be
+established" after it had been established at -78, and it held no events. It is
+deleted; its one real finding, why run 2's front camera is hard to read, moved
+into the ledger that supersedes it.
+
+### Correcting a ledger moved six published figures, and that is the point
+
+Refining four rows of `event-ledger-0.1.json` changed every number computed
+from it:
+
+| figure | was | is |
+|---|---|---|
+| pairing drift, shift 0 | -16.0 % | -15.6 % |
+| pairing drift, shift 1 | -13.7 % | -13.2 % |
+| pairing drift, shift 2 | -12.6 % | -13.2 % |
+| null rate at one frame | 43.2 % | 46.8 % |
+| null rate at a quarter second | 83.2 % | 85.2 % |
+| the 0.267 s fit | 6 matched against a ceiling of 6 | 5 against 6 |
+
+**A figure that does not move when its ledger is corrected was never computed
+from that ledger.** The null-rate pair has now moved twice, and the two moves
+are different in kind: 48/88 and 43/85 were wrong because nothing committed
+produced them; 43.2/83.2 to 46.8/85.2 is the instrument working.
+
+The last row cost a test. `test_a_count_EQUAL_to_the_chance_ceiling_does_not_fit`
+used the real ledger because it happened to sit exactly on the ceiling, and
+after refinement it does not. It builds its own fixture now, so the case cannot
+disappear when data improves.
+
+### And the writer was still telling readers the second pair had failed
+
+`_sync_block`'s unmeasured note hard-coded one pair and then asserted that "the
+remaining two files were tried and FAILED, two targeted anchors gave 77 and
+75". Both halves went stale the moment pair 2 was established at -78 — those
+ARE the two files. The note read the established pairs out of the table now.
