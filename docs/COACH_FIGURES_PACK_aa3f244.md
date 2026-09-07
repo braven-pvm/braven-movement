@@ -195,8 +195,18 @@ those job files.
 
 ## 7. The fan figures
 
-The fan is index tip to pinky tip. Across every phase where BOTH sides appear
-in `grip`, the worst left-right gap is 0.095 cm.
+The fan is index tip to pinky tip.
+
+> **REFUTED AND SUPERSEDED, 2026-09-07.** This section said the worst
+> left-right gap was 0.095 cm across every phase where both sides appear in
+> `grip`. Both halves were wrong: the instrument posed under the CONFIG's
+> limits where `render_job` passes the JOB's own, and "both sides appear in
+> `grip`" is a label rather than a measurement, so the population included
+> holds the job asks to be ASYMMETRIC. `deflect_high/contact`, the phase that
+> gave 0.095, is 27.3 degrees off a mirror. Measured on the shipped poses and
+> on symmetric holds only, the worst gap is **0.0559 cm** at
+> `one_hand_snatch_to_other_hand/pull_in`. Refer to
+> `docs/FAN_AND_RELEASE_PACK.md`.
 
 Two phases show gaps above 2 cm, `hooks_outside_hand/contact` at 2.372 and
 `one_hand_snatch_to_other_hand/contact` at 2.248. Both look like the old
@@ -204,11 +214,12 @@ right-hand defect and neither is: the job carries `grip` for the RIGHT SIDE ONLY
 on both, so one hand is closed on the ball near 6.9 cm and the other is open
 near 9.3 cm. The instrument narrowed the claim, not the drill names.
 
-These figures were measured before the girdle fix and MUST BE RE-MEASURED on
-this library. Moving the ball by the overhead pass's own girdle travel moves the
-fan by up to 0.273 cm, because the fingers flex until they reach the ball
-surface, and that is nearly three times the 0.095 cm the figures report.
-`scripts/fan_mirror_check.py` regenerates them.
+These figures have now been re-measured on this library and are no longer held.
+The drift figure was also wrong: raising the ball by the overhead pass's own
+girdle travel moves the fan by up to 0.3757 cm, not 0.273, which is 6.7 times
+the gap the figures report rather than three. The direction of the caution was
+right and the size was not. `scripts/fan_mirror_check.py` regenerates them and
+proves each pose against the archive.
 
 ## 8. The rest-pose difference the fix does not remove
 
