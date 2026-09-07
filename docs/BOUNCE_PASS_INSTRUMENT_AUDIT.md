@@ -66,6 +66,19 @@ ground, bounce, rebound and restitution; the only hits are a horizontal
 projection in `incoming_speed_cm` and the foot-height code, neither of which
 touches the ball.
 
+**THE ORIGIN, SETTLED. Every span and every time below is measured from THE
+BALL CENTRE AT THE FIRST RELEASED FRAME to THE AIM POINT `possession._launch_toward`
+RECEIVES. That is the whole definition, it is the one this document now uses
+everywhere, and nothing here is measured from anything else.**
+
+**It is stated this bluntly because the floor figure has moved three times —
+0.584, then 0.5842, then 0.5838 — and every move was a DIFFERENT ORIGIN rather
+than a better measurement.** The contract lane re-derived its own table after
+each one. A figure that keeps stepping by small amounts is telling you its
+origin is unstated; the fix is to name the origin once, not to publish a fourth
+value. The two points above are the engine's own, so this figure cannot move
+again without the engine moving.
+
 **THE ORIGIN OF EVERY SPAN BELOW, stated once because a first draft of this
 document got it wrong.** The ball file aims its floor point **4.00 m from her
 CHEST**, which is where the stance frame is anchored and where the drill's own

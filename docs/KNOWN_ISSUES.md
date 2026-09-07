@@ -6,6 +6,158 @@ grading. An entry belongs to whichever lane can fix it.
 
 # Rendering and modelling
 
+## This rig cannot reach the girdle the solve asks for
+
+The job now sends `shoulderShiftFromRestInTorsos` and the renderer poses the
+clavicles from it. The ball's anchor error fell from 0 of 48 phases inside a
+ten-millimetre rule to 46 of 48. The two failures are `hooks_outside_hand`, at
+20.45 mm on `facing_away` and 11.60 mm on `contact`, and that is the library's
+only drill where she is turned.
+
+WHAT REMAINS IS THE WIDTH. A clavicle rotates about its sternal end and does not
+stretch, so a shoulder lands on a sphere. Of 102 transmitted targets 97 sit
+outside this rig's sphere and 5 sit inside it, and none lies on it, so all 102
+are out of reach; the shipped library's 96 read 96 of 96. The rendered girdle is a MEDIAN 43.98 mm narrower
+than the solve asks and 62.01 mm narrower at worst. A shoulder-width reading on
+a rendered figure is a reading of THE RIG and not of the solve.
+
+The ball can be right while the girdle is narrow because each shoulder falls
+short outward along its own clavicle, and those errors cancel in the midpoint
+and do not cancel in the width. At `bounce_pass/ready` the left shoulder misses
+by 25.473 mm of which 24.084 mm is the across axis.
+
+THE MECHANISM IS A BUILD DIFFERENCE. The engine's clavicle is 0.35553 torso
+lengths against this rig's 0.29530, which is 20.4 percent longer relative to its
+torso, so a torso-normalised displacement asks a shorter bone to reach further
+than it can. Measured by `scripts/engine_clavicle.py` and by
+`blender_movement_render.rest_girdle`. A clavicle divisor was measured rather
+than proposed: it cuts the worst residual from 52.09 mm to 31.03 mm and does not
+remove it, because the two clavicles differ in rest orientation as well as
+length. The normalisation is the movement lane's field.
+
+`out of reach` IS NOT A CHECK THAT PASSED. `rotate_bone_toward` lands on the
+radial projection by construction, so `beyondReachableMm` is zero on every
+target and the `disagrees` branch is unreachable from that caller. It is a
+tripwire for a later change that clamps the rotation or moves the pivot. The
+number that says whether a FIGURE is right is `ballAnchorErrorMm`.
+
+The clavicle is turned up to 68.33 degrees to follow the girdle. Nothing in this
+lane bounds that angle, and a real clavicle's elevation and protraction are
+limited. That is a missing instrument.
+
+## `netball_one_hand_high_pass` cannot be posed at its ready phase
+
+    FLEXION_AXIS: r index is set to flex about axis 0, which carries only 0.44
+    of the turn: x=18.5 y=-7.2 z=42.2 degrees.
+
+The right index knuckle turns 42.2 degrees about z while the limits are applied
+to x. The drill is therefore ABSENT from the `2413f9d` library; its `lift` and
+`release` phases pose and pass.
+
+It is not caused by the girdle change. Posing the phase with the shift ZEROED
+raises the identical error with identical numbers, and a zero shift leaves this
+rig at its own rest girdle. Do NOT try it by removing the field: a missing field
+is refused before the hands are posed, so the run stops with the refusal
+instead.
+
+## One failing phase aborts the whole library render
+
+**Status: queued. Owner: the rendering lane.**
+
+`render_job` raises out of the whole run when any one phase raises, so eleven
+good drills were lost to one bad one on 2026-09-07 and the library cost a second
+full render. A phase that cannot be posed should be recorded and skipped, and
+the run should end by naming what it could not render, so that one bad phase
+costs one figure rather than a library.
+
+It is filed here rather than under the drill that triggered it, because it is a
+defect in the renderer's loop and a reader searching for renderer defects must
+find it under its own heading.
+
+
+## The ball is anchored to a landmark the job does not transmit
+
+EVERY NUMBER IN THIS ENTRY was measured on 2026-09-04 against the `aa3f244`
+job export in `spikes/poc-output`, with the renderer at `2015424` and the rig
+from `load_reference_catch_config`. The engine's figures are the movement
+lane's, reported the same day from the solved pose. This attribution is here
+because `scripts/docs_number_audit.py` found the first version of this entry
+quoting 42.7681 and 0.2648 with NO BUILD NAMED, which is the fault the audit
+exists to find.
+
+`pose_phase` places the ball at `shoulders + fromShouldersInArms * arm`. Every
+term on that line comes from the job except `shoulders`, which this rig
+supplies itself. The ball's position error is therefore the shoulder midpoint's
+error, one for one, with nothing to attenuate it.
+
+The movement renderer never poses a clavicle. Measured on 2026-09-04, this rig
+holds its shoulder midpoint 42.7681 cm above the pelvis on all 43 graded phases
+of all 10 drills, with a range of 0.0000 cm. The engine's midpoint moves on
+every drill. Against a one-centimetre rule, 15 of the 43 figures pass and 28
+fail. 19 of the failures are HELD phases, where the ball is in her hands and a
+coach reads a cue from it. Every one of the 10 drills has at least one failing
+phase. The worst is `overhead_pass/lift` at 8.451 cm, which is 77 percent of
+the ball's radius.
+
+MEASURE ALL THREE AXES. The first version of this entry reported 7.41 cm at
+`overhead_pass/lift` from a vertical-only column and understated the error by a
+whole tolerance. The true figure is 8.451 cm, because the midpoint also travels
+4.08 cm fore-and-aft. `bounce_pass` is the sharper case: its vertical barely
+changes, so a vertical-only column would have called it the cleanest drill in
+the library, and it is not.
+
+A width instrument is worse still. A symmetric change of shoulder width does
+not move the midpoint at all, and `hooks_outside_hand` is the only drill with a
+real across-body component, 1.776 cm at `facing_away`, because she is turned.
+
+The three phases that pass exactly are the neutral-girdle phases. That is the
+evidence that this rig is calibrated to the engine's rest pose, because a wrong
+calibration point would put the passes somewhere else.
+
+`bounce_pass` has five graded phases in the engine and NO JOB FILE in
+`spikes/poc-output`. This lane cannot render it. A drill the renderer never
+sees is not a passing drill.
+
+THE FIX MUST BE TRANSMITTED IN THE JOB'S OWN UNITS. `arms.reachFraction`,
+`ball.fromShouldersInArms` and `grip.wristFromSurfaceInArms` are all in arm
+lengths, and `ball.radiusM` is the only absolute length in the file, because a
+real netball is one physical size on every body. A shoulder position has the
+opposite property. Shoulder positions sent in metres would place this rig's
+ball about 6 cm too high on every frame, including the 15 that pass today.
+Send them relative to the pelvis, in arm lengths.
+
+SEND THE DISPLACEMENT, NOT THE POSITION. Transmitting the shoulder POSITION
+does not work across these two bodies, even normalised. Resolving the engine's
+positions onto this rig at 42.7689 / 49.6456 puts ZERO of the 48 phases under
+the one-centimetre rule, with a smallest error of 1.108 cm. `chest_pass/ready`
+reads 2.488 cm, and that is a phase where both bodies are at their neutral
+girdle and nothing is wrong at all. An instrument that reports an error where
+there is none is measuring something else.
+
+It is measuring a constant. This rig's shoulders sit 0.2648 cm BEHIND its
+pelvis and the engine's sit 2.4622 cm AHEAD of its own, which is 2.386 cm after
+scaling. A divisor scales and it does not translate, so no scalar can remove a
+difference in where MHR's `root` sits against MPFB's `pelvis`, or a difference
+in neutral posture. Nobody can currently separate those two causes: this rig
+has no `root` bone and the movement lane has no MPFB rig.
+
+So the field carries `(position at the frame - that body's REST-POSE shoulder
+position) / restTorso`, and each side applies the displacement to its own rest
+pose. The reference is the rest pose and not a drill's neutral phase, because
+the rest pose is the only reference both sides compute without being told. Every
+constant cancels, a neutral phase reads exactly zero, and the quantity
+transmitted is the one that is actually missing, which is that this rig's
+girdle does not move.
+
+`girdle_agreement.py` holds the consumer guard. It refuses a frame whose
+transmitted positions are absent, because a frame nobody can check must not
+read the same as a frame that passed. On this rig the clavicle tail and the
+upper-arm bone head are the same point to 0.000000 mm, so the bone head is this
+rig's own shoulder joint rather than an offset from it.
+
+Do not add a scapula motion to the renderer to close this. A pose that no solve
+produced must not reach a figure.
+
 ## Reference catch is not yet a final coaching sample
 
 The current MPFB catch render remains a review artifact. Its hand orientation in the locked
