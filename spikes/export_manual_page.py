@@ -43,9 +43,16 @@ from PIL import Image
 
 SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
+# `render_receipt.py` is the repository's bpy-free rule module and it lives at
+# the root, beside the renderer that writes these receipts.
+sys.path.insert(0, str(SPIKE_DIR.parent))
 
 from manual_source import for_movement, load as load_manual  # noqa: E402
 from movement_definition import load as load_definition  # noqa: E402
+from render_receipt import (  # noqa: E402
+    refuse_partial_receipt,
+    undrawn_phases,
+)
 from movement_engine import definition_path  # noqa: E402
 
 OUTPUT = SPIKE_DIR / "poc-output"
@@ -90,6 +97,33 @@ def still_path(recorded: str, renders: Path) -> Path:
     return Path(recorded)
 
 
+def undrawn_figure(entry: dict) -> str:
+    """A visible slot saying the phase was not drawn, and why.
+
+    The template emits `<img src=...>` for every figure, so a placeholder has
+    to BE an image or the reader gets a broken box with no words in it.
+    """
+    reason = str(entry.get("error", "no reason recorded"))
+    words = [reason[i:i + 46] for i in range(0, min(len(reason), 184), 46)]
+    lines = "".join(
+        f'<text x="8" y="{70 + n * 14}" font-family="monospace" '
+        f'font-size="10" fill="#b23">{word}</text>'
+        for n, word in enumerate(words)
+    )
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="150">'
+        '<rect width="300" height="150" fill="#fdf2f2" stroke="#b23" '
+        'stroke-width="2" stroke-dasharray="6 4"/>'
+        f'<text x="8" y="28" font-family="sans-serif" font-size="15" '
+        f'fill="#b23">NOT DRAWN: {entry.get("name", "?")}</text>'
+        '<text x="8" y="48" font-family="sans-serif" font-size="11" '
+        'fill="#b23">this phase could not be posed</text>'
+        f'{lines}</svg>'
+    )
+    return "data:image/svg+xml;base64," + base64.b64encode(
+        svg.encode("utf-8")).decode("ascii")
+
+
 def build(
     movement_id: str, receipt: dict, job: dict, drills: dict, view: str, renders: Path
 ) -> dict:
@@ -108,6 +142,18 @@ def build(
     holding = {phase["name"]: phase["ball"]["holding"] for phase in job["phases"]}
 
     figures, embedded = [], 0
+    # A PHASE THAT COULD NOT BE DRAWN STILL TAKES ITS PLACE ON THE PAGE. The
+    # caller has already been refused unless it passed --allow-partial, so
+    # reaching here means the omission is deliberate and must be VISIBLE.
+    for entry in undrawn_phases(receipt):
+        figures.append({
+            "name": entry.get("name", "?"),
+            "frame": entry.get("frame", -1),
+            "image": undrawn_figure(entry),
+            "holding": False,
+            "measured": [],
+            "undrawn": entry.get("error", "no reason recorded"),
+        })
     for phase in receipt["phases"]:
         rendered = phase["views"].get(view)
         if rendered is None:
@@ -157,6 +203,12 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--jobs", type=Path, default=OUTPUT)
     parser.add_argument("--output", type=Path, default=OUTPUT / "manual.html")
     parser.add_argument("--view", default="quarter")
+    parser.add_argument(
+        "--allow-partial", action="store_true",
+        help="build a page for a drill the renderer could not fully draw. "
+             "Each undrawn phase gets a visible slot naming its reason. "
+             "Without this the run refuses, because a page with fewer figures "
+             "than the drill has and no notice is worse than no page.")
     return parser.parse_args(argv[1:])
 
 
@@ -180,10 +232,15 @@ def main(argv: list[str]) -> int:
         if not receipt_path.is_file() or not job_path.is_file():
             missing.append(movement_id)
             continue
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        # REFUSED BEFORE A PAGE IS BUILT, not after. `failedPhases` is newer
+        # than this reader, and a reader that predates it sees a SHORT list of
+        # phases and nothing else.
+        refuse_partial_receipt(movement_id, receipt, args.allow_partial)
         pages.append(
             build(
                 movement_id,
-                json.loads(receipt_path.read_text(encoding="utf-8")),
+                receipt,
                 json.loads(job_path.read_text(encoding="utf-8")),
                 drills,
                 args.view,

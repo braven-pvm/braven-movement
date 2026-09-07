@@ -23,6 +23,9 @@ from finger_curl import (  # noqa: E402
 from movement_contract import normalization_transform  # noqa: E402
 from render_receipt import (  # noqa: E402
     NOTHING_RENDERED,
+    SOME_PHASES_FAILED,
+    refuse_partial_receipt,
+    undrawn_phases,
     PASS,
     render_outcome,
 )
@@ -1145,3 +1148,526 @@ class MeasuringScriptWiringTest(unittest.TestCase):
                     and node.func.id == "refuse_unless_shipped"):
                 called = True
         self.assertTrue(called, "the gate is defined but never invoked")
+
+
+class FailedPhaseOutcomeTest(unittest.TestCase):
+    """A run that could not draw a phase must not say PASS.
+
+    On 2026-09-07 one unposable phase of one drill aborted the whole library
+    render and cost eleven good drills, twice, at forty minutes each. The loop
+    now carries on. That trade is only worth making if the run still says
+    plainly what it could not draw, or a loud failure has become a quiet one.
+    """
+
+    def test_a_failed_phase_outranks_a_successful_run(self):
+        self.assertEqual(SOME_PHASES_FAILED, render_outcome(3, None, 1))
+
+    def test_a_failed_phase_outranks_NOTHING_RENDERED(self):
+        """Both are true at once when the only phase asked for failed.
+
+        The reader needs the one that names a cause.
+        """
+        self.assertEqual(SOME_PHASES_FAILED, render_outcome(0, None, 1))
+
+    def test_a_failed_phase_outranks_a_finished_animation(self):
+        self.assertEqual(
+            SOME_PHASES_FAILED, render_outcome(4, {"frames": 49}, 2))
+
+    def test_the_DEFAULT_still_reports_the_old_two_outcomes(self):
+        """Called with no failure count, as every older caller does.
+
+        A default is not exercised by callers that pass the argument
+        explicitly, so it is pinned here on its own.
+        """
+        self.assertEqual(PASS, render_outcome(4, None))
+        self.assertEqual(NOTHING_RENDERED, render_outcome(0, None))
+
+    def test_zero_failures_is_not_a_failure(self):
+        self.assertEqual(PASS, render_outcome(4, None, 0))
+        self.assertEqual(NOTHING_RENDERED, render_outcome(0, None, 0))
+
+
+class RenderLoopControlFlowTest(unittest.TestCase):
+    """The loop must record a failed phase and CARRY ON, and still fail loudly.
+
+    Matched on AST shape: the behaviour runs only inside Blender, where these
+    tests skip, and a comment describing it would otherwise satisfy any check.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tree = ast.parse(
+            (MODULE_DIR / "blender_movement_render.py").read_text(
+                encoding="utf-8"
+            )
+        )
+
+    def function(self, name):
+        for node in ast.walk(self.tree):
+            if isinstance(node, ast.FunctionDef) and node.name == name:
+                return node
+        self.fail(f"{name} is not defined")
+
+    def phase_try(self):
+        for node in ast.walk(self.function("render_job")):
+            if not isinstance(node, ast.Try):
+                continue
+            for inner in ast.walk(node):
+                if (isinstance(inner, ast.Call)
+                        and isinstance(inner.func, ast.Name)
+                        and inner.func.id == "pose_phase"):
+                    return node
+        self.fail("the phase loop does not guard pose_phase")
+
+    def phase_loop(self):
+        """The FOR whose body holds the guarded try.
+
+        The first version of these guards walked the HANDLERS only, so a raise
+        placed in the loop body after the try passed every one of them and
+        aborted the library exactly as before. The claim that a moved raise
+        must fail the guard was refuted for that placement.
+        """
+        guarded = self.phase_try()
+        for node in ast.walk(self.function("render_job")):
+            if isinstance(node, ast.For) and any(
+                inner is guarded for inner in ast.walk(node)
+            ):
+                return node
+        self.fail("the guarded try is not inside a loop")
+
+    def failure_list(self):
+        """The NAME the handler appends its failures to.
+
+        Pinning the name is what stops a constant taking its place.
+        """
+        for handler in self.phase_try().handlers:
+            for node in ast.walk(handler):
+                if (isinstance(node, ast.Call)
+                        and isinstance(node.func, ast.Attribute)
+                        and node.func.attr == "append"
+                        and isinstance(node.func.value, ast.Name)):
+                    return node.func.value.id
+        self.fail("the handler appends the failure nowhere")
+
+    def test_a_failing_phase_does_not_stop_the_loop(self):
+        """Without the `continue` the handler falls through into the render."""
+        handlers = self.phase_try().handlers
+        self.assertTrue(handlers, "the guard catches nothing")
+        carries_on = any(
+            isinstance(node, ast.Continue)
+            for handler in handlers for node in ast.walk(handler)
+        )
+        self.assertTrue(
+            carries_on,
+            "a failed phase must be recorded and the loop must continue",
+        )
+
+    def test_the_guard_catches_EVERY_failure_and_not_one_kind(self):
+        """A narrowed `except RuntimeError` lets a KeyError abort the library.
+
+        The phases come from a job file this lane does not write, so a
+        malformed one raises something else entirely.
+        """
+        for handler in self.phase_try().handlers:
+            self.assertTrue(
+                handler.type is None
+                or (isinstance(handler.type, ast.Name)
+                    and handler.type.id == "Exception"),
+                "the phase guard must catch Exception and not one subclass: a "
+                "narrower catch aborts the library on anything else",
+            )
+
+    def test_a_failing_phase_is_not_swallowed(self):
+        """It must record the CAUGHT error, not merely carry an `error` key.
+
+        `"error": "failed"` keeps the key and loses the reason.
+        """
+        for handler in self.phase_try().handlers:
+            bound = handler.name
+            self.assertTrue(bound, "the handler does not bind the error")
+            for node in ast.walk(handler):
+                if not isinstance(node, ast.Dict):
+                    continue
+                names = [
+                    key.value for key in node.keys
+                    if isinstance(key, ast.Constant)
+                ]
+                for wanted in ("name", "frame", "failed", "error"):
+                    self.assertIn(wanted, names,
+                                  f"a failure must carry {wanted}")
+                reason = node.values[names.index("error")]
+                self.assertTrue(
+                    any(isinstance(inner, ast.Name) and inner.id == bound
+                        for inner in ast.walk(reason)),
+                    "the recorded reason must be the CAUGHT error, not a "
+                    "constant standing in for it",
+                )
+                return
+        self.fail("the handler records no failure")
+
+    def test_NOTHING_in_the_phase_loop_re_raises(self):
+        """Not the handler: the whole loop.
+
+        A raise placed in the loop body after the try aborts the library once
+        one good phase follows a bad one, and a guard that walks only the
+        handlers cannot see it.
+        """
+        for node in ast.walk(self.phase_loop()):
+            self.assertNotIsInstance(
+                node, ast.Raise,
+                "raising anywhere in the phase loop costs every later phase "
+                "and every later drill",
+            )
+
+    def test_the_animation_export_is_REFUSED_when_a_frame_failed(self):
+        """A still with a hole is one missing figure. An animation with a hole
+        plays over the gap and says nothing, because the frames either side
+        close across it. So the frame loop records and the EXPORT is refused,
+        while the receipt is still written: the old behaviour raised out of
+        `render_job` and left no receipt at all, the stale one having already
+        been unlinked.
+        """
+        guarded = [
+            node for node in ast.walk(self.function("render_job"))
+            if isinstance(node, ast.Try)
+            and any(isinstance(inner, ast.Call)
+                    and isinstance(inner.func, ast.Name)
+                    and inner.func.id == "pose_phase"
+                    for inner in ast.walk(node))
+        ]
+        self.assertGreaterEqual(
+            len(guarded), 2,
+            "the ANIMATION frame loop must guard pose_phase too, not only the "
+            "phase loop",
+        )
+
+        wanted = self.failure_list()
+        exports = [
+            node for node in ast.walk(self.function("render_job"))
+            if isinstance(node, ast.If)
+            and any(isinstance(inner, ast.Name) and inner.id == wanted
+                    for inner in ast.walk(node.test))
+            and any(isinstance(inner, ast.Call)
+                    and isinstance(inner.func, ast.Name)
+                    and inner.func.id == "bake_action"
+                    for inner in ast.walk(node))
+        ]
+        self.assertTrue(
+            exports,
+            f"the animation export must be conditional on {wanted}: an "
+            f"animation with a missing frame must not be written",
+        )
+
+    def test_the_receipt_carries_THE_FAILURES_not_an_empty_list(self):
+        """`"failedPhases": []` keeps the key and loses every finding."""
+        wanted = self.failure_list()
+        for node in ast.walk(self.function("render_job")):
+            if not isinstance(node, ast.Dict):
+                continue
+            for key, value in zip(node.keys, node.values):
+                if (isinstance(key, ast.Constant)
+                        and key.value == "failedPhases"):
+                    self.assertTrue(
+                        isinstance(value, ast.Name) and value.id == wanted,
+                        f"the receipt must carry the {wanted} list itself, "
+                        f"not a literal standing in for it",
+                    )
+                    return
+        self.fail("the receipt does not name the phases it could not draw")
+
+    def test_the_outcome_is_told_the_REAL_count(self):
+        """A constant 0 satisfies "three arguments" and reports PASS."""
+        wanted = self.failure_list()
+        for node in ast.walk(self.function("render_job")):
+            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                    and node.func.id == "render_outcome"):
+                self.assertGreaterEqual(
+                    len(node.args), 3,
+                    "render_outcome must be given the failure count",
+                )
+                third = node.args[2]
+                self.assertTrue(
+                    isinstance(third, ast.Call)
+                    and isinstance(third.func, ast.Name)
+                    and third.func.id == "len"
+                    and any(isinstance(inner, ast.Name) and inner.id == wanted
+                            for inner in ast.walk(third)),
+                    f"the count must be len({wanted}) and not a constant",
+                )
+                return
+        self.fail("render_job never calls render_outcome")
+
+    def test_main_FAILS_the_run_but_only_after_every_drill(self):
+        """The exit code must stay honest without costing the later drills.
+
+        A raise inside the job loop is the original defect wearing a different
+        hat: it would still abandon every drill after the failing one.
+        """
+        main = self.function("main")
+        loops = [node for node in main.body if isinstance(node, ast.For)]
+        self.assertTrue(loops, "main does not loop over the jobs")
+        for loop in loops:
+            for node in ast.walk(loop):
+                self.assertNotIsInstance(
+                    node, ast.Raise,
+                    "raising inside the job loop abandons the later drills",
+                )
+        after = main.body[main.body.index(loops[-1]) + 1:]
+        raises = [
+            node for statement in after for node in ast.walk(statement)
+            if isinstance(node, ast.Raise)
+        ]
+        self.assertTrue(
+            raises,
+            "a run that could not draw a phase must exit non-zero, after the "
+            "rest of the library has been rendered",
+        )
+
+
+class PartialReceiptTest(unittest.TestCase):
+    """A receipt for a drill that could not be fully drawn must stop its readers.
+
+    The render loop began writing receipts for partly-drawn drills on
+    2026-09-07. Before that a failing drill produced NO receipt, so no reader
+    could be fooled: the run died and the stale receipt had already been
+    unlinked. The producer widened its shape and its readers stayed on the old
+    assumption, and `export_manual_page` built a two-figure page for a
+    three-phase drill, exited 0, and said nothing.
+    """
+
+    WHOLE = {"movementId": "d", "phases": [{"name": "a"}], "failedPhases": []}
+    PARTIAL = {
+        "movementId": "netball_one_hand_high_pass",
+        "phases": [{"name": "lift"}, {"name": "release"}],
+        "failedPhases": [
+            {"name": "ready", "frame": 0, "failed": True,
+             "error": "RuntimeError: FLEXION_AXIS: r index ..."},
+        ],
+    }
+
+    def test_a_whole_receipt_passes_and_reports_nothing_undrawn(self):
+        self.assertEqual([], refuse_partial_receipt("d", self.WHOLE))
+
+    def test_an_OLD_receipt_with_no_such_key_is_whole(self):
+        """Receipts written before this field exist and must still be read.
+
+        Absence means whole, because a drill that failed used to produce no
+        receipt at all.
+        """
+        self.assertEqual([], refuse_partial_receipt("d", {"phases": []}))
+
+    def test_a_partial_receipt_STOPS_the_reader(self):
+        with self.assertRaises(SystemExit) as caught:
+            refuse_partial_receipt("netball_one_hand_high_pass", self.PARTIAL)
+
+        self.assertIn("netball_one_hand_high_pass", str(caught.exception))
+        self.assertIn("ready", str(caught.exception))
+
+    def test_the_refusal_carries_the_REASON_and_not_only_the_name(self):
+        """A reader told only that `ready` is missing has to go hunting.
+
+        The cause is in the receipt; it belongs in the sentence.
+        """
+        with self.assertRaises(SystemExit) as caught:
+            refuse_partial_receipt("d", self.PARTIAL)
+
+        self.assertIn("FLEXION_AXIS", str(caught.exception))
+
+    def test_allow_partial_is_explicit_and_returns_what_is_missing(self):
+        """It must not silence the finding, only permit it deliberately."""
+        undrawn = refuse_partial_receipt("d", self.PARTIAL, True)
+
+        self.assertEqual(1, len(undrawn))
+        self.assertEqual("ready", undrawn[0]["name"])
+
+    def test_an_EMPTY_list_is_whole_and_a_populated_one_is_not(self):
+        """`"failedPhases": []` is the mutation that empties the finding."""
+        self.assertEqual([], undrawn_phases(self.WHOLE))
+        self.assertEqual(1, len(undrawn_phases(self.PARTIAL)))
+
+
+class ReceiptReaderWiringTest(unittest.TestCase):
+    """Both readers must CALL the refusal, not merely be able to.
+
+    A rule nothing invokes protects nothing, and these two run under pixi
+    rather than in this suite.
+    """
+
+    def tree(self, name):
+        return ast.parse(
+            (MODULE_DIR / "spikes" / name).read_text(encoding="utf-8")
+        )
+
+    def calls(self, tree, callee):
+        return any(
+            isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+            and node.func.id == callee
+            for node in ast.walk(tree)
+        )
+
+    def test_the_page_builder_refuses_a_partial_receipt(self):
+        self.assertTrue(
+            self.calls(self.tree("export_manual_page.py"),
+                       "refuse_partial_receipt"),
+            "export_manual_page must refuse before it builds a page",
+        )
+
+    def test_the_page_builder_DRAWS_the_missing_phase_when_allowed(self):
+        """--allow-partial must not mean --say-nothing.
+
+        The template emits an <img> for every figure, so the slot has to be an
+        image or the reader sees a broken box.
+        """
+        tree = self.tree("export_manual_page.py")
+        self.assertTrue(
+            self.calls(tree, "undrawn_figure"),
+            "an allowed partial page must still show what is missing",
+        )
+        source = (MODULE_DIR / "spikes" / "export_manual_page.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("--allow-partial", source)
+
+    def test_the_archive_refuses_a_partial_library(self):
+        """`one_set` checks stamps, and a partial receipt carries a whole one.
+
+        So the stamp check cannot see this and a separate one is needed.
+        """
+        tree = self.tree("archive_receipts.py")
+        self.assertTrue(
+            self.calls(tree, "whole_drills"),
+            "archive_receipts must check that every drill was fully drawn",
+        )
+        source = (MODULE_DIR / "spikes" / "archive_receipts.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("--allow-partial", source)
+
+    def test_both_readers_gate_on_the_flag_and_not_on_nothing(self):
+        """A refusal that ignores its own flag is a refusal nobody can pass."""
+        for name, flag in (("export_manual_page.py", "allow_partial"),
+                           ("archive_receipts.py", "allow_partial")):
+            names = {
+                node.attr
+                for node in ast.walk(self.tree(name))
+                if isinstance(node, ast.Attribute)
+            }
+            self.assertIn(
+                flag, names,
+                f"{name} must read its own --allow-partial",
+            )
+
+
+class ExecutableMainTest(unittest.TestCase):
+    """RUN `main()`, do not only read it.
+
+    Three faults survive every AST check that describes this function: a job
+    loop emptied of its `render_job` call, an inverted `if not unposable`, and a
+    narrowed `except`. All three are about what the code DOES, and the shapes
+    that express them are indistinguishable from the correct ones.
+
+    `blender_movement_render` imports `bpy` and the MPFB services, so it is
+    stubbed. If it ever stops importing under those stubs the test SKIPS and
+    says why, rather than passing quietly.
+    """
+
+    STUBS = (
+        "bpy", "bpy_extras", "bpy_extras.object_utils", "mathutils", "bmesh",
+        "bl_ext", "bl_ext.blender_org", "bl_ext.blender_org.mpfb",
+        "bl_ext.blender_org.mpfb.services",
+        "bl_ext.blender_org.mpfb.services.humanservice",
+        "bl_ext.blender_org.mpfb.services.faceservice",
+        "bl_ext.blender_org.mpfb.services.targetservice",
+    )
+
+    def run_main(self, failures_for):
+        """Call `main()` over two jobs and report what happened.
+
+        `failures_for` names the movement whose `render_job` returns a failure.
+        """
+        import json
+        import tempfile
+        import types
+        from unittest import mock
+
+        stubs = {name: mock.MagicMock() for name in self.STUBS}
+        with mock.patch.dict(sys.modules, stubs):
+            sys.modules.pop("blender_movement_render", None)
+            try:
+                import blender_movement_render as renderer
+            except Exception as error:  # pragma: no cover - stub drift
+                self.skipTest(
+                    f"blender_movement_render no longer imports under these "
+                    f"stubs, so this test cannot run it: {error}"
+                )
+            try:
+                with tempfile.TemporaryDirectory() as room:
+                    out = Path(room)
+                    jobs = []
+                    for movement in ("a", "b"):
+                        path = out / f"{movement}.job.json"
+                        path.write_text(json.dumps({
+                            "movementId": movement,
+                            "phases": [{"name": "ready", "frame": 0,
+                                        "ball": {"radiusM": 0.1}}],
+                        }), encoding="utf-8")
+                        jobs.append(path)
+
+                    calls = []
+
+                    def fake_render_job(studio, job, path, args, output):
+                        calls.append(job["movementId"])
+                        if job["movementId"] == failures_for:
+                            return [{"name": "ready", "frame": 0,
+                                     "failed": True,
+                                     "error": "RuntimeError: FLEXION_AXIS"}]
+                        return []
+
+                    args = types.SimpleNamespace(
+                        job=jobs, output=out / "render", config=None,
+                        phase=None, turntable=0, animate=False,
+                        no_stills=False,
+                    )
+                    raised = None
+                    with mock.patch.object(renderer, "parse_args",
+                                           return_value=args), \
+                            mock.patch.object(renderer, "Studio"), \
+                            mock.patch.object(renderer,
+                                              "load_reference_catch_config"), \
+                            mock.patch.object(renderer, "render_job",
+                                              fake_render_job):
+                        try:
+                            renderer.main()
+                        except SystemExit as error:
+                            raised = str(error)
+                    return calls, raised
+            finally:
+                sys.modules.pop("blender_movement_render", None)
+
+    def test_a_failing_drill_does_not_cost_the_LATER_drills(self):
+        """The whole point. An emptied job loop passes every AST check."""
+        calls, raised = self.run_main("a")
+
+        self.assertEqual(
+            ["a", "b"], calls,
+            "the second drill must still be rendered after the first fails",
+        )
+        self.assertIsNotNone(
+            raised, "a run that could not draw a phase must exit non-zero"
+        )
+        self.assertIn("a/ready", raised)
+
+    def test_a_clean_run_returns_normally(self):
+        """An inverted condition fails HERE and nowhere else.
+
+        `if not unposable: raise` keeps the raise, keeps it after the loop and
+        keeps its message. Only running it tells the two apart.
+        """
+        calls, raised = self.run_main("neither")
+
+        self.assertEqual(["a", "b"], calls)
+        self.assertIsNone(
+            raised,
+            "a run in which every phase drew must not raise: an inverted "
+            "condition would fail every clean render in the project",
+        )
