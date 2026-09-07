@@ -19,13 +19,17 @@ Every guard here is stdlib-only, which is where a units check is most use.
 
 from __future__ import annotations
 
-import re
 import unittest
 from pathlib import Path
 
 import hand_orientation
-from export_manual_page import BAND_SUFFIX, band_label
-from movement_definition import Checkpoint, definition_files, load
+from movement_definition import (
+    BAND_SUFFIX,
+    Checkpoint,
+    band_label,
+    definition_files,
+    load,
+)
 from segment_measures import CENTIMETRES, DEGREES, MEASURE_UNITS, unit_of
 
 SPIKES = Path(__file__).resolve().parent

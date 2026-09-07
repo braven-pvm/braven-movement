@@ -630,6 +630,30 @@ def what_the_ball_changes(varied: dict) -> dict[str, list[dict]]:
     return moved
 
 
+# HOW A BAND READS TO A COACH, one entry per unit.
+#
+# IT LIVES HERE BECAUSE HOW A BAND READS IS A PROPERTY OF THE BAND. It was in
+# `export_manual_page`, which imports the solver chain, so the guards over it
+# could not run without a solver -- and the pack that added them CLAIMED they
+# were stdlib-only without testing it, having only ever run them under `pixi`,
+# where that claim cannot fail. The import-hygiene guard caught it.
+#
+# A degree sign is written tight against the number and a centimetre unit is
+# written with a space, which is how each is written everywhere else in this
+# repository. A measure with no declared unit gets the numbers and NO unit,
+# never a guessed one.
+BAND_SUFFIX = {"degrees": "\u00b0", "centimetres": " cm"}
+
+
+def band_label(check) -> str:
+    """The band as a coach reads it, with its own unit."""
+    try:
+        suffix = BAND_SUFFIX[unit_of(check.measure)]
+    except KeyError:
+        suffix = ""
+    return f"{check.minimum:g}\u2013{check.maximum:g}{suffix}"
+
+
 def definition_files(folder: Path) -> list[Path]:
     """Return every coaching definition in a folder, and nothing else.
 
