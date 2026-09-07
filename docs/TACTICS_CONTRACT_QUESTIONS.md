@@ -355,18 +355,38 @@ any board. That is a fact about the consumer, and not about the clip.
 
 `5d60dd2` on `cc2c20a` added `netball_bounce_pass` to `CLASSES` as
 `("pass", "bounce-pass", "release")`. From
-`docs/BOUNCE_PASS_INSTRUMENT_AUDIT.md` on the same commit:
+`docs/BOUNCE_PASS_INSTRUMENT_AUDIT.md`, quoted at **`56e70a3`** rather than at
+`cc2c20a`, because PR #79 changed what that document prints:
 
 - The engine **has no floor**. There is no floor term, no bounce and no
   restitution in `possession.py`, `ball_track.py` or `possession_solve.py`.
-- The ball reaches the ground at **0.584 s**, 400.0 cm from her chest.
+- "The ball reaches the ground at **0.584 s**, exactly 400.0 cm from her chest,
+  and keeps falling." The clause is kept because it is the point: nothing stops
+  the ball at the court, which is what "has no floor" means in practice.
+- The release sits at **frame 76 of 96**, which is phase 0.80 in the definition,
+  and the flight the clip contains is **19 intervals at 60 frames per second,
+  frame 76 to frame 95 = 0.3167 s**.
+- "The floor is reached at **0.5842 s**, **1.84 times longer than the clip has
+  left, short by 0.268 s**."
 
-- The release sits at **0.80 of a 1.60 s clip**, leaving **0.32 s of flight**.
-- The floor is reached **1.84 times later than that, short by 0.268 s**.
+**`0.3167 s` is now a quotation.** The audit printed only the rounded 0.32 s when
+this section was first written, and PR #79 (merged `56e70a3`, authored
+`62f6414`) added the interval count and the unrounded flight to it. Its own
+paragraph says why: the flight figure "was not reproducible without it", because
+0.5842 − 0.32 is 0.264 rather than the stated 0.268.
 
-Those are the audit's own printed figures. **The unrounded 0.3167 s and
-0.2673 s used below are my reconstruction** from the frame count, not a
-quotation: the audit prints only the rounded pair.
+**The unrounded shortfall is still mine.** The audit prints it rounded, as
+0.268 s, and no unrounded form of it appears anywhere in that document. The
+table below derives it from the quoted flight and the quoted floor, and labels
+it as a derivation rather than attributing it. An earlier version of this
+section gave it as 0.2673, which came from a floor of 0.584.
+
+**The audit prints the floor in two forms, and the table uses the four-figure
+one.** Its line 92 says the ball reaches the ground at 0.584 s, "exactly 400.0 cm
+from her chest"; its line 99 says "The floor is reached at 0.5842 s". Both are in
+the document and neither is a correction of the other, so a reader searching for
+either string will find it. Every derived figure below is computed from
+**0.5842**, and that choice is stated rather than assumed.
 
 **Those figures are correct, and a first version of this section wrongly said
 they did not close.** The error is worth recording, because it was a unit
@@ -387,10 +407,20 @@ against the frame count. Nothing disagrees.
 **What differed was my arithmetic, not the audit's.** The flight left in a clip
 is measured to the LAST FRAME, not to the clip's nominal end:
 
-| reading | intervals | flight | shortfall | ratio |
+The shortfall and ratio columns are computed from the flight in the same row.
+Only the flight figures are quoted; the audit prints its shortfall as 0.268 s.
+
+| interval count | intervals | flight | shortfall | ratio |
 |---|---|---|---|---|
-| audit: frame 76 to frame 95 | 19 | **0.3167 s** | 0.2673 | **1.844** |
-| mine: release to clip end | 20 | 0.3333 s | 0.2507 | 1.752 |
+| to frame 95, the audit's | 19 | **0.3167 s** | 0.2675 | **1.845** |
+| to the clip's end, mine | 20 | 0.3333 s | 0.2509 | 1.753 |
+
+**All FOUR derived figures move with the floor**, not two and not three. From
+0.584 to 0.5842 the shortfalls go 0.2673 to 0.2675 and 0.2507 to 0.2509, and the
+ratios go 1.84421 to 1.84484 and 1.75200 to 1.75260. The first ratio is the one
+worth naming: it crosses a rounding boundary at three decimals, 1.844 to 1.845,
+so it is the only figure here whose printed form changes for a reason a reader
+cannot see. The audit's own **1.84** is unaffected at two decimals.
 
 The audit's is right. Frame 95 is the last frame that exists, so there are
 nineteen intervals of drawn flight and not twenty. My reading counted an
