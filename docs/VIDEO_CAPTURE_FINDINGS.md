@@ -797,6 +797,67 @@ say which. The other instructions here are about seeing the movement; this one
 is about being able to measure the part of it a coach can see and an engine
 cannot yet reproduce.
 
+### Re-measured 2026-09-08, and the hundred pixels stands
+
+Marius asked the same question again on 2026-09-08 — the athlete flicks her
+wrist and fingers, the engine's hand stays flat — and the lane measured the
+footage a second time WITHOUT FINDING THIS NOTE FIRST. That was a mistake and
+it is recorded as one. The second measurement is kept because two independent
+readings of the same footage are worth more than one, and because they
+disagreed about the price.
+
+**They agree on the lever and on the answer.** The 2026-09-02 reading took the
+wrist-to-knuckle lever at 30 px; the 2026-09-08 reading measures the
+wrist-to-hand landmark vector at 29.8 px on this same front camera, 22.1 px on
+the side. It is the same lever, and the pose model reports it as the wrist
+against the midpoint of the index and pinky landmarks. **The model carries no
+knuckle**, so "wrist to knuckles" is a description of what the lever spans and
+not of two landmarks a shoot can check; on the day, the thing to check is the
+wrist-to-fingertip span in pixels.
+
+**Today's scatter, solved rather than assumed.** A still, well-tracked arm
+swings 11.1 degrees over 29 frames on a 22.1 px lever. Two landmarks each
+scattering by `e` px across a lever `L` put about `57.3 * sqrt(2) * e / L`
+degrees on the angle, which gives **e = 3.0 px** for this detector at this
+resolution. That predicts 245 deg/s of still-arm noise at a 30 px lever
+against the 197 deg/s maximum measured on 2026-09-02 — the same quantity, from
+two directions, six days apart.
+
+**Two criteria, both legitimate, and they do not give the same number.**
+
+| criterion | what it compares | 25 deg in 100 ms | 15 deg in 50 ms |
+|---|---|---|---|
+| A, the 2026-09-02 one | the flick's RATE against the still-arm rate floor, 3x | 88 px | 73 px |
+| B, the 2026-09-08 one | the flick's ANGLE against the two-frame noise, 3x | 41 px | 69 px |
+
+**Criterion A is the stricter and it is the one that survives**, because a
+flick is a FAST movement: at 30 fps a 100 ms flick is three frames, so what
+must be cleared is the frame-to-frame scatter, not a floor accumulated slowly
+over a window. **The hundred pixels asked for on 2026-09-02 sits just above
+criterion A's 88, and it stands.**
+
+**The 29 to 49 px published in the filming guide on the morning of 2026-09-08
+was WRONG and has been withdrawn.** It compared the flick's total angle
+against the still-arm swing over a 31-frame window — a slowly accumulated
+statistic — instead of against the per-frame scatter. That made the
+requirement two to three times too lax, which is the dangerous direction: it
+would have sent a shoot away with footage that still could not answer.
+
+**The frame rate is a separate requirement and neither reading covers it.** A
+movement needs samples as well as pixels: four across the flick means about
+40 fps for 100 ms and about 80 fps for 50 ms. Both cameras ran at 30.
+
+**And the fingers are not reachable at any lever.** The pose model carries one
+point per finger — index, pinky and thumb tips — and no knuckles, so finger
+flexion is not expressible in it at any resolution or frame rate. Measuring it
+needs the hand landmarker, twenty-one points per hand. That is a decision to
+take before the shoot: add a hand model and frame for it, or say in the coach
+pack that the fingers are ungraded.
+
+The instrument and the band of hand SPEED that came out of the same work are
+in `spikes/video_hand_speed.py` and
+`spikes/video-annotations/hand-speed/BAND.md`.
+
 **Instruction: put a slate between repetitions** — a clap of the hands, a
 raised marker, anything that appears in both views and cannot be confused with
 the drill. Two things follow from it. Repetitions stop having to be inferred
