@@ -4,6 +4,12 @@ A paper for Marius, prepared by the movement lane on 2026-09-08 from `1c3d9d7`.
 **It proposes a model and changes nothing.** No engine file is touched, and
 `spikes/movements/` is gate 4 and untouched.
 
+> **RULED 2026-09-08 BY MARIUS: MECHANICAL.** The release TIMING is the unit and
+> the cosmetic hand sits on top of it afterwards. Section 9 records the ruling,
+> its reason, and what the unit costs. **Question 1 below is answered; the other
+> four are open.** Every withdrawal in this paper stands: they are what the
+> ruling was made on.
+
 Marius watched Erin's page v13 and found the one thing that differs: at launch
 the athlete flicks her **wrist and her fingers** in the last moments of contact,
 and the engine's hand stays flat through the release.
@@ -563,14 +569,27 @@ value**. So:
   the category where the athlete is slower** — not merely a drill that behaves
   differently from the other three.
 
-## 9. Mechanical or cosmetic: the choice, and what each costs
+## 9. The ruling: MECHANICAL, and the unit it defines
 
-A release model that only bends a flat hand would leave the video lane's
-finding untouched. So the paper must say how the launch speed would be
-delivered, or say plainly that it stays assigned. Both are stated; neither is
-chosen here.
+**Marius ruled on 2026-09-08: mechanical.** The release timing is the unit. The
+cosmetic hand sits on top of it afterwards. He is holding Erin's page until he
+is satisfied with what she is given, so the constraint on this unit is that it
+lands BEFORE she grades.
 
-### If the launch stays ASSIGNED and the hand motion is cosmetic
+**THE REASON IS NOT THE SPEED, AND THIS PAPER HAD MISSED IT.** Both branches
+below argue about whether the arm can produce an athlete's release speed.
+Marius's reason is different and better: **retiming moves the arm inside the last
+frames of contact, and that window is exactly what Erin's checkpoints measure.**
+A cosmetic build shipped now would have her grade a build we already intend to
+change. She grades once, against the build we mean to keep.
+
+**That reason does not appear anywhere in the two branches below**, which
+weighed figure quality against implementation cost and never asked which window
+the coach's instrument reads. The sections are kept as written, because the
+ruling was made against them and a superseded argument that is deleted cannot be
+checked.
+
+### The record: what the cosmetic branch would have cost
 
 **What it costs.** The figure a coach sees becomes right and the mechanism stays
 absent: the hand will move through the last frames of contact and the ball will
@@ -589,7 +608,7 @@ launch depend on the hand without a ruling.
 crucial for the FIGURE. A cosmetic flick delivers exactly that and nothing else,
 at a cost measured in one unit of work.
 
-### If the launch is to be DELIVERED by the arm and hand
+### The record: what the mechanical branch was costed at
 
 **What it costs.** It is not this unit. The ball's speed today comes from
 `author_flight.DEFAULT_SPEED_CM = 600`, a constant with no provenance already on
@@ -627,24 +646,71 @@ contact, and not at the digits.**
 technique, which is the thing the engine cannot do today, and the only route to
 grading "power" at all.
 
-### This lane's reading
+### This lane's recommendation, and why it is superseded
 
-**The two are not alternatives at the same scale.** The cosmetic model is one
-unit and it is the one Marius described. The mechanical model is a rework of the
-ball's launch and belongs on the agenda beside the 600's provenance, not inside
-a hand unit.
+**This paper recommended the cosmetic model. That recommendation is
+superseded.** It is left here in full rather than deleted, because a
+recommendation that is quietly removed cannot be checked against the ruling that
+overrode it. It read:
 
-**The recommendation is the cosmetic model, built so it cannot be mistaken for
-the other**: the hand moves, the ledger and the drill files say in terms that
-the ball's launch is assigned and the hand does not drive it, and a guard holds
-that. If Marius wants the mechanism, this paper is the wrong size for it and the
-right first step is the 600.
+> The two are not alternatives at the same scale. The cosmetic model is one unit
+> and it is the one Marius described. The mechanical model is a rework of the
+> ball's launch and belongs on the agenda beside the 600's provenance, not
+> inside a hand unit. The recommendation is the cosmetic model, built so it
+> cannot be mistaken for the other.
+
+**Where it was wrong.** It weighed the two by size and by what a coach would
+see, and it never asked WHICH FRAMES the coach's instrument reads. Erin's
+checkpoints measure the last frames of contact. That is the same window a
+retiming moves. So the cosmetic model is not the smaller unit at all once
+grading is counted: it is a unit that would have to be graded twice.
+
+**The one argument it made that survives is a cost, not a reason against.** A
+hand that moves while the ball's speed is still assigned would look like a
+throw the engine does not perform. Under this ruling that is not a risk to be
+avoided by staying still; it is a state the unit must not stop in. **The launch
+must stop being assigned in the same unit that makes the hand move**, or the
+build in between is exactly the misleading one this paper warned about.
+
+### What the mechanical unit is
+
+Ordered, and the first three read before any code is written.
+
+1. **The provenance of the authored 600.** `author_flight.DEFAULT_SPEED_CM` is
+   one constant for the whole library. The bounce pass's own ball file already
+   records that it has no coach, no measurement and no source, and that it is
+   measurably wrong there: 600 cm/s needs a vertical of +95 cm/s, so the ball is
+   thrown UPWARD at a floor below a release of 734 mm. What does the manual say
+   about pass speed, if anything, and what would a derived launch replace it
+   with. **The video lane is measuring the athlete's ball speed at release from
+   the footage in parallel**, which would be the first real source this constant
+   has ever had. This step leaves the slot for it and does not wait on it.
+2. **What retiming moves in the graded window.** A measurement and not a build:
+   on the chest pass, shift the hand's acceleration to before the release frame
+   and report **which graded checkpoints move and by how much, per checkpoint**,
+   against the shipped build. That number is the size of the unit, and it is
+   what Erin would have to re-grade if this landed after her. Run the way the
+   sweeps are run: on a copy, gate 4 untouched, joint steps beside every point,
+   and a refusal on a flat result.
+3. **Why one pass already times it correctly.** `one_hand_high_pass` peaks AT
+   the release frame at 5.61 m/s, above the athlete's fastest one-handed
+   release. **Either that is the template for the other three, or it is a defect
+   that happens to flatter the engine.** Find out which and say which. It is the
+   cheapest possible answer to "can the engine do this at all", and the engine
+   may already contain it.
+
+Then, on those three readings and Marius's word on the launch: the possession
+model stops assigning the launch and derives it, the flights are re-calibrated,
+the receipt rows, the guards, the sweep. **The cosmetic hand and its two angles
+come last**, and they now belong at the coach morning where Erin picks them from
+renders rather than in this paper.
 
 ## Questions for Marius, in order
 
-1. **Is the flick to be cosmetic or mechanical?** If the ball's speed is to come
-   from the hand, that is a change to the possession model and a much larger
-   unit than this one. If it is to look right, this model is the shape.
+1. **ANSWERED 2026-09-08: MECHANICAL.** The release timing is the unit; the
+   cosmetic hand follows it. Marius's reason is that retiming moves the arm
+   inside the window Erin's checkpoints measure, so a cosmetic build would make
+   her grade a build we intend to change. Refer to section 9.
 2. **The two angles.** `wristToDegrees` and `fingerToDegrees` have no source.
    A coach's judgment, or the unit waits for faster footage.
 3. **Option A or option B at the release frame**, decided with the flick rather
