@@ -72,6 +72,42 @@ differenced frame to frame at the track's own rate.
 reach that band**, and the gap is a statement about the whole arm's timing
 through the last frames of contact rather than about the wrist alone.
 
+### How far the hand travels, on all four passes
+
+**Measured for the contract lane's sixth question**, which has to size a hand
+channel by what a hand actually does. Degrees, from the solve. A span is a
+maximum minus a minimum inside its window, so it can exceed the first-to-last
+difference when the angle turns around.
+
+| drill | side | wrist, last 8 held frames | wrist, 4 frames after release | finger, before -> at release |
+|---|---|---|---|---|
+| `chest_pass` | l | 130.66 to 127.62, span **3.04** | 127.18 to 104.06, span **23.11** | 119.66 to 175.87 |
+| `overhead_pass` | l | 129.35 to 128.28, span **1.07** | 128.22 to 114.13, span **14.09** | 119.09 to 175.87 |
+| `bounce_pass` | l | 117.77 to 112.22, span **5.55** | 111.39 to 104.99, span **8.93** | 119.20 to 175.87 |
+| `one_hand_high_pass` | r | 107.68 to 102.97, span **4.71** | 111.30 to 110.48, span **0.82** | 133.04 to 175.87 |
+
+**Three readings a hand channel would have to carry, and one that it must not.**
+
+1. **The hand does most of its moving after the ball has gone.** On the chest
+   pass the wrist turns 3.04 degrees through the last eight frames of contact
+   and 23.11 degrees in the four frames after release, which is seven times as
+   much once the ball can no longer be affected. The overhead pass is the same
+   shape at 1.07 against 14.09.
+2. **The one-hand-high pass is the exception and it goes the other way**: 4.71
+   degrees during contact and 0.82 after. It is also the only one of the four
+   the engine solves RIGHT-handed, which this script measures rather than
+   assumes.
+3. **The finger lands on 175.87 degrees in all four passes.** One value, to two
+   decimals, across four different techniques and both working hands. That is
+   not four measurements agreeing. It is one constant, and it is the clearest
+   evidence in this paper that the digits are not solved at all after the ball
+   leaves: they fall to the same rest value every time.
+
+**The third reading bounds the channel.** A hand channel fed by today's solve
+would transmit a constant and a post-release swing, and neither is the flick
+Marius asked about, so the channel is worth adding only together with a release
+model that puts something in it.
+
 ### The video lane found the same thing from the other end
 
 Cited from that lane's pack and log, not re-derived here: **in every shipped
@@ -84,20 +120,41 @@ at all.
 **Two lanes, two instruments, one conclusion**, which is worth more than either
 alone: that lane read the exported clips, this one read the solve.
 
-**AND THE TWO SETS OF NUMBERS ARE NOT THE SAME QUANTITY, so they are not
-presented as agreeing.** Measured here on the solve, the ball centre's
-frame-to-frame displacement at 60 fps on the chest pass:
+**THE TWO SETS OF NUMBERS WERE NOT THE SAME QUANTITY, AND NOW THEY ARE
+RECONCILED.** An earlier draft of this paper reported the disagreement and
+declined to explain it. The orchestrator supplied the explanation and this lane
+then reproduced it, which is why the paragraph now states a result instead of a
+puzzle.
 
-    75 -> 76   0.33 m/s   carried -> released
-    76 -> 77   6.03 m/s   released -> released
+**The clip does not carry the ball in metres.** `clip_geometry.read_ball`
+carries it from the SHOULDER MIDPOINT and in ARM LENGTHS, and it recomputes the
+divisor every frame from that frame's own left arm. So one ball has three
+speeds, and only one of them is what either lane published:
 
-The SHAPE matches exactly — a one-frame step, 18.3 times here against their 19.3
-— and the magnitudes do not: theirs is uniformly about 1.4 times these on BOTH
-the held and the released figure. A uniform factor on both suggests a rate or a
-scale difference rather than a different event, but **this paper does not know
-which and does not guess**. Whichever pack can name both quantities should
-settle it; the conclusion does not turn on it, because both readings say the
-ball's speed appears in one frame from nothing.
+| step | world | from the shoulders | the clip's own channel | that channel x 0.77 m |
+|---|---|---|---|---|
+| 75 -> 76 | 0.33 m/s | 0.31 m/s | 0.585 arm/s | **0.45** |
+| 76 -> 77 | 6.03 m/s | 6.07 m/s | 11.530 arm/s | **8.88** |
+
+**The released frame reproduces the video lane's 8.88 exactly.** That lane
+converted the arm-length channel with a filmed athlete's arm of 0.77 m. The
+engine's arm is **52.68 cm** measured here at the release frame through the
+exporter's own chain, so the conversion inflates every figure by
+0.77 / 0.5268 = **1.462**, which is the factor the earlier draft observed and
+could not name.
+
+**The held frame lands one hundredth low: 0.45 here against their 0.46.** It is
+not claimed as an exact reproduction. The channel is rounded to four decimals
+before it is written, and over a single frame at 60 fps that rounding is worth
+about a hundredth at this magnitude, so the residual is the size of the rounding
+and no further claim is made about it.
+
+**So the two routes agree in the engine's own units**, and the agreement is
+worth more than either reading alone: that lane read the exported clips through
+the arm-length channel, this one read the solve in centimetres, and both say the
+ball's speed appears in one frame from nothing. **When Tony's corrected column
+lands, cite his figures and not these**; these exist to show the two are the
+same measurement.
 
 ### And that is the finding under Marius's observation
 
@@ -370,6 +427,9 @@ because a hand-driven speed will not land on 600.
 carries a small fraction of the energy a 6 m/s ball needs, so the unit would
 have to change the ARM's motion through contact and not only the wrist's. That
 is the finding the wrist table above points at.
+
+**If the answer is mechanical, the unit starts at the arm's timing through
+contact, and not at the digits.**
 
 **What it is worth**: a ball whose speed a coach can change by changing
 technique, which is the thing the engine cannot do today, and the only route to

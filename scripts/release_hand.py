@@ -28,6 +28,7 @@ if str(SPIKES) not in sys.path:
 
 import numpy as np  # noqa: E402
 from movement_definition import load  # noqa: E402
+from clip_geometry import athlete_frame, read_ball  # noqa: E402
 from movement_engine import MOVEMENT_DIR, load_character  # noqa: E402
 from possession_solve import solve_movement  # noqa: E402
 
@@ -40,6 +41,10 @@ PASSES = (
 )
 # The last frames of contact, over which the paper reads the hand's speed.
 CONTACT_FRAMES = 8
+# The frames after release, over which the paper reads what the hand does next.
+FOLLOW_FRAMES = 4
+# The arm the video lane converted the clip's arm-length channel with, metres.
+ATHLETE_ARM_M = 0.77
 DIGITS = ("_thumb", "_index", "_middle", "_ring", "_pinky")
 
 
@@ -141,10 +146,112 @@ def hand_against_ball(character) -> None:
     print("    statement that the two are not connected.")
 
 
+def wrist_angle(pose, index, side: str) -> float:
+    return angle_at(pose[index[f"{side}_lowarm"]], pose[index[f"{side}_wrist"]],
+                    pose[index[f"{side}_middle1"]])
+
+
+def finger_angle(pose, index, side: str) -> float:
+    return angle_at(pose[index[f"{side}_wrist"]], pose[index[f"{side}_middle1"]],
+                    pose[index[f"{side}_middle3"]])
+
+
+def hand_travel(character) -> None:
+    """How far the wrist and the finger actually travel, on all four passes.
+
+    FOR THE CONTRACT LANE'S SIXTH QUESTION. A hand channel has to be sized by
+    what the hand does, and section 1 measured only the chest pass. Reported as
+    the first value, the last value and the span, because a span alone cannot
+    say whether the hand opened or closed.
+    """
+    print()
+    print("    WRIST AND FINGER TRAVEL, all four passes, from the solve")
+    print(f"    {'drill':22s} {'side':4s} "
+          f"{'wrist, last 8 held frames':>30s} "
+          f"{'wrist, 4 frames after':>30s} "
+          f"{'finger, before -> at release':>30s}")
+    for movement_id in PASSES:
+        result = solve_movement(character, movement_id)
+        index, points = result["index"], result["points"]
+        release = release_frame(result)
+        side = working_side(result, release)
+        last = len(points) - 1
+
+        held = [wrist_angle(points[n], index, side)
+                for n in range(max(0, release - CONTACT_FRAMES), release)]
+        after = [wrist_angle(points[n], index, side)
+                 for n in range(release, min(last, release + FOLLOW_FRAMES) + 1)]
+        before_finger = finger_angle(points[release - 1], index, side)
+        at_finger = finger_angle(points[release], index, side)
+
+        print(f"    {movement_id.replace('netball_', ''):22s} {side:4s} "
+              f"{held[0]:8.2f} to {held[-1]:7.2f} span {max(held) - min(held):5.2f}  "
+              f"{after[0]:8.2f} to {after[-1]:7.2f} span {max(after) - min(after):5.2f}  "
+              f"{before_finger:9.2f} to {at_finger:8.2f} "
+              f"span {abs(at_finger - before_finger):5.2f}")
+    print()
+    print("    A span is a MAXIMUM MINUS A MINIMUM inside the window, so it can")
+    print("    exceed the first-to-last difference when the angle turns around.")
+
+
+def clip_units(character) -> None:
+    """Why this lane's metres and the video lane's are not the same metres.
+
+    The clip does not carry the ball in metres. `clip_geometry.read_ball`
+    carries it FROM THE SHOULDER MIDPOINT AND IN ARM LENGTHS, and it recomputes
+    the divisor every frame from that frame's own left arm. So one ball has
+    three speeds and they are not interchangeable:
+
+      world      the ball centre's own displacement.
+      shoulder   the same ball measured from the moving shoulder midpoint,
+                 which is the quantity the clip channel actually carries.
+      athlete    that channel converted with a HUMAN arm of 0.77 m, which is
+                 what the video lane published.
+
+    This prints all three so the two lanes' figures can be compared as the same
+    quantity or not at all.
+    """
+    result = solve_movement(character, CLOSE_UP)
+    index, points = result["index"], result["points"]
+    frames = result["possession"].frames
+    rate = float(result["track"].frames_per_second)
+    release = release_frame(result)
+    axes = athlete_frame(points[0], index)
+
+    def arm_cm(n: int) -> float:
+        pose = points[n]
+        shoulder, elbow = pose[index["l_uparm"]], pose[index["l_lowarm"]]
+        return float(np.linalg.norm(elbow - shoulder)) + float(
+            np.linalg.norm(pose[index["l_wrist"]] - elbow))
+
+    offsets = [
+        np.asarray(read_ball(points[n], index, frames[n], axes)[:3], dtype=float)
+        for n in range(len(points))
+    ]
+
+    print()
+    print(f"    THE SAME BALL IN THREE UNITS, {CLOSE_UP}, release at {release}")
+    print(f"    {'step':>9s} {'arm cm':>7s} {'world m/s':>10s} "
+          f"{'shoulder m/s':>13s} {'arm len/s':>10s} {'x 0.77 m':>9s}")
+    for n in range(release - 1, min(len(points) - 1, release + 2)):
+        world = float(np.linalg.norm(
+            np.asarray(frames[n + 1].centre) - np.asarray(frames[n].centre))) * rate
+        channel = float(np.linalg.norm(offsets[n + 1] - offsets[n])) * rate
+        shoulder = channel * arm_cm(n + 1) / 100.0
+        print(f"    {n:4d}->{n + 1:<4d} {arm_cm(n):7.2f} {world / 100:10.2f} "
+              f"{shoulder:13.2f} {channel:10.3f} {channel * ATHLETE_ARM_M:9.2f}")
+    print()
+    print(f"    the engine's own arm at release: {arm_cm(release):.2f} cm, so a")
+    print(f"    channel converted with {ATHLETE_ARM_M} m is inflated by "
+          f"{ATHLETE_ARM_M / (arm_cm(release) / 100.0):.3f}x")
+
+
 def main() -> int:
     character = load_character()
     close_up(character)
     hand_against_ball(character)
+    hand_travel(character)
+    clip_units(character)
     return 0
 
 
