@@ -4607,3 +4607,216 @@ Moving either is one number in `PAIR1_SECTIONS` and a re-pin of two digests.
 12. An exit code of 1 is not a failing test. Read the summary line and the
     named tests.
 
+## The anchor sheets
+
+Found 8 September 2026, building `spikes/video_anchor_sheets.py`: one sheet per
+moment, the front view above the side view at the same mapped instant, seven
+columns two frames apart, so a person can read a camera pairing off the
+pictures. A frame offset is a claim about two recordings and the arithmetic
+that produces it agrees with itself whatever it is given; a human eye on the
+frames is the only check that shares nothing with the fit.
+
+### Three kinds of evidence, and one that must never be drawn
+
+`PAIRS` records three kinds of event and the instrument that drew the first
+sheets treated them as one.
+
+- **anchors** — the events the offset was FITTED to. A ball meeting hands,
+  where the contact frame is not a judgement call. Pair 1: front 274 and 605.
+  Pair 2: front 324 and 635.
+- **checks** — events the fitted offset must also explain afterwards. Pair 1:
+  front 534. Pair 2: front 484. An event that produced the answer and an event
+  that agreed with it later are different evidence, and a sheet that names them
+  alike invites a reader to weigh them alike.
+- **setAside** — events deliberately not used, each with its reason recorded.
+  Pair 1's first clap reads four frames apart where the offset says five,
+  because "nearly together" and "together" are one frame apart in both views.
+  Pair 2's one-handed catch gives −78 or −77 depending on which frame is called
+  contact. **Never drawn.** A sheet is what a reader trusts, and putting a
+  knowingly ambiguous event on one asks that reader to resolve by eye the
+  ambiguity the entry exists to record.
+
+The scratch instrument drew 324, 484 and 635 and called all three anchors. The
+sheets are the same pictures; the names are now `anchor-324`, `check-484`,
+`anchor-635`.
+
+A test asserts the table's own consistency — `otherIndex == referenceIndex +
+offset` for every anchor and check of both pairs — and a companion test
+requires at least one set-aside row to DISAGREE with the offset. If every
+set-aside row ever agrees exactly, somebody has resolved an ambiguity by
+picking the frame that suits the answer.
+
+### Two kinds of pin, worth different things
+
+The sheets are composed the way the confirmed ones were: 7 × 2 tiles of
+202 × 360, built by ffmpeg (`scale=-2:360`, the label burned in by `drawtext`,
+`vstack` then `hstack`). That is not this repository's other sheet layout, and
+the divergence is deliberate: reproducing the confirmed composition exactly is
+what makes those sheets pinnable at all. All 42 tiles of pair 2's three sheets
+reproduce byte for byte, and so do the whole sheets.
+
+84 tile digests are committed, cropped out of a FINISHED sheet so the identical
+measurement can be taken on a sheet this tool did not draw. Hashing an
+intermediate file would have pinned something only this pipeline produces.
+
+**The two pins do not prove the same thing.**
+
+- **pair 2** — the sheets came from an instrument outside this repository, so
+  matching them is two instruments agreeing.
+- **pair 1** — the sheets came from THIS tool, so matching them is this tool
+  agreeing with itself: a change detector. It catches a change to the pipeline,
+  the font, the scaler or the frames, and it catches nothing about whether −5 is
+  right.
+
+What makes −5 right is a person reading the pictures, and the reading is
+recorded column by column: on `anchor-274` the ball reaches her hands in column
+four of both rows (front 274, side 269) with the gap still there in column
+three; `anchor-605` the same (front 605 with the ball above at 603, side 600
+with it above at 598); `check-534` the hands meeting in column four (front 534,
+side 529) and apart in column three. Three moments about 11 seconds apart.
+
+The pins depend on more than the frames, because the label is rendered into the
+picture: ffmpeg `8.1.2-full_build-www.gyan.dev` and
+`C:/Windows/Fonts/arialbd.ttf`, 989780 bytes, sha256 `e8f4e3ba…7a43f5`. The
+tool refuses by name when that font is absent rather than letting ffmpeg fall
+back to another face, which would fail all 84 pinned tiles with a message about
+the pictures — the wrong place to go looking.
+
+### What the pins cover, and one sentence that was false
+
+A tile is 202 px wide and `FRONT idx 268  t=8.933s` at fontsize 20 does not
+fit, so the FRONT row's seconds read truncated as `t=8.9`. **The side row
+fits**: `SIDE idx 263  t=8.763s` is one character shorter.
+
+An earlier version of this record said every tile was truncated. That was
+wrong, and a mutation disproved it: cutting the front label alone failed on
+three of the six sheets rather than all six.
+
+So a tile digest pins the frame, the whole side label, and the part of the front
+label inside 202 px — which includes the entire index. It does NOT pin the front
+row's seconds beyond that edge: those characters are never drawn. A pairing is
+made of indices, every index is inside the edge, and the manifest carries the
+seconds in full to four decimals. Fixing the overrun would re-pin all 84 tiles
+against sheets nobody has read, so it is recorded instead.
+
+### The only check that looks at a picture
+
+Every other guard is an index checked against an index, or a digest pinned
+against a confirmed sheet — and a pin covers only the pairs that have been
+pinned. A third pair would have arithmetic and nothing else.
+
+`centre_tile_alignment` crops the centre tile below the label band and compares
+it against the source frame and both neighbours. **The source frame is resized
+by a different resampler**: the tile is ffmpeg's `scale=-2:360`, the frame it is
+compared with is decoded and resized by PIL's LANCZOS. Checking swscale with
+swscale would agree with itself.
+
+Measured over every sheet of both pairs, twelve centre tiles:
+
+    pair   sheet        view    right      -1      +1  margin
+    pair1  anchor-274   front   47.89   23.14   26.82   21.07
+    pair1  anchor-274   side    50.04   30.74   30.19   19.30
+    pair1  anchor-605   front   47.98   23.22   24.81   23.16
+    pair1  anchor-605   side    50.14   31.73   32.79   17.36
+    pair1  check-534    front   47.95   26.84   26.86   21.09
+    pair1  check-534    side    49.89   33.66   33.04   16.23
+    pair2  anchor-324   front   49.60   29.41   29.92   19.68
+    pair2  anchor-324   side    49.97   25.99   26.41   23.56
+    pair2  anchor-635   front   49.82   30.11   33.50   16.31
+    pair2  anchor-635   side    49.89   26.81   27.39   22.51
+    pair2  check-484    front   49.73   29.55   33.51   16.22
+    pair2  check-484    side    50.30   30.51   31.34   18.96
+
+The criterion is relative, not a floor: the right frame must beat both
+neighbours. `TILE_MARGIN_DB` is 10.0, pinned above zero and below the measured
+minimum; `MEASURED_MIN_TILE_MARGIN_DB` records 16.22 and a test reads it back.
+
+**The whole-tile figure is 20.9 dB and means nothing.** The tile carries a
+burned-in label and the source frame does not. Below the 40-row band the same
+comparison is 49.6. A reader who meets 20.9 without that sentence concludes the
+tile shows the wrong picture.
+
+### A boundary test that refused for the other view's reason
+
+`check_span` must refuse a sheet that runs off either recording. The first
+tests refused at centre 3 and at 944 and accepted at 324, which leaves the
+boundaries themselves unmeasured: `first < 0` could have been `first < -1`,
+`last >= frames` could have been `last > frames`, and the side recording's far
+edge was never approached. Three mutations of exactly that shape survived.
+
+The replacement put both views on their edge at once — and **under a single
+offset the two views cannot both sit at a boundary**, so two cases refused for
+the other view's reason. That is precisely what a front-only check would do,
+which is the fault the test exists to catch: it would have passed against the
+very bug it was written for. Each of the eight cases now isolates one edge by
+choosing the offset that gives the other view room, and the fixtures carry that
+explanation.
+
+### A guard made unfalsifiable by a correctness fix
+
+`centreSideIndex` is `centre + offset`. A mutation replacing it with the
+table's own `otherIndex` survived — after, and BECAUSE OF, a fix three lines
+away that proved the table consistent (`otherIndex == referenceIndex + offset`
+on every row). Once that holds, the two expressions produce identical numbers
+everywhere the table can reach.
+
+Neither change was wrong. Together they removed the only case that could
+distinguish the two behaviours, and turned a live mutation into an equivalent
+mutant.
+
+The case had to be BUILT: `anchor_sheet` is handed a fabricated moment whose
+`otherIndex` is 40 out, and the test asserts the manifest field follows the
+offset rather than the lie, that the drawn side row does too, and that the tiles
+still match the pins. This is the repository's existing rule about a guard whose
+case must exist in data, arriving from the opposite direction.
+
+### The rules that came out of it
+
+1. Name the kinds of evidence apart. An event that produced an answer and an
+   event that agreed with it later are not the same thing.
+2. An ambiguity recorded as unresolved must not appear on the artefact a person
+   reads to resolve things.
+3. Require at least one recorded exception to keep disagreeing. When every
+   exception agrees, somebody has picked the frame that suits the answer.
+4. Take the composition of the artefact somebody confirmed, even when a nicer
+   one exists, if that is what makes the confirmation reusable.
+5. Say what a pin is worth. Matching another instrument is agreement; matching
+   yourself is a change detector; a person reading the picture is the evidence.
+6. Record what a pin does NOT cover, in the same place as what it does.
+7. Compare a picture against its source through a DIFFERENT implementation, and
+   state which comparison regions are meaningless and why.
+8. Measure a threshold on every case it will be spent on, and record the
+   measured minimum where a test reads it back.
+9. Test a boundary AT the boundary, one step either side, and make each case
+   isolate the thing it names — a case that fails for the neighbouring reason
+   passes against the bug it was written for.
+10. After a fix that makes data provably consistent, re-run the mutations that
+    depended on it being possibly inconsistent. A correctness fix can make a
+    guard unfalsifiable; build the case the data can no longer supply.
+11. The hosted runner is a different machine. A test that asserts a machine
+    property — a font, a recording, a solver — SKIPS BY NAME where the property
+    is absent, and a refusal that depends on the machine comes after the
+    refusals that do not.
+
+### The machine the tests ran on was not the machine that checks them
+
+Every check on this machine was green and three went red on the hosted runner,
+which is Linux and has no `C:/Windows/Fonts/arialbd.ttf`. `Ran 972 tests,
+FAILED (failures=2, errors=1, skipped=179)`:
+
+- `test_the_font_this_machine_pinned_with_is_present` called `check_font()`
+  unguarded, which raises `SystemExit` where the file is absent. That is an
+  ERROR, and an error on a runner is that runner saying a test meant to run and
+  could not. It skips by name now, beside the tests gated on the recordings.
+- an import-hygiene guard counts errors across the suite, so the one above made
+  it fail too. One ungated test took a second check down with it.
+- `main()` called `check_font()` BEFORE `resolve()`, so an unknown pair was
+  refused with a message about a Windows font path rather than the list of
+  known pairs. **The same wrong argument gave a different answer depending on
+  where it ran.** The pair is resolved first now.
+
+The font gate is beside the recordings gate, and a test loads every other test
+in the module with the font patched away and requires ZERO errors: a pass or a
+skip that names its reason. Measured that way, `ran=34 errors=0 failures=0
+skipped=11`, every skip naming the font or the recordings.
+
