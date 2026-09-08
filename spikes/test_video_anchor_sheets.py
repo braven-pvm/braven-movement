@@ -192,17 +192,20 @@ class TheSheetsReproduceTheOnesAPersonConfirmed(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.ready = recordings_present(PAIR2)
+        cls.ready = all(recordings_present(key) for key in PAIRS)
         if not cls.ready:
             return
         cls.out = Path(tempfile.mkdtemp())
         cls.refusal = ""
         try:
-            cls.files = sheets.resolve(PAIR2)
+            cls.files = {}
             cls.entries = {}
-            for moment in sheets.moments(PAIR2):
-                entry = sheets.anchor_sheet(cls.files, moment, cls.out)
-                cls.entries[entry["sheet"]] = entry
+            for key in PAIRS:
+                cls.files[key] = sheets.resolve(key)
+                folder = cls.out / sheets.pair_folder(key)
+                for moment in sheets.moments(key):
+                    entry = sheets.anchor_sheet(cls.files[key], moment, folder)
+                    cls.entries[(key, entry["sheet"])] = entry
         except SystemExit as refused:
             cls.refusal = str(refused)
         except Exception as broken:
@@ -221,18 +224,33 @@ class TheSheetsReproduceTheOnesAPersonConfirmed(unittest.TestCase):
 
     def test_every_sheet_matches_the_tiles_committed_for_it(self):
         missing = []
-        for name, entry in self.entries.items():
-            pinned = sheets.pinned_tiles("pair2", Path(name).stem)
+        for (key, name), entry in self.entries.items():
+            pinned = sheets.pinned_tiles(sheets.pair_folder(key),
+                                         Path(name).stem)
             if pinned is None:
-                missing.append(name)
+                missing.append(f"{sheets.pair_folder(key)}/{name}")
                 continue
-            with self.subTest(sheet=name):
+            with self.subTest(pair=key, sheet=name):
                 self.assertEqual(len(pinned), 14)
                 self.assertEqual(entry["tileDigests"], pinned,
                                  "this sheet shows different pictures from "
                                  "the one that was confirmed")
         self.assertEqual(missing, [],
                          "no tiles are committed for these sheets")
+
+    def test_BOTH_pairs_are_pinned_and_neither_is_taken_on_trust(self):
+        """Six sheets, 84 tiles. Pinning one of two shipped pairs guards half
+        the tool, and the half left out is the one a later change breaks."""
+        counted = 0
+        for key in PAIRS:
+            for moment in sheets.moments(key):
+                pinned = sheets.pinned_tiles(sheets.pair_folder(key),
+                                             sheets.sheet_name(moment))
+                with self.subTest(pair=key, sheet=sheets.sheet_name(moment)):
+                    self.assertIsNotNone(pinned)
+                    self.assertEqual(len(pinned), 14)
+                counted += len(pinned or [])
+        self.assertEqual(counted, 84)
 
     def test_a_SHIFTED_OFFSET_changes_every_side_tile_and_no_front_tile(self):
         """THE MEASUREMENT THE SHEET EXISTS TO CHECK. If the offset moved by
@@ -243,7 +261,8 @@ class TheSheetsReproduceTheOnesAPersonConfirmed(unittest.TestCase):
         pinned = sheets.pinned_tiles("pair2", sheets.sheet_name(moment))
         out = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, out, ignore_errors=True)
-        wrong = dict(self.files, offset=self.files["offset"] + 1)
+        files = self.files[PAIR2]
+        wrong = dict(files, offset=files["offset"] + 1)
 
         drawn = sheets.anchor_sheet(wrong, moment, out)["tileDigests"]
 
@@ -258,18 +277,19 @@ class TheSheetsReproduceTheOnesAPersonConfirmed(unittest.TestCase):
 
     def test_each_sheet_holds_the_columns_that_were_asked_for(self):
         columns = 2 * sheets.SHEET_HALF + 1
-        for name, entry in self.entries.items():
-            with self.subTest(sheet=name):
+        for (key, name), entry in self.entries.items():
+            with self.subTest(pair=key, sheet=name):
                 self.assertEqual(len(entry["frontIndices"]), columns)
                 self.assertEqual(len(entry["sideIndices"]), columns)
                 self.assertEqual(len(entry["tileDigests"]), 2 * columns)
 
     def test_the_side_row_is_the_MAPPED_row(self):
-        for name, entry in self.entries.items():
-            with self.subTest(sheet=name):
+        for (key, name), entry in self.entries.items():
+            with self.subTest(pair=key, sheet=name):
                 self.assertEqual(
                     entry["sideIndices"],
-                    [k + self.files["offset"] for k in entry["frontIndices"]])
+                    [k + self.files[key]["offset"]
+                     for k in entry["frontIndices"]])
 
     def test_the_centre_agrees_with_the_index_THE_TABLE_RECORDED(self):
         """NOT THE SAME ARITHMETIC TWICE. `centreSideIndex` is
@@ -277,23 +297,29 @@ class TheSheetsReproduceTheOnesAPersonConfirmed(unittest.TestCase):
         read off the side recording when the pairing was made. They must
         agree, and if they ever stop agreeing the table is inconsistent with
         the offset it also carries."""
-        for moment in sheets.moments(PAIR2):
-            entry = self.entries[f"{sheets.sheet_name(moment)}.png"]
-            with self.subTest(index=moment["referenceIndex"]):
-                self.assertEqual(entry["centreSideIndex"],
-                                 moment["otherIndex"])
+        for key in PAIRS:
+            for moment in sheets.moments(key):
+                entry = self.entries[(key, f"{sheets.sheet_name(moment)}.png")]
+                with self.subTest(pair=key,
+                                  index=moment["referenceIndex"]):
+                    self.assertEqual(entry["centreSideIndex"],
+                                     moment["otherIndex"])
 
     def test_the_manifest_names_both_recordings_by_hash_and_the_font(self):
-        manifest = sheets.manifest_for(self.files, list(self.entries.values()))
+        for key in PAIRS:
+            entries = [e for (pair, _), e in self.entries.items()
+                       if pair == key]
+            manifest = sheets.manifest_for(self.files[key], entries)
 
-        self.assertTrue(manifest["front"]["sha256"].startswith(
-            PAIRS[PAIR2]["referenceSha256"]))
-        self.assertTrue(manifest["side"]["sha256"].startswith(
-            PAIRS[PAIR2]["otherSha256"]))
-        self.assertEqual(manifest["sideIndexEqualsFrontIndexPlus"],
-                         self.files["offset"])
-        self.assertEqual(len(manifest["labelFont"]["sha256"]), 64)
-        self.assertIn("setAside", manifest["whatIsNotHere"])
+            with self.subTest(pair=key):
+                self.assertTrue(manifest["front"]["sha256"].startswith(
+                    PAIRS[key]["referenceSha256"]))
+                self.assertTrue(manifest["side"]["sha256"].startswith(
+                    PAIRS[key]["otherSha256"]))
+                self.assertEqual(manifest["sideIndexEqualsFrontIndexPlus"],
+                                 self.files[key]["offset"])
+                self.assertEqual(len(manifest["labelFont"]["sha256"]), 64)
+                self.assertIn("setAside", manifest["whatIsNotHere"])
 
 
 class TheCommandLineDrawsWhatTheTableHolds(unittest.TestCase):

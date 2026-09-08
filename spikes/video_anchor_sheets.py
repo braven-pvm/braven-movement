@@ -66,6 +66,24 @@ SHEET_HALF = 3
 # 202 wide at this height, so a sheet is 7 * 202 by 2 * 360.
 TILE_HEIGHT = 360
 
+# THE LABEL RUNS PAST THE EDGE OF THE TILE, AND IT IS LEFT THAT WAY.
+# A tile is 202 px wide and `FRONT idx 268  t=8.933s` at fontsize 20 does not
+# fit, so the seconds read truncated on the picture: `t=8.9`. That is true of
+# the three sheets a person read and confirmed for each pair, because this is
+# their chain reproduced exactly.
+#
+# WHAT IS CUT OFF IS NOT THE MEASUREMENT. The frame INDEX is fully visible on
+# every tile, and the index is what a pairing is made of. The seconds are
+# derived from each file's own pts, they drift between the two cameras by
+# about 11 microseconds a frame, and the manifest carries them in full.
+#
+# It is not fixed because every fix costs more than it buys. A smaller font or
+# a caption band changes the pixels, so all 84 committed tile digests would
+# have to be re-pinned against sheets nobody has read -- cutting the tie to
+# the artefacts that were actually confirmed. A second, legible sheet would be
+# an artefact with no pin at all. Recorded here instead, and any change to the
+# label format will fail the pins loudly, which is the right outcome.
+
 # THE LABEL IS PART OF THE PINNED PIXELS. `drawtext` renders it from this font
 # file, so the committed tile digests depend on the font as much as on the
 # frame. A missing font would make ffmpeg fall back to another face and every

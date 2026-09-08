@@ -22,7 +22,7 @@ machine.
 | `pair2/check-484.sha256` | `catch-2-anchor-proof.png` | front 484 / side 406 | check |
 | `pair2/anchor-635.sha256` | `catch-3-anchor-proof.png` | front 635 / side 557 | anchor |
 
-42 tiles in total. Re-derive them with
+42 tiles in total, and 84 across both pairs. Re-derive them with
 `.remember/review-instruments/video-anchor-sheets/A2-tile-provenance.py`.
 
 **The names changed and the pictures did not.** The instrument that drew them
@@ -30,15 +30,31 @@ called all three `catch-N` and its docstring called all three anchors. `PAIRS`
 records 324 and 635 as the anchors the offset was FITTED to, and 484 as a
 CHECK the fitted offset had to explain afterwards. Same sheets, honest names.
 
-## pair1 — produced, NOT pinned
+## pair1 — pinned after a person read them, and the difference matters
 
-Pair 1's three sheets are in `.remember/extraction/pair1-anchors/`, drawn by
-this tool. **No digests are committed for them, on purpose.** Pair 1's pairing
-was read by hand from frames rather than from sheets, so there is no confirmed
-artefact to compare against, and pinning this tool's own output would be a
-change-detector wearing the clothes of a proof. When somebody reads those
-three sheets and confirms them, they become a reference like pair 2's and
-pinning them means something.
+Pair 1's three sheets are in `.remember/extraction/pair1-anchors/`, and unlike
+pair 2's they were **drawn by this tool**. They were held unpinned until the
+orchestrator read all three by eye on 2026-09-08 and confirmed the offset of
+−5 on the pictures:
+
+| sheet | what was seen |
+|---|---|
+| `anchor-274` | the ball reaching her hands in column four of BOTH rows (front 274, side 269), and the gap still there in column three of both |
+| `anchor-605` | the same in column four (front 605 with the ball above at 603; side 600 with the ball above at 598) |
+| `check-534` | the hands meeting in column four of both rows (front 534, side 529), apart in column three |
+
+Three moments about 11 seconds apart, all agreeing.
+
+**WHAT THE PIN PROVES HERE IS NARROWER THAN FOR PAIR 2, AND THE WORDING IS NOT
+DECORATION.** Pair 2's sheets came from an instrument outside this repository,
+so matching them is agreement between two tools. Pair 1's came from this tool,
+so matching them is this tool agreeing with itself: a change-detector. It
+catches an accidental change to the pipeline, the font, the scaler or the
+frames, and it catches nothing about whether −5 is right.
+
+What makes −5 right is the reading in the table above. The digests exist so
+that nobody has to read the same sheet twice, and so that a sheet which has
+quietly stopped showing what was read fails loudly.
 
 ## What the tiles depend on besides the frames
 
@@ -53,8 +69,26 @@ the frame.
 - rendered at `scale=-2:360`, `fontsize=20`, `box=1:boxcolor=black@0.6:boxborderw=6`
 
 `check_font()` refuses by name when that file is absent, rather than letting
-ffmpeg fall back to another face: a fallback would fail all 42 pinned tiles
+ffmpeg fall back to another face: a fallback would fail all 84 pinned tiles
 with a message about the pictures, which is the wrong place to go looking.
+
+### The label runs past the edge of the tile
+
+A tile is 202 px wide and `FRONT idx 268  t=8.933s` at fontsize 20 does not
+fit, so the seconds read truncated on the picture as `t=8.9`. This is true of
+every sheet under both pairs, including the three that were confirmed before
+this tool existed, because it is the same chain.
+
+**What is cut off is not the measurement.** The frame INDEX is fully visible
+on every tile, and a pairing is made of indices. The seconds are derived from
+each file's own pts, drift about 11 microseconds a frame between the two
+cameras, and the manifest carries them in full.
+
+It is left alone because every fix costs more than it buys. A smaller font or
+a caption band changes the pixels, so all 84 tile digests would need re-pinning
+against sheets nobody has read, which cuts the tie to the artefacts that were
+actually confirmed. A second, legible sheet would be an artefact with no pin
+at all. Any change to the label format fails the pins loudly, which is right.
 
 The same caution as the posters applies to the decoder. H.264 decoding is
 exact, so which FRAME a tile shows is a property of the recording. The PNG the
