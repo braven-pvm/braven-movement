@@ -990,22 +990,45 @@ far the wrist and fingers move in the engine's own solve. **That measurement now
 exists and it settles nothing, because the current solve contains no flick to
 measure.**
 
-From `docs/RELEASE_HAND_PAPER.md` at `f6384f0` on `lane/movement-release-hand`.
-**That branch is NOT merged**, so these figures are cited from work in progress
-and may move:
+From `docs/RELEASE_HAND_PAPER.md` section 1, at **`b29b2d2`** on
+`lane/movement-release-hand`. **That branch is NOT merged**, so these figures are
+cited from work in progress and may move. All four passes, wrist span in degrees:
 
-- The wrist drifts **3.04 degrees** across the last eight contact frames, then
-  moves **23 degrees in the four frames AFTER** the ball has gone.
-- The fingers hold about 119.7 through every contact frame, then jump **56.2
-  degrees to 175.87 at the release frame and never move again**. The paper names
-  the cause: `spread_fingers` resetting the digits once the ball is gone. It is
-  a reset, not a flick.
-- The engine's wrist travels at **0.33 to 0.79 m/s** through contact across the
-  four passes. The filmed athlete's is **3.4 to 4.3 m/s**.
+| drill | side | last 8 held frames | 4 frames after release | finger, before → at release |
+|---|---|---|---|---|
+| `chest_pass` | l | **3.04** | **23.11** | 119.66 → 175.87 |
+| `overhead_pass` | l | **1.07** | **14.09** | 119.09 → 175.87 |
+| `bounce_pass` | l | **5.55** | **8.93** | 119.20 → 175.87 |
+| `one_hand_high_pass` | r | **4.71** | **0.82** | 133.04 → 175.87 |
 
-**An order of magnitude, and what motion there is happens after release.** So
-measuring the present solve more finely would only describe the absence more
-precisely. The channel count cannot be read off it.
+**A first version of this section quoted the chest pass alone and generalised
+from it.** Two of its statements do not survive the other three drills, and the
+correction matters because it is the exception that carries the information:
+
+- "The wrist moves far more after release than during contact" holds for the
+  chest and overhead passes, weakly for the bounce pass, and **reverses on the
+  one-hand-high pass**, which turns 4.71 degrees during contact against 0.82
+  after. The paper notes that this is also the only one of the four the engine
+  solves **right**-handed, and that its script measures the side rather than
+  assuming it.
+- "The fingers hold about 119.7" is true of the three left-handed solves and
+  **false of the right-handed one, which holds 133.04**.
+
+**What does hold across all four is the finger's value AT release: 175.87
+degrees, to two decimals, in every pass and on both hands.** The paper is
+explicit that this is the reading its conclusion rests on, and it is the right
+one to rest on, because it is the only one with no exception: that is not four
+measurements agreeing, it is one constant. `spread_fingers` resets the digits
+once the ball is gone, and they fall to the same rest value every time.
+
+The scale is in the same section. The engine's wrist travels **0.33 to 0.79 m/s**
+through contact across the four passes; the filmed athlete's travels **3.4 to
+4.3 m/s**. An order of magnitude.
+
+**So a hand channel fed by today's solve would carry a constant, plus a swing
+that mostly arrives after the ball has gone.** Neither is the flick. Measuring
+this solve more finely would only describe the absence more precisely, and the
+channel count cannot be read off it.
 
 ### What decides it instead
 
