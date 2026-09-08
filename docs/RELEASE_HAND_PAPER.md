@@ -56,21 +56,39 @@ The comparison the clip cannot supply, because the clip carries no wrist at all
 (below). This is the wrist joint's own speed **from the solve**, over the last
 eight frames of contact, in **metres per second**:
 
-| | wrist through contact | the filmed athlete |
-|---|---|---|
-| `chest_pass` | **0.33 to 0.36 m/s** | |
-| `overhead_pass` | 0.46 to 0.53 | |
-| `bounce_pass` | 0.34 to 0.35 | |
-| `one_hand_high_pass` | 0.63 to 0.79 | |
-| | | **3.4 to 4.3 m/s through the throw** |
+| | wrist through contact | the athlete, image scale | the athlete, world scale |
+|---|---|---|---|
+| `chest_pass` | **0.33 to 0.36 m/s** | | |
+| `overhead_pass` | 0.46 to 0.53 | | |
+| `bounce_pass` | 0.34 to 0.35 | | |
+| `one_hand_high_pass` | 0.63 to 0.79 | | |
+| peak hand speed | | **3.3 to 5.4 m/s** | **2.5 to 3.9 m/s** |
 
-**The engine's wrist runs at a fifth to a thirteenth of the filmed hand.** No
-forward-kinematics rebuild is involved: these are the solved joint positions,
-differenced frame to frame at the track's own rate.
+**The athlete's figures are the video lane's, cited and not re-derived here**,
+and they carry their inputs: twelve releases across both runs, the near arm,
+**two independent scales with neither preferred**, and one slow held repetition
+excluded and declared. That lane also searched a null and put it at **0.06 to
+0.10 m/s**, which bounds the footage column and not the engine's.
 
-**A flick added to a wrist travelling at a tenth of the filmed speed will not
-reach that band**, and the gap is a statement about the whole arm's timing
-through the last frames of contact rather than about the wrist alone.
+**The engine's wrist runs at a third to a sixteenth of the filmed hand**, taking
+the range across both scales, 2.5 to 5.4 m/s. No forward-kinematics rebuild is
+involved: these are the solved joint positions, differenced frame to frame at
+the track's own rate.
+
+**What makes this a comparison of two hands is that both columns are hand speeds
+in metres per second.** Nothing more is needed and nothing more is claimed. An
+earlier draft of this paper argued it differently, by observing that the
+engine's slowest wrist clears the video lane's searched null of 0.06 to 0.10 m/s
+by three to five times. **That argument is withdrawn.** The null is landmark
+scatter on a still arm, so it bounds that lane's own measurement and nothing
+else. A solved joint carries no landmark scatter, so the ratio between the two
+says nothing at all. It was this ledger's own recurring fault in a new place: a
+quantity measured in one regime and spent in another.
+
+**A flick added to a wrist travelling at a third to a sixteenth of the filmed
+speed will not reach that band**, and the gap is a statement about the whole
+arm's timing through the last frames of contact rather than about the wrist
+alone.
 
 ### How far the hand travels, on all four passes
 
@@ -103,10 +121,23 @@ difference when the angle turns around.
    evidence in this paper that the digits are not solved at all after the ball
    leaves: they fall to the same rest value every time.
 
-**The third reading bounds the channel.** A hand channel fed by today's solve
-would transmit a constant and a post-release swing, and neither is the flick
-Marius asked about, so the channel is worth adding only together with a release
-model that puts something in it.
+**The third reading bounds the channel, and the other two do not generalise.**
+An earlier draft of this paper said a channel would carry "a constant and a
+post-release swing". That smoothed the table above and it is corrected here.
+
+- **The swing is not on every pass**: 23.11, 14.09 and 8.93 degrees on the
+  chest, overhead and bounce passes, against **0.82 on one-hand-high**, which
+  has effectively none.
+- **The grip before release is not one value either**: 119.66, 119.09 and 119.20
+  on the three left-handed passes, and **133.04** on the right-handed one.
+- **The constant has no exception**: 175.87 on all four, both hands.
+
+**So the conclusion rests on the constant alone**, which is the only reading that
+holds across four techniques and both working hands: the digits are not solved
+after release. A hand channel fed by today's solve would carry that constant, and
+a swing on three passes out of four. Neither is the flick Marius asked about, so
+the channel is worth adding only together with a release model that puts
+something in it.
 
 ### The video lane found the same thing from the other end
 
@@ -148,6 +179,19 @@ not claimed as an exact reproduction. The channel is rounded to four decimals
 before it is written, and over a single frame at 60 fps that rounding is worth
 about a hundredth at this magnitude, so the residual is the size of the rounding
 and no further claim is made about it.
+
+**TWO DIFFERENT QUANTITIES IN THIS PAPER BOTH READ 0.33 m/s, and a reader has to
+be told which is which.** The 0.33 in the table above is the BALL's centre while
+it is still held. The 0.33 to 0.36 in section 1 is the WRIST joint, from
+`scripts/release_hand.py`. They are not the same measurement and neither is
+derived from the other.
+
+**They agree because the ball is carried.** While the hand holds it, the ball
+moves at the hand's speed, so the two readings SHOULD match, and they do. One
+frame later the ball is at 6.03 m/s and the wrist is still at 0.36. **The ball
+tracks the hand exactly while held, and then leaves it entirely.** That is the
+authored launch seen from the ball's side rather than the hand's, and it is the
+same finding measured a second way.
 
 **So the two routes agree in the engine's own units**, and the agreement is
 worth more than either reading alone: that lane read the exported clips through
@@ -229,8 +273,29 @@ Cited from the video lane's committed work, not re-derived here.
 - **The hand ANGLE is not measurable.** The footage is 30 fps with the hand 15
   to 30 px. The video lane has measured that the wrist angle cannot be read from
   it.
-- **The hand SPEED is measurable**: about **3.4 to 4.3 m/s through the throw**,
-  with that lane's pack to follow and the engine's release beside it.
+- **The hand SPEED is measurable.** The full pack gives a peak hand speed of
+  **3.3 to 5.4 m/s on the image scale and 2.5 to 3.9 m/s on the model's world
+  scale**, from twelve releases across both runs on the near arm, with one slow
+  held repetition excluded and said so. **Neither scale is preferred**, so this
+  paper quotes the range across both, **2.5 to 5.4 m/s**, and never a single
+  figure. An earlier draft cited 3.4 to 4.3 from that lane's first reading; the
+  band above supersedes it.
+- **The two scales differ by about 30 per cent at the median, and the frames
+  underneath are far noisier than that.** Across all 176 frames of the twelve
+  windows where both scales read above 0.3 m/s, the image-to-world ratio has a
+  **median of 1.30**, per-release medians of **1.11 to 1.41**, and per-frame
+  values from **0.21 to 3.05** with a middle half of **1.10 to 1.56**. **One
+  factor describes the centre and not the frames.**
+- **An earlier draft of this paper fitted that factor to 1.354 to 1.367 and the
+  interval is withdrawn.** It was derived from the two published endpoints and
+  their rounding, which is the endpoint-fit trap twice over. It assumed the
+  extremes of two summary ranges are one release measured two ways, when they
+  need not come from the same release at all. It then published an interval
+  about a hundred times tighter than the frames beneath it. The lane that owns
+  the frames caught it.
+- **That lane searched a null and put it at 0.06 to 0.10 m/s.** It is landmark
+  scatter on a still arm, so it bounds the FOOTAGE column and says nothing about
+  a solved joint, which has no landmark scatter to bound.
 - **The pairing is by hash, never by name** — the files were relabelled on
   2026-09-07. The established pair is `f7faf38b` with `6e8f9fb2` at `side index
   = front index − 5`.
@@ -245,10 +310,17 @@ because the footage does not carry them. Only the speed can be checked against
 it, and only as a band.
 
 Second, and larger: the engine's hand runs at **0.33 to 0.79 m/s** through
-contact against the footage's **3.4 to 4.3 m/s**. That is a factor of five to
-thirteen, and it is a statement about the whole arm's timing, not about the
-wrist. **A wrist flick added to a hand travelling at a tenth of the filmed speed
-will not reach that band**, and this paper does not pretend otherwise.
+contact against the footage's **2.5 to 5.4 m/s**. That is **a factor of three to
+sixteen**. Three is the kindest reading, the slowest filmed hand against the
+fastest engine wrist. Sixteen is the harshest. It is a statement about the
+whole arm's timing, not about the wrist. **A wrist flick added to a hand
+travelling at a third to a sixteenth of the filmed speed will not reach that
+band**, and this paper does not pretend otherwise.
+
+**The factor survives the scale disagreement.** On the world scale alone it is
+three to twelve; on the image scale alone, four to sixteen. The conclusion does
+not turn on which scale is right, **because the smallest factor either one
+permits is still three**.
 
 ## 3b. The clip cannot carry a flick, whatever the animation does
 
@@ -284,7 +356,7 @@ frame** rather than on a clip fraction, because that is where the event is.
 
 | parameter | what it sets | inferred FROM |
 |---|---|---|
-| `flickWindowFrames` | N, the contact frames the flick occupies | **the footage**: the only source with a timescale. 30 fps and a 3.4–4.3 m/s hand bound it; the engine runs at 60, so N is read off the footage and doubled, and the paper states that doubling |
+| `flickWindowFrames` | N, the contact frames the flick occupies | **the footage**: the only source with a timescale. 30 fps and a 2.5–5.4 m/s hand bound it; the engine runs at 60, so N is read off the footage and doubled, and the paper states that doubling |
 | `wristFromDegrees` | the wrist angle at the window's start | **the engine's own solve**: it is where the wrist already is, 130.7 on the chest pass, so the flick starts from the shipped pose and does not move it |
 | `wristToDegrees` | the wrist angle at the release frame | **NOT SOURCED. A coach must set it.** No manual number exists, the footage cannot read an angle, and biomechanics literature is not in this repository |
 | `fingerFromDegrees` | the finger flexion at the window's start | **the engine's own solve**: 119.7, the grip the possession model already holds |
@@ -386,6 +458,19 @@ value**. So:
   the flick is about and neither has a source; a number invented for them would
   be this ledger's own recurring fault in a new place.
 - **It has not been swept.** Nothing here is proven able to fail.
+- **It does not explain its own exception, and this lane owns the check.**
+  `one_hand_high_pass` is the only one of the four whose wrist moves MORE through
+  contact (4.71 degrees) than after release (0.82), and it is also the only one
+  the engine solves RIGHT-handed. PR #46 (`ac240b2`, 2026-09-01) fixed a sign in
+  `finger_wrap.spread_fingers` on exactly that hand. **No mechanism is
+  established here and none is claimed.** That fix changed the finger SPREAD
+  (`middle1_ry`, 0.18, negated on the right until then) and this paper measures
+  wrist and finger FLEXION, which is a different quantity. The two are not
+  independent either: a spread rotation on `middle1` moves `middle3` out of the
+  flexion plane, so it can move the angle measured here. **The experiment is
+  named**: solve the drill with the pre-#46 sign restored and see whether the
+  exception follows the sign. Until that runs, this is a coincidence with a
+  plausible route, and not a finding.
 
 ## 9. Mechanical or cosmetic: the choice, and what each costs
 
