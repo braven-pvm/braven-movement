@@ -159,6 +159,66 @@ class TheNearArmIsMeasuredNotAssumed(unittest.TestCase):
                 self.assertEqual(speed.check_near_arm(d, index, centre),
                                  speed.NEAR_ARM)
 
+    def test_asking_for_the_arm_the_camera_does_NOT_see_is_refused(self):
+        """The check has to REFUSE, not report. Until 2026-09-08 it only
+        reported, and nothing but a test ever called it."""
+        d, index = speed.load("side", "0.2")
+
+        speed.gate_near_arm(d, index, 423, side="left")
+        with self.assertRaises(SystemExit) as refusal:
+            speed.gate_near_arm(d, index, 423, side="right")
+
+        self.assertIn("left arm nearer", str(refusal.exception))
+        self.assertIn("right", str(refusal.exception))
+
+    def test_the_BAND_itself_stops_when_the_near_arm_disagrees(self):
+        """Pinned by a RUN. Delete the call from `band_rows` and this fails.
+
+        The case cannot be found in the footage, because both recordings put
+        the same arm nearest. So it is BUILT: the check is made to answer
+        `right` and the band must then refuse to report a number.
+        """
+        with mock.patch.object(speed, "check_near_arm", return_value="right"):
+            with self.assertRaises(SystemExit) as refusal:
+                speed.band_rows()
+
+        self.assertIn("right arm nearer", str(refusal.exception))
+
+    def test_EVERY_release_is_gated_and_not_just_the_first(self):
+        """A gate handed the same frame every time checks one release of
+        twelve. The case is built: the check is made to answer `right` for
+        the SECOND release only, which is in the same recording as the first,
+        so neither a fixed frame nor one check per recording can pass."""
+        second = speed.RELEASES[1]
+        self.assertEqual((second.view, second.setId),
+                         (speed.RELEASES[0].view, speed.RELEASES[0].setId),
+                         "this test needs two releases in one recording")
+
+        def only_for_the_second(d, index, centre):
+            return "right" if centre == second.frame else "left"
+
+        with mock.patch.object(speed, "check_near_arm", only_for_the_second):
+            with self.assertRaises(SystemExit) as refusal:
+                speed.band_rows()
+
+        self.assertIn(f"frame {second.frame}", str(refusal.exception))
+
+    def test_the_gate_reads_the_recording_and_is_not_a_constant(self):
+        """A gate that answers the same way whatever it is given guards
+        nothing. Feed it a recording whose right wrist tracks better and it
+        must say so."""
+        d, index = speed.load("side", "0.2")
+        swapped = json.loads(json.dumps(
+            {"source": d["source"], "frames": d["frames"][400:440]}))
+        left, right = index["left_wrist"], index["right_wrist"]
+        for frame in swapped["frames"]:
+            if frame["detected"]:
+                marks = frame["landmarks"]
+                marks[left]["visibility"], marks[right]["visibility"] = (
+                    marks[right]["visibility"], marks[left]["visibility"])
+
+        self.assertEqual(speed.check_near_arm(swapped, index, 23), "right")
+
 
 class TheBandIsWhatAnotherLaneQuotes(unittest.TestCase):
 

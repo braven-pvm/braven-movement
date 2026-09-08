@@ -69,8 +69,12 @@ BEFORE, AFTER = 10, 5
 
 # The near arm. In BOTH runs the side camera sees her left arm nearer: the
 # left wrist tracks at 0.86 and 0.69 visibility against 0.31 and 0.18 for the
-# right, which is the occluded one. `check_near_arm` re-measures this rather
-# than trusting the sentence.
+# right, which is the occluded one.
+#
+# THIS IS A DEFAULT THAT `band_rows` CHECKS AT EVERY RELEASE, not a fact about
+# the next recording. It was advice until 2026-09-08: `check_near_arm` existed
+# and only a test ever called it, so a recording shot from the other side would
+# have been measured on the occluded arm without complaint.
 NEAR_ARM = "left"
 
 
@@ -174,6 +178,23 @@ def check_near_arm(d: dict, index: dict, centre: int) -> str:
     if not counted:
         raise SystemExit(f"no detected frames around {centre}")
     return max(seen, key=lambda side: seen[side])
+
+
+def gate_near_arm(d: dict, index: dict, centre: int,
+                  side: str = NEAR_ARM) -> None:
+    """REFUSE if the camera does not see the arm we are about to measure.
+
+    The failure this prevents is silent. An occluded wrist is not missing: the
+    model reports it, smoothly, as a guess, so measuring the far arm returns a
+    clean slow trace that looks like a result.
+    """
+    seen = check_near_arm(d, index, centre)
+    if seen != side:
+        source = d["source"]
+        raise SystemExit(
+            f"{source['view']} {source['setId']} frame {centre}: the camera "
+            f"sees the {seen} arm nearer, but the measurement asks for the "
+            f"{side} one. Set NEAR_ARM, or pass side= for this recording.")
 
 
 def metres_per_pixel(frame: dict, index: dict) -> float | None:
@@ -292,6 +313,7 @@ def band_rows() -> list[dict]:
             loaded[key] = load(*key)
             nulls[key] = search_null(*loaded[key])
         d, index = loaded[key]
+        gate_near_arm(d, index, release.frame)
         measured = [r for r in speed_rows(d, index, release.frame)
                     if r["handImage"] is not None]
         best_image = max(measured, key=lambda r: r["handImage"])
