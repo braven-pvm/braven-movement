@@ -875,10 +875,12 @@ Stated here so that nobody reads silence as a finding.
   readings, and that it must not be reported as a failure on its own.
 - **Whether the eight live clips should be restaged.** That is Marius's open
   decision. Section 6 is the number it needs.
-- **How much the wrist and fingers actually move across the four passes.**
-  Section 8 asks whether the clip should carry a hand at all, and says which of
-  its four shapes fits depends on that measurement. Nobody has taken it, and it
-  needs a solve.
+- **Which of section 8's four shapes a hand channel should take.** This is NOT
+  waiting on a measurement. The measurement exists, on an unmerged branch, and
+  shows the present solve has no flick in it to size: 3.04 degrees of wrist
+  through contact against an athlete's order of magnitude more. It waits on
+  Marius's answer to whether the flick is cosmetic or mechanical, which section 8
+  maps onto the four shapes.
 
 ---
 
@@ -981,8 +983,54 @@ drawing the flick; the joints would let it draw the flick without knowing the
 speed. Marius's stated reason names both — ball speed AND late direction change
 — and only the joints carry direction.
 
-**What is not known, and needs a measurement rather than an opinion:** how much
-the wrist and fingers actually move across the four passes in the engine's own
-solve. If the answer is a few degrees, option A carries it; if the flick is
-large and out of plane, it is B or C. That read is a solve, so it is not this
-lane's, and no option above should be chosen before it exists.
+### The measurement exists, and it does not decide the shape
+
+A first version of this section said the choice waited on a measurement of how
+far the wrist and fingers move in the engine's own solve. **That measurement now
+exists and it settles nothing, because the current solve contains no flick to
+measure.**
+
+From `docs/RELEASE_HAND_PAPER.md` at `f6384f0` on `lane/movement-release-hand`.
+**That branch is NOT merged**, so these figures are cited from work in progress
+and may move:
+
+- The wrist drifts **3.04 degrees** across the last eight contact frames, then
+  moves **23 degrees in the four frames AFTER** the ball has gone.
+- The fingers hold about 119.7 through every contact frame, then jump **56.2
+  degrees to 175.87 at the release frame and never move again**. The paper names
+  the cause: `spread_fingers` resetting the digits once the ball is gone. It is
+  a reset, not a flick.
+- The engine's wrist travels at **0.33 to 0.79 m/s** through contact across the
+  four passes. The filmed athlete's is **3.4 to 4.3 m/s**.
+
+**An order of magnitude, and what motion there is happens after release.** So
+measuring the present solve more finely would only describe the absence more
+precisely. The channel count cannot be read off it.
+
+### What decides it instead
+
+The flick model's own parameters, which do not exist yet. The paper's first
+question to Marius is the one that reaches this contract:
+
+> **Is the flick to be cosmetic or mechanical?** If the ball's speed is to come
+> from the hand, that is a change to the possession model and a much larger unit
+> than this one. If it is to look right, this model is the shape.
+
+**That answer selects among the four shapes above, and the mapping is not
+obvious, so it is stated here.**
+
+- **Cosmetic** — the flick must look right and the ball's speed stays authored.
+  Then the clip needs **the joints**, because looking right is exactly what the
+  board must draw. A speed field would carry nothing a viewer sees. Options A,
+  B or C, and the paper's own `wristToDegrees` and `fingerToDegrees` decide
+  which.
+- **Mechanical** — the ball's speed comes from the hand. Then the boundary has a
+  real choice for the first time: **the joints** let the board draw the flick and
+  derive the speed, and **a speed field** carries the outcome for a board that
+  will never draw a hand. Only then is option D a serious answer rather than a
+  cheaper substitute.
+
+The paper reaches the same boundary from the other side, as its own fifth
+question to Marius: "Fifteen channels carry no hand. A flick reaches the coach's
+figure and the receipt and stops there unless the contract gains channels." Both
+lanes are asking one question, and neither can answer it alone.
