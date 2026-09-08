@@ -50,6 +50,55 @@ the last eight contact frames, all four passes:
 
 **The ball leaves 8 to 18 times faster than the hand that released it.**
 
+### The engine's wrist beside the athlete's, in the same units
+
+The comparison the clip cannot supply, because the clip carries no wrist at all
+(below). This is the wrist joint's own speed **from the solve**, over the last
+eight frames of contact, in **metres per second**:
+
+| | wrist through contact | the filmed athlete |
+|---|---|---|
+| `chest_pass` | **0.33 to 0.36 m/s** | |
+| `overhead_pass` | 0.46 to 0.53 | |
+| `bounce_pass` | 0.34 to 0.35 | |
+| `one_hand_high_pass` | 0.63 to 0.79 | |
+| | | **3.4 to 4.3 m/s through the throw** |
+
+**The engine's wrist runs at a fifth to a thirteenth of the filmed hand.** No
+forward-kinematics rebuild is involved: these are the solved joint positions,
+differenced frame to frame at the track's own rate.
+
+**A flick added to a wrist travelling at a tenth of the filmed speed will not
+reach that band**, and the gap is a statement about the whole arm's timing
+through the last frames of contact rather than about the wrist alone.
+
+### The video lane found the same thing from the other end
+
+Cited from that lane's pack and log, not re-derived here: **in every shipped
+clip the ball is ASSIGNED its flight velocity at the release frame** — on the
+chest pass **0.46 m/s while held and 8.88 the next frame**, a step of 6 to 19
+times in ONE frame across all eight techniques. Nothing accelerates the ball,
+and the flick Marius saw is the last part of a throw the engine does not perform
+at all.
+
+**Two lanes, two instruments, one conclusion**, which is worth more than either
+alone: that lane read the exported clips, this one read the solve.
+
+**AND THE TWO SETS OF NUMBERS ARE NOT THE SAME QUANTITY, so they are not
+presented as agreeing.** Measured here on the solve, the ball centre's
+frame-to-frame displacement at 60 fps on the chest pass:
+
+    75 -> 76   0.33 m/s   carried -> released
+    76 -> 77   6.03 m/s   released -> released
+
+The SHAPE matches exactly — a one-frame step, 18.3 times here against their 19.3
+— and the magnitudes do not: theirs is uniformly about 1.4 times these on BOTH
+the held and the released figure. A uniform factor on both suggests a rate or a
+scale difference rather than a different event, but **this paper does not know
+which and does not guess**. Whichever pack can name both quantities should
+settle it; the conclusion does not turn on it, because both readings say the
+ball's speed appears in one frame from nothing.
+
 ### And that is the finding under Marius's observation
 
 The ball's speed is **authored**, not imparted: `author_flight.DEFAULT_SPEED_CM
@@ -143,6 +192,28 @@ contact against the footage's **3.4 to 4.3 m/s**. That is a factor of five to
 thirteen, and it is a statement about the whole arm's timing, not about the
 wrist. **A wrist flick added to a hand travelling at a tenth of the filmed speed
 will not reach that band**, and this paper does not pretend otherwise.
+
+## 3b. The clip cannot carry a flick, whatever the animation does
+
+Verified here from the exporter rather than taken on trust. A clip frame is
+**fifteen positional numbers** (`export_tactics_clip.py:246-264`):
+
+    bob, lean, twist,
+    leg left upper/lower, leg right upper/lower,
+    arm left upper/lower, arm right upper/lower,
+    leg left out, leg right out, arm left out, arm right out
+
+**There is no wrist, no hand and no finger among them**, confirmed against a
+shipped clip: `netball_chest_pass.clip.json` carries fifteen bare numbers per
+frame and no channel name matching wrist, hand, finger or thumb.
+
+So a flick can be solved, rendered and graded, and **Tactics will not receive
+it**. That is a contract question for Marius and this paper states it as one: a
+sixteenth and seventeenth channel would be a change to the clip contract, which
+is the boundary this lane deliberately does not cross alone.
+
+**It also bounds what the unit can claim.** A flick reaches the coach's figure
+and the receipt; it does not reach a board.
 
 ## 4. The proposed model
 
@@ -259,6 +330,64 @@ value**. So:
   be this ledger's own recurring fault in a new place.
 - **It has not been swept.** Nothing here is proven able to fail.
 
+## 9. Mechanical or cosmetic: the choice, and what each costs
+
+A release model that only bends a flat hand would leave the video lane's
+finding untouched. So the paper must say how the launch speed would be
+delivered, or say plainly that it stays assigned. Both are stated; neither is
+chosen here.
+
+### If the launch stays ASSIGNED and the hand motion is cosmetic
+
+**What it costs.** The figure a coach sees becomes right and the mechanism stays
+absent: the hand will move through the last frames of contact and the ball will
+still receive 6 m/s from a constant at the release frame. Anyone reading the
+engine afterwards — a coach, a later lane, a reviewer — may reasonably take the
+moving hand as the cause of the speed, because that is what a moving hand means
+everywhere else. **The engine would then look like it models a throw and not do
+it**, which is a worse position than today, where the flat hand at least does
+not imply the mechanism.
+
+**What it needs**: one sentence in the drill files and the ledger saying the
+hand does not drive the ball, and a guard that fails if a later change makes the
+launch depend on the hand without a ruling.
+
+**What it is worth**: Marius's own words are that the difference is small but
+crucial for the FIGURE. A cosmetic flick delivers exactly that and nothing else,
+at a cost measured in one unit of work.
+
+### If the launch is to be DELIVERED by the arm and hand
+
+**What it costs.** It is not this unit. The ball's speed today comes from
+`author_flight.DEFAULT_SPEED_CM = 600`, a constant with no provenance already on
+the coach agenda. Delivering it from the body means the possession model stops
+assigning a velocity and starts reading one, which changes: how a release is
+authored; how every existing flight was calibrated, since all eight techniques
+derive 600 from the same constant; and the whole library's ball trajectories,
+because a hand-driven speed will not land on 600.
+
+**And the arm cannot deliver it as it stands.** At 0.33 to 0.79 m/s the hand
+carries a small fraction of the energy a 6 m/s ball needs, so the unit would
+have to change the ARM's motion through contact and not only the wrist's. That
+is the finding the wrist table above points at.
+
+**What it is worth**: a ball whose speed a coach can change by changing
+technique, which is the thing the engine cannot do today, and the only route to
+grading "power" at all.
+
+### This lane's reading
+
+**The two are not alternatives at the same scale.** The cosmetic model is one
+unit and it is the one Marius described. The mechanical model is a rework of the
+ball's launch and belongs on the agenda beside the 600's provenance, not inside
+a hand unit.
+
+**The recommendation is the cosmetic model, built so it cannot be mistaken for
+the other**: the hand moves, the ledger and the drill files say in terms that
+the ball's launch is assigned and the hand does not drive it, and a guard holds
+that. If Marius wants the mechanism, this paper is the wrong size for it and the
+right first step is the 600.
+
 ## Questions for Marius, in order
 
 1. **Is the flick to be cosmetic or mechanical?** If the ball's speed is to come
@@ -270,6 +399,9 @@ value**. So:
    than before it.
 4. **Gate 4**: the parameters live in the technique files, so the unit needs the
    ruling before any drill carries them.
+5. **The clip contract.** Fifteen channels carry no hand. A flick reaches the
+   coach's figure and the receipt and stops there unless the contract gains
+   channels, which is a boundary this lane does not cross alone.
 
 ## The instrument
 

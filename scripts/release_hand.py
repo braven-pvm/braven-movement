@@ -110,7 +110,8 @@ def hand_against_ball(character) -> None:
     print(f"    THE HAND AGAINST THE BALL IT RELEASES, over the last "
           f"{CONTACT_FRAMES} contact frames")
     print(f"    {'drill':32s} {'release':>7s} {'hand cm/s':>18s} "
-          f"{'ball cm/s':>10s} {'ratio':>7s}")
+          f"{'ball cm/s':>10s} {'ratio':>7s}   "
+          f"the same wrist in the athlete's units")
     for movement_id in PASSES:
         result = solve_movement(character, movement_id)
         index, points = result["index"], result["points"]
@@ -132,7 +133,8 @@ def hand_against_ball(character) -> None:
         flight = sum(ball) / len(ball)
         print(f"    {movement_id.replace('netball_', ''):32s} {release:7d} "
               f"{min(hand):7.1f} to {max(hand):6.1f} {flight:10.1f} "
-              f"{flight / max(hand):6.1f}x")
+              f"{flight / max(hand):6.1f}x   "
+              f"wrist {min(hand) / 100:.2f} to {max(hand) / 100:.2f} m/s")
     print()
     print("    The ball's speed is AUTHORED (author_flight.DEFAULT_SPEED_CM),")
     print("    not imparted, so the ratio is not a defect in the hand: it is a")
