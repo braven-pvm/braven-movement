@@ -9,8 +9,10 @@ saying a test meant to run and could not.
 
 from __future__ import annotations
 
+import copy
 import json
 import re
+import tempfile
 import unittest
 import unittest.mock as mock
 from pathlib import Path
@@ -67,6 +69,23 @@ class TheReleasesAreReadOnThePicturesAndRecordedAsSuch(unittest.TestCase):
         self.assertIn(speed.HELD_REPETITION[2],
                       [r.frame for r in speed.RELEASES])
 
+    def test_the_exclusion_FOLLOWS_THE_NAME_and_is_not_a_threshold(self):
+        """`inBand` was indistinguishable from `handImage > 2.5`, which is
+        the fastest way for a named exclusion to become a silent filter.
+        Point the name at another repetition and the exclusion must move with
+        it, leaving the slow one in.
+        """
+        if not keypoints_present():
+            self.skipTest("the keypoint artefacts are not on this machine")
+        elsewhere = ("side", "0.2", 646)
+        with mock.patch.object(speed, "HELD_REPETITION", elsewhere):
+            rows = {r["frame"]: r for r in speed.band_rows()}
+
+        self.assertFalse(rows[646]["inBand"], "the named row stayed in")
+        self.assertTrue(rows[593]["inBand"],
+                        "the slow row stayed out, so a threshold is doing "
+                        "the work and not the name")
+
 
 class TheNullIsSearchedAndNotChosen(unittest.TestCase):
     """My first null was a stretch I believed was a stand. It held a 3.03 m/s
@@ -106,7 +125,8 @@ class TheTwoScalesAreKeptApart(unittest.TestCase):
 
     def test_the_image_scale_follows_her_size_in_the_picture(self):
         d, index = speed.load("side", "0.2")
-        near = speed.metres_per_pixel(d["frames"][423], index)
+        near = speed.metres_per_pixel(d["frames"][423], index,
+                                      speed.athlete_height(d))
 
         self.assertIsNotNone(near)
         self.assertGreater(near, 0.001)
@@ -119,7 +139,8 @@ class TheTwoScalesAreKeptApart(unittest.TestCase):
         rows = speed.band_rows()
         for row in rows:
             with self.subTest(release=row["frame"]):
-                self.assertLessEqual(abs(row["atImage"] - row["atWorld"]), 8)
+                self.assertLessEqual(abs(row["atImage"] - row["atWorld"]),
+                                     speed.BEFORE + speed.AFTER)
                 self.assertGreater(row["handWorld"], 0.4 * row["handImage"])
                 self.assertLess(row["handWorld"], 1.6 * row["handImage"])
 
@@ -136,10 +157,25 @@ class TheTwoScalesAreKeptApart(unittest.TestCase):
         self.assertAlmostEqual(
             engine,
             json.loads(receipt.read_text(encoding="utf-8"))["armLengthCm"] / 100.0)
-        source = Path(speed.__file__).read_text(encoding="utf-8")
-        self.assertNotIn("0.5268", source,
-                         "the engine's arm is typed into the module instead "
-                         "of read from its receipt")
+
+
+class TheEnginesArmIsReadAndNotTyped(unittest.TestCase):
+    """No recording is needed for this, so it runs where the artefacts do not
+    reach: the receipt it reads is written by the test itself."""
+
+    def test_the_engine_arm_MOVES_when_the_receipt_says_something_else(self):
+        """Proved by a run, not by searching the source for a number. A
+        typed `52.68 / 100.0` passed the old text guard, because the string
+        it searched for was `0.5268`."""
+        with tempfile.TemporaryDirectory() as tmp:
+            elsewhere = Path(tmp)
+            (elsewhere / "netball_two_hand_snatch_pull_in.reach.json").write_text(
+                json.dumps({"armLengthCm": 61.5}), encoding="utf-8")
+            with mock.patch.object(speed, "LIBRARY", elsewhere):
+                arm, receipt = speed.engine_arm_metres()
+
+        self.assertAlmostEqual(arm, 0.615)
+        self.assertEqual(receipt.parent, elsewhere)
 
 
 class TheNearArmIsMeasuredNotAssumed(unittest.TestCase):
@@ -347,6 +383,202 @@ class TheReleaseFrameIsTheOneThatWasRead(unittest.TestCase):
         self.assertEqual(len(rows), speed.BEFORE + speed.AFTER + 1)
         self.assertEqual(rows[0]["offset"], -speed.BEFORE)
         self.assertEqual(rows[-1]["offset"], speed.AFTER)
+
+
+class TheBandCarriesItsInputsAndIsPinnedByHash(unittest.TestCase):
+    """A band without its inputs cannot be checked by anyone, and these two
+    recordings have already been renamed once at source. A filename does not
+    say which recording this is; a hash does."""
+
+    def setUp(self):
+        if not keypoints_present():
+            self.skipTest("the keypoint artefacts are not on this machine")
+
+    def written_inputs(self) -> dict[str, list[str]]:
+        text = speed.BAND_DOC.read_text(encoding="utf-8")
+        start = text.index("| recording | keypoints sha256 |")
+        block = text[start:text.index("\n\n", start)]
+        rows = {}
+        for line in block.splitlines()[2:]:
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            rows[cells[0].strip("`")] = cells[1:]
+        return rows
+
+    def test_BAND_DOC_carries_the_hashes_of_the_files_IT_JUST_READ(self):
+        """Hashed here, now, from the files on disk. A hash copied into a
+        document once is a hash that will outlive the file it describes."""
+        written = self.written_inputs()
+        checked = 0
+        for row in speed.provenance_rows():
+            key = f"{row['view']} {row['setId']}"
+            with self.subTest(recording=key):
+                cells = written[key]
+
+                self.assertEqual(cells[0], row["keypointsSha256"])
+                self.assertEqual(cells[1], row["videoSha256"])
+                self.assertEqual(cells[2].lower(),
+                                 row["modelSha256"].lower())
+                self.assertEqual(cells[3],
+                                 str(row["framesPerSecondMeasured"]))
+                self.assertEqual(cells[4], str(row["frames"]))
+                checked += 1
+
+        self.assertEqual(checked, len(speed.recordings()))
+        self.assertEqual(sorted(written), sorted(
+            f"{v} {s}" for v, s in speed.recordings()))
+
+    def test_the_recorded_frame_rate_is_the_file_s_own_and_not_a_nominal_30(self):
+        """30.012 against 30.0 is 0.04 per cent and invisible at two decimals,
+        so a constant 30 passed every test. It is pinned here instead: the
+        two recordings do not even agree with each other."""
+        rates = {row["framesPerSecondMeasured"]
+                 for row in speed.provenance_rows()}
+
+        self.assertNotIn(30.0, rates)
+        self.assertEqual(len(rates), len(speed.recordings()),
+                         "the two recordings should carry different measured "
+                         "rates; a shared one suggests a typed value")
+
+    def test_a_keypoint_file_that_is_not_the_pinned_one_is_REFUSED(self):
+        """The case is built, because every file on this machine matches."""
+        wrong = speed.Artefact("0" * 64,
+                               speed.EXPECTED[("side", "0.2")].videoSha256)
+        with mock.patch.dict(speed.EXPECTED, {("side", "0.2"): wrong}):
+            with self.assertRaises(SystemExit) as refusal:
+                speed.load("side", "0.2")
+
+        self.assertIn("is pinned to 000000000000", str(refusal.exception))
+        self.assertIn("renamed at source", str(refusal.exception))
+
+    def test_a_file_describing_ANOTHER_recording_is_REFUSED(self):
+        wrong = speed.Artefact(
+            speed.EXPECTED[("side", "0.2")].keypointsSha256, "1" * 64)
+        with mock.patch.dict(speed.EXPECTED, {("side", "0.2"): wrong}):
+            with self.assertRaises(SystemExit) as refusal:
+                speed.load("side", "0.2")
+
+        self.assertIn("describes video", str(refusal.exception))
+
+    def test_THE_TWO_SIDE_FILES_SWAPPED_BY_NAME_ARE_REFUSED(self):
+        """This is the failure the source rename made real, and before the
+        hashes it was caught only by the numbers coming out different — and
+        only on a machine that has the files at all."""
+        def swapped(view, set_id):
+            other = {"0.1": "0.2", "0.2": "0.1"}[set_id]
+            return speed.KEYPOINTS / f"keypoints-{view}-{other}.json"
+
+        with mock.patch.object(speed, "keypoint_path", swapped):
+            with self.assertRaises(SystemExit) as refusal:
+                speed.load("side", "0.2")
+
+        self.assertIn("is not the one this band was measured on",
+                      str(refusal.exception))
+
+    def test_a_recording_with_no_recorded_hash_is_REFUSED(self):
+        """The front recordings are not measured here and are not pinned. The
+        module must say so rather than measure them."""
+        with self.assertRaises(SystemExit) as refusal:
+            speed.load("front", "0.2")
+
+        self.assertIn("no hash is recorded", str(refusal.exception))
+
+    def test_the_athlete_figures_are_READ_and_a_disagreement_REFUSES(self):
+        """They sit in every keypoint file. Typing them here is the pattern
+        this module condemns two paragraphs later for the engine's arm."""
+        d, _ = speed.load("side", "0.2")
+
+        self.assertAlmostEqual(speed.athlete_height(d),
+                               speed.ATHLETE_HEIGHT_METRES)
+        self.assertAlmostEqual(d["athlete"]["oneArmReachMetres"],
+                               speed.ATHLETE_ARM_METRES)
+
+        with mock.patch.object(speed, "ATHLETE_HEIGHT_METRES", 1.60):
+            with self.assertRaises(SystemExit) as refusal:
+                speed.load("side", "0.2")
+
+        self.assertIn("calibrated on 1.6", str(refusal.exception))
+
+    def test_the_image_scale_FOLLOWS_the_height_the_file_carries(self):
+        """Proved by a run: give the file a taller athlete and every image
+        speed must rise in proportion."""
+        d, index = speed.load("side", "0.2")
+        taller = copy.deepcopy(d)
+        taller["athlete"]["heightMetres"] = 2 * d["athlete"]["heightMetres"]
+
+        was = speed.speed_rows(d, index, 423)
+        now = speed.speed_rows(taller, index, 423)
+        pairs = [(a["handImage"], b["handImage"])
+                 for a, b in zip(was, now)
+                 if a["handImage"] is not None and b["handImage"] is not None]
+
+        self.assertTrue(pairs)
+        for a, b in pairs:
+            self.assertAlmostEqual(b, 2 * a, places=6)
+
+    def test_the_world_speed_uses_the_file_s_own_frame_rate(self):
+        """A nominal 30 is 0.04 per cent out and invisible in the table. Move
+        the file's rate and the speeds must move with it."""
+        d, index = speed.load("side", "0.2")
+        doubled = copy.deepcopy(d)
+        doubled["source"]["framesPerSecondMeasured"] *= 2
+
+        was = speed.speed_rows(d, index, 423)
+        now = speed.speed_rows(doubled, index, 423)
+
+        self.assertTrue(was)
+        for a, b in zip(was, now):
+            self.assertAlmostEqual(b["handWorld"], 2 * a["handWorld"],
+                                   places=6)
+
+
+class TheNullSearchIgnoresAnUntrackedWrist(unittest.TestCase):
+    """R08: the visibility filter changed nothing on this footage, because
+    the quietest window passes it anyway. A guard whose case cannot be found
+    in the data has to have its case BUILT."""
+
+    def setUp(self):
+        if not keypoints_present():
+            self.skipTest("the keypoint artefacts are not on this machine")
+
+    def frozen(self) -> tuple[dict, dict, int]:
+        """A recording with a stretch where the hand does not move at all and
+        the wrist is barely tracked: exactly what an untracked wrist looks
+        like, and the quietest window in the file by a distance."""
+        d, index = speed.load("side", "0.2")
+        made = copy.deepcopy(d)
+        start, length = 200, speed.BEFORE + speed.AFTER + 3
+        still = copy.deepcopy(made["frames"][start]["landmarks"])
+        for n in range(start, start + length):
+            frame = made["frames"][n]
+            frame["detected"] = True
+            frame["degraded"] = False
+            frame["landmarks"] = copy.deepcopy(still)
+            frame["landmarks"][index[f"{speed.NEAR_ARM}_wrist"]]["visibility"] = 0.5
+        return made, index, start
+
+    def test_the_filter_CHANGES_which_window_is_chosen(self):
+        made, index, start = self.frozen()
+
+        kept = speed.search_null(made, index)
+        with mock.patch.object(speed, "NULL_MIN_VISIBILITY", 0.0):
+            taken = speed.search_null(made, index)
+
+        self.assertAlmostEqual(taken["peak"], 0.0, places=9)
+        self.assertGreaterEqual(taken["start"], start)
+        self.assertGreater(kept["peak"], 0.0)
+        self.assertNotEqual(kept["start"], taken["start"])
+
+    def test_the_filter_leaves_the_real_recording_alone(self):
+        """It must not be doing work on the real files: the searched null is
+        the same window with the filter off, which is why the case above had
+        to be built."""
+        d, index = speed.load("side", "0.2")
+
+        kept = speed.search_null(d, index)
+        with mock.patch.object(speed, "NULL_MIN_VISIBILITY", 0.0):
+            taken = speed.search_null(d, index)
+
+        self.assertEqual(kept["start"], taken["start"])
 
 
 class ItRefusesRatherThanGuessesWhenAnArtefactIsAbsent(unittest.TestCase):

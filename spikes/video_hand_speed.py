@@ -17,11 +17,28 @@ WHAT THIS MEASURES, AND WHAT IT REFUSES TO.
              finding, not an omission.
 
 THE RELEASE FRAMES ARE READ ON THE PICTURES, NOT DERIVED HERE. The rule is:
-the release is the FIRST FRAME IN WHICH A GAP IS VISIBLE BETWEEN THE BALL AND
-BOTH HANDS, read at a step of one frame at 400 px. `RELEASES` records what was
-read, with the ones where the ball is blurred at separation marked `soft`.
-Nothing in this file finds a release; a wrist-speed peak was used to narrow
-where to look, and it fires on catches too.
+the release is the FIRST FRAME IN WHICH THE BALL LEAVES THE HANDS, read at a
+step of one frame at 400 px. `RELEASES` records what was read, with the ones
+where the ball is blurred at separation marked `soft`. Nothing in this file
+finds a release; a wrist-speed peak was used to narrow where to look, and it
+fires on catches too.
+
+THE CONVENTION MATTERS BECAUSE THE BALL SEPARATES DURING AN EXPOSURE. At the
+release frame the ball is a smear whose trailing edge still touches the
+fingertips; the frame after is the first with a gap clear of the smear. This
+module reads the smear as the ball, so the release is the frame in which the
+ball leaves the hands rather than the first frame with clear air behind it. An
+independent review of 2026-09-08 read the same five frames one later under the
+other convention. The band does not move either way, the `at` column does.
+
+EVERY ARTEFACT IS PINNED BY SHA256, NEVER BY NAME. The two side recordings
+swapped names at source on 2026-09-07, and their keypoint files record it in
+`source.renamedFrom`. `load` refuses unless the file's own hash and the
+`videoSha256` it carries are the ones recorded in `EXPECTED`, so a rename
+cannot quietly change which recording produced the band. If a recording is
+extracted again, its hash changes and this module refuses until the new hash
+is recorded and BAND.md is regenerated, which is the intended behaviour: the
+band belongs to the bytes it was measured on.
 
 TWO SCALES, AND NEITHER IS PREFERRED.
 
@@ -33,11 +50,13 @@ They are printed side by side because two instruments that fail differently
 are the only check available here. They disagree by about 20 per cent, and the
 band quoted to another lane spans both.
 
-ONE WORD, TWO ARMS, TWO QUANTITIES. `ATHLETE_ARM_METRES` is Marius's figure
-for the athlete and belongs to the footage. The engine's clips are in the
-ENGINE's arm lengths, and converting those with the athlete's arm inflates
-every engine metre by 1.46. This module holds the athlete's number only, and
-`ENGINE_ARM_METRES` is read from the engine's own receipt at run time.
+ONE WORD, TWO ARMS, TWO QUANTITIES. The athlete's arm belongs to the footage
+and is READ from each keypoint file. The engine's clips are in the ENGINE's arm
+lengths, and converting those with the athlete's arm inflates every engine
+metre by 1.46. The engine's arm is read from the engine's own receipt at run
+time. Neither number is typed into an arithmetic path here: the constants below
+are the values the files carried on 2026-09-08, and `load` refuses if a file
+disagrees with them.
 
     pixi run --frozen python -B video_hand_speed.py
 """
@@ -66,6 +85,11 @@ ATHLETE_ARM_METRES = 0.77
 
 # The window either side of a release, in frames.
 BEFORE, AFTER = 10, 5
+
+# The null search ignores frames where the near wrist is barely tracked. An
+# untracked wrist sits still, so without this the quietest window in a
+# recording would be the one the model had most trouble seeing.
+NULL_MIN_VISIBILITY = 0.7
 
 # The near arm. In BOTH runs the side camera sees her left arm nearer: the
 # left wrist tracks at 0.86 and 0.69 visibility against 0.31 and 0.18 for the
@@ -115,6 +139,26 @@ NO_RELEASE = {("side", "0.2"): (739, "she carries the ball out of the drill")}
 HELD_REPETITION = ("side", "0.2", 593)
 
 
+class Artefact(NamedTuple):
+    """What a recording must hash to before this module will measure it."""
+
+    keypointsSha256: str
+    videoSha256: str
+
+
+# PINNED 2026-09-08 by hashing the files this band was measured on. The two
+# side recordings carry the same four filenames they were renamed to at source
+# on 2026-09-07; only these hashes say which recording is which.
+EXPECTED = {
+    ("side", "0.1"): Artefact(
+        "61a8940128ebf12ce00d432391fcba18164b3dce2ce813126ad79f153f9fd333",
+        "6e8f9fb2fe03f517a595a202ffb69e1554c228a5931919a3da359e6a590f2912"),
+    ("side", "0.2"): Artefact(
+        "f98e5dc50f4a749f85bc6411c7ec1b0ff364c4fd35a131ac9ddc0e4cffb79a62",
+        "253fa551605e4844dcf509b4462464b97043a55b5e059e6221b73723353caf66"),
+}
+
+
 def sha256(path: Path) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as f:
@@ -128,13 +172,62 @@ def keypoint_path(view: str, set_id: str) -> Path:
 
 
 def load(view: str, set_id: str) -> tuple[dict, dict[str, int]]:
+    """Read a recording's keypoints, REFUSING anything but the exact bytes.
+
+    Three things are checked and each can fail on its own: the file hashes to
+    what was recorded, it describes the recording that was recorded, and it
+    carries the athlete figures this module was calibrated against.
+    """
     path = keypoint_path(view, set_id)
     if not path.exists():
         raise SystemExit(
             f"{path.name} is not on this machine. The keypoint artefacts are "
             "not in git; extract them before running this.")
+    expected = EXPECTED.get((view, set_id))
+    if expected is None:
+        raise SystemExit(
+            f"no hash is recorded for {view} {set_id}; this module measures "
+            "only recordings pinned in EXPECTED.")
+    found = sha256(path)
+    if found != expected.keypointsSha256:
+        raise SystemExit(
+            f"{path.name} hashes to {found[:12]} and {view} {set_id} is "
+            f"pinned to {expected.keypointsSha256[:12]}. The file is not the "
+            "one this band was measured on; the side recordings have been "
+            "renamed at source once already.")
     d = json.loads(path.read_text(encoding="utf-8"))
+    carried = d["source"]["videoSha256"]
+    if carried != expected.videoSha256:
+        raise SystemExit(
+            f"{path.name} describes video {carried[:12]} and {view} {set_id} "
+            f"is pinned to {expected.videoSha256[:12]}.")
+    athlete = d.get("athlete") or {}
+    for field, value in (("heightMetres", ATHLETE_HEIGHT_METRES),
+                         ("oneArmReachMetres", ATHLETE_ARM_METRES)):
+        if field not in athlete:
+            raise SystemExit(
+                f"{path.name} carries no athlete.{field}; this module reads "
+                "the athlete's figures rather than typing them.")
+        if abs(athlete[field] - value) > 1e-9:
+            raise SystemExit(
+                f"{path.name} says athlete.{field} is {athlete[field]} and "
+                f"this module was calibrated on {value}.")
     return d, {n: i for i, n in enumerate(d["model"]["landmarkNames"])}
+
+
+def provenance(view: str, set_id: str) -> dict:
+    """What a reader needs to check the band against: every input, hashed."""
+    d, _ = load(view, set_id)
+    return {
+        "view": view,
+        "setId": set_id,
+        "keypointsSha256": sha256(keypoint_path(view, set_id)),
+        "videoSha256": d["source"]["videoSha256"],
+        "modelSha256": d["model"]["modelSha256"],
+        "modelFile": d["model"]["modelFile"],
+        "framesPerSecondMeasured": d["source"]["framesPerSecondMeasured"],
+        "frames": len(d["frames"]),
+    }
 
 
 def image_point(frame: dict, index: dict, name: str) -> tuple[float, float]:
@@ -197,7 +290,13 @@ def gate_near_arm(d: dict, index: dict, centre: int,
             f"{side} one. Set NEAR_ARM, or pass side= for this recording.")
 
 
-def metres_per_pixel(frame: dict, index: dict) -> float | None:
+def athlete_height(d: dict) -> float:
+    """Her height, READ from the recording rather than typed here."""
+    return d["athlete"]["heightMetres"]
+
+
+def metres_per_pixel(frame: dict, index: dict,
+                     height_metres: float) -> float | None:
     """A scale from HER OWN height in this frame, so it follows her about."""
     nose = image_point(frame, index, "nose")[1]
     heel = max(image_point(frame, index, "left_heel")[1],
@@ -205,7 +304,7 @@ def metres_per_pixel(frame: dict, index: dict) -> float | None:
     span = heel - nose
     if span <= 0:
         return None
-    return (ATHLETE_HEIGHT_METRES * NOSE_TO_HEEL_FRACTION) / span
+    return (height_metres * NOSE_TO_HEEL_FRACTION) / span
 
 
 def speed_rows(d: dict, index: dict, centre: int,
@@ -226,7 +325,7 @@ def speed_rows(d: dict, index: dict, centre: int,
             row["wristImage"] = row["wristWorld"] = None
             rows.append(row)
             continue
-        scale = metres_per_pixel(here, index)
+        scale = metres_per_pixel(here, index, athlete_height(d))
         for part in ("hand", "wrist"):
             if part == "hand":
                 now2 = hand_centre(here, index, image_point)
@@ -263,9 +362,9 @@ def search_null(d: dict, index: dict, side: str = NEAR_ARM) -> dict:
         here, was = d["frames"][n], d["frames"][n - 1]
         if not (here["detected"] and was["detected"]) or here["degraded"]:
             continue
-        if visibility(here, index, f"{side}_wrist") < 0.7:
+        if visibility(here, index, f"{side}_wrist") < NULL_MIN_VISIBILITY:
             continue
-        scale = metres_per_pixel(here, index)
+        scale = metres_per_pixel(here, index, athlete_height(d))
         if scale is None:
             continue
         speed[n] = math.dist(hand_centre(here, index, image_point),
@@ -348,7 +447,27 @@ def band(rows: list[dict] | None = None) -> tuple[float, float]:
             max(max(r["handImage"], r["handWorld"]) for r in wanted))
 
 
+def recordings() -> tuple[tuple[str, str], ...]:
+    """The recordings the band is measured on, in the order they are used."""
+    seen = []
+    for release in RELEASES:
+        if (release.view, release.setId) not in seen:
+            seen.append((release.view, release.setId))
+    return tuple(seen)
+
+
+def provenance_rows() -> list[dict]:
+    return [provenance(*key) for key in recordings()]
+
+
 def main(argv: list[str]) -> int:
+    print("THE INPUTS, hashed. A band without them cannot be checked.")
+    for p in provenance_rows():
+        print(f"  {p['view']} {p['setId']}: keypoints "
+              f"{p['keypointsSha256'][:12]}, video {p['videoSha256'][:12]}, "
+              f"model {p['modelSha256'][:12]}, "
+              f"{p['framesPerSecondMeasured']} fps, {p['frames']} frames")
+    print()
     rows = band_rows()
     low, high = band(rows)
     print(f"{'run':>5s} {'release':>8s} {'read':>6s} {'hand img':>9s} "
