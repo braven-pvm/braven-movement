@@ -149,6 +149,10 @@ class Artefact(NamedTuple):
 # PINNED 2026-09-08 by hashing the files this band was measured on. The two
 # side recordings carry the same four filenames they were renamed to at source
 # on 2026-09-07; only these hashes say which recording is which.
+#
+# ONLY THE TWO SIDE RECORDINGS ARE HERE, because only they are measured. Asking
+# for a front recording is refused with "no hash is recorded", which is correct
+# and is not a defect: hash the file, add it here, and it becomes measurable.
 EXPECTED = {
     ("side", "0.1"): Artefact(
         "61a8940128ebf12ce00d432391fcba18164b3dce2ce813126ad79f153f9fd333",
