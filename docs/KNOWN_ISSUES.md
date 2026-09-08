@@ -4793,4 +4793,30 @@ case must exist in data, arriving from the opposite direction.
 10. After a fix that makes data provably consistent, re-run the mutations that
     depended on it being possibly inconsistent. A correctness fix can make a
     guard unfalsifiable; build the case the data can no longer supply.
+11. The hosted runner is a different machine. A test that asserts a machine
+    property — a font, a recording, a solver — SKIPS BY NAME where the property
+    is absent, and a refusal that depends on the machine comes after the
+    refusals that do not.
+
+### The machine the tests ran on was not the machine that checks them
+
+Every check on this machine was green and three went red on the hosted runner,
+which is Linux and has no `C:/Windows/Fonts/arialbd.ttf`. `Ran 972 tests,
+FAILED (failures=2, errors=1, skipped=179)`:
+
+- `test_the_font_this_machine_pinned_with_is_present` called `check_font()`
+  unguarded, which raises `SystemExit` where the file is absent. That is an
+  ERROR, and an error on a runner is that runner saying a test meant to run and
+  could not. It skips by name now, beside the tests gated on the recordings.
+- an import-hygiene guard counts errors across the suite, so the one above made
+  it fail too. One ungated test took a second check down with it.
+- `main()` called `check_font()` BEFORE `resolve()`, so an unknown pair was
+  refused with a message about a Windows font path rather than the list of
+  known pairs. **The same wrong argument gave a different answer depending on
+  where it ran.** The pair is resolved first now.
+
+The font gate is beside the recordings gate, and a test loads every other test
+in the module with the font patched away and requires ZERO errors: a pass or a
+skip that names its reason. Measured that way, `ran=34 errors=0 failures=0
+skipped=11`, every skip naming the font or the recordings.
 

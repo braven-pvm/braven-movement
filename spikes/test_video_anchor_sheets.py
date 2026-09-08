@@ -30,6 +30,17 @@ def recordings_present(pair_key):
     return (SAMPLES / PAIRS[pair_key]["referenceFile"]).exists()
 
 
+def font_present():
+    """THE LABEL FONT IS A PROPERTY OF THE MACHINE, like the recordings.
+
+    It lives at a Windows path, the hosted runner is Linux, and a test that
+    needs it must SKIP BY NAME there rather than error. An error on a runner
+    is that runner saying a test meant to run and could not, which is a
+    different thing from a test that does not apply.
+    """
+    return sheets.LABEL_FONT.exists()
+
+
 class TheMomentsComeFromTheTable(unittest.TestCase):
     """THE SCRATCH INSTRUMENT DREW THREE ANCHORS FOR PAIR 2 AND THE TABLE HOLDS
     TWO. Its third sheet is a CHECK: an event the fitted offset had to explain
@@ -237,6 +248,11 @@ class TheLabelFontIsPartOfThePinnedPixels(unittest.TestCase):
     another face would fail every pinned tile with a message about the
     picture, which is the wrong thing to go looking at."""
 
+    def needs_font(self):
+        if not font_present():
+            self.skipTest(f"the label font {sheets.LABEL_FONT} is not on "
+                          "this machine")
+
     def test_a_missing_font_refuses_and_says_what_it_would_have_broken(self):
         with mock.patch.object(sheets, "LABEL_FONT",
                                Path("C:/nowhere/arialbd.ttf")):
@@ -248,6 +264,11 @@ class TheLabelFontIsPartOfThePinnedPixels(unittest.TestCase):
         self.assertIn("right frames", message)
 
     def test_the_font_this_machine_pinned_with_is_present(self):
+        """Or says by name that it is not. `check_font()` raises SystemExit
+        where the file is absent, so calling it unguarded turned this into an
+        ERROR on the hosted runner -- a test that meant to run and could not."""
+        self.needs_font()
+
         self.assertTrue(sheets.check_font().exists())
 
     def test_a_missing_font_refuses_BEFORE_anything_is_written(self):
@@ -284,7 +305,8 @@ class TheSheetsReproduceTheOnesAPersonConfirmed(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.ready = all(recordings_present(key) for key in PAIRS)
+        cls.ready = (all(recordings_present(key) for key in PAIRS)
+                     and font_present())
         if not cls.ready:
             return
         cls.out = Path(tempfile.mkdtemp())
@@ -310,7 +332,8 @@ class TheSheetsReproduceTheOnesAPersonConfirmed(unittest.TestCase):
 
     def setUp(self):
         if not self.ready:
-            self.skipTest("the session 1.0 recordings are not on this machine")
+            self.skipTest("the session 1.0 recordings or the label font are "
+                          "not on this machine")
         if self.refusal:
             self.fail(f"drawing the sheets refused: {self.refusal}")
 
@@ -511,6 +534,9 @@ class TheCommandLineDrawsWhatTheTableHolds(unittest.TestCase):
     def test_main_draws_every_moment_of_a_pair_and_writes_the_manifest(self):
         if not recordings_present(PAIR2):
             self.skipTest("the session 1.0 recordings are not on this machine")
+        if not font_present():
+            self.skipTest(f"the label font {sheets.LABEL_FONT} is not on "
+                          "this machine")
         out = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, out, ignore_errors=True)
 
@@ -548,15 +574,86 @@ class TheCommandLineDrawsWhatTheTableHolds(unittest.TestCase):
                     "the sheet main wrote is not the one that was confirmed")
 
     def test_an_unknown_pair_refuses_and_lists_what_is_known(self):
+        """THE SAME ANSWER ON EVERY MACHINE. `main` used to check the font
+        first, so on a machine without it this refused with a message about a
+        Windows font path instead of the list of pairs -- the same wrong
+        argument, a different answer, depending on where it ran."""
         with self.assertRaises(SystemExit) as refusal:
             sheets.main(["video_anchor_sheets.py", "--pair", "front 9.9",
                          "--out", "nowhere"])
+
+        message = str(refusal.exception)
+        self.assertIn(PAIR1, message)
+        self.assertNotIn("font", message)
+
+    def test_the_pair_refusal_is_the_same_WITHOUT_the_font(self):
+        """Measured with the font patched away, which is what the hosted
+        runner is."""
+        with mock.patch.object(sheets, "LABEL_FONT",
+                               Path("/nowhere/arialbd.ttf")):
+            with self.assertRaises(SystemExit) as refusal:
+                sheets.main(["video_anchor_sheets.py", "--pair", "front 9.9",
+                             "--out", "nowhere"])
 
         self.assertIn(PAIR1, str(refusal.exception))
 
     def test_a_pair_folder_is_read_from_the_tables_order(self):
         self.assertEqual(sheets.pair_folder(PAIR1), "pair1")
         self.assertEqual(sheets.pair_folder(PAIR2), "pair2")
+
+
+class NothingInThisModuleERRORS_WithoutTheFont(unittest.TestCase):
+    """WHAT THE HOSTED RUNNER SEES, run here rather than guessed at.
+
+    The runner is Linux and has no `C:/Windows/Fonts/arialbd.ttf`. Three
+    checks went red on it while every check on this machine was green, and the
+    reason was not that the code was wrong there: a test asserted a property
+    of THIS machine and raised where the property was absent, an import
+    hygiene guard counted that error, and `main` refused an unknown pair with
+    a message about a font instead of the list of pairs.
+
+    So this loads every other test in this module, patches the font away, runs
+    them, and requires ZERO ERRORS. Failures are not tolerated either -- what
+    is allowed is a pass or a skip that names its reason.
+
+    A machine property is a skip, never an error. An error on a runner is that
+    runner saying a test meant to run and could not.
+    """
+
+    def test_every_other_test_here_passes_or_skips_with_no_font(self):
+        import io
+
+        loader = unittest.TestLoader()
+        suite = unittest.TestSuite(
+            case for case in _flatten(loader.loadTestsFromModule(
+                __import__(__name__ if __name__ != "__main__"
+                           else "test_video_anchor_sheets")))
+            if not isinstance(case, NothingInThisModuleERRORS_WithoutTheFont))
+
+        with mock.patch.object(sheets, "LABEL_FONT",
+                               Path("/nowhere/arialbd.ttf")):
+            outcome = unittest.TextTestRunner(
+                stream=io.StringIO(), verbosity=0).run(suite)
+
+        self.assertEqual(
+            [f"{case}: {trace.splitlines()[-1]}"
+             for case, trace in outcome.errors], [],
+            "these ERRORED with the font absent; a machine property is a skip")
+        self.assertEqual(
+            [str(case) for case, _ in outcome.failures], [],
+            "these FAILED with the font absent")
+        self.assertGreater(outcome.testsRun, 20)
+        self.assertGreater(len(outcome.skipped), 0,
+                           "nothing skipped, so nothing was actually gated on "
+                           "the font and this test proves nothing")
+
+
+def _flatten(suite):
+    for item in suite:
+        if isinstance(item, unittest.TestSuite):
+            yield from _flatten(item)
+        else:
+            yield item
 
 
 if __name__ == "__main__":

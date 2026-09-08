@@ -449,8 +449,14 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--out", required=True, type=Path)
     arguments = parser.parse_args(argv[1:])
 
-    check_font()
+    # THE PAIR FIRST, THE FONT SECOND, and the order is the point. Checking
+    # the font first made an unknown pair refuse with a message about
+    # `C:/Windows/Fonts/arialbd.ttf` on any machine that has no such file --
+    # so the same wrong argument produced a different answer on Linux from on
+    # Windows. A refusal that depends on the machine comes after the refusals
+    # that do not.
     files = resolve(arguments.pair)
+    check_font()
     print(f"{arguments.pair}")
     for view in ("front", "side"):
         print(f"  {view:5s} {files[view]['name']:16s} "
