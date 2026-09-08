@@ -16,6 +16,7 @@ What each of the five turns out to be:
 | 3 | truncation | **answered by the code**, and the answer is "nothing reads it" |
 | 4 | `generatedFrom` | **a proposal**, for a gap with no field at all |
 | 5 | the ball anchor | **a proposal**, for a residual on a design that is right |
+| 6 | the hand at release | **a decision**, added 2026-09-08; refer to section 8 |
 
 This document has been through one independent review, which found three
 blocking errors and ten smaller ones. Every correction is kept visible in the
@@ -874,3 +875,114 @@ Stated here so that nobody reads silence as a finding.
   readings, and that it must not be reported as a failure on its own.
 - **Whether the eight live clips should be restaged.** That is Marius's open
   decision. Section 6 is the number it needs.
+- **How much the wrist and fingers actually move across the four passes.**
+  Section 8 asks whether the clip should carry a hand at all, and says which of
+  its four shapes fits depends on that measurement. Nobody has taken it, and it
+  needs a solve.
+
+---
+
+## 8. A sixth question, raised after this document was written
+
+Added 2026-09-08 against `braven-movement` main at `1c3d9d7` and
+`braven-tactics` main at `987e2e2`. It is placed at the end rather than beside
+the other five, so that the record of what was asked when stays readable.
+
+**The question.** Marius has asked the movement lane to model the wrist and
+finger flick at release, which he calls the mechanism of ball speed and of late
+direction change. **The clip as specified cannot carry it**, whatever the engine
+does with it.
+
+### What the engine has, and what the clip has
+
+The engine solves a wrist and every finger. Named in the solve on `1c3d9d7`:
+`l_wrist`, `l_thumb1`, `l_thumb3`, `l_index1`, `l_index3`, `l_middle1`,
+`l_middle3`, `l_ring1`, `l_ring3`, `l_pinky1`, `l_pinky3`, and their right-side
+counterparts. The hand-mirror fix in PR #46 moved 47 graded values by correcting
+a sign on exactly these.
+
+The clip carries fifteen channels per frame:
+
+    bob  lean  twist
+    leg  left/right   upper  lower  out
+    arm  left/right   upper  lower  out
+
+**The arm ends at the forearm.** There is no wrist, no hand and no finger in the
+clip, so the distal half of the mechanism stops at the boundary.
+
+### What the clip carries about release speed today: nothing
+
+`export_tactics_clip.py` contains **zero** occurrences of `speed`. The ball
+channel is a position and a flag — forward, up and sideways from the shoulder
+midpoint in arm lengths, then 1 while she has it — so a speed exists only as the
+difference between consecutive positions. Section 0 adds that no code in
+`braven-tactics` reads that channel at all.
+
+**And the release speed is not solved from the body. It is one authored
+constant.** `author_flight.DEFAULT_SPEED_CM` is `600.0` cm/s, the one speed the
+whole library uses. The bounce pass's ball file records what that means:
+
+> 600 cm/s is `author_flight.DEFAULT_SPEED_CM`, the one speed the whole library
+> uses, recorded in `docs/KNOWN_ISSUES.md` as having no coach, no measurement
+> and no source.
+
+It is the horizontal component only; the vertical is solved so the ball reaches
+its target. On the bounce pass the same file measures the constant as visibly
+wrong: 600 cm/s needs a vertical of **+95.15 cm/s**, so the ball is lobbed
+UPWARD at the floor, arcing from 111.7 cm to 116.3 cm before it falls. The throw
+is downward only above **734 cm/s**, and 600 is 0.82 of that. A bounce pass is
+driven at the floor, not lobbed at it.
+
+**So the flick is the mechanism of a quantity the library currently supplies as
+one unsourced constant.** That is what makes this a contract question rather
+than only a movement one: if the flick is solved, the speed it produces has
+somewhere to go only if the boundary carries either the joints or the speed.
+
+### What a hand channel would cost Tactics' reader
+
+Less than section 0's third consequence suggests, and the reason is worth
+stating precisely, because it decides between two shapes.
+
+`Frame` in `clips.ts` is `number[]`, not a fixed-length tuple, and `blend` reads
+each channel by index through:
+
+```ts
+const v = (k: number) => mix(a[k] ?? 0, b[k] ?? 0, w)
+```
+
+**A channel a clip does not carry reads as zero, not as an error.** The comment
+beside it records why: "an older file has no sideways part". That is not
+hypothetical. The four `out` channels were added later and sit at indices 11 to
+14 — **appended after the eleven, not inserted beside their own limbs**.
+
+Two consequences, and they point the same way:
+
+- **Appending channels 15 upward costs the consumer nothing.** Old clips read
+  the new channels as zero, which is the neutral value, and no type changes.
+  This is exactly the migration `out` already made.
+- **Inserting a channel in the middle would be silent and severe.** Every
+  channel after the insertion shifts by one, `?? 0` means nothing throws, and
+  the board draws a body with the wrong joint on every limb and no error
+  anywhere. Section 0 says a change to `frames` is the only kind that can break
+  Tactics; this is the shape that break would take.
+
+### The shapes, framed and not chosen
+
+| | what it adds | channels | notes |
+|---|---|---|---|
+| **A. One per hand** | a wrist flex angle | 15 → 17 | the smallest thing that carries a flick at all |
+| **B. Two per hand** | flex and deviation | 15 → 19 | a flick is not purely in one plane |
+| **C. A third arm segment** | `hand` beside `upper` and `lower` | 15 → 19 | matches the shape the pose already has, and the renderer already knows how to draw a segment |
+| **D. No joints, one number** | a release speed on the clip | 15 | carries the OUTCOME and not the mechanism |
+
+**D is not equivalent to the others and should not be read as the cheap version
+of them.** A speed field would let a board throw at the right pace without
+drawing the flick; the joints would let it draw the flick without knowing the
+speed. Marius's stated reason names both — ball speed AND late direction change
+— and only the joints carry direction.
+
+**What is not known, and needs a measurement rather than an opinion:** how much
+the wrist and fingers actually move across the four passes in the engine's own
+solve. If the answer is a few degrees, option A carries it; if the flick is
+large and out of plane, it is B or C. That read is a solve, so it is not this
+lane's, and no option above should be chosen before it exists.
