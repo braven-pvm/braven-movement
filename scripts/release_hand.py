@@ -246,11 +246,68 @@ def clip_units(character) -> None:
           f"{ATHLETE_ARM_M / (arm_cm(release) / 100.0):.3f}x")
 
 
+def across_release(character) -> None:
+    """The wrist's speed on BOTH sides of the release, both hands.
+
+    THE CORRECTION THAT PROMPTED THIS. An earlier reading of this paper compared
+    the engine's hand with the filmed athlete's using the frames BEFORE release
+    only, and concluded the engine's arm is slow. `docs/KNOWN_ISSUES.md` already
+    recorded, under "The hands are not already moving", that the wrist multiplies
+    its speed in the single frame AFTER release. Both readings are in the same
+    solve and the paper had printed the second one without reading it.
+
+    Speed into frame n is |p[n] - p[n-1]| * fps, so the column headed `rel`
+    is the last motion while the ball is still held and `rel+1` is the first
+    motion after it has gone.
+    """
+    print()
+    print("    THE WRIST ACROSS THE RELEASE, both hands, cm/s")
+    print(f"    {'drill':22s} {'side':4s} {'rel-2':>7s} {'rel-1':>7s} "
+          f"{'rel':>7s} | {'rel+1':>8s} {'rel+2':>8s} {'rel+3':>8s} "
+          f"{'step':>6s} {'peak m/s':>9s}")
+    for movement_id in PASSES:
+        result = solve_movement(character, movement_id)
+        index, points = result["index"], result["points"]
+        rate = float(result["track"].frames_per_second)
+        release = release_frame(result)
+        last = len(points) - 1
+
+        for side in ("l", "r"):
+            joint = index[f"{side}_wrist"]
+
+            def speed(n: int) -> float:
+                if n <= 0 or n > last:
+                    return float("nan")
+                step = points[n][joint] - points[n - 1][joint]
+                return float(np.linalg.norm(step)) * rate
+
+            held = speed(release)
+            after = speed(release + 1)
+            # FROM THE RELEASE FRAME, not from the one after it. An earlier
+            # version started at release + 1 and reported 3.49 m/s for
+            # one_hand_high_pass, whose wrist actually peaks at 5.61 in the
+            # release frame itself. The one drill that behaves differently was
+            # the one the window excluded.
+            peak = max(
+                speed(n) for n in range(release, min(last, release + 6) + 1)
+            )
+            print(f"    {movement_id.replace('netball_', ''):22s} {side:4s} "
+                  f"{speed(release - 2):7.1f} {speed(release - 1):7.1f} "
+                  f"{held:7.1f} | {after:8.1f} {speed(release + 2):8.1f} "
+                  f"{speed(release + 3):8.1f} {after / held:5.1f}x "
+                  f"{peak / 100:9.2f}")
+    print()
+    print("    `step` is the frame after the release over the frame before it.")
+    print("    `peak m/s` is the fastest from the release frame through the six after it.")
+    print("    THE ATHLETE'S BAND IS 2.5 TO 5.4 m/s ACROSS BOTH SCALES.")
+
+
 def main() -> int:
     character = load_character()
     close_up(character)
     hand_against_ball(character)
     hand_travel(character)
+    across_release(character)
     clip_units(character)
     return 0
 
