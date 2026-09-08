@@ -16,11 +16,15 @@ orchestrator drew and read on 2026-09-07 to confirm pair 2's frame offset of
 −78, in `.remember/extraction/pair2/`, which is not in git and is on one
 machine.
 
-| committed as | read from | centre | kind |
-|---|---|---|---|
-| `pair2/anchor-324.sha256` | `catch-1-anchor-proof.png` | front 324 / side 246 | anchor |
-| `pair2/check-484.sha256` | `catch-2-anchor-proof.png` | front 484 / side 406 | check |
-| `pair2/anchor-635.sha256` | `catch-3-anchor-proof.png` | front 635 / side 557 | anchor |
+| committed as | read from | file sha256 | bytes | centre | kind |
+|---|---|---|---|---|---|
+| `pair2/anchor-324.sha256` | `catch-1-anchor-proof.png` | `42fb2bbb0e9cefd1afba12abce7b218ffd9d7bc5eff5ee5160413520f40f58b6` | 936201 | front 324 / side 246 | anchor |
+| `pair2/check-484.sha256` | `catch-2-anchor-proof.png` | `871db665ab53988deaca3615501f8747256b6fb2ecff6d28aa7f0ba8f0c5983e` | 818016 | front 484 / side 406 | check |
+| `pair2/anchor-635.sha256` | `catch-3-anchor-proof.png` | `b070650db155af6bb27a387107c440e4b279723dccf72ab8568a82ef57dfa5eb` | 858563 | front 635 / side 557 | anchor |
+
+A filename is not an identity, which is the lesson this pack was built on: two
+recordings swapped names at source on 2026-09-07 and fifty tests did not
+notice. The sheets are named by their own hashes here for the same reason.
 
 42 tiles in total, and 84 across both pairs. Re-derive them with
 `.remember/review-instruments/video-anchor-sheets/A2-tile-provenance.py`.
@@ -37,11 +41,11 @@ pair 2's they were **drawn by this tool**. They were held unpinned until the
 orchestrator read all three by eye on 2026-09-08 and confirmed the offset of
 −5 on the pictures:
 
-| sheet | what was seen |
-|---|---|
-| `anchor-274` | the ball reaching her hands in column four of BOTH rows (front 274, side 269), and the gap still there in column three of both |
-| `anchor-605` | the same in column four (front 605 with the ball above at 603; side 600 with the ball above at 598) |
-| `check-534` | the hands meeting in column four of both rows (front 534, side 529), apart in column three |
+| sheet | file sha256 | bytes | what was seen |
+|---|---|---|---|
+| `anchor-274` | `b46c75a3fc77c0d68b98179d66274288f413b48f0db7a3711cf3fac776b67780` | 938602 | the ball reaching her hands in column four of BOTH rows (front 274, side 269), and the gap still there in column three of both |
+| `anchor-605` | `958c4e4673c78cba157323fef4ed9c0a22ed06a800e113f32846b4ed06d86cb9` | 964180 | the same in column four (front 605 with the ball above at 603; side 600 with the ball above at 598) |
+| `check-534` | `d2ea5c0e97a369df3af5358158e922087542a101fa7c1b5772ecaa8f156c9f4b` | 892240 | the hands meeting in column four of both rows (front 534, side 529), apart in column three |
 
 Three moments about 11 seconds apart, all agreeing.
 
@@ -72,23 +76,31 @@ the frame.
 ffmpeg fall back to another face: a fallback would fail all 84 pinned tiles
 with a message about the pictures, which is the wrong place to go looking.
 
-### The label runs past the edge of the tile
+### The FRONT row's label runs past the edge of the tile
 
 A tile is 202 px wide and `FRONT idx 268  t=8.933s` at fontsize 20 does not
-fit, so the seconds read truncated on the picture as `t=8.9`. This is true of
-every sheet under both pairs, including the three that were confirmed before
-this tool existed, because it is the same chain.
+fit, so the front row's seconds read truncated on the picture as `t=8.9`.
+**The side row fits**: `SIDE idx 263  t=8.763s` is one character shorter and
+ends inside the tile. An earlier version of this page said every tile was
+truncated. That was wrong, and it was disproved by a mutation that cut the
+front label alone: it failed on three of the six sheets rather than all six.
 
-**What is cut off is not the measurement.** The frame INDEX is fully visible
-on every tile, and a pairing is made of indices. The seconds are derived from
+**What the pins therefore cover, exactly.** A tile digest is over the tile's
+pixels, so it pins the frame, the whole side label, and the part of the front
+label that lands inside 202 px — which includes the entire index. It does NOT
+pin the front row's seconds beyond that edge: those characters are never
+drawn, so no digest can notice if they change.
+
+**What is unpinned is not the measurement.** A pairing is made of INDICES, and
+every index on every tile is inside the edge. The seconds are derived from
 each file's own pts, drift about 11 microseconds a frame between the two
-cameras, and the manifest carries them in full.
+cameras, and the manifest carries them in full to four decimals.
 
 It is left alone because every fix costs more than it buys. A smaller font or
 a caption band changes the pixels, so all 84 tile digests would need re-pinning
 against sheets nobody has read, which cuts the tie to the artefacts that were
 actually confirmed. A second, legible sheet would be an artefact with no pin
-at all. Any change to the label format fails the pins loudly, which is right.
+at all.
 
 The same caution as the posters applies to the decoder. H.264 decoding is
 exact, so which FRAME a tile shows is a property of the recording. The PNG the

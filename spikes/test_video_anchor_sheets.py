@@ -23,6 +23,7 @@ from video_section_cuts import SAMPLES
 
 PAIR1 = "front 0.1 + side 0.1"
 PAIR2 = "front 0.2 + side 0.2"
+TILE_HEIGHT_FOR_TESTS = 360
 
 
 def recordings_present(pair_key):
@@ -86,6 +87,39 @@ class TheMomentsComeFromTheTable(unittest.TestCase):
             with self.subTest(pair=key):
                 self.assertTrue(PAIRS[key].get("setAside"))
 
+    def test_the_TABLE_ITSELF_is_consistent_with_the_offset_it_carries(self):
+        """`centreSideIndex` is `referenceIndex + offset` and the test that
+        compares it with `otherIndex` passes just as happily if the code
+        copies `otherIndex` straight out of the table. So the table is checked
+        HERE, on its own, for every row of every kind including the ones no
+        sheet draws: what somebody read off the side recording must equal what
+        the recorded offset predicts."""
+        for key, pair in PAIRS.items():
+            offset = pair["frameOffsetToReference"]
+            for kind in ("anchors", "checks"):
+                for row in pair[kind]:
+                    with self.subTest(pair=key, kind=kind,
+                                      index=row["referenceIndex"]):
+                        self.assertEqual(row["otherIndex"],
+                                         row["referenceIndex"] + offset)
+
+    def test_a_set_aside_row_is_allowed_to_disagree_with_the_offset(self):
+        """AND THAT IS THE POINT OF SETTING IT ASIDE. Pair 1's first clap
+        reads four frames apart where the offset says five. If a set-aside row
+        ever agreed exactly, somebody has quietly resolved an ambiguity the
+        entry exists to record."""
+        disagreements = 0
+        for key, pair in PAIRS.items():
+            offset = pair["frameOffsetToReference"]
+            for row in pair.get("setAside", ()):
+                predicted = row["referenceIndex"] + offset
+                if row["otherIndex"] != predicted:
+                    disagreements += 1
+        self.assertGreater(disagreements, 0,
+                           "every set-aside event now agrees with the offset, "
+                           "so either one was resolved by picking the frame "
+                           "that suits the answer, or it is not set aside")
+
     def test_the_indices_are_the_tables_and_no_literal_is_typed_here(self):
         for key in PAIRS:
             for moment in sheets.moments(key):
@@ -114,23 +148,57 @@ class TheSheetSpanIsCheckedBeforeAnythingIsWritten(unittest.TestCase):
     def test_a_window_inside_both_recordings_is_accepted(self):
         self.assertEqual(sheets.check_span(self.files(), 324)[3], 324)
 
-    def test_a_window_off_the_front_of_either_recording_refuses(self):
-        for centre, view in ((3, "front"), (80, "side")):
-            with self.subTest(centre=centre):
-                with self.assertRaises(SystemExit) as refusal:
-                    sheets.check_span(self.files(), centre)
+    def test_the_span_is_measured_AT_every_boundary_of_both_views(self):
+        """FOUR EDGES, EACH MEASURED ONE FRAME EITHER SIDE OF LEGAL. The old
+        pair of tests refused at 3 and at 944 and accepted at 324, which
+        leaves the boundaries themselves unmeasured: `first < 0` could have
+        been `first < -1`, `last >= frames` could have been `last > frames`,
+        and the side recording's far edge was never approached at all. Three
+        mutations of exactly that shape survived.
 
-                self.assertIn(view, str(refusal.exception))
+        EACH CASE ISOLATES ONE EDGE, and the fixtures look odd for a reason:
+        under a single offset the two views cannot both sit at a boundary, so
+        putting one view on its edge requires giving the other room. The
+        offset is chosen per case to do that, and the other recording is made
+        large enough that it cannot be the one that refuses. My first attempt
+        at this test put both views on the edge at once and refused for the
+        other view's reason, which would have passed a front-only check.
+        """
+        cases = {
+            # (centre, offset, front frames, side frames, accepted)
+            "front first == 0": (6, 0, 946, 2000, True),
+            "front first == -1": (5, 1, 946, 2000, False),
+            "front last == frames - 1": (939, 0, 946, 2000, True),
+            "front last == frames": (940, -1, 946, 2000, False),
+            "side first == 0": (10, -4, 2000, 863, True),
+            "side first == -1": (10, -5, 2000, 863, False),
+            "side last == frames - 1": (1000, -144, 2000, 863, True),
+            "side last == frames": (1000, -143, 2000, 863, False),
+        }
+        for label, (centre, offset, front, side, allowed) in cases.items():
+            files = self.files(offset=offset, front_frames=front,
+                               side_frames=side)
+            view = label.split()[0]
+            with self.subTest(case=label, centre=centre, offset=offset):
+                if allowed:
+                    self.assertEqual(
+                        sheets.check_span(files, centre)[sheets.SHEET_HALF],
+                        centre)
+                else:
+                    with self.assertRaises(SystemExit) as refusal:
+                        sheets.check_span(files, centre)
 
-    def test_a_window_off_the_end_of_either_recording_refuses(self):
-        """THE SIDE RUNS OUT FIRST HERE, and a front-only check would miss it.
-        Pair 2's side recording is 83 frames shorter than its front and the
-        offset is -78, so the far end is the front's to lose; the near end is
-        the side's. Both are checked."""
+                    self.assertIn(view, str(refusal.exception),
+                                  f"{label} refused for the other view")
+
+    def test_the_side_runs_out_before_the_front_at_the_near_end(self):
+        """A FRONT-ONLY CHECK WOULD MISS IT. Pair 2's side recording is 83
+        frames shorter than its front and the offset is -78, so a centre that
+        is comfortably inside the front file is off the start of the side."""
         with self.assertRaises(SystemExit) as refusal:
-            sheets.check_span(self.files(), 944)
+            sheets.check_span(self.files(), 80)
 
-        self.assertIn("front", str(refusal.exception))
+        self.assertIn("side", str(refusal.exception))
 
     def test_a_refusal_writes_no_sheet_and_no_tile(self):
         out = Path(tempfile.mkdtemp())
@@ -143,19 +211,24 @@ class TheSheetSpanIsCheckedBeforeAnythingIsWritten(unittest.TestCase):
 
         self.assertEqual(sorted(p.name for p in out.rglob("*")), [])
 
-    def test_every_real_moment_of_every_pair_fits_its_recordings(self):
-        """The windows in the table are not near an edge today. If a future
-        anchor is, this says so before somebody runs the tool."""
+    def test_every_real_moment_of_every_pair_fits_its_REAL_recordings(self):
+        """The windows in the table are not near an edge today, and if a
+        future anchor is, this says so before somebody runs the tool.
+
+        THE REAL FRAME COUNTS, not a 10 000-frame fixture. With the fixture a
+        moment at front 5000 passed this and was refused by the recordings,
+        which is the opposite of what the test is for."""
+        if not all(recordings_present(key) for key in PAIRS):
+            self.skipTest("the session 1.0 recordings are not on this machine")
         for key in PAIRS:
-            pair = PAIRS[key]
-            files = {"offset": pair["frameOffsetToReference"],
-                     "front": {"pts": [0.0] * 10000},
-                     "side": {"pts": [0.0] * 10000}}
+            files = sheets.resolve(key)
             for moment in sheets.moments(key):
                 with self.subTest(pair=key, index=moment["referenceIndex"]):
                     span = sheets.check_span(files, moment["referenceIndex"])
 
                     self.assertEqual(len(span), 2 * sheets.SHEET_HALF + 1)
+                    self.assertEqual(span[sheets.SHEET_HALF],
+                                     moment["referenceIndex"])
 
 
 class TheLabelFontIsPartOfThePinnedPixels(unittest.TestCase):
@@ -176,6 +249,25 @@ class TheLabelFontIsPartOfThePinnedPixels(unittest.TestCase):
 
     def test_the_font_this_machine_pinned_with_is_present(self):
         self.assertTrue(sheets.check_font().exists())
+
+    def test_a_missing_font_refuses_BEFORE_anything_is_written(self):
+        """The span refusal is measured on an empty directory and this one was
+        not, so `check_font()` could have moved below the first write and
+        nothing would have said so."""
+        out = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, out, ignore_errors=True)
+        moment = {"kind": "anchor", "event": "e", "referenceIndex": 324,
+                  "otherIndex": 246}
+        files = {"offset": -78, "pairKey": "test",
+                 "front": {"name": "f.mp4", "pts": [0.0] * 946},
+                 "side": {"name": "s.mp4", "pts": [0.0] * 863}}
+
+        with mock.patch.object(sheets, "LABEL_FONT",
+                               Path("C:/nowhere/arialbd.ttf")):
+            with self.assertRaises(SystemExit):
+                sheets.anchor_sheet(files, moment, out)
+
+        self.assertEqual(sorted(p.name for p in out.rglob("*")), [])
 
 
 class TheSheetsReproduceTheOnesAPersonConfirmed(unittest.TestCase):
@@ -305,6 +397,66 @@ class TheSheetsReproduceTheOnesAPersonConfirmed(unittest.TestCase):
                     self.assertEqual(entry["centreSideIndex"],
                                      moment["otherIndex"])
 
+    def test_EVERY_centre_tile_shows_the_frame_it_is_labelled_with(self):
+        """THE ONLY CHECK HERE THAT LOOKS AT A PICTURE, and the one a pair
+        with no pins would depend on entirely. Every sheet of every pair in
+        the table, both rows, so run 2's sheets are covered the day they
+        exist. The source frame is resized by a DIFFERENT resampler, so this
+        is not swscale agreeing with itself."""
+        worst = None
+        for (key, name), entry in self.entries.items():
+            sheet = self.out / sheets.pair_folder(key) / name
+            for view in ("front", "side"):
+                row = sheets.centre_tile_alignment(self.files[key], sheet,
+                                                   entry, view)
+                with self.subTest(pair=key, sheet=name, view=view):
+                    self.assertGreater(
+                        row["margin"], sheets.TILE_MARGIN_DB,
+                        f"{name} {view}: the centre tile is no closer to "
+                        f"frame {row['centreIndex']} than to a neighbour")
+                if row["margin"] != float("inf"):
+                    worst = (row["margin"] if worst is None
+                             else min(worst, row["margin"]))
+        self.assertIsNotNone(worst)
+        self.assertAlmostEqual(
+            worst, sheets.MEASURED_MIN_TILE_MARGIN_DB, delta=0.5,
+            msg="the tightest centre tile no longer measures what the module "
+                "records for it; re-measure all twelve before moving the "
+                "constant")
+
+    def test_the_centre_side_index_is_COMPUTED_and_not_copied(self):
+        """R11 SURVIVED THE FIRST FOLD, and the reason is worth writing down.
+
+        `centreSideIndex` should be `centre + offset`. Copying the table's
+        `otherIndex` instead gives the identical number on every real row --
+        because the fold above added a test proving the table is consistent,
+        which turns that mutation into an equivalent mutant everywhere the
+        table can reach. The case cannot be found in the data; it has to be
+        BUILT.
+
+        So this hands `anchor_sheet` a moment whose `otherIndex` is
+        deliberately wrong. The pictures drawn are still the mapped ones -- the
+        drawing loop uses the offset -- and a manifest field that follows the
+        fabricated number instead would now disagree with them.
+        """
+        files = self.files[PAIR2]
+        real = sheets.moments(PAIR2)[0]
+        lying = dict(real, otherIndex=real["otherIndex"] + 40)
+        out = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, out, ignore_errors=True)
+
+        entry = sheets.anchor_sheet(files, lying, out)
+
+        self.assertEqual(entry["centreSideIndex"],
+                         entry["centreFrontIndex"] + files["offset"])
+        self.assertNotEqual(entry["centreSideIndex"], lying["otherIndex"])
+        # And the pictures did not follow the lie either.
+        self.assertEqual(entry["sideIndices"],
+                         [k + files["offset"] for k in entry["frontIndices"]])
+        self.assertEqual(entry["tileDigests"],
+                         sheets.pinned_tiles("pair2",
+                                             sheets.sheet_name(real)))
+
     def test_the_manifest_names_both_recordings_by_hash_and_the_font(self):
         for key in PAIRS:
             entries = [e for (pair, _), e in self.entries.items()
@@ -317,9 +469,41 @@ class TheSheetsReproduceTheOnesAPersonConfirmed(unittest.TestCase):
                 self.assertTrue(manifest["side"]["sha256"].startswith(
                     PAIRS[key]["otherSha256"]))
                 self.assertEqual(manifest["sideIndexEqualsFrontIndexPlus"],
-                                 self.files[key]["offset"])
-                self.assertEqual(len(manifest["labelFont"]["sha256"]), 64)
+                                 PAIRS[key]["frameOffsetToReference"])
+                for entry in entries:
+                    self.assertEqual(
+                        entry["centreSideIndex"],
+                        entry["centreFrontIndex"]
+                        + PAIRS[key]["frameOffsetToReference"])
+                self.assertEqual(manifest["labelFont"]["sha256"],
+                                 sheets.sha256(sheets.LABEL_FONT))
                 self.assertIn("setAside", manifest["whatIsNotHere"])
+
+
+class TheBarForATileSitsBetweenAMeasurementAndZero(unittest.TestCase):
+    """`TILE_MARGIN_DB` is a number somebody can lower, and every test that
+    reads it compares a real measurement against it -- which passes at any
+    lower value. Pinned from both sides on constructed rows, because one side
+    is not a comparison."""
+
+    def test_the_bar_is_above_zero(self):
+        """At zero a tile indistinguishable from its neighbour passes, and the
+        sheet could not show a wrong offset at all."""
+        self.assertGreater(sheets.TILE_MARGIN_DB, 0.0)
+
+    def test_the_bar_is_below_what_the_sheets_measure(self):
+        """Above the measured minimum it refuses the real sheets, and the tool
+        cannot draw its own pairs."""
+        self.assertLess(sheets.TILE_MARGIN_DB,
+                        sheets.MEASURED_MIN_TILE_MARGIN_DB)
+
+    def test_the_label_band_clears_the_label(self):
+        """Compared whole, a correct tile scores 20.9 dB against its own
+        source frame -- the tile has a label burned in and the frame has none.
+        Below the band it is 49.6. A band of zero makes every correct tile
+        look wrong."""
+        self.assertGreaterEqual(sheets.TILE_LABEL_BAND, 30)
+        self.assertLess(sheets.TILE_LABEL_BAND, TILE_HEIGHT_FOR_TESTS // 4)
 
 
 class TheCommandLineDrawsWhatTheTableHolds(unittest.TestCase):
@@ -338,6 +522,14 @@ class TheCommandLineDrawsWhatTheTableHolds(unittest.TestCase):
             (out / "manifest.json").read_text(encoding="utf-8"))
         wanted = sheets.moments(PAIR2)
 
+        # AGAINST THE TABLE AND THE PINS, NOT AGAINST THE FILE JUST WRITTEN.
+        # This used to compare the manifest's digests with `sheet_tiles()` on
+        # the sheet that produced them -- an artefact checked against the
+        # value that produced it. Zeroing the offset in `main` then wrote
+        # unmapped side rows, a manifest saying the offset was 0, and a green
+        # suite.
+        offset = PAIRS[PAIR2]["frameOffsetToReference"]
+        self.assertEqual(manifest["sideIndexEqualsFrontIndexPlus"], offset)
         self.assertEqual(len(manifest["sheets"]), len(wanted))
         for entry, moment in zip(manifest["sheets"], wanted):
             with self.subTest(sheet=entry["sheet"]):
@@ -345,8 +537,15 @@ class TheCommandLineDrawsWhatTheTableHolds(unittest.TestCase):
                                  f"{sheets.sheet_name(moment)}.png")
                 self.assertTrue((out / entry["sheet"]).exists())
                 self.assertEqual(entry["kind"], moment["kind"])
-                self.assertEqual(entry["tileDigests"],
-                                 sheets.sheet_tiles(out / entry["sheet"]))
+                self.assertEqual(entry["centreFrontIndex"],
+                                 moment["referenceIndex"])
+                self.assertEqual(
+                    entry["sideIndices"],
+                    [k + offset for k in entry["frontIndices"]])
+                self.assertEqual(
+                    entry["tileDigests"],
+                    sheets.pinned_tiles("pair2", Path(entry["sheet"]).stem),
+                    "the sheet main wrote is not the one that was confirmed")
 
     def test_an_unknown_pair_refuses_and_lists_what_is_known(self):
         with self.assertRaises(SystemExit) as refusal:

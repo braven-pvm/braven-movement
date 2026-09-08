@@ -26,9 +26,8 @@ three kinds of event and they are not interchangeable:
 
 THIS SHEET IS LAID OUT DIFFERENTLY FROM `proof_sheet`, ON PURPOSE. It shares
 the part that carries the correctness -- frames chosen BY INDEX with
-`select='eq(n,i)'` and never by a timestamp, the side row mapped through the
-table's own frame offset, and the drawn indices returned from the loop rather
-than recomputed afterwards. It does not share the composition: tiles are
+`select='eq(n,i)'` and never by a timestamp, and the side row mapped through
+the table's own frame offset. It does not share the composition: tiles are
 scaled to 360 high with the label burned in by `drawtext`, stacked by ffmpeg.
 That is the layout of the three sheets the orchestrator read and signed off
 for pair 2, and reproducing it exactly is what lets those sheets be pinned
@@ -66,23 +65,30 @@ SHEET_HALF = 3
 # 202 wide at this height, so a sheet is 7 * 202 by 2 * 360.
 TILE_HEIGHT = 360
 
-# THE LABEL RUNS PAST THE EDGE OF THE TILE, AND IT IS LEFT THAT WAY.
+# THE FRONT ROW'S LABEL RUNS PAST THE EDGE OF THE TILE.
 # A tile is 202 px wide and `FRONT idx 268  t=8.933s` at fontsize 20 does not
-# fit, so the seconds read truncated on the picture: `t=8.9`. That is true of
-# the three sheets a person read and confirmed for each pair, because this is
-# their chain reproduced exactly.
+# fit, so the front row's seconds read truncated on the picture: `t=8.9`. THE
+# SIDE ROW FITS -- `SIDE idx 263  t=8.763s` is one character shorter and ends
+# inside the tile. An earlier version of this comment said every tile was
+# truncated, which is false and was disproved by a mutation that cut the front
+# label alone: it failed on three of the six sheets, not all six.
 #
-# WHAT IS CUT OFF IS NOT THE MEASUREMENT. The frame INDEX is fully visible on
-# every tile, and the index is what a pairing is made of. The seconds are
-# derived from each file's own pts, they drift between the two cameras by
-# about 11 microseconds a frame, and the manifest carries them in full.
+# WHAT THAT MEANS FOR THE PINS, EXACTLY. A tile digest covers the pixels of
+# the tile, so it pins the frame, the whole side label, and the part of the
+# front label that lands inside 202 px -- which includes the entire index. It
+# does NOT pin the front row's seconds beyond that edge: those characters are
+# never drawn, so no digest can notice if they change.
 #
-# It is not fixed because every fix costs more than it buys. A smaller font or
-# a caption band changes the pixels, so all 84 committed tile digests would
+# WHAT IS UNPINNED IS NOT THE MEASUREMENT. A pairing is made of INDICES, and
+# every index on every tile is inside the edge. The seconds are derived from
+# each file's own pts, drift about 11 microseconds a frame between the two
+# cameras, and the manifest carries them in full and to four decimals.
+#
+# It is left alone because every fix costs more than it buys. A smaller font
+# or a caption band changes the pixels, so all 84 committed tile digests would
 # have to be re-pinned against sheets nobody has read -- cutting the tie to
 # the artefacts that were actually confirmed. A second, legible sheet would be
-# an artefact with no pin at all. Recorded here instead, and any change to the
-# label format will fail the pins loudly, which is the right outcome.
+# an artefact with no pin at all.
 
 # THE LABEL IS PART OF THE PINNED PIXELS. `drawtext` renders it from this font
 # file, so the committed tile digests depend on the font as much as on the
@@ -92,6 +98,28 @@ LABEL_FONT = Path("C:/Windows/Fonts/arialbd.ttf")
 LABEL_SIZE = 20
 
 ANCHOR_DIGESTS = SPIKE_DIR / "video-annotations" / "anchor-sheets"
+
+# THE ROWS THE LABEL IS BURNED INTO, excluded before a tile is compared with
+# the recording it came from. The label box is about 30 px tall; 40 clears it.
+#
+# WITHOUT THIS THE NUMBER IS MEANINGLESS AND LOOKS LIKE A FAILURE. Compared
+# whole, a correct tile scores 20.9 dB against its own source frame, because
+# the tile carries a label and the source frame does not. Below this band the
+# same comparison is 49.6 dB. A reader who meets 20.9 without that sentence
+# concludes the tile shows the wrong picture.
+TILE_LABEL_BAND = 40
+
+# The bar a centre tile must beat its neighbouring frames by. Measured across
+# every sheet of both pairs before it was chosen -- twelve centre tiles, six
+# sheets, both rows -- where the right frame scores 47.9 to 50.3 dB and a
+# neighbour 23.1 to 33.7. It sits far below the smallest margin found and far
+# above zero, and a test pins it from both sides.
+TILE_MARGIN_DB = 10.0
+
+# The smallest margin that sweep found, kept so a test can read it back. A
+# number in a comment that nothing reads is how the last threshold in this
+# pack went wrong.
+MEASURED_MIN_TILE_MARGIN_DB = 16.22
 
 
 def pinned_tiles(pair_folder: str, name: str) -> list[str] | None:
@@ -194,16 +222,27 @@ def check_span(files: dict, centre: int) -> list[int]:
 
 
 def tile(files: dict, view: str, index: int, destination: Path) -> int:
-    """One labelled tile, and the index it actually drew.
+    """One labelled tile, and the index it was ASKED for.
+
+    Not the index it drew: this function echoes its argument, and an echo is
+    not a measurement. What proves a tile shows the frame it names is
+    `centre_tile_alignment`, which compares the picture against the recording,
+    and the committed tile digests.
 
     Two ffmpeg calls because that is what the confirmed sheets were built
     with, and the pinned digests are of their output.
     """
     raw = destination.with_name(f"_raw-{destination.name}")
+    # `-fps_mode passthrough`, not the deprecated `-vsync 0` the confirmed
+    # sheets were built with. MEASURED BEFORE IT WAS CHANGED, because the 84
+    # pinned tiles depend on this command: four tiles, both views, both
+    # spellings, byte-identical output every time. The flag is inert for a
+    # single selected frame either way and is kept because the side file is
+    # variable-rate and it says so.
     subprocess.run(
         ["ffmpeg", "-v", "error", "-y", "-i", str(files[view]["path"]),
          "-vf", rf"select='eq(n\,{index})'",
-         "-vsync", "0", "-frames:v", "1", str(raw)], check=True)
+         "-fps_mode", "passthrough", "-frames:v", "1", str(raw)], check=True)
     if not raw.exists():
         raise SystemExit(f"ffmpeg wrote no {view} frame for index {index}")
     seconds = files[view]["pts"][index]
@@ -229,7 +268,14 @@ def sheet_name(moment: dict) -> str:
 
 
 def anchor_sheet(files: dict, moment: dict, out_dir: Path) -> dict:
-    """One sheet, and the indices it drew in each row."""
+    """One sheet, and the indices each row was asked for.
+
+    `frontIndices` and `sideIndices` are collected in the drawing loop, which
+    makes them the requested indices rather than a second sum done afterwards
+    -- worth having, and worth less than it sounds. They are echoes. The
+    pinned tile digests and `centre_tile_alignment` are what tie a sheet to
+    the pictures.
+    """
     check_font()
     centre = moment["referenceIndex"]
     wanted = check_span(files, centre)
@@ -290,6 +336,74 @@ def anchor_sheet(files: dict, moment: dict, out_dir: Path) -> dict:
     }
 
 
+def centre_tile_alignment(files: dict, sheet: Path, entry: dict,
+                          view: str) -> dict:
+    """How well the centre tile matches the frame it is labelled with, and how
+    well it matches that frame's two neighbours.
+
+    THE ONLY CHECK HERE THAT LOOKS AT A PICTURE. Everything else about a sheet
+    is an index checked against another index, or a digest pinned against a
+    sheet somebody confirmed -- and a pin covers only the pairs that have been
+    pinned. The day a third pair is added, this is what stands between it and
+    a sheet drawn from the wrong frames.
+
+    THE SOURCE FRAME IS RESIZED BY A DIFFERENT RESAMPLER. The tile is ffmpeg's
+    `scale=-2:360`; the frame it is compared against is decoded and resized
+    here by PIL's LANCZOS. Checking swscale with swscale would agree with
+    itself, which is the fault this pack has now met three times.
+    """
+    import subprocess as run_module
+    import tempfile
+
+    import numpy as np
+    from PIL import Image
+
+    centre = (entry["frontIndices"] if view == "front"
+              else entry["sideIndices"])[SHEET_HALF]
+    scratch = Path(tempfile.mkdtemp())
+    try:
+        with Image.open(sheet) as drawn:
+            wide, high = drawn.width // len(entry["frontIndices"]), \
+                drawn.height // 2
+            row = 0 if view == "front" else 1
+            tile = np.asarray(
+                drawn.crop((SHEET_HALF * wide, row * high,
+                            (SHEET_HALF + 1) * wide, (row + 1) * high))
+                .convert("RGB"), dtype=np.float64)[TILE_LABEL_BAND:]
+
+        scores = {}
+        for shift in (0, -1, 1):
+            index = centre + shift
+            if not 0 <= index < len(files[view]["pts"]):
+                scores[shift] = None
+                continue
+            raw = scratch / f"source-{shift}.png"
+            run_module.run(
+                ["ffmpeg", "-v", "error", "-y", "-i",
+                 str(files[view]["path"]),
+                 "-vf", rf"select='eq(n\,{index})'",
+                 "-fps_mode", "passthrough", "-frames:v", "1",
+                 str(raw)], check=True)
+            with Image.open(raw) as source:
+                other = np.asarray(
+                    source.convert("RGB").resize((wide, high), Image.LANCZOS),
+                    dtype=np.float64)[TILE_LABEL_BAND:]
+            error = float(np.mean((tile - other) ** 2))
+            scores[shift] = (float("inf") if error == 0
+                             else 10.0 * float(np.log10(255.0 ** 2 / error)))
+    finally:
+        import shutil
+        shutil.rmtree(scratch, ignore_errors=True)
+
+    neighbours = [scores[-1], scores[1]]
+    measured = [n for n in neighbours if n is not None]
+    return {"view": view, "centreIndex": centre, "at": scores[0],
+            "before": scores[-1], "after": scores[1],
+            "margin": (min(scores[0] - n for n in measured)
+                       if measured and scores[0] is not None
+                       else float("inf"))}
+
+
 def manifest_for(files: dict, sheets: list[dict]) -> dict:
     return {
         "schemaVersion": "video-anchor-sheets-1",
@@ -314,9 +428,11 @@ def manifest_for(files: dict, sheets: list[dict]) -> dict:
             "the pair's setAside events. Each is recorded in PAIRS with the "
             "reason it was not used, and drawing one would invite a reader to "
             "resolve by eye the ambiguity that entry exists to record."),
-        "labelFont": {"path": str(LABEL_FONT),
-                      "sha256": sha256(LABEL_FONT) if LABEL_FONT.exists()
-                      else None},
+        # `check_font` rather than a conditional: it has already refused on
+        # every path that reaches here, so the `else None` arm was a branch
+        # nothing could execute, and a manifest that recorded a null font
+        # would have been describing a sheet that could not exist.
+        "labelFont": {"path": str(LABEL_FONT), "sha256": sha256(check_font())},
         "sheets": sheets,
     }
 
