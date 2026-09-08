@@ -71,29 +71,65 @@ eight frames of contact, in **metres per second**:
 **Both sides of the release**, because one side alone gives the wrong answer.
 The working wrist's own speed from the solve, in metres per second:
 
-| | held, last 8 frames | the frame after | peak, release onward | against her band |
-|---|---|---|---|---|
-| `chest_pass` | 0.33 to 0.36 | 2.46 | **2.46** | 0.04 below the floor |
-| `overhead_pass` | 0.46 to 0.53 | 4.42 | **4.42** | inside |
-| `bounce_pass` | 0.34 to 0.35 | 3.02 | **3.02** | inside |
-| `one_hand_high_pass` | 0.63 to 0.79 | 3.49 | **5.61** at the release frame | 0.21 above the ceiling |
-| **the filmed athlete** | | | **2.5 to 5.4 m/s** | |
+The working wrist, in centimetres per second, **one column per instant**. The
+peak column names the frame its number falls on, because which frame that is
+turns out to be the whole finding:
 
-### The engine's hand is not slow. It is LATE.
+| drill | working hand | held, last 8 | AT the release | one frame after | peak, and where |
+|---|---|---|---|---|---|
+| `chest_pass` | left | 33 to 36 | 33.6 | 245.5 | 2.45 m/s, one frame after |
+| `overhead_pass` | left | 46 to 53 | 43.4 | 442.2 | 4.42 m/s, one frame after |
+| `bounce_pass` | left | 34 to 35 | 35.4 | 302.3 | 3.02 m/s, one frame after |
+| `one_hand_high_pass` | right | 63 to 79 | **561.4** | 349.1 | **5.61 m/s, AT the release** |
+| **the filmed athlete** | near arm | | | | **2.5 to 5.4 m/s** |
+
+**The release frame has its own column so that no column can hide the one drill
+whose big number is in a different one.** An earlier version of this table
+carried that 561.4 only as prose inside a peak cell, and a reader comparing the
+"one frame after" column down the page would have seen 245.5, 442.2, 302.3 and
+349.1 and missed the exception entirely. The video lane found the same fault in
+its own table on the same morning: **prose inside a cell does not survive a
+reader who is scanning a column.**
+
+**THE COMPARISON IS GOOD TO THE ORDER AND TO THE OVERLAP OF THE RANGES, AND NO
+FURTHER.** The video lane states the resolution of its own instrument and this
+paper repeats it in the same place as the numbers rather than under them: one
+athlete, twelve releases, 30 fps footage, two scales whose frame-by-frame ratio
+runs 0.21 to 3.05 about a median of 1.30. **The width of the band, 2.5 to 5.4,
+IS that instrument's honest resolution.** These are solved joints at 60 fps and
+share no arithmetic with it. That two such instruments land this close is a good
+sign, and it is coincidence at the second decimal. **No sentence in this paper
+rests on a gap of a few hundredths of a metre per second**, and an earlier draft
+that said "0.04 below the floor" was making a claim its evidence cannot carry.
+
+### Three of the four are not slow. They are LATE. The fourth is FAST.
 
 **This is a correction, and the correction is the finding.** An earlier draft of
 this paper compared the held column alone against the athlete's band, concluded
 the engine's wrist runs "at a third to a sixteenth of the filmed hand", and
 called that a statement about the arm's timing. **The held column is one side of
-the release.** In the single frame after it the same wrist multiplies its speed
-by **7.3 to 10.5 times**, and every drill lands within a quarter of a metre per
-second of her band: two inside it, the chest pass 0.04 below its floor, the
-one-hand-high 0.21 above its ceiling.
+the release.**
 
-**The engine's arm reaches an athlete's release speed. It reaches it one frame
-after the ball has gone.** That is a different fault from the one the earlier
-draft named, and a smaller one to fix, because the motion exists and is
-misplaced in time rather than missing.
+**THE LATE THREE.** On the chest, overhead and bounce passes the wrist
+multiplies its speed by 7.4 to 10.5 times in the single frame AFTER the release,
+reaching 2.45, 4.42 and 3.02 m/s against a band that starts at 2.5. **The
+engine's arm reaches an athlete's release speed and reaches it one frame after
+the ball has gone.** That is a different fault from the one the earlier draft
+named, and a smaller one to fix, because the motion exists and is misplaced in
+time rather than missing.
+
+**THE FAST ONE, AND A SENTENCE COVERING ALL FOUR WOULD BE WRONG IN THE ENGINE'S
+FAVOUR.** `one_hand_high_pass` reaches **5.61 m/s in the release frame itself**
+and then slows. It does not sit inside her band: it **overshoots** it. It is the
+one drill whose hand is fast at the moment the ball leaves and the one drill
+that goes too far. **Three late and one fast is a different finding from four
+late**, and this paper states it as two findings on the video lane's caution.
+
+**And the overshoot is against a ceiling that is not even one-handed.** That
+lane reports its fastest release, 5.39 on the image scale, is a TWO-HANDED one
+(run 0.2, release 646); the athlete's one-handed releases are not the fastest in
+its set. So the engine's one-handed drill exceeds her fastest release of any
+kind, in the category where she is slower.
 
 **None of this is new to the repository, which is the uncomfortable part.**
 `docs/KNOWN_ISSUES.md` has recorded it since before this paper began, under "The
@@ -338,9 +374,13 @@ it, and only as a band.
 Second, and larger: **the engine's hand is late, not slow, and an earlier draft
 of this paper said the opposite.** Through contact the wrist runs 0.33 to
 0.79 m/s against her 2.5 to 5.4, which the earlier draft published as a factor
-of three to sixteen. One frame after the release the same wrist is at 2.46 to
-5.61 m/s, which is her band. **The comparison was true of the frames it chose
-and false of the next one.**
+of three to sixteen. One frame after the release the same wrist is at 2.45 to
+4.42 m/s on three of the four drills, and the fourth reaches 5.61 m/s in the
+release frame itself. **The comparison was true of the frames it chose and false
+of the next one.** An intermediate draft then wrote those two as one range,
+"2.46 to 5.61 m/s one frame after the release", which is a range that exists at
+no single instant: it is the same across-the-release fault committed inside the
+correction for it.
 
 **What that costs the model, and what it does not.** It does not weaken the
 finding that the ball's speed is assigned: the ball still receives 6 m/s from a
@@ -515,6 +555,13 @@ value**. So:
   still unexplained** — 133.04 degrees before release against about 119 on the
   other three, on the one hand whose spread that fix changed — and the
   experiment named above still settles that half.
+- **And the video lane has narrowed what that experiment must explain.** Its
+  fastest measured release, 5.39 on the image scale, is a TWO-HANDED one, and
+  the athlete's one-handed releases are not the fastest in its set. The engine's
+  one-handed drill peaks at 5.61 AT the release frame. **So whatever the sign
+  experiment settles has to explain a drill that is early AND fast, and fast in
+  the category where the athlete is slower** — not merely a drill that behaves
+  differently from the other three.
 
 ## 9. Mechanical or cosmetic: the choice, and what each costs
 
@@ -554,10 +601,11 @@ because a hand-driven speed will not land on 600.
 
 **And the arm does reach that speed. It reaches it one frame too late.** An
 earlier draft of this section read the held frames alone and said "the arm
-cannot deliver it as it stands". The same wrist runs at 2.46 to 5.61 m/s in the
-frames after the release, inside the athlete's band or within 0.21 of it.
-**That sentence is withdrawn, and this section had rested its cost estimate on
-it.**
+cannot deliver it as it stands". The same wrist runs at 2.45 to 4.42 m/s one
+frame after the release on three drills, and at 5.61 m/s in the release frame
+itself on the fourth, which overshoots the athlete's band rather than reaching
+it. **That sentence is withdrawn, and this section had rested its cost estimate
+on it.**
 
 **What the correction changes: the mechanical option is smaller than this paper
 first costed it.** Not small. The speed after the release comes from an ease-out
