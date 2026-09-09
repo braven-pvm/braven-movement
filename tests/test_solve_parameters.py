@@ -302,6 +302,24 @@ class NoProducerOnThisBranchTest(unittest.TestCase):
     is that a real artefact exists for each. Number 5 has no real artefact until
     a producer records two.
 
+    AND THE GUARD PROTECTS THE NEXT COMPARISONS, NOT THE ONES ALREADY ON DISK.
+    Every archived receipt predates the field:
+
+        coach-figures-2413f9d              11 receipts, 0 carry it
+        coach-figures-aa3f244              10 receipts, 0 carry it
+        rerender-hand-mirror-2026-09-02    16 receipts, 0 carry it
+        TOTAL                              37 receipts, 0 carry it
+
+    So ANY two of them refuse at check 1 and cannot be paired at all -- not
+    because a parameter moved, but because the field did not exist when they were
+    rendered. Verified by pairing two real archived receipts, not reasoned.
+
+    THOSE 37 ARE THE ARTEFACTS A COACH-MORNING COMPARISON WOULD REACH FOR.
+    Refusing them is correct, and better than captioning two old pictures as a
+    pair. But a reader will assume this guard is for the comparisons this project
+    MAKES, and today it is for the ones it has not made yet. "This guard protects
+    our comparisons" is false; "it will protect our next ones" is true.
+
     PROVEN ABLE TO FAIL on 2026-09-09, and the first attempt at that proof did
     NOT run: its anchor string was absent, the assertion fired before any
     rewrite, and the claim "proven able to fail" reached a commit message

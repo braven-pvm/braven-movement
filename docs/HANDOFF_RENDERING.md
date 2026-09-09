@@ -988,6 +988,17 @@ value is READ from the job and is not a literal or an argument.
     two receipts at the SAME value           two pictures at one value
     two DIFFERENT drills                     not a pair however they read
 
+**THE GUARD PROTECTS THE NEXT COMPARISONS, NOT THE ONES ALREADY ON DISK.** All
+**37** archived receipts predate the field and none carries it — 11 in
+`coach-figures-2413f9d`, 10 in `aa3f244`, 16 in the hand-mirror rerender. **So any
+two of them refuse at the FIRST check and cannot be paired at all**, because the
+field did not exist when they were rendered, and those are the artefacts a
+coach-morning comparison would reach for.
+
+Refusing them is correct and better than captioning two old pictures as a pair.
+**But "this guard protects our comparisons" is false and "it will protect our
+next ones" is true.**
+
 **And the fifth: every OTHER parameter must be EQUAL. IT IS CORRECT AND TODAY IT IS
 DORMANT**, because the producer records one parameter, so there is never another to
 compare and it cannot fire against any receipt this repository can produce. It becomes
