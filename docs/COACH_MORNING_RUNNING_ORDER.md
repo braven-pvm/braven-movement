@@ -12,10 +12,16 @@ produces.** Sections 5 and 6 answer those two questions.
 
 ## 1. Every item, and where it came from
 
-**Eighteen live items. The arithmetic is stated so a reader can check it:**
-`docs/COACH_MORNING_2026-09.md` carries **16 numbered items**, of which **item 7
-is STRUCK**, which leaves 15. It carries **3 further items** with no engine
-evidence. 15 plus 3 is **18**.
+**Twenty live items. The arithmetic is stated so a reader can check it:**
+`docs/COACH_MORNING_2026-09.md` carries **18 numbered items**, of which **item 7
+is STRUCK**, which leaves 17. It carries **3 further items** with no engine
+evidence. 17 plus 3 is **20**.
+
+**A first version of this document said eighteen, and it was right at the time.**
+The gather found two morning items that no agenda document carried. The
+orchestrator ruled on 2026-09-09 that both become agenda items, and they are now
+items 17 and 18. **This document's arithmetic follows that ruling rather than
+leading it.**
 
 | # | item | where it came from |
 |---|---|---|
@@ -35,23 +41,25 @@ evidence. 15 plus 3 is **18**.
 | 14 | A one-handed pass is harder to place | agenda `6228b3d`; ledger determinacy row |
 | 15 | Every pass clip stops before the ball arrives | agenda `56e70a3` |
 | 16 | The landing's cue may be ungradeable | agenda `b214bc4`; ledger row at `KNOWN_ISSUES.md:516` |
+| 17 | The hand that was posed wrongly | **found by this gather**; page question 1; fix at `fde5d5a` |
+| 18 | The two angles of the release hand | **found by this gather**; `.remember/ORCHESTRATOR-STATE.md`; paper at `f7af647`, not on main |
 | A | A second grader | agenda, no engine evidence |
 | B | Vocabulary conflicts | agenda, no engine evidence |
 | C | Two manual titles | agenda, no engine evidence |
 
-### Two things the gather found that are NOT on the agenda
+### The two items this gather found
 
-**They are listed here because the morning needs them and no document carries
-them as agenda items.**
+**Items 17 and 18 did not exist as agenda items when this document was written.**
+The gather found them in two different places and neither was an agenda document:
 
-- **The hand mirror.** Erin's page asks it as question 1: the model's right hand
-  was posed wrongly, and that is the likely reason the thumbs looked wrong to
-  her. **The page asks it. The agenda does not carry it.**
-- **The release hand's two angles.** Marius answered Q1 as cosmetic and Q2 as
-  option B. **Q3, where the two release angles come from, is open**, and the
-  orchestrator's recommendation in `.remember/ORCHESTRATOR-STATE.md` is that
-  **Erin picks them from rendered candidates at this morning**. That makes it a
-  morning item with no home in either document.
+- **The hand mirror** is the FIRST question on Erin's own page, and the agenda
+  did not carry it at all.
+- **The release hand's two angles** existed only in the orchestrator's state
+  notes, as a recommendation that Erin choose them at this morning.
+
+Both are now items 17 and 18 in `docs/COACH_MORNING_2026-09.md`, by the
+orchestrator's ruling. **They are still marked in the tables below as the two the
+gather found**, because where an item came from is worth keeping.
 
 ---
 
@@ -67,19 +75,18 @@ her time. The three are:
 - **RULE.** A decision Marius takes after she has spoken. **These must come last
   in the morning, or he rules without her answer.**
 
-**Sorting the eighteen agenda items, PLUS the two the gather found.** The table
-holds twenty rows for that reason, and the counts say which are which.
+**Sorting the twenty.** All twenty are agenda items now, so the two columns a
+first version of this table needed have collapsed into one.
 
-| kind | items | count | of which on the agenda |
-|---|---|---|---|
-| ASK | 3, 5, 11, 12, 13, 15, 16, A, B | 9 | 9 |
-| LOOK | 1, 2, 4, 6, the hand mirror, the release angles | 6 | **4** |
-| RULE | 8, 9, 10, 14, C | 5 | 5 |
-| **total** | | **20** | **18** |
+| kind | items | count |
+|---|---|---|
+| ASK | 3, 5, 11, 12, 13, 15, 16, A, B | 9 |
+| LOOK | 1, 2, 4, 6, 17, 18 | 6 |
+| RULE | 8, 9, 10, 14, C | 5 |
+| **total** | | **20** |
 
-The two that are not agenda items are the hand mirror and the release angles,
-both LOOK. Nine plus four plus five is eighteen, which is the agenda's own
-count from section 1.
+Nine plus six plus five is twenty, which is the agenda's own count from
+section 1.
 
 Item 14 is a RULE only in a weak sense. It asks her to notice a wrong pose on
 one-handed drills. It carries no decision and it is placed with the briefings.
@@ -157,17 +164,16 @@ vocabulary before she has spoken about the drills would settle it by accident.**
 ## 4. What each item needs in the room
 
 **This section is the honest answer to "why is a date hard".** The counts, of the
-eighteen agenda items:
+twenty agenda items:
 
 - **eleven need nothing that does not exist**: 3, 10, 11, 12, 13, 14, 15, 16, A,
   B and C;
 - **one needs nothing until item 1 is answered**: item 9;
-- **six need an artefact**: 1, 2, 4, 5, 6 and 8.
+- **eight need an artefact**: 1, 2, 4, 5, 6, 8, 17 and 18.
 
-**Of those six, two have no artefact at all** (items 2 and 4), **three sit on the
-page that is held** (items 5, 6 and 8), and one is partly ready (item 1). **Add
-the two items the gather found, the hand mirror and the release angles, and
-neither has an artefact either.**
+**Of those eight, four have no artefact at all** (items 2, 4, 17 and 18),
+**three sit on the page that is held** (items 5, 6 and 8), and one is partly
+ready (item 1).
 
 **So four things must be rendered before the LOOK block can run**: the corrected
 right hand, the two elbow-width renders, the finger clip, and the release-angle
@@ -175,14 +181,14 @@ candidates.
 
 | item | what it needs | ready? |
 |---|---|---|
-| hand mirror | a render of the corrected right hand | **NO. The page is held.** |
+| 17, hand mirror | a render of the corrected right hand | **NO. The page is held.** |
 | 2, elbow width | two renders, 31.3 and 37.3 | **NO** |
 | 8, elbow dial | the live width player on the page | on the page, held |
 | 4, fingers | a clip at full speed and slowed | **NO** |
 | 6, arm span | a still at the ready frame | on the page, held |
 | 1, release | the four failing checkpoints, and a clip | partly: the footage sections exist |
 | 9, release timing | nothing until item 1 is answered | n/a |
-| release angles | **rendered candidates to choose from** | **NO. Not started.** |
+| 18, release angles | **rendered candidates to choose from** | **NO. Not started.** |
 | 3, speeds | two numbers on a card | ready |
 | 5, join travel | the 14 cm figure and a clip | on the page, held |
 | 11, band floor | four numbers on a card | ready |
@@ -198,8 +204,8 @@ candidates.
 catch, hold, ready and release, each front and side with a poster. **Run 2's
 sections are deferred by the page hold**, per the state notes.
 
-**The blocking artefact is the render.** Items 2, 4, the hand mirror and the
-release angles all need renders, and the page that would carry them is held until
+**The blocking artefact is the render.** Items 2, 4, 17 and 18 all need
+renders, and the page that would carry them is held until
 Marius is happy with it. **That is the date's real dependency, not the agenda's
 length.**
 
@@ -250,7 +256,7 @@ her eyes, and would leave every LOOK item for a second sitting.
 
 **Pictures she accepts or rejects:**
 
-- the corrected right hand (the hand mirror);
+- the corrected right hand (item 17);
 - the finger closing speed (item 4);
 - the ready pose's arm span (item 6);
 - the elbow width render she prefers (item 2).
@@ -292,7 +298,7 @@ that is the window her checkpoints measure.
 | **15** | the arrival frames, if the release frame moves |
 | **3** | the return speed, which is derived from the release |
 
-**Seven of eighteen.** The four items in block 1 and the four written-list items
+**Seven of twenty.** The four items in block 1 and the four written-list items
 do NOT move, which is a second reason to run block 1 first: **those answers keep
 their value whatever the retiming does.**
 
@@ -311,7 +317,7 @@ eight questions.**
 
 | page question | agenda item |
 |---|---|
-| 1. The hand mirror | **none. The page asks it, the agenda does not carry it.** |
+| 1. The hand mirror | **item 17**, added 2026-09-09 because this gather found the page asking what the agenda did not carry |
 | 2. The elbow width | item 2 |
 | 3. The hand change | item 4 |
 | 4. The join travel | item 5 |
@@ -320,7 +326,8 @@ eight questions.**
 | 7. The elbow dial | item 8 |
 | 8. The pass speed | item 3 |
 
-**The page covers agenda items 1, 2, 3, 4, 5, 6 and 8. Seven of eighteen.**
+**The page covers agenda items 1, 2, 3, 4, 5, 6 and 8. Seven of twenty**, and
+its own first question is now item 17.
 
 **TEN LIVE ITEMS HAVE NO HOME ON THE PAGE: 10, 11, 12, 13, 14, 15, 16, A, B and
 C.** Every one of items 10 to 16 was added after 2 September, as the pass family
