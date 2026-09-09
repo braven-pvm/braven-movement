@@ -19,8 +19,8 @@ The questions are for Erin and Marius. They are written to be answerable by a
 coach watching the athlete, not by reading a number. Where the engine has an
 opinion it is stated as a measurement and never as a recommendation.
 
-**Eighteen numbered items.** One, item 7, is STRUCK, because it was raised on a
-measurement the solver read from a second solution for that drill. **Fourteen
+**Nineteen numbered items.** One, item 7, is STRUCK, because it was raised on a
+measurement the solver read from a second solution for that drill. **Fifteen
 carry engine measurements. Items 8, 10 and 18 do not**, and neither claims to: item
 8 names the constant that follows from item 2's answer, item 10 compares two
 written vocabularies, and item 18 asks for two angles that nothing sources.
@@ -812,6 +812,60 @@ paper, which is why both rulings are written out in order.
 If the paper changes before the morning, this item's account of what is sourced
 changes with it. **Its account of the RULING has already changed once**, and the
 sequence above is the record of that.
+
+## 19. Which of the cues you teach are distances rather than shapes?
+
+**The question, and it is for Erin.** The manual's cues are written in the words
+a coach uses. Some name a SHAPE, such as how wide the elbows sit. Some name a
+DISTANCE, such as how far the ball is from the chest. **Which of yours are
+distances?**
+
+**Why it is asked.** This engine grades angles. **A cue that names a distance has
+no instrument here, and a checkpoint has been authored for one and withdrawn
+twice.** Her answer sizes the gap, and no measurement in this repository can.
+
+### Two experiments, and the second is the one that matters
+
+**THE FIRST FAILED OPENLY.** A checkpoint for the manual's "don't pull ball back
+behind head" was authored on `netball_chest_pass` and mutation-tested. Moving the
+step key 13.2 cm, which is more than half a netball's diameter, moved every
+measure this engine has by at most 5.1 degrees. **That is the threshold this
+repository calls meaningless. It passed the mutation, so it was not a check, and
+it was deleted rather than kept green.**
+
+**THE SECOND LOOKED LIKE IT WORKED.** The same checkpoint was authored again on
+`netball_overhead_pass`. Swept against its band, **a 26 cm pull-back, with the
+ball well behind her head, PASSED at 114.99**, and the whole range from 0 to 26 cm
+moved the measure 7.7 degrees. The failure at 27.7 cm was a SOLVER BASIN FLIP.
+The elbow's z ran +8.5 to -12.0, swinging 20.5 cm from in front of the shoulder to
+behind it, while the wrist moved 0.2 cm and the ball did not move at all.
+
+**A GREEN CHECK THAT WOULD HAVE SHIPPED IS WORSE EVIDENCE ABOUT THE ENGINE THAN A
+CHECK THAT PLAINLY DID NOTHING.** The first deletion suggests the answer is a
+linear measure. **The second shows an angle measure that appeared to supply one
+and did not.**
+
+### Four drills, counted from the list rather than summarised
+
+| drill | the cue, and what quantity it names |
+|---|---|
+| `netball_chest_pass` | "don't pull ball back behind head" — a DISTANCE. Checkpoint deleted |
+| `netball_overhead_pass` | the same cue — checkpoint deleted for the worse reason above |
+| `netball_bounce_pass` | "bounce approximately 1m in front of receiver" — a POSITION; "keep ball low" — a HEIGHT; "pull the ball to the side" — a LATERAL position |
+| `netball_one_hand_high_pass` | "pull the ball up as high as arm can go" — a HEIGHT, and it is the sentence that drill exists for |
+
+Refer to the row in `docs/KNOWN_ISSUES.md` that records both deletions and all
+four drills. It states the pattern once: **the manual cues lengths, and a length
+needs a measure whose unit says so.**
+
+**THIS ITEM IS NOT A REQUEST FOR AN INSTRUMENT.** It asks which class of cue she
+teaches in. Whether the engine should grow a linear measure is a separate
+decision, and it belongs to Marius after her answer rather than before it.
+
+**Not settled.** How much of her coaching is distance and how much is shape.
+**That number does not exist and only she can supply it.**
+
+---
 
 ## Three items with no engine evidence
 
