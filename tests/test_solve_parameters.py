@@ -266,6 +266,42 @@ class NoProducerOnThisBranchTest(unittest.TestCase):
     SO THIS PINS ONLY WHAT THIS BRANCH CAN SEE. When a producer lands here, the
     first test goes RED, and that red is the field becoming reachable.
 
+    ONE TEST IN THIS CLASS DOES SKIP, AND AN EARLIER VERSION OF THIS DOCSTRING
+    SAID NONE DID. `test_a_real_job_on_this_branch_yields_none` reads a job file
+    from `spikes/poc-output/`, which is in `.gitignore` at line 13 with ZERO job
+    files tracked anywhere. So it skips on every clean clone and on the runner,
+    and it runs only on a machine that has rendered.
+
+    That claim was checked here, on a machine that HAS rendered, and reported as
+    "nothing skips". Moving the job files aside for one run shows the skip. The
+    proof of no-skip was itself a statement about one machine, which is the fault
+    this class exists to record.
+
+    IT IS THE ONLY TEST HERE THAT READS A REAL ARTEFACT, and it is the one that
+    does not run where the suite is public. The reachability proof therefore
+    rests on `test_the_producer_in_THIS_repository_decides_the_field`, which
+    reads a TRACKED file and runs everywhere.
+
+    NO COMMITTED JOB FIXTURE IS ADDED, deliberately. A checked-in job goes stale
+    against the producer it describes, and that trades a visible skip for a
+    silent lie.
+
+    WHICH TEST PROVES EACH REFUSAL REACHABLE ON THE MERGED TREE, which is the
+    state that will actually ship. After the producer merges it records one key,
+    so a receipt carries a mapping:
+
+        1 no `solveParameters`   STILL REACHABLE, from the ARCHIVED receipts,
+                                 which predate the field and carry no key
+        2 does not name it       reachable: ask for a parameter the producer
+                                 does not record, such as CONTACT_WEIGHT
+        3 same value             reachable: two jobs at the same pole angle
+        4 two different drills   reachable: any two drills
+        5 another moved          NOT reachable at one recorded key
+
+    The tests for 1 to 4 construct their inputs; what changes on the merged tree
+    is that a real artefact exists for each. Number 5 has no real artefact until
+    a producer records two.
+
     PROVEN ABLE TO FAIL on 2026-09-09, and the first attempt at that proof did
     NOT run: its anchor string was absent, the assertion fired before any
     rewrite, and the claim "proven able to fail" reached a commit message
@@ -290,7 +326,7 @@ class NoProducerOnThisBranchTest(unittest.TestCase):
     STALE_NOTE = "ON THIS BRANCH NO PRODUCER WRITES THE FIELD AT ALL"
 
     def test_the_producer_in_THIS_repository_decides_the_field(self):
-        """NO SKIP ON ANY PATH, and both paths assert.
+        """BOTH PATHS ASSERT AND THIS TEST NEVER SKIPS.
 
         The artefact is `spikes/export_blender_job.py` in THIS repository, which
         is tracked, so the answer is reproducible and does not depend on what any
@@ -307,6 +343,10 @@ class NoProducerOnThisBranchTest(unittest.TestCase):
         The earlier version skipped when a PATH was missing, which is a statement
         about one machine. This fails or asserts on a statement about the
         repository.
+
+        THIS TEST CARRIES THE WEIGHT, because it is the only one in the class
+        that reads a real artefact AND runs everywhere. Refer to the class
+        docstring for the one that does skip.
         """
         import ast
 
