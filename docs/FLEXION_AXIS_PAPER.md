@@ -35,9 +35,10 @@ configuration".
 The mapping from "the knuckle's own curl axis" to a component index is therefore
 the CONSUMER's, and it is `FLEXION_AXIS = {"index": 0, "middle": 0, "ring": 0,
 "pinky": 0, "thumb": 2}`, a module constant at
-`blender_mpfb_reference_catch.py:437`. Its own comment, four lines above the
-guard that reads it, says it is "an assumption about the rig and nothing checked
-it".
+`blender_mpfb_reference_catch.py:437`. The line that reads it is
+`axis = FLEXION_AXIS[digit]`, and the comment DIRECTLY BELOW that line says it
+is "an assumption about the rig and nothing checked it". The guard it feeds
+raises seventeen lines further down.
 
 **So the axis is this renderer's assumption, correctly so, and the defect is
 that the assumption is fixed rather than measured.**
@@ -157,7 +158,7 @@ the pose was sound, and nothing here shows that.
   lane cannot read MHR's knuckle frames.
 - What the figure would LOOK like under option C. The pose exists only behind a
   neutralised guard in a probe, and no still has been rendered from it.
-- Whether `MIN_AXIS_SHARE = 0.5` is the right threshold. Nothing in the library
+- Whether `MIN_AXIS_SHARE = 0.5`, at `finger_curl.py:147`, is the right threshold. Nothing in the library
   sits between 0.4239 and 1.0000, so the library cannot distinguish 0.5 from any
   value in that gap.
 
