@@ -1,6 +1,8 @@
 # The coach morning: what to ask, and the evidence behind each question
 
-**Items 1 to 9 were re-measured on `ac240b2` with a clean tree.** Items 10 and
+**Items 1 to 9 were re-measured on `ac240b2` with a clean tree. ITEM 6 IS THE
+EXCEPTION AND ITS TABLE NAMES ITS OWN BUILD**, because one of its eight rows was
+read on a pose that drill no longer holds. Items 10 and
 above were added later, as each drill was authored, and **each names the commit
 its own figures were read on, or says that it carries no figure** — item 18 is
 the one that carries none — do not read the `ac240b2` line as covering
@@ -17,8 +19,8 @@ The questions are for Erin and Marius. They are written to be answerable by a
 coach watching the athlete, not by reading a number. Where the engine has an
 opinion it is stated as a measurement and never as a recommendation.
 
-**Eighteen numbered items.** One, item 7, is STRUCK, because it was raised on a
-measurement the solver read from a second solution for that drill. **Fourteen
+**Nineteen numbered items.** One, item 7, is STRUCK, because it was raised on a
+measurement the solver read from a second solution for that drill. **Fifteen
 carry engine measurements. Items 8, 10 and 18 do not**, and neither claims to: item
 8 names the constant that follows from item 2's answer, item 10 compares two
 written vocabularies, and item 18 asks for two angles that nothing sources.
@@ -80,9 +82,45 @@ changes the other's evidence.
 **The question.** Watch the two previews side by side. Which elbow width looks
 like the athlete in the manual's photographs?
 
+**THIS ITEM ASKS TWO QUESTIONS AND DOES NOT SAY WHICH ONE SHE ANSWERS.** The
+paragraph above asks her to pick a preview, which picks a NUMBER. A paragraph
+below asks whether 38.6 describes the drills that put both hands on the ball or
+the two that put one, which picks a POPULATION. **They are not the same question,
+and this item has never said that the second determines the first.**
+
+**Named here and not resolved.** Which question to put to a coach changes what
+she is asked, so it is Marius's ruling. It is recorded because **an archived
+answer to item 2 does not say which of the two was answered**, and a later reader
+will assume whichever they met first.
+
 **What the dial does.** One number sets it, `ELBOW_POLE_ANGLE_DEGREES`, at 31.3
 today. The manual's figure, read from photographs, is 38.6 cm between the
 elbows at contact.
+
+**EVERY LINE NUMBER QUOTED BELOW WAS READ ON `4bad91b` AND RE-VERIFIED ON
+`a02d9b4`.** All six ranges still contain what they are quoted for. **A CITATION
+TO A LINE IS A CLAIM ABOUT A TREE**, the same way a figure is, so it names the
+tip it was read on.
+
+**The re-verification is not ceremony.** These three files belong to lanes that
+are actively changing them. **A reader who follows an unstamped citation to the
+wrong line concludes the quotation is wrong, when the file has moved** — which is
+a worse outcome than an obviously stale number, because it discredits a correct
+quotation.
+
+**WHY THE QUESTION IS IN DEGREES AT ALL, AND IT IS NOT A DETAIL.** The dial before
+this one was `elbowWidth`, a dimensionless multiplier. Its own reader records what
+it was worth, at `spikes/technique.py:60-65`:
+
+> "That dial was named for the folded case and wired to a term which **a weight
+> sweep from 2.0 down to 0.0 showed moves folded elbow separation by 0.2 cm, so
+> it could not have honoured a coach's number whatever they said.**"
+
+And the line after it: **"No technique file authored `elbowWidth`, so nothing is
+migrated."** So it was a dial that could not have carried a coach's answer across
+its whole range, **and no drill ever set it, so nobody found out.** The pole angle
+is in degrees because degrees are a quantity a coach can hold in their head, and
+because the quantity before it could not be honoured.
 
 On the six drills that put BOTH hands on the ball:
 
@@ -92,6 +130,36 @@ On the six drills that put BOTH hands on the ball:
 | at 37.3, previewed | **38.42 cm** | 30.57 | 42.37 |
 
 The manual says 38.6. At 31.3 the gap is 2.17 cm. At 37.3 it is **0.18 cm**.
+
+**WHERE BOTH NUMBERS COME FROM, WHICH THIS ITEM HAS NEVER SAID.** They are not two
+guesses. **They are one definition read on two populations.**
+
+    31.3   the angle that puts the WHOLE LIBRARY's solved mean on 38.6
+    37.3   the angle that puts the SIX TWO-HANDED drills on 38.6
+
+`spikes/contact_solve.py:116-118` states the definition: **"the angle is whatever
+puts the solved mean on the manual's figure, and when the solve changes the angle
+has to be read again."**
+
+`spikes/preview_variants.py:46-51` states which population each is read on, and
+names the fault in the first:
+
+> "38.6 cm is read from photographs of a two-handed snatch at contact. **The
+> whole-library mean agreed with it while no member of that population did,
+> because two one-handed drills pulled it up.** On the six two-handed drills the
+> angle gives 36.4 cm; about 37.3 degrees is what would put those six on 38.6."
+
+**THE MANUAL'S 38.6 IS READ FROM A PHOTOGRAPH OF A TWO-HANDED SNATCH**, which is
+the population 37.3 is read on.
+
+**THE OBVIOUS ALTERNATIVE WAS CONSIDERED AND REJECTED FOR A STATED REASON**, at
+`contact_solve.py:121-123`. The angle is deliberately not read from the solve's
+own pole angle in the evidenced band, because **"that spreads from -14 to +75
+degrees over 16 frames, so its mean would be calibrating against noise."**
+
+**And what she is NOT being asked**, from the same comment: "What the folded
+regime then does is a FINDING, not a target. **No evidence says how wide the
+elbows should be with the ball at the chest.**"
 
 Every cell in this table is read on one build, with the locked parameters
 pinned, and the whole row was re-measured rather than the mean alone. An
@@ -145,6 +213,31 @@ the elbow width by 37.91 cm. That is the FREE arm relocating rather than the
 elbow width changing, and it would dominate anything a person watched on that
 drill. The comparison drill is `deflect_high`, where both hands are on the ball
 and nothing else moves.
+
+**THE SCOPE OF WHATEVER SHE ANSWERS.** `ELBOW_POLE_ANGLE_DEGREES` is one module
+constant and it is what every drill uses. A per-drill override exists,
+`elbowAngleDegrees` in a technique file's grip block, and `spikes/technique.py:57`
+says "None means the engine's own". **Not one of the twelve technique files sets
+it.** So a change to this number moves twelve drills, and using the override would
+be the library's first use of it.
+
+**THE PREVIEW PAIR DEMONSTRATES A PER-DRILL CHANGE**, because it is produced by
+setting the override in a copy of one drill's technique file. **A caption implying
+it shows a global change would over-claim**, and the picture and this document
+must agree on that.
+
+**AND THE FILE SAYS THIS ABOUT ITS OWN CONSTANT**, at `contact_solve.py:357-363`:
+
+> "`ELBOW_POLE_ANGLE_DEGREES` was **bisected through the whole solve rather than
+> derived from the geometry**, so it had absorbed the basis error: correcting a
+> 12.30 cm geometry fault moved the two-handed mean contact separation from
+> 36.58 cm to 36.43, and the angle needed no re-read. **That is worth reading
+> twice. A calibration robust to a 12 cm geometry error is robust because it is
+> loosely coupled to the geometry, which is not entirely a compliment.**"
+
+**A constant that a 12.30 cm geometry correction did not move is a constant whose
+value is not really about the geometry.** That is what her answer will and will
+not control, and the file says it about itself.
 
 **The guard that this section said it had dissolved was right.**
 `test_elbow_pole.py` holds a tripwire on the distance between the two means.
@@ -214,46 +307,85 @@ defect.
 the centre of the body towards the ball. Watch the second hand join. Does it go
 too far?
 
-**What the engine does.** On the two drills where one hand takes the ball and
-the other joins, the free hand goes out ahead of her shoulders and comes back:
+**AMENDED 2026-09-09, AND ONE LINE SORTS THIS SECTION: EVERYTHING MEASURED ON THE
+WORLD AXIS IS WITHDRAWN, AND EVERYTHING MEASURED ON HER OWN AXIS OR WITH NO AXIS
+STANDS.**
 
-Measured from the midpoint of her two upper-arm joints, which is the origin
-`docs/KNOWN_ISSUES.md` used, so the two readings can be compared at all:
+**What the engine does.** On the two drills where one hand takes the ball and the
+other joins, the free hand goes out ahead of her shoulders and comes back.
+
+Measured on `2413f9d` from the midpoint of her two upper-arm joints, **along her
+own forward axis**, which is the origin and the axis `docs/KNOWN_ISSUES.md` uses:
 
 | drill | at contact | furthest out | back to | travel |
 |---|---|---|---|---|
-| `one_hand_snatch_to_other_hand` | 11.85 cm | 25.97 cm | 12.07 cm | **14.12 cm** |
-| `hooks_outside_hand` | 3.43 cm | 14.33 cm | 3.48 cm | **10.90 cm** |
+| `one_hand_snatch_to_other_hand` | 12.02 cm | 25.98 cm, frame 58 | 12.07 cm | **13.96 cm** |
+| `hooks_outside_hand` | 12.35 cm | 25.06 cm, frame 60 | 12.07 cm | **12.71 cm** |
+
+**BOTH ROWS WERE RE-READ ON ONE BUILD**, not the one that was wrong, because a
+corrected row beside an uncorrected one is a two-build table that does not say it
+is one.
+
+**BOTH DRILLS ARE THE SAME SHAPE.** Each waits, then goes, and each comes back to
+12.07 cm. The first ends 0.05 cm further out than at contact and the second ends
+0.28 cm closer. **What they do not share is the frame count**: the peaks sit at
+frames 58 and 60, so a count quoted once for both was measured on one of them.
+
+**AHEAD IS A DIRECTION IN HER FRAME AND NOT IN THE ROOM.** The engine places
+every hand and every ball as `chest + rotation @ [across, up, ahead]`, and
+`possession.to_offset` inverts it with the same rotation. **There is no
+world-forward axis in the engine.** On the second drill she stands 48.22 degrees
+turned at the first frame and about 4 degrees at the last, so a reading taken
+along the room's forward adds her shoulders unwinding to her hand's travel, and
+answers a different question.
+
+### The row this item published was wrong, and its correction of the ledger was wronger
+
+**RETRACTED.** This item stated 3.43 out to 14.33 and back to 3.48 on the second
+drill, a travel of 10.90 cm, and told a coach the drill "has moved" and "sits
+closer in" against the ledger's 13.3.
+
+**Those figures reproduce on NEITHER axis**: 7.80 cm out along the room's forward
+and 10.73 cm out along hers. **They were read on the pose that drill no longer
+holds**, which is the pose that struck item 7.
+
+**AND THE LEDGER WAS RIGHT.** Its row, introduced in `1106617` on 2026-08-27,
+records 11.9 to 26.0 to 12.0 on the first drill and 11.8 to 25.1 to 12.0 on the
+second.
+
+| against `2413f9d`, worst of the three readings | |
+|---|---|
+| the ledger, first drill | **0.12 cm** |
+| the ledger, second drill | **0.55 cm** |
+| this item's retracted row, second drill | **10.73 cm** |
+
+**A row that stood for two weeks reproduces to half a centimetre, and the
+correction published against it was nineteen times further out.** Nothing in
+`docs/KNOWN_ISSUES.md` needed changing.
+
+### Two retractions on one item, from two different causes
+
+**The first.** An earlier draft gave 17.6 and 13.1 cm at contact, from the trunk
+frame's own shoulder places rather than the solved upper-arm joints. **The origin
+was wrong.**
+
+**The second.** This item then published 10.90 cm and called it a correction of
+the ledger. **The origin was right and the pose was wrong.**
+
+**Neither was caught by its author.** The first was caught by a reader; the second
+by another lane reviewing a draft that quoted it.
 
 **WATCH THE TRAVEL, NOT THE HEIGHT ABOVE ZERO.** "Ahead of her shoulders" needs
-an origin, and the number changes completely with the choice while the movement
-does not. On the first drill, across four defensible origins, the contact
-reading ranges from 7.46 to 20.66 cm and the travel stays between 14.12 and
-14.67. The travel is the movement. The level is a choice of where to measure
-from.
-
-**Against the older reading in `docs/KNOWN_ISSUES.md`**, which records 11.9 out
-to 26.0 and back to 12.0 on the first drill and 11.8 to 25.1 to 12.0 on the
-second, both introduced in `1106617` on 2026-08-27:
-
-- **The first drill has not moved.** 11.85 to 25.97 to 12.07 against 11.9 to
-  26.0 to 12.0. The older reading reproduces on `ac240b2`.
-- **The second drill has moved**, and it is the drill the hand fix changed most.
-  Travel 10.90 cm against 13.3, and it sits closer in.
-
-**A correction to an earlier draft of this document.** It gave 17.6 and 13.1 cm
-at contact and said the hand now sits further forward on both drills. Those
-figures came from a DIFFERENT ORIGIN — the trunk frame's own shoulder places
-rather than the solved upper-arm joints — so the difference was in the
-measurement and not in the athlete. One drill had not moved at all. Retracted
-rather than corrected in place, because a coach could have repeated it.
-
-The movement is smooth either way. The hand ramps out over about thirteen
-frames and back over about thirty-nine.
+an origin AND an axis, and the number changes completely with either while the
+movement does not. On `ac240b2`, across four defensible origins, the first
+drill's contact reading ranged from 7.46 to 20.66 cm while its travel stayed
+between 14.12 and 14.67. **That survey named its origins and not its axis, and
+this amendment is what happens when the axis is the thing that moves.** Read it
+as a demonstration of the point rather than as current figures.
 
 **Not settled.** Whether travel of this size is what the cue forbids. If it is,
-the change is to the `join` and `gather` keys, which is a key retune and goes
-to Marius with this evidence before anybody touches it.
+the change is to the `join` and `gather` keys, which is a key retune and goes to
+Marius with this evidence before anybody touches it.
 
 ---
 
@@ -261,21 +393,49 @@ to Marius with this evidence before anybody touches it.
 
 **The question.** Watch the ready position. Is she showing the passer a target?
 
-**What the engine does.** Wrist to wrist at the first frame:
+**What the engine does.** Wrist to wrist at the first frame, on the engine's
+solved skeleton, checked against archive `coach-figures-2413f9d`:
 
-| drill | wrist to wrist |
-|---|---|
-| `deflect_high` | 18.29 cm |
-| `hooks_jump_pull_in` | 19.83 cm |
-| `double_foot_landing` | 19.91 cm |
-| `two_hand_snatch_pull_in` | 20.08 cm |
-| `two_hand_snatch_straight_back` | 20.08 cm |
-| `two_hand_catch_chest` | 20.10 cm |
-| `one_hand_snatch_to_other_hand` | 32.15 cm |
-| `hooks_outside_hand` | 45.68 cm |
+| drill | wrist to wrist | as this item read it on `ac240b2` |
+|---|---|---|
+| `deflect_high` | 18.29 cm | 18.29 |
+| `hooks_jump_pull_in` | 19.83 cm | 19.83 |
+| `double_foot_landing` | 19.91 cm | 19.91 |
+| `two_hand_snatch_pull_in` | 20.08 cm | 20.08 |
+| `two_hand_snatch_straight_back` | 20.08 cm | 20.08 |
+| `two_hand_catch_chest` | 20.10 cm | 20.10 |
+| `one_hand_snatch_to_other_hand` | 32.15 cm | 32.15 |
+| `hooks_outside_hand` | **40.36 cm** | 45.68, **MOVED** |
+
+**AMENDED 2026-09-09. SEVEN OF THE EIGHT ROWS REPRODUCE TO TWO DECIMAL PLACES AND
+THE EIGHTH DOES NOT.** The eighth is `hooks_outside_hand`. All eight were re-read
+rather than the one already known to be wrong, because a single corrected row
+leaves seven unchecked rows from an earlier build under one heading.
+
+**Seven right and one wrong names the mechanism. One wrong row alone could have
+been anything.** That drill has two solved poses about 33 degrees apart. The turn
+of the shoulder line at the first frame is 48.22 degrees on the engine and 45.48
+on the rendered figure, and struck item 7 records 48.22 as the corrected pose and
+15.44 as the pose the shipped parameter set reached. **Both bodies hold the
+corrected pose and only this row was behind.**
+
+**ITEM 7 WAS STRUCK FOR THAT POSE AND NOBODY RE-MEASURED THE OTHER ROWS READ ON
+THE SAME DRILL.** This row carried a figure from it for a week.
+
+**THIS MEASUREMENT HAS NO AXIS, WHICH IS WHY IT IS SETTLED.** Wrist to wrist is a
+straight-line distance between two points, so it reads the same in her frame and
+in the room's. **Item 5's figures are a component along an axis and they are not
+settled**, which is a difference between the two items and not a difference in
+how carefully each was measured.
 
 Six of the eight hold their hands about 20 cm apart. The manual's cue for the
 snatch asks for the arm span to be shown.
+
+**THIS TABLE IS THE ENGINE AND THE COACH LOOKS AT THE FIGURE.** The two bodies do
+not hold the same pose at the ready frame, and the gap is not small on any row.
+**That measurement belongs to the rendering lane and it is in
+`docs/TWO_BODIES_PAPER.md`, which is not on main.** It is named here so that this
+table is not read as a description of what she will be shown.
 
 **Not settled.** Whether 20 cm is a shown arm span or a pair of hands held
 together. No checkpoint grades this today, so nothing in the engine will notice
@@ -783,6 +943,60 @@ If the paper changes before the morning, this item's account of what is sourced
 changes with it. **Its account of the RULING has already changed once**, and the
 sequence above is the record of that.
 
+## 19. Which of the cues you teach are distances rather than shapes?
+
+**The question, and it is for Erin.** The manual's cues are written in the words
+a coach uses. Some name a SHAPE, such as how wide the elbows sit. Some name a
+DISTANCE, such as how far the ball is from the chest. **Which of yours are
+distances?**
+
+**Why it is asked.** This engine grades angles. **A cue that names a distance has
+no instrument here, and a checkpoint has been authored for one and withdrawn
+twice.** Her answer sizes the gap, and no measurement in this repository can.
+
+### Two experiments, and the second is the one that matters
+
+**THE FIRST FAILED OPENLY.** A checkpoint for the manual's "don't pull ball back
+behind head" was authored on `netball_chest_pass` and mutation-tested. Moving the
+step key 13.2 cm, which is more than half a netball's diameter, moved every
+measure this engine has by at most 5.1 degrees. **That is the threshold this
+repository calls meaningless. It passed the mutation, so it was not a check, and
+it was deleted rather than kept green.**
+
+**THE SECOND LOOKED LIKE IT WORKED.** The same checkpoint was authored again on
+`netball_overhead_pass`. Swept against its band, **a 26 cm pull-back, with the
+ball well behind her head, PASSED at 114.99**, and the whole range from 0 to 26 cm
+moved the measure 7.7 degrees. The failure at 27.7 cm was a SOLVER BASIN FLIP.
+The elbow's z ran +8.5 to -12.0, swinging 20.5 cm from in front of the shoulder to
+behind it, while the wrist moved 0.2 cm and the ball did not move at all.
+
+**A GREEN CHECK THAT WOULD HAVE SHIPPED IS WORSE EVIDENCE ABOUT THE ENGINE THAN A
+CHECK THAT PLAINLY DID NOTHING.** The first deletion suggests the answer is a
+linear measure. **The second shows an angle measure that appeared to supply one
+and did not.**
+
+### Four drills, counted from the list rather than summarised
+
+| drill | the cue, and what quantity it names |
+|---|---|
+| `netball_chest_pass` | "don't pull ball back behind head" — a DISTANCE. Checkpoint deleted |
+| `netball_overhead_pass` | the same cue — checkpoint deleted for the worse reason above |
+| `netball_bounce_pass` | "bounce approximately 1m in front of receiver" — a POSITION; "keep ball low" — a HEIGHT; "pull the ball to the side" — a LATERAL position |
+| `netball_one_hand_high_pass` | "pull the ball up as high as arm can go" — a HEIGHT, and it is the sentence that drill exists for |
+
+Refer to the row in `docs/KNOWN_ISSUES.md` that records both deletions and all
+four drills. It states the pattern once: **the manual cues lengths, and a length
+needs a measure whose unit says so.**
+
+**THIS ITEM IS NOT A REQUEST FOR AN INSTRUMENT.** It asks which class of cue she
+teaches in. Whether the engine should grow a linear measure is a separate
+decision, and it belongs to Marius after her answer rather than before it.
+
+**Not settled.** How much of her coaching is distance and how much is shape.
+**That number does not exist and only she can supply it.**
+
+---
+
 ## Three items with no engine evidence
 
 These are on the agenda and this document has nothing to add to them.
@@ -799,7 +1013,8 @@ These are on the agenda and this document has nothing to add to them.
 
 ## Provenance
 
-**Items 1 to 9** were read on `ac240b2` with a clean tree, the tip that passed
+**Items 1 to 9, EXCEPT ITEM 6**, were read on `ac240b2` with a clean tree, the
+tip that passed
 the suite at 564 tests and passed the clip gate on the morning of 2026-09-02.
 Those figures come from one solve of each of the eight drills that existed then,
 plus one preview solve at 37.3 degrees.
