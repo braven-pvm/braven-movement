@@ -1,6 +1,8 @@
 # The coach morning: what to ask, and the evidence behind each question
 
-**Items 1 to 9 were re-measured on `ac240b2` with a clean tree.** Items 10 and
+**Items 1 to 9 were re-measured on `ac240b2` with a clean tree. ITEM 6 IS THE
+EXCEPTION AND ITS TABLE NAMES ITS OWN BUILD**, because one of its eight rows was
+read on a pose that drill no longer holds. Items 10 and
 above were added later, as each drill was authored, and **each names the commit
 its own figures were read on, or says that it carries no figure** — item 18 is
 the one that carries none — do not read the `ac240b2` line as covering
@@ -261,21 +263,49 @@ to Marius with this evidence before anybody touches it.
 
 **The question.** Watch the ready position. Is she showing the passer a target?
 
-**What the engine does.** Wrist to wrist at the first frame:
+**What the engine does.** Wrist to wrist at the first frame, on the engine's
+solved skeleton, checked against archive `coach-figures-2413f9d`:
 
-| drill | wrist to wrist |
-|---|---|
-| `deflect_high` | 18.29 cm |
-| `hooks_jump_pull_in` | 19.83 cm |
-| `double_foot_landing` | 19.91 cm |
-| `two_hand_snatch_pull_in` | 20.08 cm |
-| `two_hand_snatch_straight_back` | 20.08 cm |
-| `two_hand_catch_chest` | 20.10 cm |
-| `one_hand_snatch_to_other_hand` | 32.15 cm |
-| `hooks_outside_hand` | 45.68 cm |
+| drill | wrist to wrist | as this item read it on `ac240b2` |
+|---|---|---|
+| `deflect_high` | 18.29 cm | 18.29 |
+| `hooks_jump_pull_in` | 19.83 cm | 19.83 |
+| `double_foot_landing` | 19.91 cm | 19.91 |
+| `two_hand_snatch_pull_in` | 20.08 cm | 20.08 |
+| `two_hand_snatch_straight_back` | 20.08 cm | 20.08 |
+| `two_hand_catch_chest` | 20.10 cm | 20.10 |
+| `one_hand_snatch_to_other_hand` | 32.15 cm | 32.15 |
+| `hooks_outside_hand` | **40.36 cm** | 45.68, **MOVED** |
+
+**AMENDED 2026-09-09. SEVEN OF THE EIGHT ROWS REPRODUCE TO TWO DECIMAL PLACES AND
+THE EIGHTH DOES NOT.** The eighth is `hooks_outside_hand`. All eight were re-read
+rather than the one already known to be wrong, because a single corrected row
+leaves seven unchecked rows from an earlier build under one heading.
+
+**Seven right and one wrong names the mechanism. One wrong row alone could have
+been anything.** That drill has two solved poses about 33 degrees apart. The turn
+of the shoulder line at the first frame is 48.22 degrees on the engine and 45.48
+on the rendered figure, and struck item 7 records 48.22 as the corrected pose and
+15.44 as the pose the shipped parameter set reached. **Both bodies hold the
+corrected pose and only this row was behind.**
+
+**ITEM 7 WAS STRUCK FOR THAT POSE AND NOBODY RE-MEASURED THE OTHER ROWS READ ON
+THE SAME DRILL.** This row carried a figure from it for a week.
+
+**THIS MEASUREMENT HAS NO AXIS, WHICH IS WHY IT IS SETTLED.** Wrist to wrist is a
+straight-line distance between two points, so it reads the same in her frame and
+in the room's. **Item 5's figures are a component along an axis and they are not
+settled**, which is a difference between the two items and not a difference in
+how carefully each was measured.
 
 Six of the eight hold their hands about 20 cm apart. The manual's cue for the
 snatch asks for the arm span to be shown.
+
+**THIS TABLE IS THE ENGINE AND THE COACH LOOKS AT THE FIGURE.** The two bodies do
+not hold the same pose at the ready frame, and the gap is not small on any row.
+**That measurement belongs to the rendering lane and it is in
+`docs/TWO_BODIES_PAPER.md`, which is not on main.** It is named here so that this
+table is not read as a description of what she will be shown.
 
 **Not settled.** Whether 20 cm is a shown arm span or a pair of hands held
 together. No checkpoint grades this today, so nothing in the engine will notice
@@ -799,7 +829,8 @@ These are on the agenda and this document has nothing to add to them.
 
 ## Provenance
 
-**Items 1 to 9** were read on `ac240b2` with a clean tree, the tip that passed
+**Items 1 to 9, EXCEPT ITEM 6**, were read on `ac240b2` with a clean tree, the
+tip that passed
 the suite at 564 tests and passed the clip gate on the morning of 2026-09-02.
 Those figures come from one solve of each of the eight drills that existed then,
 plus one preview solve at 37.3 degrees.
