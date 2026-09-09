@@ -312,9 +312,18 @@ IT AS THREE ROWS.** It said check 1 becomes unreachable after the merge. **The
 archived receipts predate the field entirely**, so any pair drawn from them
 refuses at check 1 whatever the producer records later.
 
-    37 receipts across FOUR archives      coach-figures-2413f9d, coach-figures-aa3f244,
-                                          interim-05e58cd, pre-fix-31aug
-    carrying `solveParameters`            NONE
+    THREE archive sets, 37 receipts, counted RECURSIVELY:
+
+      coach-figures-2413f9d                        11 receipts
+      coach-figures-aa3f244                        10
+      rerender-hand-mirror-2026-09-02               0 directly, 16 beneath
+          pre-fix-31aug                             8      the last batch BEFORE
+                                                                the 1 Sep hand fix
+          interim-05e58cd                           8      an interim build, and
+                                                                NOT the corrected
+                                                                figures
+
+    carrying `solveParameters`                      NONE, at any depth
 
 **So the guard protects comparisons this project has not yet made, rather than
 the ones already on disk.** A pair can only be assembled from two receipts
@@ -324,6 +333,47 @@ rendered after the producer lands.
 **A row about a tree that does not exist yet is a prediction**, and this one is
 kept as three rows so the third can be checked when it becomes a statement about
 main rather than carried forward as settled.
+
+### A COUNT OF FILES UNDER A DIRECTORY MUST STATE ITS DEPTH
+
+**Four lanes measured that one directory within ten minutes and produced four
+different answers. None was careless and no two asked the same question.**
+
+| reading | sets | receipts | what it actually asked |
+|---|---|---|---|
+| the orchestrator, first | 2 | 21 | enumerated to look, hard-coded to measure |
+| the movement lane | 3 | 21 | a NON-recursive glob |
+| this lane | **4** | 37 | recursive, but grouped one level too deep |
+| the orchestrator, second, and the rendering lane | **3** | **37** | recursive, grouped at the top |
+
+**The rerender holds ZERO receipts directly and SIXTEEN one level down.** So a
+non-recursive count says 0 for it and a recursive one says 16, and a listing one
+level deeper reports its two subdirectories as archive sets beside the others.
+**The two readings differ by the entire disputed amount.**
+
+**MY TOTAL WAS RIGHT AND MY SHAPE WAS WRONG, AND THE SHAPE IS WHAT A READER TAKES
+AWAY.** Four independent archives of graded work is a different belief from two,
+plus one pair of before-and-after states from a single repair.
+
+**So "37 receipts in the archives" is not a claim until it says whether it
+descended.** A count of files under a directory carries its depth the way a
+figure carries its build and a line citation carries its tip. **It is the same
+rule three times: a number without its scope is not yet a statement.**
+
+**AND A FIFTH READING OF THE SAME DIRECTORY WAS WRONG IN THIS DOCUMENT UNTIL IT
+WAS CHECKED.** A draft of the block above labelled the two nested states "the
+state BEFORE a fix" and "the state AFTER it", **inferred from their names and
+inverted.** The archive's own `PROVENANCE.md` says it:
+
+> `pre-fix-31aug` — "the last full batch before the 1 Sep hand fix"
+>
+> `interim-05e58cd` — 8 receipts on `05e58cd`. **"NOT the corrected figures"**
+
+**So they are not a before and an after at all.** One is the last batch before a
+fix and the other is an interim build that is explicitly not the corrected
+state. **A name is not a correspondence**, and `pre-fix` reads like an ordering
+while `interim` reads like a stage, so guessing from the pair produces a
+plausible sentence that is wrong twice over.
 
 ---
 
