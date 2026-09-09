@@ -78,7 +78,6 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
             ("spikes/test_elbow_pole.py", "MEASURED_CM"),
             ("spikes/test_elbow_pole.py", "ONE_HANDED_GAP_CM"),
             ("spikes/test_authored_launch.py", "ARM_CM"),
-            ("spikes/test_possession.py", "ARM_CM"),
             ("girdle_agreement.py", "REST_TORSO_M"),
             ("scripts/landmark_comparison.py", "MY_TORSO_CM"),
             ("scripts/clavicle_divisor_probe.py", "ENGINE_TORSO_CM"),
@@ -91,7 +90,13 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
     (
         "range-of-motion", INCLUDE,
         "A limit on how far a joint or a hand may go. It is a claim about what "
-        "a human being can do, and a coach or a clinical source can rule on it.",
+        "a human being can do, and a coach or a clinical source can rule on it. "
+        "THE PAIR MOST LIKELY TO LOOK INCONSISTENT FROM OUTSIDE IS "
+        "technique.MINIMUM_SPREAD_DEGREES here against "
+        "contact_solve.SPREAD_TOLERANCE_DEGREES under numerical-tolerance. "
+        "Both are about the hand spread. ONE BOUNDS WHAT A HAND CAN DO. THE "
+        "OTHER BOUNDS AGREEMENT BETWEEN TWO COMPUTATIONS OF IT. That is the "
+        "whole of the difference and it is the reason the split holds.",
         {
             ("spikes/ball_reach.py", "ELBOW_FLEXION_LIMIT_DEGREES"),
             ("spikes/technique.py", "MINIMUM_SPREAD_DEGREES"),
@@ -123,7 +128,6 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
             ("spikes/movement_engine.py", "ELBOW_POLE_DOWN_CM"),
             ("spikes/movement_engine.py", "ELBOW_POLE_OUT_CM"),
             ("spikes/movement_engine.py", "HAND_LIFT"),
-            ("spikes/movement_engine.py", "PLANTED_CM"),
             ("spikes/ball_reach.py", "PALM_CENTRE_FRACTION"),
             ("spikes/smplx_retarget.py", "LEAN"),
             ("spikes/sweep_ball_height.py", "SHIPPED_UP"),
@@ -184,6 +188,17 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
             ("spikes/finger_wrap.py", "MIDDLE_WEIGHT"),
             ("spikes/finger_wrap.py", "THUMB_WEIGHT"),
             ("spikes/smplx_retarget.py", "BODY_WEIGHT"),
+        },
+    ),
+    (
+        "planted-threshold", CONTESTED,
+        "PLANTED_CM decides when a foot counts as planted. That is either a "
+        "claim about a body, because a coach can say how still a planted foot "
+        "is, or a numerical tolerance on a position the solver already "
+        "reports. RULED CONTESTED 2026-09-09 rather than decided: a row on the "
+        "line filed as decided is worse than a row filed as contested.",
+        {
+            ("spikes/movement_engine.py", "PLANTED_CM"),
         },
     ),
     (
@@ -389,6 +404,11 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
             ("spikes/author_flight.py", "DEFAULT_KEYS"),
             ("spikes/test_job_shoulders.py", "COVERED_AT_LEAST"),
             ("spikes/test_possession.py", "FRAMES"),
+            # RULED 2026-09-09: moved here from anthropometry. 50.0 is a round
+            # number and the reference athlete's arm is 52.68, so this is a
+            # fixture and not a body. test_authored_launch.ARM_CM = 52.7 STAYS
+            # in anthropometry, because it is a rounding of the real value.
+            ("spikes/test_possession.py", "ARM_CM"),
             ("spikes/test_authored_launch.py", "SECONDS_PER_PHASE"),
             ("spikes/sweep_ball_height.py", "LIFT_FRAME"),
             ("spikes/sweep_ball_height.py", "RELEASE_FRAME"),

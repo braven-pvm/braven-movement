@@ -148,6 +148,11 @@ while declaring that no generator touched it.
 The row-level read cannot find this. The release key's note field is EMPTY and
 its provenance sits one level up, in the file's `source`.
 
+**"Declares a generator" and "is downstream" are independent properties.** A
+file can declare a generator and be a source for some of its keys. A file can
+deny every generator and still be downstream. Test for the parent. Do not test
+for the declaration.
+
 *The defect: this lane asserted fifteen where the list says ten, on a day it
 quoted "a count is a claim about a list" at three lanes.*
 
@@ -251,3 +256,30 @@ One pattern is worth more than any single rule. Not one of the four errors
 recorded that morning was caught by the lane that made it. Every one was caught
 by a lane that went to the SOURCE rather than to the MESSAGE. **An absence
 claim must say what was READ, not what was looked for.**
+
+---
+
+## The habit under all of it: publish the claim you measured
+
+The contract lane found the general form in its own three errors of that
+morning, and it is the rule this register most needs:
+
+| what it measured | what it published |
+|---|---|
+| "no citation in the five fields I printed" | "no citation in any of the four files" |
+| "the offset is constant" | "the wrist is stationary" |
+| "this function is not called" | "this module is not reached" |
+
+Each time the narrow claim was the one it checked, and the wide one was the one
+it wrote. **That is not three errors. It is one habit with three outputs**, and
+this lane's own four fall into the same shape.
+
+The third row cost the most. **The wide reading would have removed
+`ELBOW_POLE_ANGLE_DEGREES` from this register**, and that constant is on the
+coach agenda, where Erin is being asked to move it from 31.3 to 37.3. The
+orchestrator had already dictated the broad version into a document about to
+merge. The pull request is held until the sentence is narrowed.
+
+So a row in this register states the claim that was measured. When a wider
+claim follows from it, the wider claim is a separate row and it is marked as an
+inference until somebody measures it.
