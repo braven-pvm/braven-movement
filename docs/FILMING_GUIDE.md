@@ -48,6 +48,21 @@ almost nothing. This is measured, in `spikes/spike_h_roundtrip.py`.
 - A plain background rather than a busy fence.
 - Sixty frames a second if the phone offers it.
 
+## If the wrists and fingers matter
+
+Marius has twice said the athlete flicks her wrist and fingers as she releases
+and the engine's hand stays flat. **The footage from 2026-08-28 cannot measure
+that flick**, and neither can a shoot filmed the same way.
+
+The requirement — how many pixels across the hand, at what frame rate, and why
+the fingers need a different model entirely — is derived and reconciled in one
+place: **"Instruction: put enough pixels on the hands to measure a wrist" in
+`docs/VIDEO_CAPTURE_FINDINGS.md`**. It is not repeated here, because a number
+in two documents is a number that will disagree with itself.
+
+What this footage DOES measure well is hand SPEED. The band is in
+`spikes/video-annotations/hand-speed/BAND.md`.
+
 ## What to send
 
 - Both videos from each set. The pair, not one of them.

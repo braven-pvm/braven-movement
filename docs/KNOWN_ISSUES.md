@@ -4003,8 +4003,32 @@ withdrawn, and an event ledger over the whole clip finds no constant offset that
 beats chance AT ANY TOLERANCE A SYNC COULD USE (at 0.400 s, twelve frames, one
 does: 8 matched against a ceiling of 7, and at that width a match spans most of
 the 1.866 s toss cycle) — refer to
-`spikes/video-annotations/event-ledger-0.1.json`. Set
-0.1 is not a synchronous pair and is unusable for two-view work.
+`spikes/video-annotations/event-ledger-0.1.json`. The pair measured here is
+**`f7faf38b5d42` with `253fa551605e`**, and it is not a synchronous pair. It is
+unusable for two-view work.
+
+**THE SET NAME IN THAT VERDICT WENT STALE ON 2026-09-07 AND THE FINDING DID
+NOT.** Corrected 2026-09-09. The recording measured here as "side 0.1" is
+`253fa551605e`, which was renamed that afternoon and is **today's
+`side 0.2.mp4`**. So this entry paired the front of one run with the side of
+the other, which is why no offset fitted. Everything above stands for that
+pair, including the null: 12 per cent of 2000 trials with `random.seed(0)`.
+
+**TODAY'S SET 0.1 IS A DIFFERENT PAIRING AND IT IS ESTABLISHED.**
+`f7faf38b5d42` with `6e8f9fb2fe03`, at a side index of the front index minus
+five, fitted on three events eleven seconds apart and confirmed on the frames.
+Refer to the header of `docs/VIDEO_CAPTURE_FINDINGS.md`. A reader who took the
+old sentence at face value would call an established pairing unusable.
+
+**WHY THE SENTENCE SURVIVED.** This entry WAS corrected on 2026-09-07, for the
+withdrawn offsets, and not for the rename that happened the same afternoon. A
+correction to one claim in an entry is not a review of the entry.
+
+**THE LEDGER FILE ITSELF NEVER WENT STALE**, because it records identity rather
+than a label: its side view carries `videoSha256` `253fa551605e`,
+`videoFile` `side 0.2.mp4` and `namedBeforeTheRename` `side 0.1.mp4`. The data
+was right and the prose about it was wrong, which is the argument for keying a
+pipeline by hash: a sentence that names a hash cannot be moved by a rename.
 
 **AND A CORROBORATOR THIS LANE OFFERED IS WITHDRAWN.** A wrist-height scan was
 reported as peaking at −0.967 s, agreeing with the recorded −1.000. Three of its
@@ -4819,4 +4843,150 @@ The font gate is beside the recordings gate, and a test loads every other test
 in the module with the font patched away and requires ZERO errors: a pass or a
 skip that names its reason. Measured that way, `ran=34 errors=0 failures=0
 skipped=11`, every skip naming the font or the recordings.
+
+## The hand at release
+
+The band of hand speed the movement lane cites, the shoot requirement that came
+out of the same morning, and the two withdrawals it took to get there. Branch
+`lane/video-hand-speed`, off main `1c3d9d7`. The band itself never moved: the
+same twelve rows, 2.5 to 5.4 m/s, survived an independent review that
+re-derived every one of them with its own code.
+
+### The finding was already in main, and nobody looked
+
+Marius asked on 2026-09-08 whether the footage could show the athlete's wrist
+flick. The answer had been in `docs/VIDEO_CAPTURE_FINDINGS.md` since
+`bde122e` of 2026-09-02, under a heading that names the question, written after
+he asked the SAME question six days earlier. Neither the lane nor the
+orchestrator searched. One `git grep` would have found it.
+
+**The rule: before measuring, grep `docs/` and this file for the topic.** A
+finding that already exists in main is re-derived only to CHECK it, and the two
+readings are then reconciled in ONE place, with the stricter published and the
+withdrawn one named. A number living in two documents is a number that will
+disagree with itself, which is exactly what happened next.
+
+### A range spent as a sigma, and a window that was not still
+
+The re-derivation disagreed with the old note about the PRICE — it asked for 29
+to 49 px where the note asked for about a hundred — and the re-derivation was
+wrong, in the lax direction, twice over.
+
+- **The first figure compared a fast movement against a slow statistic.** A
+  flick lasting 100 ms is three frames at 30 fps, so what it must clear is the
+  frame-to-frame scatter, not a swing accumulated over a 29-frame window.
+- **The second figure was built on a range wearing a sigma's clothes.** Redone,
+  the requirement came out at 88 / 73 / 41 / 69 px from a landmark error of
+  `e = 3.0 px`, and that `e` was the RANGE of the angle over the same window,
+  max minus min, put into a formula that wants a one-sigma value. For 29
+  samples that inflates it about fourfold. Measured as a per-frame quantity the
+  same window gives 0.30 px and the pack's own searched null gives 0.14.
+- **The window was not still, and "still" is a claim about the data.** The
+  forearm's pixel length grows 39 per cent inside it, because she is raising
+  the arm. The one window this pack proved still by its own search changes by
+  3 per cent.
+- **The cross-check compared two different statistics and called them one.**
+  "245 deg/s predicted against the 197 measured — the same quantity, from two
+  directions" set a one-sigma prediction against a measured MAXIMUM.
+
+**Both figures are withdrawn.** The instruction rests on the 2026-09-02
+MEASURED floor and nothing else: median 40, 90th 104, maximum 197 deg/s on a
+30 px lever, and the floor scales with the lever. Three times the maximum needs
+71 px for a 25 degree flick in 100 ms and 59 px for 15 degrees in 50 ms. The
+hundred pixels asked for on 2026-09-02 sits above both and stands.
+
+This is another instance of the repository's oldest fault class: a quantity
+measured in one regime and spent in another. **Name the statistic before it
+goes into a formula** — a range, a standard deviation, a 90th, a maximum — and
+check the formula wants that one. A range grows with the sample count; a sigma
+does not.
+
+### A guard that measured the right thing and gated nothing
+
+`check_near_arm` measured which arm the camera sees. Nothing in the measurement
+path called it: `speed_rows`, `search_null` and `hand_centre` all took the
+`NEAR_ARM` constant, and the only caller was a test, at two windows of twelve.
+A recording shot from the other side would have been measured on the OCCLUDED
+arm, and that failure is silent — the model reports an occluded wrist smoothly,
+as a guess, so the trace looks like a clean slow release.
+
+Writing the gate's test found a second fault: the refusal read a `name` key the
+recordings do not carry, so the path raised `KeyError` instead of refusing.
+**That is proof it had never run once.** The lane and an independent review
+found this defect separately, within the same hour.
+
+### A guard need not skip to guard nothing
+
+Three levers in the same module RAN, on every row, and changed no result.
+
+- The null search ignored frames where the wrist tracks below 0.7, and the
+  quietest window passed the filter anyway.
+- A speed was divided by the file's measured 30.012 fps, where a nominal 30.0
+  is 0.04 per cent out and invisible at two decimals.
+- A sentence claimed per-frame timing where the code used one mean rate, and
+  the intervals vary by 0.3 per cent.
+
+Each is inert on THIS footage and each would matter on a recording that tracks
+worse or runs at another rate. **The signature is a mutation that deletes the
+lever and survives.** The answer is the same as for a guard that skips: build
+the case. The visibility filter now has a stretch with frozen landmarks and a
+half-visible wrist, which is the quietest window in the file and which the
+filter must refuse — and a second test asserting the filter changes nothing on
+the real recordings, so a later reader knows the built case is not decoration.
+
+### A band without its inputs cannot be checked
+
+`BAND.md` named no hash, no frame rate and no model. The module defined
+`sha256` and never called it, keyed the keypoint files BY NAME, and never read
+the `videoSha256` those files carry — on two recordings that swapped names at
+source on 2026-09-07 and record the swap in their own `renamedFrom` block.
+A filename does not say which recording this is.
+
+`load` now refuses unless the file hashes to what is pinned, describes the
+video that is pinned, and carries the athlete figures the module was calibrated
+on. The mutation that swaps the two side files by name now fails with that
+refusal, naming both hashes, instead of failing because the numbers happen to
+differ. Only the two side recordings are pinned, because only they are
+measured; a front recording is refused with "no hash is recorded", which is
+correct and is not a defect.
+
+### A mutation string that matches nothing runs no experiment
+
+One mutation in this pack reported no match, because the document sentence it
+targeted wraps mid-phrase. A driver that scored it as a kill would have counted
+an experiment that never ran. Two rules follow, and the second is the one that
+bites later: **require every mutation string to match EXACTLY once**, and after
+any edit to the files a mutation set targets, RE-RUN the set — a string that
+stops matching, or starts matching twice, is running a different experiment
+under the old name.
+
+The same wrapping caught a test: a document sentence cannot be checked against
+an instrument when the sentence wraps between the number and its unit. The
+figures moved into a table, where each row names the window or the statistic it
+belongs to and a test pairs them by that name rather than by row order.
+
+### The rules that came out of it
+
+1. Grep `docs/` and this file before measuring. Re-derive a merged finding only
+   to check it, then reconcile both readings in one place.
+2. Name the statistic before it enters a formula. A range is not a sigma, and a
+   maximum is not a prediction.
+3. "Still" is a claim about the data. Measure it — the forearm's own pixel
+   length here — rather than reading it off a frame strip.
+4. When two readings disagree, publish the STRICTER and name the withdrawn one
+   with its reason. Being too lax is the dangerous direction: it sends a shoot
+   away with footage that still cannot answer.
+5. A guard that only a test calls is advice. Call it from the measurement path
+   and make it refuse.
+6. A guard that runs and changes nothing is inert. Its signature is a deletion
+   mutation that survives; build the case the data does not supply, and keep a
+   test saying the lever is inert on the real data.
+7. Publish a number with its inputs, hashed. Resolve artefacts by hash, refuse
+   on a mismatch, and put the hashes in the document a lane reads.
+8. Read a figure the file carries rather than typing it, and let the typed
+   value be the CHECK the file must agree with.
+9. Require every mutation string to match exactly once, and re-run a mutation
+   set after any edit to the files it targets.
+10. Give a document's figures a table, not a sentence. A wrapped sentence
+    cannot be checked, and a test that cannot match its target passes.
 

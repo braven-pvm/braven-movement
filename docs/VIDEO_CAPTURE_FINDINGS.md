@@ -797,6 +797,97 @@ say which. The other instructions here are about seeing the movement; this one
 is about being able to measure the part of it a coach can see and an engine
 cannot yet reproduce.
 
+### Re-measured 2026-09-08, and the hundred pixels stands
+
+Marius asked the same question again on 2026-09-08 — the athlete flicks her
+wrist and fingers, the engine's hand stays flat — and the lane measured the
+footage a second time WITHOUT FINDING THIS NOTE FIRST. That was a mistake and
+it is recorded as one. The second measurement is kept for two reasons, and
+neither is its answer: it measured the landmark scatter reported below, and it
+is the record of two requirements this lane published and withdrew in one day.
+Both were too lax. The instruction above is the 2026-09-02 one, unchanged.
+
+**They agree on the lever and on the answer.** The 2026-09-02 reading took the
+wrist-to-knuckle lever at 30 px; the 2026-09-08 reading measures the
+wrist-to-hand landmark vector at 29.8 px on this same front camera, and 19 to
+23 px on the side depending on the window. It is the same lever, and the pose
+model reports it as the wrist against the midpoint of the index and pinky
+landmarks. **The model carries no
+knuckle**, so "wrist to knuckles" is a description of what the lever spans and
+not of two landmarks a shoot can check; on the day, the thing to check is the
+wrist-to-fingertip span in pixels.
+
+**The requirement rests on the MEASURED floor above, and on nothing else.**
+The floor scales with the lever, because the same landmark error subtends a
+smaller angle across a longer arm. So a flick of a given rate needs a lever
+long enough that the floor falls to a third of it.
+
+| the floor it must clear, three times over | 25 deg in 100 ms | 15 deg in 50 ms |
+|---|---|---|
+| `maximum`, 197 deg/s — **this is the published requirement** | 71 px | 59 px |
+| `p90`, 104 deg/s | 37 px | 31 px |
+| `median`, 40 deg/s | 14 px | 12 px |
+
+**The maximum is the conservative choice and the other two rows are there so
+that choice can be seen rather than taken on trust.** Against the maximum the
+strictest flick asks for 71 px. **The hundred pixels asked for on 2026-09-02
+sits above that, and it stands.**
+
+**TWO REQUIREMENTS PUBLISHED ON 2026-09-08 ARE WITHDRAWN, and both were too
+lax.** The 29 to 49 px of that morning compared the flick's total angle
+against the still-arm swing over a 29-frame window, a slowly accumulated
+statistic. The 88 / 73 / 41 / 69 px that replaced it were no better: they were
+built on a landmark error of `e = 3.0 px`, and that `e` was the RANGE of the
+angle over the same window — max minus min — put into a formula that wants a
+one-sigma scatter, which inflates it by about four. The window was not still
+either: the forearm grows 39 per cent in pixels inside it, because she is
+raising the arm. Neither figure survives, and the cross-check that read "the
+same quantity, from two directions" was comparing a one-sigma prediction with
+a measured maximum.
+
+**What the scatter actually is, reported as a RANGE because this footage does
+not hold one number.** Measured per frame on two windows of side 0.2, with the
+sample standard deviation:
+
+| window of side 0.2 | forearm change | angle sd | step sd | implied landmark error |
+|---|---|---|---|---|
+| `37-52`, the searched null, still by its own search | 3 per cent | 1.37 deg | 0.86 deg | **0.32 and 0.14 px** |
+| `560-588`, the window the withdrawn derivation used | 39 per cent | 2.70 deg | 1.62 deg | **0.70 and 0.30 px** |
+
+**The range is 0.14 to 0.70 px.** It is reported here and it derives nothing:
+an `e` that small would ask for fewer pixels than the footage already has,
+which is the sign that a scatter model cannot settle this question and the
+empirical floor must. Treating the 560-588 window's 11.1 degree RANGE as
+though it were a standard deviation is what produced the withdrawn `e = 3.0`,
+and that is a factor of about four above the same window's own step figure.
+
+**The frame rate is a separate requirement and neither reading covers it.** A
+movement needs samples as well as pixels: four across the flick means about
+40 fps for 100 ms and about 80 fps for 50 ms. Both cameras ran at 30.
+
+**And the fingers are not reachable at any lever.** The pose model carries one
+point per finger — index, pinky and thumb tips — and no knuckles, so finger
+flexion is not expressible in it at any resolution or frame rate. Measuring it
+needs the hand landmarker, twenty-one points per hand. That is a decision to
+take before the shoot: add a hand model and frame for it, or say in the coach
+pack that the fingers are ungraded.
+
+**Every figure in this section is DERIVED, and the instrument is
+`spikes/video_flick_requirement.py`.** Run it and it prints the requirement
+from the measured floor, and the scatter beside it;
+`spikes/test_video_flick_requirement.py` asserts that this section's table
+equals its output cell by cell, pairing the rows to the floor statistic they
+name and the columns to the flick in their heading, never by order. The
+requirement never reads the scatter, and a test proves that by making the
+scatter refuse and asking for the requirement anyway. These numbers were
+arithmetic done once in a document until 2026-09-08, which is how they came to
+disagree with the note above them by three times and then, on a second try,
+to rest on a range relabelled as a scatter.
+
+The instrument and the band of hand SPEED that came out of the same work are
+in `spikes/video_hand_speed.py` and
+`spikes/video-annotations/hand-speed/BAND.md`.
+
 **Instruction: put a slate between repetitions** — a clap of the hands, a
 raised marker, anything that appears in both views and cannot be confused with
 the drill. Two things follow from it. Repetitions stop having to be inferred
