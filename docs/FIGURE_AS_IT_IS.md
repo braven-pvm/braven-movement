@@ -144,6 +144,14 @@ that build. A reader that predates it sees a short `phases` list and no cause.
 
 ## 6. What the receipt does not record, and it is this lane's to fix
 
+> **FIXED ON THIS BRANCH, after the orchestrator approved it on 2026-09-09.**
+> `asset_licences.py` holds the two determinations, quoted from
+> `docs/LICENSING.md`. The receipt now records path, sha256 and licence per
+> asset, and an asset with no determination stops the run in
+> `Studio.__init__`, before any figure is drawn. The reading below is kept as
+> the record of the defect. Refer to section 10 for what the fix does and what
+> it deliberately does not do.
+
 **The movement render receipt names its source assets by path, and never hashes
 them.**
 
@@ -255,3 +263,61 @@ Recorded so that nobody repeats it.
 
 The archive is outside git. Its combined digest is in that directory's
 `PROVENANCE.md`, and it is quoted in section 5.
+
+## 10. The fix to section 6, and what it does not do
+
+`asset_licences.py` has no Blender in it, for the same reason
+`render_receipt.py` and `finger_curl.py` have none: this module's tests must
+run, and the renderer's own tests skip.
+
+**What it does.** It holds the two asset determinations `docs/LICENSING.md`
+makes, each quoted verbatim. `licence_for` returns the licence and the sentence
+it came from. `source_asset_records` returns path, sha256 and licence per asset.
+`Studio.__init__` calls it as soon as the athlete is built, so an asset with no
+determination stops the run before any figure is drawn. The receipt then writes
+what was already resolved.
+
+**The evidence.** 22 tests in `tests/test_asset_licences.py`, none of which
+skips on this machine. Every guard was proved FAILING under eight mutations, and
+each mutation was killed by a named test:
+
+| mutation | killed by |
+|---|---|
+| drop one selected asset from the table | `test_the_generator_selects_exactly_the_licensed_assets` and five others |
+| license every asset instead of refusing | `test_an_asset_outside_both_families_raises` and four others |
+| misquote the MPFB determination by one word | `test_both_determinations_are_quoted_verbatim_from_the_document` |
+| drop the faceunits pack rule | `test_a_face_target_resolves_by_rule_and_not_by_name` and two others |
+| put the old bare-path list back in the receipt | `test_the_receipt_writes_the_licensed_records_and_not_the_raw_assets` |
+| write the raw assets while still calling the records | the same test, and ONLY that test |
+| move the licence check out of `Studio` | `test_the_licence_check_runs_before_any_figure_is_drawn` |
+| hash the path text instead of the bytes | `test_the_hash_follows_the_bytes_and_not_the_name` |
+
+**One guard was too weak and the mutation set found it.** The first version of
+the receipt test asserted only that `source_asset_records` is called somewhere
+in the module. It PASSED with the old bare-path list back in the receipt,
+because the call in `Studio.__init__` satisfied it. The test now reads the value
+the receipt assigns to `sourceAssets` out of the syntax and pins it. The sixth
+mutation exists to prove the difference: nothing else catches it.
+
+**What it does not do, stated so nobody assumes otherwise.**
+
+1. **It licenses nothing.** It transcribes two determinations and refuses
+   everything else. A CC0 label here is the repository's document speaking, and
+   a test fails if that document stops saying it.
+2. **It does not check that the determination is correct.** That is a legal
+   reading of an asset's own licence, and it is not a thing code can do.
+3. **`create_athlete` and the table are still two lists.** An AST guard binds
+   them, and it is proved failing on an asset added and on an asset removed. The
+   one-source-of-truth fix, where the generator reads its asset names from the
+   table, is NOT done. It changes the rendering lane's generator, and it is
+   Chuck's call.
+4. **The reference generator is unchanged.** It already hashes its assets, and
+   it records one licence for the whole configuration rather than one per asset.
+   Converging the two receipts is a separate question and is not answered here.
+5. **The archived receipts keep the old shape.** Nothing rewrites them. The test
+   that reads the graded build accepts both shapes for that reason.
+6. **`sourceAssets` had exactly one writer and no readers when this changed.**
+   That was checked with a search across the repository, not assumed. This is
+   the failure class where a producer widens its shape and its readers stay on
+   the old one, so the absence of readers is the reason this change is safe, and
+   it is recorded here rather than left to be re-derived.
