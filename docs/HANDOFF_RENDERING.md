@@ -1,5 +1,45 @@
 # Handover — the rendering and modelling lane
 
+> **THE SOURCE FILES WERE RENAMED ON 2026-09-07, AND MUCH OF THIS DOCUMENT WAS
+> WRITTEN BEFORE THAT.** Marius swapped the two SIDE files' names at source, so
+> the labels now describe the contents. Nothing in any recording changed and no
+> measurement changed. Read every older sentence through this table, which is
+> by sha256 and is the only identity that has never moved:
+>
+> | sha256 (first 12) | frames | called before | called now |
+> |---|---|---|---|
+> | `f7faf38b5d42` | 866 | `front 0.1.mp4` | `front 0.1.mp4` |
+> | `2bdf00a3fc45` | 946 | `front 0.2.mp4` | `front 0.2.mp4` |
+> | `6e8f9fb2fe03` | 990 | **`side 0.2.mp4`** | **`side 0.1.mp4`** |
+> | `253fa551605e` | 863 | **`side 0.1.mp4`** | **`side 0.2.mp4`** |
+>
+> **BOTH PAIRS ARE NOW ESTABLISHED (2026-09-07), and nothing here is PAIRING
+> UNKNOWN any more:**
+>
+> | pair | frame offset | anchors, read at a step of |
+> |---|---|---|
+> | `front 0.1.mp4` + `side 0.1.mp4` | **-5** | 1 frame, 11.03 s apart |
+> | `front 0.2.mp4` + `side 0.2.mp4` | **-78** | 1 frame, 10.37 s apart |
+>
+> Before the rename the first pair's two contents were written
+> `front 0.1 + side 0.2`. Its anchors, their indices and their timestamps are
+> unchanged, because the content is unchanged.
+>
+> **The second pair was nearly recorded as a failure.** Read against a side
+> ledger sampled at every EIGHTH frame, the best of all correspondences spread
+> by 10.8 frames and no offset fitted. Re-read at a step of one frame the same
+> events give -78 three times. Refer to "A ledger without its reading step
+> nearly cost a real pairing" in `docs/KNOWN_ISSUES.md`.
+>
+> A file name is not an identity. Every artefact carries `source.videoSha256`,
+> and `source_matches()` in `spikes/video_keypoints.py` compares it with the
+> file on disk. **That field was written into every artefact from the first one
+> and nothing read it: the rename happened and 50 tests stayed green**, because
+> the only other identity check compares a frame index against a timestamp, and
+> the two side files carry identical timestamps at every shared index.
+
+
+
 Paste the block below into a fresh session. Everything after it is reference.
 
 ---
@@ -326,8 +366,69 @@ file is the boundary, and its shape is settled in
   derivations agree. Over a 29 s clip that is 11 ms, one third of a frame, so
   drift is ignorable at this length and is NOT ignorable over a ten minute
   shoot, where the same ratio is 240 ms.
-- **There is no clap.** The audio route failed honestly. The first shared event
-  is her first ball catch, about 9.25 s on the front and 8.25 s on the side.
+- **There IS a clap, and the audio route still failed.** Corrected 2026-09-04;
+  this line used to read "there is no clap". The front recording carries two, at
+  5.800 s and 17.835 s. No offset between the two tracks reproduces, so the
+  **THERE IS AN OFFSET, AND IT IS BETWEEN FILES YOU WOULD NOT EXPECT.**
+  Corrected twice on 2026-09-07. This bullet first named the first ball catch
+  matched by eye, about 9.25 s front against 8.25 s side; then a -0.7295 s;
+  both are withdrawn. It then said "THERE IS NO OFFSET IN USE", written on the
+  morning of the day one was established, and that is withdrawn too.
+
+  **THE FILE NAMES WERE WRONG AND HAVE BEEN CORRECTED AT SOURCE.** Before
+  2026-09-07 the two side files' names were the wrong way round, so no constant
+  offset mapped `front 0.1.mp4` onto the file then called `side 0.1.mp4`. The
+  finding was the pause: the front stands empty-handed from 17.3 to 20.0 s, and
+  the 863-frame side file does not have a gap of that length, while the
+  990-frame one has the pause at 17.33 to 19.73. Marius has since swapped the
+  names, so the 990-frame file is now `side 0.1.mp4` and pairs with
+  `front 0.1.mp4`.
+
+  **WHAT TO USE, EXACTLY (updated for the rename of 2026-09-07):**
+
+      the pair            front 0.1.mp4 (f7faf38b5d42)
+                        + side 0.1.mp4 (6e8f9fb2fe03)
+      the measurement     frameOffsetToReference = -5
+      what -5 means       side_index = front_index - 5
+      the table           PAIRS in spikes/video_keypoints.py
+      unpaired            front 0.2.mp4 (2bdf00a3fc45) and
+                          side 0.2.mp4 (253fa551605e) have NO established
+                          partner. No elimination argument is made.
+      check the hash      source_matches(document) compares an artefact's
+                          source.videoSha256 with the file it names. Run it
+                          before you trust a file name.
+
+  **BEFORE THE RENAME** the same pairing was written `front 0.1 + side 0.2`,
+  because the two side files' names were the wrong way round. `--set 0.1` now
+  addresses the pair correctly and runs; `--set 0.2` refuses.
+
+  **IT IS A FRAME COUNT AND NOT A DURATION, and that is not pedantry.** The two
+  cameras' frame periods differ by 11 microseconds (33.3330 against 33.3220 ms),
+  so the same pairing reads -0.1704 s at the first anchor and -0.1746 s eleven
+  seconds later. An offset in seconds drifts; the index arithmetic cannot.
+  **To place a front frame in the side file, subscript: `side["frames"][i - 5]`.
+  Do not convert -5 to seconds and search by time.** If you need a time, read
+  it off the frame you landed on: `side["frames"][i - 5]["ptsSeconds"]`.
+
+  Do NOT rename the source files. The mapping is recorded; the renaming is
+  Marius's decision.
+
+  **THE TWO TOOLS IN `scripts/` THAT TOUCH THIS, and what each does now:**
+
+      scripts/compare_lift_against_view.py   FIXED 2026-09-07. It read the
+          removed `offsetSecondsToReference` and raised KeyError on every lift
+          artefact. It now reads `syncApplied.frameOffsetToReference` and maps
+          by `frameIndex`, which the lift's rows now carry.
+      scripts/keypoint_overlay.py            REFUSES, truthfully. It cannot
+          consume a frame offset yet. On the measured side file it used to
+          return None
+          and refuse with "carries no measured offset" — a false reason for a
+          file whose sync IS measured. It now names the frame offset and the
+          partner and tells you to draw the view alone with `--local`. Teaching
+          it the frame mapping is the rendering lane's call.
+
+  Refer to `spikes/video-annotations/event-ledger-0.1.json` for the ledger the
+  mislabel was found with.
 - The sample is a **self-fed toss and catch** and matches none of the eight
   drills.
 - `front 0.1` degrades from **25.700 s**: sharpness is 87 percent of baseline
@@ -345,8 +446,16 @@ which is exactly where a consumer trips.
                                                    to reach the reference clock
 
     For the non-reference view, offsetSecondsToReference = -(--offset).
+    WITHDRAWN 2026-09-07 — offsetSecondsToReference no longer exists and the
+    sync is a FRAME offset. Kept only for the sign convention:
     This material: --offset -1.0 and offsetSecondsToReference +1.0 both put
-    the front at 9.25 s and the side at 8.25 s.
+    the front at 9.25 s and the side at 8.25 s. **THAT EXAMPLE IS WITHDRAWN
+    (2026-09-07) and is kept only to show the SIGN CONVENTION, which is
+    unchanged. No offset is measured between the two files LABELLED 0.1,
+    because they are not a pair; the measured pairing is front 0.1.mp4 with
+    side 0.1.mp4 at a FRAME offset of -5 (the file called side 0.2.mp4
+    before the rename), and no seconds figure is stored for
+    it at all.**
 
 Neither is wrong and either alone is unambiguous. `keypoint_overlay.py`
 asserts the direction against the file's own worked example on load, so a sign

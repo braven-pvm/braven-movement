@@ -34,6 +34,7 @@ from movement_definition import load as load_definition  # noqa: E402
 from reference_measures import RECOVERABLE, wanted  # noqa: E402
 from movement_engine import definition_path, library, load_character  # noqa: E402
 from possession_solve import solve_movement  # noqa: E402
+from reference_curves import SCHEMA_VERSION  # noqa: E402
 from segment_measures import unit_of  # noqa: E402
 from technique import has_technique, load_technique, technique_path  # noqa: E402
 
@@ -41,8 +42,10 @@ OUTPUT = SPIKE_DIR / "poc-output" / "video"
 
 # 1 was the shape with the bare list and no unit anywhere. 2 gives every curve
 # a unit and a values list. The number is written into the file so a consumer
-# can branch on it rather than sniffing the type of a value.
-SCHEMA_VERSION = 2
+# can branch on it rather than sniffing the type of a value. IT LIVES IN
+# reference_curves.py, WITH THE READER, so that changing the shape and failing
+# to change a reader is one edit rather than two files that can drift apart.
+# Two readers did drift, and stayed broken for six days.
 
 def drills() -> list[str]:
     return [

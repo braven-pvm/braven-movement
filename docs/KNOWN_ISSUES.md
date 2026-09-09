@@ -2,7 +2,8 @@
 
 Sectioned by lane. The rendering and modelling lane owns the athlete a person
 looks at; the movement lane owns the engine, the anatomy, the solver and the
-grading. An entry belongs to whichever lane can fix it.
+grading; the video and footage lane owns the recordings and what is cut from
+them. An entry belongs to whichever lane can fix it.
 
 # Rendering and modelling
 
@@ -4013,8 +4014,15 @@ and 26.415 s.
 Either the side camera's microphone never registered the claps — its strongest
 event is x24 against the front's x44, and it may be several metres away — or the
 two files do not contain the same instant. **The audio cannot separate those two
-readings**, and until a person does, the by-eye 1.0 s stands as the only measured
-offset.
+readings**, and until a person does, no offset stands at all. **CORRECTED
+2026-09-07: an earlier version of this line said "the by-eye 1.0 s stands as the
+only measured offset". It does not.** That offset and a later −0.7295 s are both
+withdrawn, and an event ledger over the whole clip finds no constant offset that
+beats chance AT ANY TOLERANCE A SYNC COULD USE (at 0.400 s, twelve frames, one
+does: 8 matched against a ceiling of 7, and at that width a match spans most of
+the 1.866 s toss cycle) — refer to
+`spikes/video-annotations/event-ledger-0.1.json`. Set
+0.1 is not a synchronous pair and is unusable for two-view work.
 
 **AND A CORROBORATOR THIS LANE OFFERED IS WITHDRAWN.** A wrist-height scan was
 reported as peaking at −0.967 s, agreeing with the recorded −1.000. Three of its
@@ -4072,3 +4080,907 @@ Section 18 of `docs/VIDEO_CAPTURE_FINDINGS.md`: the clap must be **in frame for
 both cameras**, not merely audible, and both files must be opened on the day to
 confirm that each one heard and saw it. A clap that only one camera records is
 worth nothing, and this session spent a morning proving that the hard way.
+
+
+## A consumer nothing executes is a consumer nobody has checked
+
+Found 2026-09-07, in a tip that had already been pushed and sent to review.
+
+`offsetSecondsToReference` was removed from the sync block, because the
+measurement is a frame count and two offsets in seconds had been withdrawn from
+the same material. **The field was removed and its two readers were left
+behind.** `spikes/video_lift_3d.py:116` and `spikes/video_elbow_curve.py:89`
+both still subscripted it.
+
+```
+$ python video_lift_3d.py --set 0.2
+    offset = float(side["sync"]["offsetSecondsToReference"])
+KeyError: 'offsetSecondsToReference'
+```
+
+**THE SPIKES SUITE WAS 786 TESTS AND GREEN.** Not one of them executed either
+consumer: every test builds a sync block as a dictionary literal and asserts on
+that dictionary. A mocked block has whatever fields the mock was given, so
+removing a field from the real writer changed nothing any test could see.
+
+### Why it did not show even when the consumers were tried
+
+Both are guarded by `if not side["sync"].get("measured")`, and both load
+`keypoints-<view>-<SET>.json` — the same set for both views.
+
+- **Set 0.1**: `side 0.1.mp4` is unmeasured, so the guard fired and the script
+  exited 1 with a clear message. That is the case that was tested, and it looked
+  right.
+- **Set 0.2**: **`side 0.2.mp4` IS measured** — it is half of the real pair,
+  with `front 0.1.mp4`. The guard passed, and the next line read the removed
+  field.
+
+The set that was tested was the one the author had been thinking about. The set
+that broke was the one the change itself created, because the pairing crosses
+sets and every consumer built on "both views of a set" rests on an assumption
+the mislabel finding had already destroyed.
+
+### And the first repair had the same shape as the fault it fixed
+
+Asking `if not side["sync"]["measured"]` is not the question. `side 0.2.mp4` has
+a sync, so `--set 0.2` loaded `front 0.2.mp4` against `side 0.2.mp4`, passed,
+and **wrote a plausible lift from two files that are not a pair**. A wrong
+artefact is worse than a crash: the crash was found in a minute and the lift
+would have been read. The guard now asks whether these two files ARE the pair.
+
+### What was done
+
+- Both consumers resolve through `PAIRS` and take the mapping BY FRAME INDEX,
+  so a wrong offset lands on executing code. `--pair` names two files; `--set`
+  survives only so the refusal can name the real pairing.
+- `spikes/test_video_sync_consumers.py` RUNS both entry points as subprocesses
+  and reads their exit codes — including the reachable pass, the lift on the
+  established pair, because a refusal-only test proves nothing a syntax error
+  would not also prove.
+- ~~Mutating the frame offset to −4 or −6 now fails the anchor assertion inside
+  the consumer, by event name.~~ **THAT WAS NOT TRUE, and it is corrected
+  below.** Each consumer read the offset out of a WRITTEN artefact, so changing
+  the offset in `PAIRS` reached neither of them: both ran to exit 0 under both
+  mutations. The assertion existed twice, once in each consumer, and no
+  mutation could fail either copy. It now lives once, in `frame_offset_of()`
+  beside the writer, and it RAISES rather than asserting, because `assert`
+  disappears under `python -O` and this is a check on data. Four mutations fail
+  it: the offset one frame out either way, a held-back check row moved by one
+  frame, the offset in `PAIRS` changed, and the loop emptied.
+
+**The rule, beside "commit the instrument with its numbers": a consumer nothing
+executes is a consumer nobody has checked.** A green suite over mocks says the
+mocks agree with each other.
+
+### Writing the test found two more, and neither came from the change
+
+The first version of the test file asserted only that a refusal exits non-zero.
+**A crash is also non-zero.** Both of these passed it.
+
+**The elbow curve compared a variable it had not loaded yet.** The guard read
+`front["source"]["videoFile"]` on a line two above the line that loads `front`.
+Every call raised `UnboundLocalError`. It survived because the test read the
+exit code and not the reason, and because the shell pipeline it was tried in
+reported the exit code of `tail`.
+
+**AND IT WAS MINE, hours old, not six days.** The pack first recorded this
+among the faults that "did not come from the change", and the independent
+review checked the commits: it is not at 9455a8c, and the first repair
+7f2a99e introduced it. So the repair for one fault created another of the same
+family in the same file, and the test written to hold the first was too weak to
+catch the second. Two of the four faults in this entry are mine, not one.
+
+**The engine's reference curves changed shape and TWO readers did not.**
+`reference-curves.json` is at schema version 2, where a curve is
+`{"unit": ..., "values": [...]}` rather than a bare list, so that
+`footHeightGapCm` can declare centimetres in a file that announces itself as
+angles. The widening landed on 1 September. `video_dry_run.py` was widened with
+it, deliberately and in writing. Two others were not:
+
+- `video_elbow_curve.py` iterated the curve, collected the dictionary's KEYS,
+  and raised a numpy type error on the strings `"unit"` and `"values"`.
+- `video_phase_align.py` did the same in TWO places, and the worse of the two
+  defeats a guard. `rank_against_library` skips a curve with fewer than two
+  points. The mapping has two keys, so it PASSED that guard and carried the two
+  words into the ranking across the whole library, which the module's own
+  docstring calls the guard on the whole method.
+
+  **THE GUARD PASSED SILENTLY; THE CALL THEN CRASHED.** This entry said the
+  fault "is SILENT", and that overstates it: three lines past the guard the
+  warp raises, so no ranking was ever produced with the words in it. What is
+  silent is the guard, and that is the part worth remembering, because a guard
+  that accepts two strings as two data points is a guard that would also accept
+  them if the arithmetic below it happened to tolerate strings.
+
+Proven by reading the exported file:
+
+```
+LINE 531 SHAPE:
+  what it collects: ['unit', 'values']  len 2  passes len<2 guard: True
+  then rank_against_library raised, from inside the warp three lines later:
+      ValueError: could not convert string to float: np.str_('unit')
+LINE 568 SHAPE:
+   ValueError: could not convert string to float: 'unit'
+```
+
+`test_video_phase_align.py` is 34 tests and was green throughout, because its
+fixture builds the reference as a bare list: **the mock had drifted from its
+producer, so it tested nothing but itself.**
+
+That is the sharper form of the rule. Two of these four are mine and hours old,
+and two are not mine and were six days old, and every suite in the repository
+had run over those two while they were broken. **Count the list before writing
+the sentence above it**: the first version of this paragraph said one was mine
+and three were not, and the review counted.
+
+The shape now lives in `spikes/reference_curves.py` with no heavy imports.
+`export_reference_curves.py` takes its version number from there, and all three
+readers read through `curve_values` or `curve_length`. `curve_length` counts
+values and returns 0 for a bare list, so the shape that passed a length guard
+now fails it. The phase-align fixture is at version 2, and
+`test_reference_curves.py` reads the REAL exported artefact when it is present.
+That last test is the only one here that can catch the next widening.
+
+### And a claim in the commit before this one was wrong
+
+That commit said mutating the frame offset to −4 or −6 fails the consumers'
+anchor assertion by event name. **It does not.** Each consumer read the offset
+out of a written keypoint artefact, so changing the offset in `PAIRS` reached
+neither of them: both ran to exit 0 under both mutations. The assertion existed
+twice, in two files, and no mutation could fail either copy.
+
+The check now lives once, in `frame_offset_of()` beside the writer, and it
+RAISES rather than asserting, because `assert` disappears under `python -O` and
+this is a check on data. Four mutations fail it: the offset one frame out in
+either direction, a held-back check row moved by one frame, the offset in
+`PAIRS` changed, and the loop emptied.
+
+### What a hosted runner can hold of this
+
+`spikes/poc-output/` is in `.gitignore`, so the keypoint artefacts exist only
+on a machine that has processed the footage. The tests that need them skip on
+the runner and say so. The tests that need no footage — every refusal that is
+decided before a file is opened, the engine-curve schema guard, and the anchor
+check — run everywhere. That split is deliberate: the runner holds that both
+consumers still import, still parse and still refuse, and the machine with the
+footage holds that they still produce.
+
+
+## A ledger without its reading step nearly cost a real pairing
+
+Found 2026-09-07, establishing the second camera pair.
+
+`front 0.2.mp4` and `side 0.2.mp4` ARE a pair, at a constant frame offset of
+**-78**, on three anchors read at a step of one frame, two of them 10.37 s
+apart. **The first answer was the opposite, and it was wrong.**
+
+### What the wrong answer looked like
+
+Three frame-exact front catches were tested against the committed side ledger.
+Every possible in-order correspondence was tried. The best spread by
+**0.3603 s = 10.8 frames**, against 0.13 frames for the pair already
+established. On that reading no constant offset fits, and the honest-failure
+report was ready to write.
+
+### Why it was wrong
+
+Every event in that side ledger sits at a frame index divisible by eight:
+
+```
+248, 256, 296, 352, 416, 472, 512, 560, 640, 696, 752
+```
+
+**It was read at every eighth frame**, so each time carries 0.267 s of
+quantisation. Worse than the quantisation, the reader recorded the frame where
+the ball was clearly HELD rather than the frame where it met the hands, so the
+times run LATE by up to ten frames. The ledger's 13.8611 s is not a catch at
+all: the catch is at index 406, and by 416 she has the ball overhead and is
+bringing it down.
+
+Re-read at a step of one frame, the same three events give -78, -78, -78, and
+the derived seconds drift -0.0042 s across 10.37 s — the same signature the
+other pair shows, which is the two cameras' 11 microsecond period difference.
+
+**The ledger carried no field recording its reading step.** Nothing in it said
+that its times were eighth-frame samples, so they read as measurements. Every
+row of the new pair table carries `readAtFrameStep`.
+
+### And the unrecorded attempt was one frame from the answer
+
+The previous pack recorded this pairing as UNKNOWN after an attempt that "gave
+frame differences of 77 and 75", and the four frames it read were never written
+down. The answer is 78. **That attempt was not wrong by much; it was
+unrecorded, which is worse** — had its four indices been written down, the next
+reader would have started one frame from the answer instead of starting again.
+A number without its inputs cannot be corrected, only discarded.
+
+### Two instruments failed on the way, and both are recorded
+
+**The contact sheet could show frames from a different part of the clip.**
+`contact_sheet` globbed its scratch directory and never emptied it, so a call
+selecting 12 frames after a call that selected 18 produced a sheet of 18 tiles
+whose last six were the PREVIOUS sheet's frames. The label had a fallback of
+`-1`, and `times[-1]` is a real timestamp, so those tiles were captioned with
+the last frame of the whole file: a real moment from elsewhere under a
+plausible caption. A ledger read from that sheet would record events that are
+not there. It now empties the scratch first and REFUSES when the file count and
+the requested count disagree.
+
+**One observation of mine was withdrawn mid-way.** I had noted that front 0.2's
+ball looked like a tan medicine ball while side 0.2's was a cream netball, and
+was ready to call them different drills on that. At full resolution `front
+0.1.mp4` shows the same netball, sharp; front 0.2's only looks olive because it
+is motion-blurred and she stands further from the camera. Same ball, same room,
+same session. The colour was lighting and blur, and it was nearly evidence.
+
+**A keypoint-based candidate detector does not work here, and is not proposed.**
+Calibrated on the view whose ledger is known, local maxima of wrist height
+above the hips recovered 4 of 10 events with 15 false candidates. In a self-toss
+the hands go high to RELEASE as well as to catch, so height cannot separate
+them. The frames have to be read.
+
+### What corroborates the pairing, independently of the anchors
+
+Both consumers run on it. The two views agree on the left elbow angle to a
+median of **4.8 degrees** with a correlation of **+0.937**, on 782 frames; the
+lift pairs 809 frames with a median residual of 16.9 mm. Under the mislabelled
+pairing the same elbow comparison gave 21.2 degrees. A wrong pairing does not
+produce agreement like that.
+
+**The rule: a ledger records the step it was read at, on every row. A time
+sampled every eighth frame is not a measurement of when something happened, and
+without the step recorded nobody can tell the difference.**
+
+
+## Two pairings, and neither could be re-derived from the tree
+
+Found by review on 2026-09-07, in the pack that established both.
+
+Both camera pairings were recorded as hand-typed anchors in `PAIRS`, and
+nothing committed could reproduce either.
+
+**Pair 1 was worse than pair 2.** `git grep 6e8f9fb2` — the sha256 of
+`side 0.1.mp4` — found that hash only in prose, in the pair table and in one
+test string. **No committed ledger held that recording's events at all.** The
+8-of-8 fit that established the pairing had run on rows that were never
+committed. "Commit the instrument with its numbers", and the instrument was
+missing.
+
+Pair 2 could not be re-derived either: its side rows live in
+`event-ledger-0.1.json` at a reading step of eight, so `usable_for_a_fit`
+refuses every one of them and the fit returns `None`.
+
+### What was done
+
+`event-ledger-pair1.json` holds `side 0.1.mp4`'s events, read from the frames
+at a step of three over 5.0 to 25.3 s, with the two anchors re-read at a step
+of one. They were read WITHOUT taking the offset off the pair table first: a
+catch found where an offset predicted a catch is not evidence in a clip of
+catches, which is how -0.7295 s was published. The two refined anchors came out
+at side 269 against front 274 and side 600 against front 605 — **-5 twice,
+11.03 s apart** — and the front view's overhead catch was refined from its
+coarse 608 to 605 to match.
+
+Two tests now load the COMMITTED ledgers and run the fit:
+
+| pair | fits | best offset | expected | events | span |
+|---|---|---|---|---|---|
+| front 0.1 + side 0.1 | yes | -0.1750 s | -5 frames = -0.1666 | 2 | 11.03 s |
+| front 0.2 + side 0.2 | yes | -2.6083 s | -78 frames = -2.5991 | 4 | 16.43 s |
+
+Each is within one frame period of the table's frame offset. A third test
+asserts that every pair in the table has a ledger named here, so the next
+hand-typed pairing fails by name.
+
+### One convention for a refined row, because there were two
+
+`event-ledger-front-0.2.json` put the refined index in `frameIndex` with the
+coarse one beside it. `event-ledger-0.1.json` did the opposite: coarse in
+`frameIndex`, refined beside it. **Two ledgers of one project disagreed about
+which field held the measurement**, so a reader taking `frameIndex` got the
+fine value from one and the coarse value from the other. Now, everywhere:
+`frameIndex` and `seconds` hold the FINEST reading, `readAtFrameStep` is its
+step, and a coarser earlier reading keeps `coarseFrameIndex`, `coarseSeconds`,
+`coarseAtFrameStep` and `framesFromRefined`.
+
+### A ledger that described a file which does not exist
+
+`event-ledger-0.2.json`'s side block carried `videoSha256: 253fa551605e` with
+`frames: 990`. That hash names an 863-frame file; 990 is `6e8f9fb2fe03`'s
+count. **A name was re-keyed to the new content's hash while its numbers stayed
+with the old content** — the fault class of the day, committed by the person
+writing the fix for it. It also still said the pair was "still to be
+established" after it had been established at -78, and it held no events. It is
+deleted; its one real finding, why run 2's front camera is hard to read, moved
+into the ledger that supersedes it.
+
+### Correcting a ledger moved six published figures, and that is the point
+
+Refining four rows of `event-ledger-0.1.json` changed every number computed
+from it:
+
+| figure | was | is |
+|---|---|---|
+| pairing drift, shift 0 | -16.0 % | -15.6 % |
+| pairing drift, shift 1 | -13.7 % | -13.2 % |
+| pairing drift, shift 2 | -12.6 % | -13.2 % |
+| null rate at one frame | 43.2 % | 46.8 % |
+| null rate at a quarter second | 83.2 % | 85.2 % |
+| the 0.267 s fit | 6 matched against a ceiling of 6 | 5 against 6 |
+
+**A figure that does not move when its ledger is corrected was never computed
+from that ledger.** The null-rate pair has now moved twice, and the two moves
+are different in kind: 48/88 and 43/85 were wrong because nothing committed
+produced them; 43.2/83.2 to 46.8/85.2 is the instrument working.
+
+The last row cost a test. `test_a_count_EQUAL_to_the_chance_ceiling_does_not_fit`
+used the real ledger because it happened to sit exactly on the ceiling, and
+after refinement it does not. It builds its own fixture now, so the case cannot
+disappear when data improves.
+
+### And the writer was still telling readers the second pair had failed
+
+`_sync_block`'s unmeasured note hard-coded one pair and then asserted that "the
+remaining two files were tried and FAILED, two targeted anchors gave 77 and
+75". Both halves went stale the moment pair 2 was established at -78 — those
+ARE the two files. The note read the established pairs out of the table now.
+
+# Video and footage
+
+The footage lane owns the recordings, the pairing between two cameras, and the
+clips and stills cut from them for a coaching page. It is neither the rig nor
+the engine, so its entries live here.
+
+## The section cutter and its posters
+
+Found 7 and 8 September 2026, building `spikes/video_section_cuts.py`: the
+four sections of Erin's page cut from both camera views, and the poster frame
+each one shows before it plays. Every fault below was found by an instrument
+rather than by reading, and every one is a way a check agreed with the thing
+it was checking.
+
+### The PSNR floor was measured in one regime and spent in another
+
+The first version asked whether each clip frame matched the source frame it
+claims above a floor of 36 dB. That floor came from ONE section-view —
+`catch-rep01` front, the section with the most motion — where a correct pair
+scores 39.9 dB at worst and a wrong-by-one pair 33.2 at best. Re-measured
+across all four sections and both views, 440 frames:
+
+    section-view          n  right min  wrong-by-one max  separation
+    catch-rep01 front    55      39.90             33.17       +6.73
+    catch-rep01 side     55      39.86             35.27       +4.59
+    release-rep09 front  56      39.91             35.62       +4.29
+    release-rep09 side   56      40.86             40.10       +0.76
+    hold-rep09 front     62      39.96             37.97       +2.00
+    hold-rep09 side      62      40.91             40.63       +0.28
+    ready-between front  47      39.95             38.01       +1.94
+    ready-between side   47      41.21             41.50       -0.29
+
+On five of the eight a wrong-by-one frame passes 36 dB. On `ready-between`
+side the best WRONG frame beats the worst RIGHT frame, so the populations
+overlap and no absolute floor can separate them there at all. That section is
+her stance between repetitions, nearly still, on the softer camera: when
+nothing moves, the neighbour frame is nearly the frame.
+
+**The criterion is relative now.** Frame k must be closer to source frame
+`start+k` than to both neighbours — three numbers measured the same way in the
+same regime, needing no constant calibrated anywhere. The same 440 frames
+support it, and the smallest winning margin is 1.14 dB, on `ready-between`
+side. `RELATIVE_MARGIN_DB` is 1.0 and `MEASURED_MIN_MARGIN_DB` records 1.14,
+which a test reads back.
+
+This is the same fault as `footHeightGapCm` and the arm constants: a number
+taken under one condition and spent under another. The condition here is how
+much the picture moves, and it is exactly what varies between sections.
+
+### Agreement with another instrument is not correctness
+
+The clips reproduced an earlier instrument's cuts exactly: eight clips, 440
+frames, zero differing. That was presented as proof they were right. It is
+not. Both tools took the same windows and the same frame offset, so a wrongly
+mapped index would have produced the same 440 agreeing rows.
+
+**What answers the question is a comparison against the SOURCE, through a
+different mechanism.** The cut uses `trim=start_frame:end_frame`, whose end is
+exclusive. The check selects source frames with `select='between(n,a,b)'`,
+inclusive at both ends, sharing no arithmetic with it. Checking trim with trim
+agrees with itself.
+
+And a shifted window keeps its frame count, so every count assertion passes
+while every frame is wrong. Only a test that NAMES the frame sees it: frame 0
+against `start` and against `start - 1`, the last frame against `end` and
+against `end + 1`.
+
+### The side clip was guarded only through a file outside git
+
+Every source check cut its own clip, so the side path of `cut_section` was
+never driven. The one test that saw a side clip compared it against an
+artefact at an absolute, gitignored path present on one machine, and skipped
+everywhere else. Three mutations survived on any other machine: the side clip
+cut from the FRONT file, the side window shifted by one, and the output frame
+rate changed from 30 to 25.
+
+**Fixed by moving the comparison into the repository.** 440 per-frame sha256
+digests of that earlier instrument's clips are committed under
+`spikes/video-annotations/section-cuts/pair1/`, compared element by element,
+with no `skipTest` inside the loop. `PROVENANCE.md` beside them names the
+eight clips by their own file sha256 and states what the comparison proves:
+reproduction, not correctness.
+
+### The poster pins are decoded pixels, and they are tied to an ffmpeg build
+
+Each section shows one still before it plays. The eight already on Erin's page
+were rendered from the recordings at `-q:v 3`; rendering the same frames from
+the tool at the same setting gives byte-identical files, both views, four
+sections, measured before the setting was written down.
+
+**The pinned digest is of the DECODED pixels, not the file.** A different
+quality setting changes every byte while showing the same picture, and the
+wrong frame re-encoded at the same setting changes nothing a file hash would
+notice. The manifest carries both hashes, because a swapped file and a wrong
+instant are different questions.
+
+**The poster pins can fail on the right frame if ffmpeg changes.** They were
+taken on `ffmpeg 8.1.2-full_build-www.gyan.dev`. H.264 decoding is exact, so
+the CLIP digests are a property of the recordings; JPEG decoding is not
+normatively bit-exact and the mjpeg encoder's transform can differ between
+builds. A different build could therefore fail
+`test_every_poster_matches_the_digest_committed_for_it` on the correct frame,
+with a message saying the poster shows a different frame. The build is
+recorded beside the poster table so that is diagnosable in one look.
+
+### A refusal that had already written a file
+
+`posters()` checked each index inside the render loop, so an index outside the
+side recording refused only after the FRONT poster was on disk. Measured: with
+front index 4, which maps to side index −1 at this pair's offset of −5,
+
+    refused: the side poster index -1 is outside that recording
+    left behind: ['refusal-probe-front-poster.jpg']
+
+A section half written, and a manifest that never mentions it because the
+manifest is written last. This was the second time in two days: `proof_sheet`
+created its scratch directory before judging its argument. **A refusal that
+still writes to disk is not a refusal.** Both indices are checked before
+either render now, and a test asserts the output directory is empty
+afterwards.
+
+### A reason keyed by section name rather than bound to its subject
+
+Each section carries a sentence saying why it exists, and each poster a
+sentence saying why that frame is the one. `main` looked them up by section
+NAME and passed them whatever window or poster the caller gave. Measured on
+the real command line:
+
+    --section catch-rep01=258:262        posterFrontIndex None, and the
+                                         sentence written for frame 276
+    --section catch-rep01=258:262@260    poster 260, and the same sentence,
+                                         which describes frame 276
+    --section other=258:262@260          no sentences
+
+A reason for a poster that does not exist, and a reason describing a frame
+nobody cut. Both read in the manifest as though somebody had chosen them.
+`reasons_for()` binds the section's reason to the window and the poster's
+reason to the poster, and returns an empty string otherwise.
+
+### A mutation driver that would have reported a survivor it never ran
+
+Two mutations quote a loop header plus the line below it, because the header
+alone occurs three times in the file. Moving the poster index check out of the
+render loop leaves two loops under the same header, one checking and one
+drawing, and the line below moved with it. Measured on the patched text before
+the change was committed:
+
+    OLD anchor after the patch: 1 occurrence  (the CHECK loop)
+    NEW anchor after the patch: 1 occurrence  (the RENDER loop)
+    the bare loop header alone: 3 occurrences
+
+An un-re-aimed driver would not have complained. It would have matched once,
+applied cleanly, mutated the bounds check instead of the render, and reported
+a completed run — and that experiment passes every poster test, so it would
+have come back a SURVIVOR and sent somebody hunting a hole that does not
+exist.
+
+The day before, a reviewer's mutation stopped applying to the same file
+because new code repeated the shape it targeted. That one matched TWICE and
+the driver refused: loud, and safe. **A count of two is a safety net. A count
+of one after a refactor is not a vindication; it is only a failure to
+complain.**
+
+### Two coaching observations, and they are Marius's call
+
+Both posters are the indices the page already ships, and both are recorded
+here rather than changed.
+
+- `release-rep09` at front index 619 is the fastest instant in its window. The
+  ball and both hands are smeared with motion blur. It is a true picture of
+  the release and a poor still.
+- `ready-between` at front index 560 shows her standing square to the camera
+  with her hands together in front of her chest. The section is named "the
+  arm-span ready" and the frame shows no arm span.
+
+Moving either is one number in `PAIR1_SECTIONS` and a re-pin of two digests.
+
+### The rules that came out of it
+
+1. Measure a threshold across every case it will be spent on, not one.
+2. Prefer a comparison between numbers measured in the same regime to a
+   constant calibrated in one of them.
+3. When a check agrees with another instrument, ask what the two share. If
+   they share inputs or arithmetic, it is a reproduction test; label it, and
+   build the one that does not share.
+4. Select the thing under test by one mechanism and the thing you check it
+   against by a different one.
+5. A shifted window keeps its frame count. Name the frame.
+6. A guard that reads an artefact outside git protects one machine.
+7. Pin what a thing SHOWS, not the bytes it is stored in, and record the tool
+   version when the decoder is not bit-exact.
+8. A refusal must write nothing. Check every argument before the first write.
+9. Bind a description to what it describes, never to a name.
+10. Re-run a mutation set on the change it was written against, and require
+    each string to match exactly once. A string that still matches once after
+    a refactor may be matching the wrong place.
+11. Ask what a mutation set CANNOT reach; that is where the untested line is.
+12. An exit code of 1 is not a failing test. Read the summary line and the
+    named tests.
+
+## The anchor sheets
+
+Found 8 September 2026, building `spikes/video_anchor_sheets.py`: one sheet per
+moment, the front view above the side view at the same mapped instant, seven
+columns two frames apart, so a person can read a camera pairing off the
+pictures. A frame offset is a claim about two recordings and the arithmetic
+that produces it agrees with itself whatever it is given; a human eye on the
+frames is the only check that shares nothing with the fit.
+
+### Three kinds of evidence, and one that must never be drawn
+
+`PAIRS` records three kinds of event and the instrument that drew the first
+sheets treated them as one.
+
+- **anchors** — the events the offset was FITTED to. A ball meeting hands,
+  where the contact frame is not a judgement call. Pair 1: front 274 and 605.
+  Pair 2: front 324 and 635.
+- **checks** — events the fitted offset must also explain afterwards. Pair 1:
+  front 534. Pair 2: front 484. An event that produced the answer and an event
+  that agreed with it later are different evidence, and a sheet that names them
+  alike invites a reader to weigh them alike.
+- **setAside** — events deliberately not used, each with its reason recorded.
+  Pair 1's first clap reads four frames apart where the offset says five,
+  because "nearly together" and "together" are one frame apart in both views.
+  Pair 2's one-handed catch gives −78 or −77 depending on which frame is called
+  contact. **Never drawn.** A sheet is what a reader trusts, and putting a
+  knowingly ambiguous event on one asks that reader to resolve by eye the
+  ambiguity the entry exists to record.
+
+The scratch instrument drew 324, 484 and 635 and called all three anchors. The
+sheets are the same pictures; the names are now `anchor-324`, `check-484`,
+`anchor-635`.
+
+A test asserts the table's own consistency — `otherIndex == referenceIndex +
+offset` for every anchor and check of both pairs — and a companion test
+requires at least one set-aside row to DISAGREE with the offset. If every
+set-aside row ever agrees exactly, somebody has resolved an ambiguity by
+picking the frame that suits the answer.
+
+### Two kinds of pin, worth different things
+
+The sheets are composed the way the confirmed ones were: 7 × 2 tiles of
+202 × 360, built by ffmpeg (`scale=-2:360`, the label burned in by `drawtext`,
+`vstack` then `hstack`). That is not this repository's other sheet layout, and
+the divergence is deliberate: reproducing the confirmed composition exactly is
+what makes those sheets pinnable at all. All 42 tiles of pair 2's three sheets
+reproduce byte for byte, and so do the whole sheets.
+
+84 tile digests are committed, cropped out of a FINISHED sheet so the identical
+measurement can be taken on a sheet this tool did not draw. Hashing an
+intermediate file would have pinned something only this pipeline produces.
+
+**The two pins do not prove the same thing.**
+
+- **pair 2** — the sheets came from an instrument outside this repository, so
+  matching them is two instruments agreeing.
+- **pair 1** — the sheets came from THIS tool, so matching them is this tool
+  agreeing with itself: a change detector. It catches a change to the pipeline,
+  the font, the scaler or the frames, and it catches nothing about whether −5 is
+  right.
+
+What makes −5 right is a person reading the pictures, and the reading is
+recorded column by column: on `anchor-274` the ball reaches her hands in column
+four of both rows (front 274, side 269) with the gap still there in column
+three; `anchor-605` the same (front 605 with the ball above at 603, side 600
+with it above at 598); `check-534` the hands meeting in column four (front 534,
+side 529) and apart in column three. Three moments about 11 seconds apart.
+
+The pins depend on more than the frames, because the label is rendered into the
+picture: ffmpeg `8.1.2-full_build-www.gyan.dev` and
+`C:/Windows/Fonts/arialbd.ttf`, 989780 bytes, sha256 `e8f4e3ba…7a43f5`. The
+tool refuses by name when that font is absent rather than letting ffmpeg fall
+back to another face, which would fail all 84 pinned tiles with a message about
+the pictures — the wrong place to go looking.
+
+### What the pins cover, and one sentence that was false
+
+A tile is 202 px wide and `FRONT idx 268  t=8.933s` at fontsize 20 does not
+fit, so the FRONT row's seconds read truncated as `t=8.9`. **The side row
+fits**: `SIDE idx 263  t=8.763s` is one character shorter.
+
+An earlier version of this record said every tile was truncated. That was
+wrong, and a mutation disproved it: cutting the front label alone failed on
+three of the six sheets rather than all six.
+
+So a tile digest pins the frame, the whole side label, and the part of the front
+label inside 202 px — which includes the entire index. It does NOT pin the front
+row's seconds beyond that edge: those characters are never drawn. A pairing is
+made of indices, every index is inside the edge, and the manifest carries the
+seconds in full to four decimals. Fixing the overrun would re-pin all 84 tiles
+against sheets nobody has read, so it is recorded instead.
+
+### The only check that looks at a picture
+
+Every other guard is an index checked against an index, or a digest pinned
+against a confirmed sheet — and a pin covers only the pairs that have been
+pinned. A third pair would have arithmetic and nothing else.
+
+`centre_tile_alignment` crops the centre tile below the label band and compares
+it against the source frame and both neighbours. **The source frame is resized
+by a different resampler**: the tile is ffmpeg's `scale=-2:360`, the frame it is
+compared with is decoded and resized by PIL's LANCZOS. Checking swscale with
+swscale would agree with itself.
+
+Measured over every sheet of both pairs, twelve centre tiles:
+
+    pair   sheet        view    right      -1      +1  margin
+    pair1  anchor-274   front   47.89   23.14   26.82   21.07
+    pair1  anchor-274   side    50.04   30.74   30.19   19.30
+    pair1  anchor-605   front   47.98   23.22   24.81   23.16
+    pair1  anchor-605   side    50.14   31.73   32.79   17.36
+    pair1  check-534    front   47.95   26.84   26.86   21.09
+    pair1  check-534    side    49.89   33.66   33.04   16.23
+    pair2  anchor-324   front   49.60   29.41   29.92   19.68
+    pair2  anchor-324   side    49.97   25.99   26.41   23.56
+    pair2  anchor-635   front   49.82   30.11   33.50   16.31
+    pair2  anchor-635   side    49.89   26.81   27.39   22.51
+    pair2  check-484    front   49.73   29.55   33.51   16.22
+    pair2  check-484    side    50.30   30.51   31.34   18.96
+
+The criterion is relative, not a floor: the right frame must beat both
+neighbours. `TILE_MARGIN_DB` is 10.0, pinned above zero and below the measured
+minimum; `MEASURED_MIN_TILE_MARGIN_DB` records 16.22 and a test reads it back.
+
+**The whole-tile figure is 20.9 dB and means nothing.** The tile carries a
+burned-in label and the source frame does not. Below the 40-row band the same
+comparison is 49.6. A reader who meets 20.9 without that sentence concludes the
+tile shows the wrong picture.
+
+### A boundary test that refused for the other view's reason
+
+`check_span` must refuse a sheet that runs off either recording. The first
+tests refused at centre 3 and at 944 and accepted at 324, which leaves the
+boundaries themselves unmeasured: `first < 0` could have been `first < -1`,
+`last >= frames` could have been `last > frames`, and the side recording's far
+edge was never approached. Three mutations of exactly that shape survived.
+
+The replacement put both views on their edge at once — and **under a single
+offset the two views cannot both sit at a boundary**, so two cases refused for
+the other view's reason. That is precisely what a front-only check would do,
+which is the fault the test exists to catch: it would have passed against the
+very bug it was written for. Each of the eight cases now isolates one edge by
+choosing the offset that gives the other view room, and the fixtures carry that
+explanation.
+
+### A guard made unfalsifiable by a correctness fix
+
+`centreSideIndex` is `centre + offset`. A mutation replacing it with the
+table's own `otherIndex` survived — after, and BECAUSE OF, a fix three lines
+away that proved the table consistent (`otherIndex == referenceIndex + offset`
+on every row). Once that holds, the two expressions produce identical numbers
+everywhere the table can reach.
+
+Neither change was wrong. Together they removed the only case that could
+distinguish the two behaviours, and turned a live mutation into an equivalent
+mutant.
+
+The case had to be BUILT: `anchor_sheet` is handed a fabricated moment whose
+`otherIndex` is 40 out, and the test asserts the manifest field follows the
+offset rather than the lie, that the drawn side row does too, and that the tiles
+still match the pins. This is the repository's existing rule about a guard whose
+case must exist in data, arriving from the opposite direction.
+
+### The rules that came out of it
+
+1. Name the kinds of evidence apart. An event that produced an answer and an
+   event that agreed with it later are not the same thing.
+2. An ambiguity recorded as unresolved must not appear on the artefact a person
+   reads to resolve things.
+3. Require at least one recorded exception to keep disagreeing. When every
+   exception agrees, somebody has picked the frame that suits the answer.
+4. Take the composition of the artefact somebody confirmed, even when a nicer
+   one exists, if that is what makes the confirmation reusable.
+5. Say what a pin is worth. Matching another instrument is agreement; matching
+   yourself is a change detector; a person reading the picture is the evidence.
+6. Record what a pin does NOT cover, in the same place as what it does.
+7. Compare a picture against its source through a DIFFERENT implementation, and
+   state which comparison regions are meaningless and why.
+8. Measure a threshold on every case it will be spent on, and record the
+   measured minimum where a test reads it back.
+9. Test a boundary AT the boundary, one step either side, and make each case
+   isolate the thing it names — a case that fails for the neighbouring reason
+   passes against the bug it was written for.
+10. After a fix that makes data provably consistent, re-run the mutations that
+    depended on it being possibly inconsistent. A correctness fix can make a
+    guard unfalsifiable; build the case the data can no longer supply.
+11. The hosted runner is a different machine. A test that asserts a machine
+    property — a font, a recording, a solver — SKIPS BY NAME where the property
+    is absent, and a refusal that depends on the machine comes after the
+    refusals that do not.
+
+### The machine the tests ran on was not the machine that checks them
+
+Every check on this machine was green and three went red on the hosted runner,
+which is Linux and has no `C:/Windows/Fonts/arialbd.ttf`. `Ran 972 tests,
+FAILED (failures=2, errors=1, skipped=179)`:
+
+- `test_the_font_this_machine_pinned_with_is_present` called `check_font()`
+  unguarded, which raises `SystemExit` where the file is absent. That is an
+  ERROR, and an error on a runner is that runner saying a test meant to run and
+  could not. It skips by name now, beside the tests gated on the recordings.
+- an import-hygiene guard counts errors across the suite, so the one above made
+  it fail too. One ungated test took a second check down with it.
+- `main()` called `check_font()` BEFORE `resolve()`, so an unknown pair was
+  refused with a message about a Windows font path rather than the list of
+  known pairs. **The same wrong argument gave a different answer depending on
+  where it ran.** The pair is resolved first now.
+
+The font gate is beside the recordings gate, and a test loads every other test
+in the module with the font patched away and requires ZERO errors: a pass or a
+skip that names its reason. Measured that way, `ran=34 errors=0 failures=0
+skipped=11`, every skip naming the font or the recordings.
+
+## The hand at release
+
+The band of hand speed the movement lane cites, the shoot requirement that came
+out of the same morning, and the two withdrawals it took to get there. Branch
+`lane/video-hand-speed`, off main `1c3d9d7`. The band itself never moved: the
+same twelve rows, 2.5 to 5.4 m/s, survived an independent review that
+re-derived every one of them with its own code.
+
+### The finding was already in main, and nobody looked
+
+Marius asked on 2026-09-08 whether the footage could show the athlete's wrist
+flick. The answer had been in `docs/VIDEO_CAPTURE_FINDINGS.md` since
+`bde122e` of 2026-09-02, under a heading that names the question, written after
+he asked the SAME question six days earlier. Neither the lane nor the
+orchestrator searched. One `git grep` would have found it.
+
+**The rule: before measuring, grep `docs/` and this file for the topic.** A
+finding that already exists in main is re-derived only to CHECK it, and the two
+readings are then reconciled in ONE place, with the stricter published and the
+withdrawn one named. A number living in two documents is a number that will
+disagree with itself, which is exactly what happened next.
+
+### A range spent as a sigma, and a window that was not still
+
+The re-derivation disagreed with the old note about the PRICE — it asked for 29
+to 49 px where the note asked for about a hundred — and the re-derivation was
+wrong, in the lax direction, twice over.
+
+- **The first figure compared a fast movement against a slow statistic.** A
+  flick lasting 100 ms is three frames at 30 fps, so what it must clear is the
+  frame-to-frame scatter, not a swing accumulated over a 29-frame window.
+- **The second figure was built on a range wearing a sigma's clothes.** Redone,
+  the requirement came out at 88 / 73 / 41 / 69 px from a landmark error of
+  `e = 3.0 px`, and that `e` was the RANGE of the angle over the same window,
+  max minus min, put into a formula that wants a one-sigma value. For 29
+  samples that inflates it about fourfold. Measured as a per-frame quantity the
+  same window gives 0.30 px and the pack's own searched null gives 0.14.
+- **The window was not still, and "still" is a claim about the data.** The
+  forearm's pixel length grows 39 per cent inside it, because she is raising
+  the arm. The one window this pack proved still by its own search changes by
+  3 per cent.
+- **The cross-check compared two different statistics and called them one.**
+  "245 deg/s predicted against the 197 measured — the same quantity, from two
+  directions" set a one-sigma prediction against a measured MAXIMUM.
+
+**Both figures are withdrawn.** The instruction rests on the 2026-09-02
+MEASURED floor and nothing else: median 40, 90th 104, maximum 197 deg/s on a
+30 px lever, and the floor scales with the lever. Three times the maximum needs
+71 px for a 25 degree flick in 100 ms and 59 px for 15 degrees in 50 ms. The
+hundred pixels asked for on 2026-09-02 sits above both and stands.
+
+This is another instance of the repository's oldest fault class: a quantity
+measured in one regime and spent in another. **Name the statistic before it
+goes into a formula** — a range, a standard deviation, a 90th, a maximum — and
+check the formula wants that one. A range grows with the sample count; a sigma
+does not.
+
+### A guard that measured the right thing and gated nothing
+
+`check_near_arm` measured which arm the camera sees. Nothing in the measurement
+path called it: `speed_rows`, `search_null` and `hand_centre` all took the
+`NEAR_ARM` constant, and the only caller was a test, at two windows of twelve.
+A recording shot from the other side would have been measured on the OCCLUDED
+arm, and that failure is silent — the model reports an occluded wrist smoothly,
+as a guess, so the trace looks like a clean slow release.
+
+Writing the gate's test found a second fault: the refusal read a `name` key the
+recordings do not carry, so the path raised `KeyError` instead of refusing.
+**That is proof it had never run once.** The lane and an independent review
+found this defect separately, within the same hour.
+
+### A guard need not skip to guard nothing
+
+Three levers in the same module RAN, on every row, and changed no result.
+
+- The null search ignored frames where the wrist tracks below 0.7, and the
+  quietest window passed the filter anyway.
+- A speed was divided by the file's measured 30.012 fps, where a nominal 30.0
+  is 0.04 per cent out and invisible at two decimals.
+- A sentence claimed per-frame timing where the code used one mean rate, and
+  the intervals vary by 0.3 per cent.
+
+Each is inert on THIS footage and each would matter on a recording that tracks
+worse or runs at another rate. **The signature is a mutation that deletes the
+lever and survives.** The answer is the same as for a guard that skips: build
+the case. The visibility filter now has a stretch with frozen landmarks and a
+half-visible wrist, which is the quietest window in the file and which the
+filter must refuse — and a second test asserting the filter changes nothing on
+the real recordings, so a later reader knows the built case is not decoration.
+
+### A band without its inputs cannot be checked
+
+`BAND.md` named no hash, no frame rate and no model. The module defined
+`sha256` and never called it, keyed the keypoint files BY NAME, and never read
+the `videoSha256` those files carry — on two recordings that swapped names at
+source on 2026-09-07 and record the swap in their own `renamedFrom` block.
+A filename does not say which recording this is.
+
+`load` now refuses unless the file hashes to what is pinned, describes the
+video that is pinned, and carries the athlete figures the module was calibrated
+on. The mutation that swaps the two side files by name now fails with that
+refusal, naming both hashes, instead of failing because the numbers happen to
+differ. Only the two side recordings are pinned, because only they are
+measured; a front recording is refused with "no hash is recorded", which is
+correct and is not a defect.
+
+### A mutation string that matches nothing runs no experiment
+
+One mutation in this pack reported no match, because the document sentence it
+targeted wraps mid-phrase. A driver that scored it as a kill would have counted
+an experiment that never ran. Two rules follow, and the second is the one that
+bites later: **require every mutation string to match EXACTLY once**, and after
+any edit to the files a mutation set targets, RE-RUN the set — a string that
+stops matching, or starts matching twice, is running a different experiment
+under the old name.
+
+The same wrapping caught a test: a document sentence cannot be checked against
+an instrument when the sentence wraps between the number and its unit. The
+figures moved into a table, where each row names the window or the statistic it
+belongs to and a test pairs them by that name rather than by row order.
+
+### The rules that came out of it
+
+1. Grep `docs/` and this file before measuring. Re-derive a merged finding only
+   to check it, then reconcile both readings in one place.
+2. Name the statistic before it enters a formula. A range is not a sigma, and a
+   maximum is not a prediction.
+3. "Still" is a claim about the data. Measure it — the forearm's own pixel
+   length here — rather than reading it off a frame strip.
+4. When two readings disagree, publish the STRICTER and name the withdrawn one
+   with its reason. Being too lax is the dangerous direction: it sends a shoot
+   away with footage that still cannot answer.
+5. A guard that only a test calls is advice. Call it from the measurement path
+   and make it refuse.
+6. A guard that runs and changes nothing is inert. Its signature is a deletion
+   mutation that survives; build the case the data does not supply, and keep a
+   test saying the lever is inert on the real data.
+7. Publish a number with its inputs, hashed. Resolve artefacts by hash, refuse
+   on a mismatch, and put the hashes in the document a lane reads.
+8. Read a figure the file carries rather than typing it, and let the typed
+   value be the CHECK the file must agree with.
+9. Require every mutation string to match exactly once, and re-run a mutation
+   set after any edit to the files it targets.
+10. Give a document's figures a table, not a sentence. A wrapped sentence
+    cannot be checked, and a test that cannot match its target passes.
+
