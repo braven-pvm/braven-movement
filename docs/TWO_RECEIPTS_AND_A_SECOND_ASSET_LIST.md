@@ -2,6 +2,9 @@
 
 Written 2026-09-09 by the character and animation lane, against main `59a91c6`,
 after PR #105 gave the movement render receipt a licence per asset.
+**AMENDED the same day against main `a02d9b4`**, after the orchestrator tried
+to replicate this document's own measurement and could not. Option D gained a
+cost, and the section "Two claims, and only one of them is unreachable" is new.
 
 **This document proposes no change and makes no recommendation.** Section 1 is a
 requirement for the rendering lane, in the pattern the clip contract uses.
@@ -116,6 +119,44 @@ evidence available, per asset, and both `docs/LICENSING.md`'s determination and
 this lane's table become derivable rather than declared. **Risk: it reads a
 comment in a file this repository does not own, and a header can be edited or a
 format can change.**
+
+**AND A COST THIS TABLE DID NOT STATE, ADDED 2026-09-09 AFTER THE ORCHESTRATOR
+TRIED TO REPLICATE THE MEASUREMENT AND COULD NOT. D's evidence base is
+UNREACHABLE FROM A CLONE.** The 78 assets live only inside a Blender
+installation, at
+`.../Blender/4.5/extensions/.user/blender_org/mpfb/data`. They are not in
+git, not under `.assets`, and a `find` for `*.mhclo` or `*.mhmat` anywhere under
+`.assets` returns nothing. **Nobody without that installation can check the
+evidence** — not another lane, not a reviewer, not a buyer's counsel. **And it is
+unreplicable on the measuring machine too, once MPFB updates**, because the same
+path would then name different bytes. That is `asset_licences.py`'s own opening
+warning turned on the evidence rather than on the receipt.
+
+**A REMEDY EXISTS AND IS NAMED HERE AS A REMEDY, NOT PROPOSED AS WORK.** If D
+were ever chosen, the header STATEMENT would have to travel with the artefact:
+the line itself, or a hash of it, copied into the receipt. **The receipt already
+pins WHICH BYTES were licensed, by recording each asset's sha256. What it does
+not pin is the sentence inside them.**
+
+### Two claims, and only one of them is unreachable
+
+**A reader of this document will otherwise conflate them, and the orchestrator
+did so having read the file.** They are different claims with different
+strengths and different reach.
+
+| | what it rests on | who can check it |
+|---|---|---|
+| **the receipt's licence** | `docs/LICENSING.md`, quoted verbatim, **in git**, with `tests/test_asset_licences.py` re-reading the document and comparing word for word | **anyone with a clone**, and a test fails if the document changes |
+| **the 78 of 78** | what the ASSETS say in their OWN headers. **Not what any receipt records** | **nobody**, without that Blender installation |
+
+**They answer different questions.** `docs/LICENSING.md` answers "what has this
+repository determined?". The headers answer "what do the assets say about
+themselves?". **The second is stronger evidence and it is the one nobody can
+reach.**
+
+**So nothing that ships today rests on the unreachable measurement.** The merged
+receipt's licence is replicable and pinned. The 78 of 78 is evidence for option D
+and for option D alone, and it is measured, this lane's, and unreplicated.
 
 ### What is NOT being asked
 
