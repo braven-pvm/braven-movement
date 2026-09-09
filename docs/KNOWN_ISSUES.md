@@ -4003,8 +4003,32 @@ withdrawn, and an event ledger over the whole clip finds no constant offset that
 beats chance AT ANY TOLERANCE A SYNC COULD USE (at 0.400 s, twelve frames, one
 does: 8 matched against a ceiling of 7, and at that width a match spans most of
 the 1.866 s toss cycle) — refer to
-`spikes/video-annotations/event-ledger-0.1.json`. Set
-0.1 is not a synchronous pair and is unusable for two-view work.
+`spikes/video-annotations/event-ledger-0.1.json`. The pair measured here is
+**`f7faf38b5d42` with `253fa551605e`**, and it is not a synchronous pair. It is
+unusable for two-view work.
+
+**THE SET NAME IN THAT VERDICT WENT STALE ON 2026-09-07 AND THE FINDING DID
+NOT.** Corrected 2026-09-09. The recording measured here as "side 0.1" is
+`253fa551605e`, which was renamed that afternoon and is **today's
+`side 0.2.mp4`**. So this entry paired the front of one run with the side of
+the other, which is why no offset fitted. Everything above stands for that
+pair, including the null: 12 per cent of 2000 trials with `random.seed(0)`.
+
+**TODAY'S SET 0.1 IS A DIFFERENT PAIRING AND IT IS ESTABLISHED.**
+`f7faf38b5d42` with `6e8f9fb2fe03`, at a side index of the front index minus
+five, fitted on three events eleven seconds apart and confirmed on the frames.
+Refer to the header of `docs/VIDEO_CAPTURE_FINDINGS.md`. A reader who took the
+old sentence at face value would call an established pairing unusable.
+
+**WHY THE SENTENCE SURVIVED.** This entry WAS corrected on 2026-09-07, for the
+withdrawn offsets, and not for the rename that happened the same afternoon. A
+correction to one claim in an entry is not a review of the entry.
+
+**THE LEDGER FILE ITSELF NEVER WENT STALE**, because it records identity rather
+than a label: its side view carries `videoSha256` `253fa551605e`,
+`videoFile` `side 0.2.mp4` and `namedBeforeTheRename` `side 0.1.mp4`. The data
+was right and the prose about it was wrong, which is the argument for keying a
+pipeline by hash: a sentence that names a hash cannot be moved by a rename.
 
 **AND A CORROBORATOR THIS LANE OFFERED IS WITHDRAWN.** A wrist-height scan was
 reported as peaking at −0.967 s, agreeing with the recorded −1.000. Three of its
