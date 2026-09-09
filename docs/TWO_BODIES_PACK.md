@@ -60,8 +60,9 @@ figure is 5.66 cm. The finding survived and the number did not.**
     elbow flexion        engine minus rendered    +0.06 to +7.27 deg, median +2.81
 
 Within the 2.39 degree allowance sit 27 of 96 elevation readings and 47 of 96
-flexion readings. Elbow flexion is the closest quantity in this pack. Shoulder
-elevation is the worst.
+flexion readings. Elbow flexion is the closest ANGLE in this pack and shoulder
+elevation is the worst. **That ranking is among angles only**, and it is not a
+comparison with the distances above, which are in centimetres.
 
 **THE ALLOWANCE IS MEASURED, NOT ASSUMED.** The renderer never rotates the spine,
 so a leaning engine athlete would have been a large silent disagreement. It is
@@ -126,7 +127,9 @@ Every gap is positive and between 0.56 and 2.20 cm, on both join drills.
     gather f72                        19.47     17.27   2.20
     pull_in f97                       12.07     10.48   1.60
 
-**This is the closest agreement in the paper.** Item 5's quantity crosses.
+**This is the closest DISTANCE agreement in this pack**, against the
+elbows' 5.66 cm and item 6's 8.69 cm. It is not compared with the angles
+above, which are in degrees. Item 5's quantity crosses.
 
 ### The axis, and how it was settled
 

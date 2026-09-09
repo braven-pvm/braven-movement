@@ -800,6 +800,45 @@ field speaks the world.** This lane works downstream and reached for the world
 frame to answer a question posed upstream, and every number it published on that
 axis had to be withdrawn.
 
+## Where a name lives is decided by WEIGHT, not by meaning
+
+**A second hazard of the same shape as the `ahead` one above, and it is worth
+having before somebody is misled rather than after.**
+
+`solveParameters` is the JOB's output. **Its NAME can only live in this lane's
+module**, because of what each side can import:
+
+    render_receipt.py        imports ONLY `from __future__ import annotations`
+    export_blender_job.py    imports numpy, ball_track, movement_definition,
+                             athlete, movement_engine and contact_solve, and
+                             reaches `pymomentum` through `possession_solve`
+
+**So the producer can import the consumer and the consumer can never import the
+producer.** A test in a suite without the engine cannot touch
+`export_blender_job` at all: `python -c "import export_blender_job"` fails with
+`ModuleNotFoundError: No module named 'pymomentum'`.
+
+**THE DIRECTION IS ALREADY THIS REPOSITORY'S PATTERN, twice**, and both times
+importing this same module:
+
+    spikes/archive_receipts.py:51    sys.path.insert(0, str(SPIKE_DIR.parent))
+                              :53    from render_receipt import (...)
+    spikes/export_manual_page.py:48  sys.path.insert(0, str(SPIKE_DIR.parent))
+                                :52  from render_receipt import (...)
+
+**A reader who expects the field's name to live with the thing that writes it
+will not find it there.** That is a fact about the dependency graph and not
+about ownership, and it is the same trap as `ahead`: a reader reasons from what
+a thing IS, and the answer is decided by something structural they cannot see
+from where they stand.
+
+**AND THE IMPORT DOES NOT REMOVE THE NEED FOR A SPANNING TEST.** It makes the
+KEY one spelling, which is strictly better than testing the key. It does not
+touch the VALUE SHAPE, and the shape is where this lane's reader makes
+decisions: a producer emitting `{"ELBOW_POLE_ANGLE_DEGREES": None}`, or nesting
+the value, or returning `{}` for a default solve, would each pass both suites
+and be read wrongly here.
+
 ## Which receipt fields REFUSE and which write null
 
 **The distinction was raised by the character and animation lane on 2026-09-09,

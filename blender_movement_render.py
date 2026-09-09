@@ -917,6 +917,12 @@ def render_job(studio: Studio, job: dict, job_path: Path, args,
         # which value. NULL when the job carries none, rather than absent, so a
         # receipt that predates the field and one rendered from a job without
         # parameters do not read the same.
+        # AND IT IS NOT EVERY PARAMETER THE SOLVE USED. This mapping holds
+        # what the PRODUCER knows to record, which is one entry today: the
+        # elbow pole angle. `CONTACT_WEIGHT`, `UPPER_ARM_AIM_OUT`,
+        # `TWIST_SEEDS` and every other solver constant are outside it. The
+        # field is plural and a reader of a receipt never opens
+        # `spikes/export_blender_job.py`, so the caution belongs here too.
         SOLVE_PARAMETERS: solve_parameters(job),
         # Path, sha256 AND licence per asset, the shape the reference generator
         # already writes. A path alone cannot tell two MPFB installations apart,

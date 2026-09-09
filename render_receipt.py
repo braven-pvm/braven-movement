@@ -15,6 +15,22 @@ can call it, because the renderer imports `bpy` and its tests skip.
 
 from __future__ import annotations
 
+# EVERY REFUSAL IN THIS MODULE RAISES `SystemExit`, AND THAT CONSTRAINS ANY TEST
+# OF ONE. Raised by the movement lane on 2026-09-09.
+#
+#   catch `SystemExit`, never `Exception`   it inherits from BaseException
+#   NEVER call a refusal from `setUpClass`  `unittest` wraps that in
+#                                           `except Exception`, so the raise
+#                                           ESCAPES the runner and silently kills
+#                                           every later test in the module
+#
+# This repository has already had two mutations exit 1 that way and be read as
+# failures. The type is not being changed: `SystemExit` is this module's
+# convention across all seven refusals, and these are called from scripts that
+# must stop with a message. Changing one would make the module inconsistent and
+# changing all seven is its own unit with its own callers to check.
+
+
 PASS = "PASS"
 NOTHING_RENDERED = "NOTHING RENDERED"
 SOME_PHASES_FAILED = "SOME PHASES FAILED"

@@ -79,6 +79,63 @@ class SolveParametersTest(unittest.TestCase):
             module.solve_parameters({"solveParameters": "31.3"})
 
 
+class TheProducersStatedShapeTest(unittest.TestCase):
+    """PIN the producer's shape without importing the producer.
+
+    `spikes/export_blender_job.solve_parameters` cannot be imported here: it
+    reaches `pymomentum` through `possession_solve`, and this suite runs under
+    plain python. So the movement lane carries the spanning test and this pins
+    the shape IT STATED, so that a change on either side turns something red on
+    the side where the change was made.
+
+    THE SHAPE, as that lane stated it on 2026-09-09:
+
+        a flat mapping of str to float, exactly one entry today,
+        never empty, never None, never any other type
+
+    IT PINS RATHER THAN OBSERVES, deliberately. That producer always records the
+    pole angle, using the ENGINE'S DEFAULT when a technique names no override,
+    so the empty case is unreachable from it TODAY. A later change to "record
+    only overrides" would read as a tidy-up and would make this receipt write
+    null for every honest default solve. This is what would go red.
+    """
+
+    PRODUCED = {"ELBOW_POLE_ANGLE_DEGREES": 31.3}
+    OVERRIDDEN = {"ELBOW_POLE_ANGLE_DEGREES": 37.3}
+
+    def setUp(self):
+        # NOT setUpClass. A refusal in this module raises SystemExit, which
+        # `unittest` does not catch there and which would kill the module.
+        self.module = _load()
+
+    def test_the_producers_mapping_survives_the_reader_unchanged(self):
+        for produced in (self.PRODUCED, self.OVERRIDDEN):
+            with self.subTest(produced=produced):
+                self.assertEqual(
+                    self.module.solve_parameters({"solveParameters": produced}),
+                    produced)
+
+    def test_the_producers_mapping_is_never_read_as_carrying_none(self):
+        """The failure neither lane can see from its own side.
+
+        The reader returns None for an empty mapping and the receipt writes that
+        as null, which reads as "this job carried no parameters". If the producer
+        ever emitted `{}` for a default solve, the receipt would say that about
+        an honest one.
+        """
+        self.assertIsNotNone(
+            self.module.solve_parameters({"solveParameters": self.PRODUCED}))
+
+    def test_two_produced_mappings_make_a_verifiable_pair(self):
+        pair = self.module.refuse_unverifiable_pair(
+            "ELBOW_POLE_ANGLE_DEGREES",
+            {"movementId": "netball_deflect_high",
+             "solveParameters": self.PRODUCED},
+            {"movementId": "netball_deflect_high",
+             "solveParameters": self.OVERRIDDEN})
+        self.assertEqual(pair, (31.3, 37.3))
+
+
 class RefuseUnverifiablePairTest(unittest.TestCase):
     PARAMETER = "ELBOW_POLE_ANGLE_DEGREES"
 
