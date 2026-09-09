@@ -133,3 +133,94 @@ def refuse_partial_receipt(movement_id: str, receipt: dict,
             undrawn_complaint(movement_id, undrawn) + WHY_REFUSED
         )
     return undrawn
+
+
+# WHAT THE SOLVE WAS SET TO, WHICH THE RECEIPT DID NOT RECORD UNTIL 2026-09-09.
+#
+# `docs/COACH_REVIEW_SPEC_INTERFACE.md` section 4 gives this lane the form
+# `render_pair(parameter, value_a, value_b)`, and a receipt could not verify one.
+# Two jobs at two parameter values have two different `jobSha256`, so the
+# receipts are DISTINGUISHABLE. Nothing said which hash meant which value.
+#
+# The name and the value are the PRODUCER's fact, so they belong in the job and
+# this lane copies them through rather than inventing them. That direction
+# matters: `docs/FLEXION_AXIS_PAPER.md` refuses to send a euler component index
+# the other way for the same reason, and this lane's shoulder positions in
+# metres were withdrawn for it on 4 September.
+#
+# A caller cannot supply it. `blender_movement_render.py` already refuses a
+# caller-supplied build stamp, because a stamp a caller supplies is a claim
+# about a build rather than a reading of one, and a parameter is the same shape.
+SOLVE_PARAMETERS = "solveParameters"
+
+NO_SOLVE_PARAMETERS = (
+    "the job records no `solveParameters`, so nothing can say which parameter "
+    "value produced this picture"
+)
+
+
+def solve_parameters(job: dict) -> dict | None:
+    """What the job says the solve was set to. None when it says nothing.
+
+    ABSENCE IS RECORDED, NEVER SILENTLY DROPPED. A receipt with the key missing
+    and a receipt with the key set to null read the same to a careless reader
+    and mean different things: one predates the field and one was rendered from
+    a job that carried no parameters. The renderer writes null for the second.
+    """
+    found = job.get(SOLVE_PARAMETERS)
+    if not isinstance(found, dict) or not found:
+        return None
+    return found
+
+
+def refuse_unverifiable_pair(parameter: str, receipt_a: dict,
+                             receipt_b: dict) -> tuple[object, object]:
+    """Raise unless these two receipts are a pair differing only in `parameter`.
+
+    FOUR THINGS MUST HOLD, and each one has a way of being wrong that reads as
+    success:
+
+    1. Both receipts name the parameter. Without it the pair is two pictures.
+    2. Their values DIFFER. Two pictures at one value are not a pair, and a
+       caller that fetched the same job twice would otherwise be told they are.
+    3. Every OTHER parameter is EQUAL. This is the rule that carries the weight:
+       a pair whose second parameter also moved shows a difference the caption
+       attributes to the first one.
+    4. Both are the same drill. Two drills are not a pair however the parameters
+       read.
+    """
+    for name, receipt in (("a", receipt_a), ("b", receipt_b)):
+        if not isinstance(receipt.get(SOLVE_PARAMETERS), dict):
+            raise SystemExit(
+                f"REFUSED: receipt {name} has no `{SOLVE_PARAMETERS}`. "
+                + NO_SOLVE_PARAMETERS
+            )
+    left = receipt_a[SOLVE_PARAMETERS]
+    right = receipt_b[SOLVE_PARAMETERS]
+    for name, found in (("a", left), ("b", right)):
+        if parameter not in found:
+            raise SystemExit(
+                f"REFUSED: receipt {name} does not name `{parameter}`, so it "
+                "cannot be one half of a pair about it."
+            )
+    if left[parameter] == right[parameter]:
+        raise SystemExit(
+            f"REFUSED: both receipts carry `{parameter}` = {left[parameter]}. "
+            "Two pictures at one value are not a pair."
+        )
+    if receipt_a.get("movementId") != receipt_b.get("movementId"):
+        raise SystemExit(
+            f"REFUSED: {receipt_a.get('movementId')} against "
+            f"{receipt_b.get('movementId')}. Two drills are not a pair."
+        )
+    moved = sorted(
+        key for key in set(left) | set(right)
+        if key != parameter and left.get(key) != right.get(key)
+    )
+    if moved:
+        raise SystemExit(
+            f"REFUSED: {len(moved)} other parameter(s) also differ: "
+            f"{', '.join(moved)}. A difference in the pictures could not be "
+            f"attributed to `{parameter}`."
+        )
+    return left[parameter], right[parameter]

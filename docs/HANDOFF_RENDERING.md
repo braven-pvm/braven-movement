@@ -741,6 +741,84 @@ Ignoring these will cost hours. Each one already did.
     be batched; stoppages cannot, because the other lanes are planning around
     a build you have just abandoned.
 
+## `solveParameters`, for the lane that owns a dial
+
+Written 2026-09-09 by the rendering lane, for the movement lane. **This is the
+producer half of a change whose consumer half is already done**, so nothing here
+waits on this lane.
+
+### Why the field exists
+
+`docs/COACH_REVIEW_SPEC_INTERFACE.md` section 4 gives this lane the artefact form
+`render_pair(parameter, value_a, value_b)`, and a receipt could not verify one.
+Two jobs at two parameter values produce two different `jobSha256`, so the
+receipts ARE distinguishable. **Nothing said which hash meant which value.** A
+picture whose parameter cannot be named is a picture a coach cannot mark against
+a build.
+
+Coach morning item 2 is exactly this: two renders of `deflect_high` at two
+values of `ELBOW_POLE_ANGLE_DEGREES`. On `ac240b2`, which is that item's build,
+those two values are 31.3 and 37.3. **They are quoted here to show the shape and
+this lane does not own them**, so read them from the agenda rather than from
+this page.
+
+### What the job must carry
+
+    "solveParameters": {"ELBOW_POLE_ANGLE_DEGREES": 31.3}
+
+A flat mapping of name to value. The renderer copies it into the receipt under
+the same key, verbatim, and writes `null` when the job carries none.
+
+**THE NAME AND THE VALUE ARE YOURS AND THIS LANE WILL NOT INVENT THEM.** A
+parameter is a fact about the solve, so it crosses the boundary in the producer's
+direction. `docs/FLEXION_AXIS_PAPER.md` refuses to send a euler component index
+the other way for the same reason, and this lane's request for shoulder positions
+in metres was withdrawn on 4 September for it.
+
+**A CALLER CANNOT SUPPLY IT EITHER.** `blender_movement_render.py` already
+refuses a caller-supplied build stamp, because a stamp a caller supplies is a
+claim about a build rather than a reading of one. A parameter is the same shape,
+and `tests/test_solve_parameters.py` matches on the parsed source to pin that the
+value is READ from the job and is not a literal or an argument.
+
+### What this lane's rule then refuses, so you know what a job must satisfy
+
+`render_receipt.refuse_unverifiable_pair` refuses four ways:
+
+    a receipt with no `solveParameters`      the pair is two pictures
+    a receipt that does not name the value   it cannot be half of that pair
+    two receipts at the SAME value           two pictures at one value
+    two DIFFERENT drills                     not a pair however they read
+
+**And the fifth, which carries the weight: every OTHER parameter must be EQUAL.**
+A pair whose second parameter also moved shows a difference the caption
+attributes to the first one. So the two jobs must differ in that one name and in
+nothing else, and the rule reads the mapping to check it rather than trusting how
+the two jobs were produced.
+
+### Two things that are NOT asked for
+
+**Not the engine's build.** The receipt already carries `generatedFrom` for the
+RENDER, and `jobSha256` pins the job's bytes. If you want the solve's own build
+recorded, that is a separate field and a separate conversation.
+
+**Not every parameter in the engine.** The mapping only has to carry what a
+reader must be able to attribute a difference to. A mapping of one entry works,
+and the rule's "every other parameter must be equal" is then trivially satisfied,
+which is honest as long as nothing else actually moved between the two jobs.
+
+### An empty mapping is not a recorded value
+
+`solve_parameters` treats `{}` as nothing recorded, deliberately, so a job that
+writes the key and fills nothing in does not read as "parameters recorded".
+Pinned by `test_an_empty_mapping_is_not_parameters`.
+
+### Nothing archived is affected
+
+No archived receipt carries the key, and none needs it. The three archives are
+readable as before, and `refuse_unverifiable_pair` correctly refuses to call any
+two of them a pair, because none of them can name a parameter.
+
 ## The render receipt, for anyone changing its shape
 
 Written 2026-09-09 by the rendering lane, for the character and animation lane,

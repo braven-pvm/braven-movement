@@ -34,7 +34,11 @@ SPIKE_DIR = MODULE_DIR / "spikes"
 if str(SPIKE_DIR) not in sys.path:
     sys.path.insert(0, str(SPIKE_DIR))
 
-from render_receipt import render_outcome  # noqa: E402
+from render_receipt import (  # noqa: E402
+    SOLVE_PARAMETERS,
+    render_outcome,
+    solve_parameters,
+)
 # The repository's ONE build stamp, shared with every other receipt this
 # project writes, and the shape `archive_receipts.py` reads. It is cached
 # for the life of the process, so every receipt of one run names one build.
@@ -896,6 +900,14 @@ def render_job(studio: Studio, job: dict, job_path: Path, args,
         # project's own tool because of this line.
         "generatedFrom": stamp,
         "jobSha256": sha256(job_path),
+        # WHAT THE SOLVE WAS SET TO, read from the job and never from a caller.
+        # `render_pair(parameter, value_a, value_b)` could not be verified from a
+        # receipt before this: two parameter values give two different
+        # `jobSha256`, so the receipts differ, and nothing said which hash meant
+        # which value. NULL when the job carries none, rather than absent, so a
+        # receipt that predates the field and one rendered from a job without
+        # parameters do not read the same.
+        SOLVE_PARAMETERS: solve_parameters(job),
         "sourceAssets": [str(path) for path in studio.source_assets],
         "animation": animation,
         # The phases that DREW, then the phases that could not, each with its
