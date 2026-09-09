@@ -314,6 +314,21 @@ this session was piped through `tail`, so the exit code read was the pipe's and
 the summary line never reached the file. It is re-running without a pipe and this
 line is replaced when the summary is read, not before.
 
+## 12a. Why the engine suite was NOT re-run for the last commits
+
+**Stated rather than left as an omission.** The engine suite is green on
+`34716e7`, read by the full procedure with HEAD recorded at both ends. The
+commits after it are prose, one caution comment, one hazard note, and tests that
+pin a stated shape without importing anything.
+
+**None of it is reachable by the engine suite.** It exercises the solver, and
+nothing in those commits touches `spikes/`. Re-running twenty minutes of solver
+tests to cover a comment would produce a number that proves nothing about what
+changed.
+
+**The lane suite WAS re-run on every one of them**, because they touch this
+lane's code and its documents, and that is the suite that reads them.
+
 ## 13. Instruments, all committed with their numbers
 
     scripts/archive_agreement.py          refuses unless the tree still solves

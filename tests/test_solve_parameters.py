@@ -85,8 +85,29 @@ class TheProducersStatedShapeTest(unittest.TestCase):
     `spikes/export_blender_job.solve_parameters` cannot be imported here: it
     reaches `pymomentum` through `possession_solve`, and this suite runs under
     plain python. So the movement lane carries the spanning test and this pins
-    the shape IT STATED, so that a change on either side turns something red on
-    the side where the change was made.
+    the shape IT STATED.
+
+    WHAT THIS PIN DOES NOT COVER, corrected by that lane on 2026-09-09 after
+    this docstring first claimed it did. It pins the SHAPE and not the FIELD
+    NAME. This test builds its own job dictionary, so it never reads the
+    producer's key. If the producer renamed its key tomorrow:
+
+        its guard      passes, using its own literal consistently on both sides
+        this pin       passes, because the dictionary is built here
+        this reader    returns None on a real job, silently
+        the receipt    writes null, which reads as "carried no parameters"
+
+    THAT IS THE FAULT THE THREE STATES EXIST TO PREVENT, arriving through the
+    one door two independent pins leave open. Closing it needs one test that
+    reads the PRODUCER's key with THIS module's constant.
+
+    AND THERE IS A SECOND ROUTE THAT NEEDS NO IMPORT: read a real job file from
+    `spikes/poc-output/` and assert this reader finds the key in it. That needs
+    the producer's ARTEFACT rather than its module, so it can live here. It is
+    not written yet because no job file carries the field today -- 0 of 12 -- and
+    a test asserting a key that no artefact has would be red for the wrong
+    reason. It becomes possible once that lane merges and the jobs are
+    regenerated.
 
     THE SHAPE, as that lane stated it on 2026-09-09:
 
