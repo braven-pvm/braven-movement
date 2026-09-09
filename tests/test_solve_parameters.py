@@ -101,13 +101,33 @@ class TheProducersStatedShapeTest(unittest.TestCase):
     one door two independent pins leave open. Closing it needs one test that
     reads the PRODUCER's key with THIS module's constant.
 
-    AND THERE IS A SECOND ROUTE THAT NEEDS NO IMPORT: read a real job file from
-    `spikes/poc-output/` and assert this reader finds the key in it. That needs
-    the producer's ARTEFACT rather than its module, so it can live here. It is
-    not written yet because no job file carries the field today -- 0 of 12 -- and
-    a test asserting a key that no artefact has would be red for the wrong
-    reason. It becomes possible once that lane merges and the jobs are
-    regenerated.
+    A SECOND ROUTE WAS PROPOSED AND IT DOES NOT WORK. Reading a real job file
+    from `spikes/poc-output/` and asserting this reader finds the key needs the
+    producer's ARTEFACT rather than its module, so it looked as though it could
+    live here. IT CANNOT:
+
+        `/spikes/poc-output/` is in `.gitignore` at line 13
+        job files tracked in git                            0
+
+    It is BUILD OUTPUT. A test reading it finds nothing on a fresh clone and
+    nothing on the runner, which has neither `pymomentum` nor the MHR assets to
+    produce one. **So it would SKIP, silently, while guarding a RENAME** -- the
+    exact silent failure it was written for. A rename would land, the test would
+    skip, the suite would be green and this receipt would write null.
+
+    THE ZERO MEANT SOMETHING ELSE THAN IT LOOKED LIKE. "0 of 12 job files carry
+    the field" was read here as "not yet". It is also "not ever, here", and the
+    movement lane found the second reading because it looked at its own side.
+
+    WHAT ACTUALLY CLOSES THE RENAME IS THE IMPORT, BY CONSTRUCTION. That
+    producer imports `SOLVE_PARAMETERS` from this module rather than spelling
+    it, so there is ONE spelling and a rename moves both ends together. It
+    cannot skip and it cannot be falsified, which is why it beats any test of
+    the key.
+
+    SO DO NOT REMOVE THAT IMPORT AND KEEP THIS TEST. This test deliberately does
+    not assert the key, so removing the import opens the hole and leaves the
+    suite green.
 
     THE SHAPE, as that lane stated it on 2026-09-09:
 

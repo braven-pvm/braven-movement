@@ -167,6 +167,15 @@ def refuse_partial_receipt(movement_id: str, receipt: dict,
 # A caller cannot supply it. `blender_movement_render.py` already refuses a
 # caller-supplied build stamp, because a stamp a caller supplies is a claim
 # about a build rather than a reading of one, and a parameter is the same shape.
+# A PRODUCER IMPORTS THIS CONSTANT. `spikes/export_blender_job.py` uses it
+# rather than spelling the key, so there is ONE spelling and a rename moves
+# both ends together. That is what closes the rename hole, and it closes it
+# BY CONSTRUCTION rather than by a test.
+#
+# DO NOT MOVE OR RENAME IT THINKING IT IS PRIVATE, and do not remove the
+# import at the other end. `tests/test_solve_parameters.py` deliberately does
+# NOT assert the key, so removing the import opens the hole and leaves the
+# suite green.
 SOLVE_PARAMETERS = "solveParameters"
 
 NO_SOLVE_PARAMETERS = (
