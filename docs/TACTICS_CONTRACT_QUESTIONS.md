@@ -16,6 +16,7 @@ What each of the five turns out to be:
 | 3 | truncation | **answered by the code**, and the answer is "nothing reads it" |
 | 4 | `generatedFrom` | **a proposal**, for a gap with no field at all |
 | 5 | the ball anchor | **a proposal**, for a residual on a design that is right |
+| 6 | the hand at release | **a decision**, added 2026-09-08; refer to section 8 |
 
 This document has been through one independent review, which found three
 blocking errors and ten smaller ones. Every correction is kept visible in the
@@ -909,6 +910,316 @@ Stated here so that nobody reads silence as a finding.
   readings, and that it must not be reported as a failure on its own.
 - **Whether the eight live clips should be restaged.** That is Marius's open
   decision. Section 6 is the number it needs.
+- **Which of section 8's four shapes a hand channel should take.** This is NOT
+  waiting on a measurement. The measurement exists, on an unmerged branch, and
+  shows the present solve has no flick in it to size: 3.04 degrees of wrist
+  through contact against an athlete's order of magnitude more. It waits on
+  Marius's answer to whether the flick is cosmetic or mechanical, which section 8
+  maps onto the four shapes.
+
+---
+
+## 8. A sixth question, raised after this document was written
+
+Added 2026-09-08 against `braven-movement` main at `1c3d9d7` and
+`braven-tactics` main at `987e2e2`. It is placed at the end rather than beside
+the other five, so that the record of what was asked when stays readable.
+
+**The question.** Marius has asked the movement lane to model the wrist and
+finger flick at release, which he calls the mechanism of ball speed and of late
+direction change. **The clip as specified cannot carry it**, whatever the engine
+does with it.
+
+### What the engine has, and what the clip has
+
+The engine solves a wrist and every finger. Named in the solve on `1c3d9d7`:
+`l_wrist`, `l_thumb1`, `l_thumb3`, `l_index1`, `l_index3`, `l_middle1`,
+`l_middle3`, `l_ring1`, `l_ring3`, `l_pinky1`, `l_pinky3`, and their right-side
+counterparts. The hand-mirror fix in PR #46 moved 47 graded values by correcting
+a sign on exactly these.
+
+The clip carries fifteen channels per frame:
+
+    bob  lean  twist
+    leg  left/right   upper  lower  out
+    arm  left/right   upper  lower  out
+
+**The arm ends at the forearm.** There is no wrist, no hand and no finger in the
+clip, so the distal half of the mechanism stops at the boundary.
+
+### What the clip carries about release speed today: nothing
+
+`export_tactics_clip.py` contains **zero** occurrences of `speed`. The ball
+channel is a position and a flag — forward, up and sideways from the shoulder
+midpoint in arm lengths, then 1 while she has it — so a speed exists only as the
+difference between consecutive positions. Section 0 adds that no code in
+`braven-tactics` reads that channel at all.
+
+**And the release speed is not solved from the body. It is one authored
+constant.** `author_flight.DEFAULT_SPEED_CM` is `600.0` cm/s, the one speed the
+whole library uses. `docs/KNOWN_ISSUES.md:2096` records what that means:
+
+> 600 cm/s has no coach, no measurement and no source, and its own comment says
+> a game pass is faster. Nothing grades it.
+
+**The second half of that sentence matters and a first version of this section
+dropped it.** It quoted the bounce pass's shorter form, which stops at "no
+source", because that file was already open. The constant is not a blank. It
+carries its own statement of intent at `spikes/author_flight.py:39`:
+
+```python
+# A drill feed. A game pass is faster, and the flight gets shorter with it.
+DEFAULT_SPEED_CM = 600.0
+```
+
+**A number that says what it was for can be put to a coach in one sentence. A
+number that says nothing cannot.** The science lane draws that distinction in its
+register, and it changes the sense of this paragraph: 600 cm/s is not a gap
+waiting to be filled, it is a drill feed whose author recorded that a game pass
+is faster.
+
+It is the horizontal component only; the vertical is solved so the ball reaches
+its target. On the bounce pass the same file measures the constant as visibly
+wrong: 600 cm/s needs a vertical of **+95.15 cm/s**, so the ball is lobbed
+UPWARD at the floor, arcing from 111.7 cm to 116.3 cm before it falls. The throw
+is downward only above **734 cm/s**, and 600 is 0.82 of that. A bounce pass is
+driven at the floor, not lobbed at it.
+
+**So the flick is the mechanism of a quantity the library currently supplies as
+one unsourced constant.** That is what makes this a contract question rather
+than only a movement one: if the flick is solved, the speed it produces has
+somewhere to go only if the boundary carries either the joints or the speed.
+
+### What a hand channel would cost Tactics' reader
+
+Less than section 0's third consequence suggests, and the reason is worth
+stating precisely, because it decides between two shapes.
+
+`Frame` in `clips.ts` is `number[]`, not a fixed-length tuple, and `blend` reads
+each channel by index through:
+
+```ts
+const v = (k: number) => mix(a[k] ?? 0, b[k] ?? 0, w)
+```
+
+**A channel a clip does not carry reads as zero, not as an error.** The comment
+beside it records why: "an older file has no sideways part". That is not
+hypothetical. The four `out` channels were added later and sit at indices 11 to
+14 — **appended after the eleven, not inserted beside their own limbs**.
+
+Two consequences, and they point the same way:
+
+- **Appending channels 15 upward costs the consumer nothing.** Old clips read
+  the new channels as zero, which is the neutral value, and no type changes.
+  This is exactly the migration `out` already made.
+- **Inserting a channel in the middle would be silent and severe.** Every
+  channel after the insertion shifts by one, `?? 0` means nothing throws, and
+  the board draws a body with the wrong joint on every limb and no error
+  anywhere. Section 0 says a change to `frames` is the only kind that can break
+  Tactics; this is the shape that break would take.
+
+### The shapes, framed and not chosen
+
+| | what it adds | channels | notes |
+|---|---|---|---|
+| **A. One per hand** | a wrist flex angle | 15 → 17 | the smallest thing that carries a flick at all |
+| **B. Two per hand** | flex and deviation | 15 → 19 | a flick is not purely in one plane |
+| **C. A third arm segment** | `hand` beside `upper` and `lower` | 15 → 19 | matches the shape the pose already has, and the renderer already knows how to draw a segment |
+| **D. No joints, one number** | a release speed on the clip | 15 | carries the OUTCOME and not the mechanism |
+
+**D is not equivalent to the others and should not be read as the cheap version
+of them.** A speed field would let a board throw at the right pace without
+drawing the flick; the joints would let it draw the flick without knowing the
+speed. Marius's stated reason names both — ball speed AND late direction change
+— and only the joints carry direction.
+
+### The measurement exists, and it does not decide the shape
+
+A first version of this section said the choice waited on a measurement of how
+far the wrist and fingers move in the engine's own solve. **That measurement now
+exists and it settles nothing, because the current solve contains no flick to
+measure.**
+
+From `docs/RELEASE_HAND_PAPER.md` section 1, at **`b29b2d2`** on
+`lane/movement-release-hand`. **That branch is NOT merged**, so these figures are
+cited from work in progress and may move. All four passes, wrist span in degrees:
+
+| drill | side | last 8 held frames | 4 frames after release | finger, before → at release |
+|---|---|---|---|---|
+| `chest_pass` | l | **3.04** | **23.11** | 119.66 → 175.87 |
+| `overhead_pass` | l | **1.07** | **14.09** | 119.09 → 175.87 |
+| `bounce_pass` | l | **5.55** | **8.93** | 119.20 → 175.87 |
+| `one_hand_high_pass` | r | **4.71** | **0.82** | 133.04 → 175.87 |
+
+**A first version of this section quoted the chest pass alone and generalised
+from it.** Two of its statements do not survive the other three drills, and the
+correction matters because it is the exception that carries the information:
+
+- "The wrist moves far more after release than during contact" holds for the
+  chest and overhead passes, weakly for the bounce pass, and **reverses on the
+  one-hand-high pass**, which turns 4.71 degrees during contact against 0.82
+  after. The paper notes that this is also the only one of the four the engine
+  solves **right**-handed, and that its script measures the side rather than
+  assuming it.
+- "The fingers hold about 119.7" is true of the three left-handed solves and
+  **false of the right-handed one, which holds 133.04**.
+
+**What does hold across all four is the finger's value AT release: 175.87
+degrees, to two decimals, in every pass and on both hands.** The paper is
+explicit that this is the reading its conclusion rests on, and it is the right
+one to rest on, because it is the only one with no exception: that is not four
+measurements agreeing, it is one constant. `spread_fingers` resets the digits
+once the ball is gone, and they fall to the same rest value every time.
+
+The scale is in the same section. The engine's wrist travels **0.33 to 0.79 m/s**
+through contact across the four passes; the filmed athlete's travels **3.4 to
+4.3 m/s**. An order of magnitude.
+
+**So a hand channel fed by today's solve would carry a constant, plus a swing
+that mostly arrives after the ball has gone.** Neither is the flick. Measuring
+this solve more finely would only describe the absence more precisely, and the
+channel count cannot be read off it.
+
+### What decides it instead
+
+The flick model's own parameters, which do not exist yet. The paper's first
+question to Marius is the one that reaches this contract:
+
+> **Is the flick to be cosmetic or mechanical?** If the ball's speed is to come
+> from the hand, that is a change to the possession model and a much larger unit
+> than this one. If it is to look right, this model is the shape.
+
+**That answer selects among the four shapes above, and the mapping is not
+obvious, so it is stated here.**
+
+- **Cosmetic** — the flick must look right and the ball's speed stays authored.
+  Then the clip needs **the joints**, because looking right is exactly what the
+  board must draw. A speed field would carry nothing a viewer sees. Options A,
+  B or C, and the paper's own `wristToDegrees` and `fingerToDegrees` decide
+  which.
+- **Mechanical** — the ball's speed comes from the hand. Then the boundary has a
+  real choice for the first time: **the joints** let the board draw the flick and
+  derive the speed, and **a speed field** carries the outcome for a board that
+  will never draw a hand. Only then is option D a serious answer rather than a
+  cheaper substitute.
+
+The paper reaches the same boundary from the other side, as its own fifth
+question to Marius: "Fifteen channels carry no hand. A flick reaches the coach's
+figure and the receipt and stops there unless the contract gains channels." Both
+lanes are asking one question, and neither can answer it alone.
+
+### What the ball does during the carry: under measurement, and not stated here
+
+**This subsection carried two claims on 2026-09-09 and both were withdrawn the
+same day.** They said there is no authored carry path, and that the ball's
+pre-release travel is the athlete's own motion. **Both are false.**
+
+**The carry is authored, in the technique file rather than the ball file.** Every
+one of the twelve technique files in `spikes/movements/` carries an
+`afterContact` path, and `spikes/possession.py` reads it: `carry_path` at line
+238, called at 419, sampled at 525. On the chest pass that path has four keys
+and it moves.
+
+**The mechanism is being measured by the movement lane and is deliberately NOT
+restated here.** It has been reported to this lane twice with different content,
+so a third-hand account in a contract document would be worth less than a
+pointer. The files above are the pointer. When that lane packs a corrected
+result, this subsection cites it.
+
+**What was wrong with my reading, because that part is mine and it is useful.** I
+read `ball_track.offset_at`, found two identical keys and a clamp, and reported
+it as the carry. That reading is CORRECT and it is about the FLIGHT offset. The
+carry is a different authored thing in a different file, and I never opened it.
+
+**That is the same fault as the one below it, one level up.** Below, a
+single-caller check on a FUNCTION became a claim about a MODULE. Here, a check on
+one FILE became a claim about a mechanism authored in another. The rule is the
+same at both levels: **a sentence must have the scope of the check that was
+run**, and "the ball file authors no carry" is not "there is no authored carry".
+
+**I traced this through the wrong module, and the correction is worth more than
+the finding.** I read `contact_solve.solve_contact`, which places the ball centre
+from `ball.offset_at(phase)` into the grip constraints, and inferred that the
+wrist is held at a stationary point. `solve_contact` has exactly one caller in
+the repository, at `contact_solve.py:724`, inside that file's own `main()`. **That
+FUNCTION is a spike entry point and is not on the library path.** The library
+route runs from `possession.py`'s frames into `possession_solve.py:245`, which
+takes `frame.centre` for a holding side.
+
+**Read that scope narrowly, because a wider reading of it is false and the
+science lane caught me at it.** The claim is about the function and NOT about the
+file. `spikes/contact_solve.py` is very much on the library path:
+`possession_solve.py` imports six names from it — `contact_constraints`,
+`contact_miss`, `elbow_poles`, `upper_arm_aim`, `foot_constraints` and
+`measure_contact` — and calls `elbow_poles` and `upper_arm_aim` at lines 304 and
+308. Those two are defined at 327 and 402, before `solve_contact` at 508 and
+outside it.
+
+Five of that file's constants sit on the library path through those two
+functions:
+
+| constant | defined | used |
+|---|---|---|
+| `ELBOW_POLE_ANGLE_DEGREES` = 31.3 | 127 | 376, inside `elbow_poles` |
+| `UPPER_ARM_AIM_OUT` = 0.55 | 146 | 434, inside `upper_arm_aim` |
+| `UPPER_ARM_AIM_DOWN` = 0.84 | 147 | 434, inside `upper_arm_aim` |
+
+**"This function is not called by the library" and "this file is not reached" are
+different claims, and only the first was measured.** The second would have
+removed `ELBOW_POLE_ANGLE_DEGREES` from the unsourced-number register. That is
+the 31.3 a coach is being asked to move to 37.3, and `elbow_poles` is called by
+the library build at `possession_solve.py:304`.
+
+**Both the orchestrator and I wrote the wide sentence, an hour apart.** The
+narrow claim was measured and the wide one was published, twice, by two readers
+of the same evidence. The guard that catches it is the same one section 8 uses on
+its own carry inference: **a sentence must have the scope of the check that was
+run.**
+
+So the reading was right about the code it read and wrong about which code runs.
+**No amount of care inside those two files could have shown that**, which is why
+the finding was held out of this document until the lane that owns the solve
+ruled on it.
+
+### The general lesson, and it is about scope rather than about the carry
+
+**A first version of this subsection drew its lesson from the carry, and the
+carry turned out to be the wrong example.** It said one lane had answered "a
+path", this lane "a held point", and that neither was true. The path answer was
+right, and it was this lane that was wrong.
+
+The rule that survives is the one the carry actually demonstrates, and it is
+stated above: **a sentence must have the scope of the check that was run.** It
+appeared three times in one morning at three different levels — a field against a
+record, a function against a module, and one authored file against another — and
+in two of those three the error was made independently by two readers of the same
+evidence.
+
+**A separate rule stands on its own two instances and does not need the carry.**
+**A position is not a value until its frame is stated.** The ball anchor in
+section 5 is expressed in arm lengths the clip never sends. The trunk lean in
+section 9 is measured from two different origins with the same apparent meaning.
+Neither of those depends on anything the movement lane is still measuring, which
+is why the rule is left resting on them.
+
+### What this does to the sixth question
+
+It moves it upstream, and it now has two legs rather than one.
+
+1. **A mechanical flick has to move the ball, and the carry is already authored
+   rather than solved.** Twelve technique files carry an `afterContact` path and
+   `possession.py` reads it. So the flick's speed would have to come from a body
+   whose carry is currently written by hand, and whether that path would then be
+   solved, kept or replaced is a question for the lane that owns it. **The shape
+   of that path is under measurement and this document does not state it.** What
+   is settled is only that the question is upstream of the Tactics boundary.
+2. **The speed a flick would replace is a drill feed**, and its own comment says
+   a game pass is faster. So the mechanical route is not only a way to source an
+   unsourced number. It is a way to replace a number the author already recorded
+   as the wrong kind.
+
+Neither leg changes what the boundary would have to carry. Both change what has
+to exist upstream before the boundary question can be answered at all.
 
 ---
 
