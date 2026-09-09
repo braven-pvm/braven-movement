@@ -17,15 +17,30 @@ the posing path and the library is not re-rendered.**
     deviation  {min: -45.8, max: 45.8}
     visibleBendAtFlexionLimit  90.0
 
-**The job never says WHICH component is flexion.** Searching the whole job file
+**The job never says WHICH COMPONENT is flexion.** Searching the whole job file
 for the string `axis` returns nothing, on any of the twelve.
 
-The axis is `FLEXION_AXIS = {"index": 0, "middle": 0, "ring": 0, "pinky": 0,
-"thumb": 2}`, a module constant at `blender_mpfb_reference_catch.py:437`. Its
-own comment, four lines above the guard that reads it, says it is "an
-assumption about the rig and nothing checked it".
+**It does name the axis ANATOMICALLY, and that distinction is the whole
+question.** `docs/HANDOFF_RENDERING.md` documents the field as
 
-**So the axis is this renderer's assumption, not a convention the job carries.**
+    flexion    {min, max}   about the knuckle's own curl axis
+    deviation  {min, max}   about the knuckle's own deviation axis, side to side
+
+So the job says which MOTION the licence bounds. It does not say which euler
+component of this rig's bone carries that motion, and it should not: the same
+document states the boundary rule, that "a RANGE OF MOTION crosses as a rotation
+about the anatomical axis, because it is a fact about the joint rather than a
+configuration".
+
+The mapping from "the knuckle's own curl axis" to a component index is therefore
+the CONSUMER's, and it is `FLEXION_AXIS = {"index": 0, "middle": 0, "ring": 0,
+"pinky": 0, "thumb": 2}`, a module constant at
+`blender_mpfb_reference_catch.py:437`. Its own comment, four lines above the
+guard that reads it, says it is "an assumption about the rig and nothing checked
+it".
+
+**So the axis is this renderer's assumption, correctly so, and the defect is
+that the assumption is fixed rather than measured.**
 
 ## 2. What the hands actually turn about
 
@@ -85,21 +100,35 @@ turned would choose the same one.** Only the refused hand moves.
 
 ### A. The guard reads the axis from the job
 
-**This one cannot be done alone.** The job carries no axis, so A requires B
-first. Stating it as a separate option overstates the number of choices
-available: there are two, not three.
+**This one cannot be done alone.** The job names the axis anatomically and
+carries no component index, so there is nothing for the guard to read and A
+requires B first. Stating it as a separate option overstates the number of
+choices available: there are two, not three.
 
 ### B. The job carries the axis
 
-The engine would name which component is flexion. **A measured objection:** the
-axis is a property of THIS rig's bone frame, and the engine solves on MHR. The
-repository's own rule for this boundary is in `docs/HANDOFF_RENDERING.md`: "A
-POSE crosses this boundary as geometry, because a rotation only means something
-against the rest pose it was measured in and the two rigs do not share one. A
-RANGE OF MOTION crosses as a rotation." An axis index is neither: it names a
-component of a euler decomposition in a skeleton the engine has never seen.
+The engine would name which component is flexion. **This is refuted by a rule
+the repository already carries, not by an opinion.**
+`docs/HANDOFF_RENDERING.md` states that a range of motion crosses the boundary
+"as a rotation about the anatomical axis, because it is a fact about the joint
+rather than a configuration", and the field already does that: it bounds the
+motion about the knuckle's own curl axis.
+
+A component index is a different kind of thing. It names a coordinate of a euler
+decomposition of a bone in a skeleton the engine has never loaded. Sending it
+would put a fact about the CONSUMER's rig into the producer, which is the same
+error, in the other direction, as the shoulder positions this lane asked for in
+metres on 4 September and had to withdraw.
+
+The first version of this field already broke that rule once, by exporting a
+range of motion as visible bend. It never shipped.
 
 ### C. The limit is applied about the axis that turned
+
+This is the only option that keeps the boundary rule intact, because it changes
+nothing about what crosses it: the job keeps bounding the motion about the
+knuckle's own curl axis, and the consumer stops ASSUMING which component that is
+and measures it instead.
 
 The guard stops naming an axis and measures one. On the eleven this is
 identical, by the 208 of 208 above. On the refused hand it would let the flexion
