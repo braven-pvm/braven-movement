@@ -28,8 +28,29 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from contact_solve import ELBOW_POLE_ANGLE_DEGREES
-from export_blender_job import check_solve_parameters, solve_parameters
+# Only a genuinely absent solver may skip. Catching every exception here would
+# swallow a break in the code under test and skip the guard in silence.
+try:
+    import pymomentum.geometry  # noqa: F401
+
+    SOLVER = True
+except ImportError:  # pragma: no cover - exercised only without the solver
+    SOLVER = False
+
+if SOLVER:
+    # Deliberately unguarded: a failure here is a real break and must be loud.
+    from contact_solve import ELBOW_POLE_ANGLE_DEGREES
+    from export_blender_job import check_solve_parameters, solve_parameters
+
+# AND NOTHING IN THIS FILE NEEDS A SOLVER. It reads one float and calls two
+# pure functions on dictionaries. The solver arrives because
+# `ELBOW_POLE_ANGLE_DEGREES` lives in `contact_solve` and
+# `check_solve_parameters` lives beside a module that imports the engine, so
+# this contract cannot be tested on a runner that has no engine and never
+# needed one. That is a cost of where the code sits and not of what it does,
+# and it is the concrete argument for moving the contract into a module of its
+# own. Recorded here rather than in a message, because the next person to read
+# these skips deserves the reason.
 
 # The value a coach is being ASKED to move to. It is not in any file and
 # nothing in the library uses it; it is here because this guard's whole job is
@@ -46,6 +67,7 @@ def job_for(method) -> dict:
     return {"movementId": "probe", "solveParameters": solve_parameters(method)}
 
 
+@unittest.skipUnless(SOLVER, "needs pymomentum, which lives in the pixi environment")
 class TheMappingRecordsWhatTheSolveUsed(unittest.TestCase):
     def test_no_override_records_the_engines_default(self) -> None:
         """A technique naming nothing solved on the default, and says so.
@@ -71,6 +93,7 @@ class TheMappingRecordsWhatTheSolveUsed(unittest.TestCase):
         self.assertNotEqual(float(ELBOW_POLE_ANGLE_DEGREES), A_CANDIDATE)
 
 
+@unittest.skipUnless(SOLVER, "needs pymomentum, which lives in the pixi environment")
 class TheCheckerRefusesAJobThatDoesNotSay(unittest.TestCase):
     """Every case here is CONSTRUCTED. The library cannot produce one."""
 
@@ -114,6 +137,7 @@ class TheCheckerRefusesAJobThatDoesNotSay(unittest.TestCase):
             check_solve_parameters(pretending, technique(None))
 
 
+@unittest.skipUnless(SOLVER, "needs pymomentum, which lives in the pixi environment")
 class BuildActuallyCallsTheChecker(unittest.TestCase):
     """A checker nothing executes is not a guard.
 
@@ -163,6 +187,7 @@ class BuildActuallyCallsTheChecker(unittest.TestCase):
         self.assertNotIn("a_name_that_is_not_called_anywhere", called)
 
 
+@unittest.skipUnless(SOLVER, "needs pymomentum, which lives in the pixi environment")
 class TheCheckerAcceptsAnHonestJob(unittest.TestCase):
     """A guard that refuses everything protects nothing either."""
 
