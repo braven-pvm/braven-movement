@@ -114,7 +114,7 @@ four. The acceleration is in the interval between `drive` (or `step`) and
 
 | number | parent today |
 |---|---|
-| `ahead` at the held offset, 0.5594 | traced three hops to a measured elbow-flexion sweep against `RangeLimit(0.0, 150.0, "AAOS")`. Refer to the movement-science lane |
+| `ahead` at the held offset, 0.5594 | traced three hops to a measured elbow-flexion sweep against `AAOS_LIMITS["elbow.flexion"]`, `isb_angles.py:240`. **The best-sourced number in this table**: the comment above it names the American Academy of Orthopaedic Surgeons in full, states the population as "a healthy adult", and already records that "an athlete population needs its own bands". What it lacks is an edition and a page, so a reader cannot go and check it |
 | `up` at the held offset, 0.1221 | **no derivation anywhere.** An open row |
 | the secured-ball parent, in torso lengths | `netball_two_hand_catch_chest.technique.json`, `afterContact` `pull_in` at 0.76. Its own origin is **open and unguessed** |
 | every `atPhase` | **no source.** They are authored phases |
