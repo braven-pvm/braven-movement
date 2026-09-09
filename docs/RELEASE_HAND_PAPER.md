@@ -208,6 +208,35 @@ a swing on three passes out of four. Neither is the flick Marius asked about, so
 the channel is worth adding only together with a release model that puts
 something in it.
 
+### Two measurements of "the fingers", and they agree
+
+**Two merged documents say opposite-sounding things about the same frame of the
+same drill, and both are right.** They measure different quantities under one
+word, which is the fault this ledger has counted more often than any other, so
+the reconciliation is written here rather than left to the next reader.
+
+| document | quantity | instrument | chest pass, frame 75 to 76 |
+|---|---|---|---|
+| this paper | how BENT the finger is | angle wrist-knuckle-tip at the middle finger, `scripts/release_hand.py` | 119.66 to **175.87**, a change of 56.21 deg |
+| `ONE_HAND_HIGH_INSTRUMENT_AUDIT.md` | which WAY the hand points | `fingerUpDegrees`, the ray wrist-to-knuckle against world up, `spikes/hand_orientation.py` | 5.87 to **5.98**, a change of 0.11 deg |
+
+**A finger can hold its direction while its bend opens**, because the two
+measures share only one point. The ray from the wrist to the knuckle can be
+fixed while the segment from the knuckle to the tip straightens. That is exactly
+what happens here: the knuckle stays put and the finger unrolls.
+
+**The audit's own definition of `fingerUpDegrees` says so before either of us
+measured anything**: it must not "conflate curl with orientation. 'Fingers up'
+is about which way the hand points."
+
+**The audit's third figure is this unit's, not the audit's.** At that same frame
+the thumb swings 11.5 to 19.8 degrees and its tip ends **0.70 to 0.72 cm inside
+the ball**, and the receipt's hand-orientation rows for a release phase are read
+at exactly that frame. **It is the frame this unit retimes and the frame option B
+changes**, so the corrupt reading is not a separate defect to be scheduled. It
+is a consequence of where the release frame sits, and it moves when the release
+moves.
+
 ### The video lane found the same thing from the other end
 
 Cited from that lane's pack and log, not re-derived here: **in every shipped
