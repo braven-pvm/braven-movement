@@ -153,9 +153,11 @@ finding that out cost one run of an instrument that already existed.
 elbow SHOULD read 15 degrees more at the drive phase is a coaching judgment, and
 `leftElbowFlexionDegrees` at `drive` has a band that a retimed value may leave.
 
-**It does not test an accelerating carry against the release seam.** That was the
-orchestrator's hypothesis and it needs the follow-through measured alongside a
-retimed carry, which is a second run.
+**It does not say the seam question is closed.** The seam test above answers the
+hypothesis on both measures and the answers differ: the hand's speed step closes
+and the shoulder's angle step does not. **An earlier version of this section said
+the seam was untested. It was, in the same run, and the sentence is corrected
+rather than deleted.**
 
 **And it does not license a retune.** No number under `spikes/movements/` is
 changed by any of this. Gate 4 stands and the shape of the retiming is a
