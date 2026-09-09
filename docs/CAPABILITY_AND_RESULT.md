@@ -1,7 +1,8 @@
 # Capability and result: which document is which
 
-Written 2026-09-09 by the content lane, on `a5d60da`. **This document classifies
-and proposes. It rewrites nothing.** A rewrite is a second unit, after Marius
+Written 2026-09-09 by the content lane, **recounted on `40e1f2f`** after PR #99
+merged and moved three documents from in flight onto main. **This document
+classifies and proposes. It rewrites nothing.** A rewrite is a second unit, after Marius
 rules on the classification.
 
 Principle 4 of `.remember/PRINCIPLES.md` asks for two documents and never one:
@@ -14,13 +15,19 @@ finding from a test recording keeps reading as a conclusion about the sport.
 
 ## The count, stated because a count is a claim about a list
 
-**`docs/` holds 25 markdown documents on `a5d60da`.** Three more are in flight in
-PR #99 and are classified at the end, separately, because they are not on main.
+**`docs/` holds 28 markdown documents on `40e1f2f`, and 29 counting this one**,
+which is on a branch and classifies itself below.
 
-**6 capability. 4 result. 15 mixed.** 6 plus 4 plus 15 is 25.
+**7 capability. 4 result. 18 mixed.** 7 plus 4 plus 18 is 29.
 
 **THE DANGEROUS CLASS IS THE MAJORITY**, and that is the finding rather than any
 individual placement.
+
+**A FIRST VERSION OF THIS DOCUMENT COUNTED 25**, which was correct on `a5d60da`
+and wrong an hour later. PR #99 merged three documents I had listed separately as
+in flight. **They are now folded into the tables below**, and this paragraph
+stays because a count is only true of the tip it was taken on — which is the same
+point the stamping rule makes.
 
 ---
 
@@ -39,7 +46,7 @@ someone reading one section.
 
 ---
 
-## Capability: 6
+## Capability: 7
 
 | document | why |
 |---|---|
@@ -49,6 +56,7 @@ someone reading one section.
 | `LICENSING.md` | licensing decisions |
 | `REQUIREMENTS.md` | what the system must do |
 | `TACTICS_CLIP_CONTRACT.md` | the boundary between two repositories |
+| `COACH_REVIEW_SPEC_INTERFACE.md` | what a generator must refuse. It holds no figure of its own |
 
 **`TACTICS_CLIP_CONTRACT.md` is the only document under `docs/` with no
 commit-like reference anywhere in it.** That is what a capability document looks
@@ -69,7 +77,7 @@ like when it is doing its job.
 and it is worth saying plainly, because the risk this unit was set to find is not
 where I would have guessed.
 
-## Mixed: 15
+## Mixed: 18
 
 | document | the durable half | the per-shoot or per-build half |
 |---|---|---|
@@ -88,6 +96,9 @@ where I would have guessed.
 | `LOB_AUTHORING_BRIEF.md` | how a lob's ball file should be authored | the measured apex figures |
 | `TACTICS_CONTRACT_QUESTIONS.md` | six questions about the contract | "today's gap read, with its inputs" |
 | `COACH_MORNING_2026-09.md` | the twenty questions and why each is asked | every figure quoted under them |
+| `COACH_MORNING_RUNNING_ORDER.md` | the order and its dependencies | the three hours, and which artefacts exist today |
+| `COACH_MORNING_PAGE_SPEC.md` | the five section specifications | "can be built today", which is true of one tip |
+| **`CAPABILITY_AND_RESULT.md`** | **the rule and the stamping proposal** | **every count in it, including this one** |
 
 **Several of these announce their own mixing in their first lines**, which is the
 honest form of the fault rather than a hidden one. `VIDEO_CAPTURE_FINDINGS.md`
@@ -107,7 +118,7 @@ whose headings all name the same thing may hoist it to the head** and say so.
 ### Why the heading and not the document
 
 **A document-level stamp is a lie for half the sections of a mixed document**, and
-fifteen of twenty-five are mixed. Stamping `KNOWN_ISSUES.md` with one build would
+eighteen of twenty-nine are mixed. Stamping `KNOWN_ISSUES.md` with one build would
 be false on nearly four thousand lines.
 
 **The heading is also the smallest unit anyone cites.** Every cross-reference in
@@ -164,20 +175,24 @@ Marius's and this document does not take it.**
 
 ---
 
-## The three documents in flight
+## This document is MIXED by its own rule
 
-**Not on `a5d60da`. They are in PR #99 and are classified here so the list is
-complete when it merges.**
+**It classifies itself, and the answer is the uncomfortable one.**
 
-| document | class | note |
-|---|---|---|
-| `COACH_MORNING_RUNNING_ORDER.md` | **mixed** | the order is durable, the time estimates and the artefact state are not |
-| `COACH_MORNING_PAGE_SPEC.md` | **mixed** | the five specifications are durable, the "can be built today" column is not |
-| `COACH_REVIEW_SPEC_INTERFACE.md` | **capability** | it describes what a generator must refuse, and holds no figure of its own |
+The rule and the stamping proposal are durable. **Every count in it is true of
+one tip and no other** — 29 documents, 176 ledger headings, 41 build-naming
+lines. The first version of this document proved that by being wrong within the
+hour.
 
-**Two of my three are mixed, by my own rule.** The running order's three-hour
-estimate and its "four renders missing" are true of today, and its ordering and
-dependencies are durable. I did not see that when I wrote them.
+**So it carries the fault it describes**, and the honest response is not to
+remove the counts but to stamp them, which is what the rule asks of every other
+mixed document.
+
+**Three of my four coach-morning documents are mixed too, by the same rule.** The
+running order's three hours and its "four renders missing" are true of today; its
+ordering and dependencies are durable. **I did not see that when I wrote them
+this morning**, which is the ordinary way a document becomes mixed: a finding and
+its method written down together, because that is the natural way to write them.
 
 ---
 
