@@ -209,6 +209,34 @@ moved.** The build differs, the population differs, and the dial is the movement
 lane's. It should be re-measured on `2413f9d` before Erin is asked to close a
 gap that may not be the size the question describes.
 
+## What the running order makes of these two items
+
+`docs/COACH_MORNING_RUNNING_ORDER.md` arrived on main on 2026-09-09 and plans
+both items. It changes what the two measurements above mean.
+
+**Item 6 is planned as a picture she accepts or rejects**, drawn as "a still at
+the ready frame", and the still is on the page already. So the disagreement is
+not academic. The text of the question says 20 cm and the picture beside it shows
+11.4 cm, and she is asked to rule on the picture.
+
+**Item 5 is planned as "the 14 cm figure and a clip".** A clip does NOT settle
+the two-body question, and a reader would reasonably assume it does.
+
+    every archived receipt          "animation": null
+    what the animate path records   frame count, rate, and the file hashes
+
+`blender_movement_render.py` poses the rig at every exported frame under
+`--animate`, and writes counts and file hashes for the result. It records no
+per-frame joint position. So a clip would DRAW the peak and record nothing about
+it, and the comparison would still be impossible afterwards.
+
+**Two things would make it measurable, and both are somebody else's.** The job
+could carry a phase at the peak frame, which is the movement lane's, or the
+animate path could record per-frame arms, which is this lane's renderer and a
+widening of the receipt. This lane proposes neither here. It records that the
+planned artefact does not answer the question, so that nobody discovers it after
+the clip is made.
+
 ## Two rows of the coach morning were read on the struck pose
 
 Item 7 is STRUCK because `hooks_outside_hand` has two solved poses about 33
