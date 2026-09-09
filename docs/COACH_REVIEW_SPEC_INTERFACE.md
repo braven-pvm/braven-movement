@@ -171,6 +171,22 @@ key does not exist and inventing it would answer an open contract question by
 accident. Under this interface that is not a paragraph a person must read. It is
 a refusal with a named cause, and the item stays visibly unanswered.
 
+**AND THE CAUSE MUST DISTINGUISH UNMADE FROM CANNOT BE POSED.** The two look
+alike to a generator and only one of them is fixed by rendering.
+
+| items 2, 4, 17 and 18 | the render has not been made |
+|---|---|
+| **item 13** | **the drill cannot be posed on this rig at all** |
+
+**A generator that emits one cause for both tells a reader to wait for a render
+that no schedule can produce.** `netball_one_hand_high_pass` is absent from every
+archive because its `ready` phase raises on a knuckle axis, and
+`.assets/archives/coach-figures-2413f9d/PROVENANCE.md` records exactly that.
+
+**So the second cause must not carry a date.** This is the rendering lane's
+requirement, and it reached this document as text because the document has one
+author.
+
 ### Refusal 2: a caption that describes what the clip does not contain
 
 **This nearly shipped today and was found by eye.** The generator can check it:
@@ -194,6 +210,48 @@ and **the clip's frame window must contain that event's frame**.
 no moment that no ledger event supports. **This is their amendment and it is
 better than what I wrote.**
 
+### Refusal 2b: `render_pair` refuses five ways, and this document asked for four
+
+**The rendering lane's, sent as text.** A picture whose parameter cannot be named
+is a picture a coach cannot mark against a build. **Until 2026-09-09 a receipt
+could not name one.** Two jobs at two parameter values produce two different
+`jobSha256`, so the receipts are distinguishable, and nothing said which hash
+meant which value.
+
+The render receipt now carries `solveParameters`, copied from the job, and
+`render_receipt.refuse_unverifiable_pair` refuses a pair it cannot read:
+
+| what it sees | why it refuses |
+|---|---|
+| a receipt with no `solveParameters` | the pair is two pictures |
+| a receipt that does not name the value | it cannot be half of that pair |
+| two receipts at the SAME value | two pictures at one value |
+| two DIFFERENT drills | not a pair, however they read |
+
+**THE FIFTH CARRIES THE WEIGHT AND THIS DOCUMENT DID NOT ASK FOR IT: EVERY OTHER
+PARAMETER MUST BE EQUAL.** A pair whose second parameter also moved shows a
+difference the caption attributes to the first one. **The rule reads both
+mappings and compares them rather than trusting how the two jobs were produced.**
+
+**That makes the choice of comparison drill a checkable thing rather than a
+judgment.** `deflect_high` is the right drill for item 2 because both hands are on
+the ball and nothing else moves, and the fifth refusal is what stops a later lane
+picking a worse drill and getting a picture anyway.
+
+**NO ARCHIVED RECEIPT CAN NAME A PARAMETER, AND THE RULE IS RIGHT TO REFUSE THEM
+ALL.** The whole key set of all three archives was walked and there is no pole,
+dial, variant or parameter key in any of them. **So a render pair cannot be
+assembled from what is already drawn.**
+
+It needs two new jobs carrying `solveParameters`, **and the order matters**. The
+receipt records the parameter, then the solves are made, then the pictures.
+**Rendering before the receipt can record the value produces two pictures nobody
+can attribute**, which is worse than no pictures.
+
+The receipt half is committed on the rendering lane's branch at `34716e7`, which
+amends `12cccbe` after the character and animation lane found a defect in it.
+**It is not on main.**
+
 ---
 
 ## 5. The answer, its options and its unit
@@ -207,6 +265,59 @@ declares each measure's unit, and `unit_of` refuses a measure it does not know
 rather than defaulting to degrees. **A question that cites a measure must cite it
 by that key**, and the generator asks the engine for the unit rather than
 trusting the specification's prose.
+
+**REFUSAL 3b: A FIGURE THAT IS A POSITION OR A DIRECTION MUST NAME ITS
+COORDINATE FRAME, THE WAY A MEASURE NAMES ITS UNIT.**
+
+**A unit stops a width being read as an angle. A coordinate frame stops a
+body-relative offset being read as a world one. Neither can be recovered from the
+number.**
+
+**THE TWO RULES DO NOT CARRY THE SAME WEIGHT. An earlier version of this
+paragraph said "exactly as", and the video lane measured that it overstates it.**
+
+| | |
+|---|---|
+| the unit is **DERIVED** | `segment_measures.MEASURE_UNITS` declares twelve measures and `unit_of` RAISES for one it does not know. **A specification cannot lie about a unit**, because the generator asks the engine rather than the specification. |
+| the coordinate frame is **DECLARED** | **There is no equivalent register anywhere in `spikes/`.** Nothing checks a declared frame against a source of truth, so a wrong declaration passes. |
+
+**So this refusal makes a mixed caption a VISIBLE error rather than an IMPOSSIBLE
+one.** That is worth having and it is less than the unit rule earns. **Closing the
+gap needs an engine-side register of coordinate frames**, which belongs to neither
+this lane nor the video lane. It is recorded here as a want and not proposed as a
+task.
+
+**AND THE WORD `frame` ALREADY DOES TWO JOBS IN THIS PIPELINE, INSIDE THE RULE
+WRITTEN TO STOP ONE WORD DOING TWO JOBS.** The shoot manifest's
+`frameOffsetToReference` is a VIDEO FRAME INDEX. This refusal means a COORDINATE
+FRAME. **The specification will call the second `coordinateFrame` so that the two
+never meet in one schema**, and this document says "coordinate frame" throughout
+for the same reason.
+
+**This is not hypothetical and it cost an afternoon.** The word `ahead` means two
+different things on the two sides of the job boundary, and **both are correct**.
+The engine AUTHORS in her frame: `motion_track` and `ball_track` both place a
+point as `chest + rotation @ [across, up, ahead]`, and `possession.to_offset`
+inverts it with the same rotation. **The JOB TRANSMITS world geometry**, which
+the renderer adds with no rotation at all.
+
+**The two agree exactly on a square athlete and diverge with her turn.** On
+`hooks_outside_hand`, 48.22 degrees turned at the first frame, reading item 5's
+travel in the wrong frame gave 14.48 cm instead of 12.71 and **reversed the
+finding**: the drill appeared to be the wider of the two when it is the milder.
+Two lanes published that reversal and both withdrew it. Treating a job vector as
+her frame puts the ball 154.7 cm from where the receipt records it, against
+20.45 mm, **a factor of about seventy-five**.
+
+**So the generator refuses a vector or a position that does not declare its
+coordinate frame**, and the declaration is the field's own rather than the
+prose's.
+
+**This rule is the video lane's, from the rendering lane's finding.** It
+generalises the unit rule above rather than adding a case beside it, and it is
+recorded in `docs/FOOTAGE_PIPELINE.md` as a requirement on the generator. **No
+refusal in this document would have caught a caption that mixed the two frames**,
+which is why it is here and not only there.
 
 **Every closed question must offer a way to decline.** "Cannot tell from this" is
 not a courtesy. A coach forced to choose gives an answer that reads as data and
