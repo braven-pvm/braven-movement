@@ -206,6 +206,15 @@ because most of these are not this lane's.
 | 9 | Her hand is close to her face on the deflect | open, and the instrument does not exist. The skull sphere reported zero hand vertices inside it, so the instrument failed rather than the pose passing | this lane, a missing instrument | `HANDOFF_RENDERING.md` state |
 | 10 | The turntable | never verified since it was written | this lane | `HANDOFF_RENDERING.md` state |
 
+**TWO DEFECTS THE BRIEF NAMED ARE MISSING FROM THIS TABLE, AND THEY WERE
+DROPPED SILENTLY.** The brief named the finger snap at the release and the
+pelvis yaw on square drills. This lane searched `docs/` for both, found neither,
+and omitted both without saying so. **Both are real and both are now rows R2 and
+R3 of `docs/WHAT_BETTER_ANIMATION_MEANS.md`**, with their figures, their sources
+and their builds. They are not repeated here, because a figure that appears twice
+goes stale in one of the two places. Section 8 of that document records why the
+search missed them, and only half of it was a search failure.
+
 **Which build each row was measured on.** Only row 1 is measured on
 `2413f9d`, from that build's own archived receipts. Every other row is quoted
 from the document named beside it and carries that document's build, which is
