@@ -82,9 +82,45 @@ changes the other's evidence.
 **The question.** Watch the two previews side by side. Which elbow width looks
 like the athlete in the manual's photographs?
 
+**THIS ITEM ASKS TWO QUESTIONS AND DOES NOT SAY WHICH ONE SHE ANSWERS.** The
+paragraph above asks her to pick a preview, which picks a NUMBER. A paragraph
+below asks whether 38.6 describes the drills that put both hands on the ball or
+the two that put one, which picks a POPULATION. **They are not the same question,
+and this item has never said that the second determines the first.**
+
+**Named here and not resolved.** Which question to put to a coach changes what
+she is asked, so it is Marius's ruling. It is recorded because **an archived
+answer to item 2 does not say which of the two was answered**, and a later reader
+will assume whichever they met first.
+
 **What the dial does.** One number sets it, `ELBOW_POLE_ANGLE_DEGREES`, at 31.3
 today. The manual's figure, read from photographs, is 38.6 cm between the
 elbows at contact.
+
+**EVERY LINE NUMBER QUOTED BELOW WAS READ ON `4bad91b` AND RE-VERIFIED ON
+`a02d9b4`.** All six ranges still contain what they are quoted for. **A CITATION
+TO A LINE IS A CLAIM ABOUT A TREE**, the same way a figure is, so it names the
+tip it was read on.
+
+**The re-verification is not ceremony.** These three files belong to lanes that
+are actively changing them. **A reader who follows an unstamped citation to the
+wrong line concludes the quotation is wrong, when the file has moved** — which is
+a worse outcome than an obviously stale number, because it discredits a correct
+quotation.
+
+**WHY THE QUESTION IS IN DEGREES AT ALL, AND IT IS NOT A DETAIL.** The dial before
+this one was `elbowWidth`, a dimensionless multiplier. Its own reader records what
+it was worth, at `spikes/technique.py:60-65`:
+
+> "That dial was named for the folded case and wired to a term which **a weight
+> sweep from 2.0 down to 0.0 showed moves folded elbow separation by 0.2 cm, so
+> it could not have honoured a coach's number whatever they said.**"
+
+And the line after it: **"No technique file authored `elbowWidth`, so nothing is
+migrated."** So it was a dial that could not have carried a coach's answer across
+its whole range, **and no drill ever set it, so nobody found out.** The pole angle
+is in degrees because degrees are a quantity a coach can hold in their head, and
+because the quantity before it could not be honoured.
 
 On the six drills that put BOTH hands on the ball:
 
@@ -94,6 +130,36 @@ On the six drills that put BOTH hands on the ball:
 | at 37.3, previewed | **38.42 cm** | 30.57 | 42.37 |
 
 The manual says 38.6. At 31.3 the gap is 2.17 cm. At 37.3 it is **0.18 cm**.
+
+**WHERE BOTH NUMBERS COME FROM, WHICH THIS ITEM HAS NEVER SAID.** They are not two
+guesses. **They are one definition read on two populations.**
+
+    31.3   the angle that puts the WHOLE LIBRARY's solved mean on 38.6
+    37.3   the angle that puts the SIX TWO-HANDED drills on 38.6
+
+`spikes/contact_solve.py:116-118` states the definition: **"the angle is whatever
+puts the solved mean on the manual's figure, and when the solve changes the angle
+has to be read again."**
+
+`spikes/preview_variants.py:46-51` states which population each is read on, and
+names the fault in the first:
+
+> "38.6 cm is read from photographs of a two-handed snatch at contact. **The
+> whole-library mean agreed with it while no member of that population did,
+> because two one-handed drills pulled it up.** On the six two-handed drills the
+> angle gives 36.4 cm; about 37.3 degrees is what would put those six on 38.6."
+
+**THE MANUAL'S 38.6 IS READ FROM A PHOTOGRAPH OF A TWO-HANDED SNATCH**, which is
+the population 37.3 is read on.
+
+**THE OBVIOUS ALTERNATIVE WAS CONSIDERED AND REJECTED FOR A STATED REASON**, at
+`contact_solve.py:121-123`. The angle is deliberately not read from the solve's
+own pole angle in the evidenced band, because **"that spreads from -14 to +75
+degrees over 16 frames, so its mean would be calibrating against noise."**
+
+**And what she is NOT being asked**, from the same comment: "What the folded
+regime then does is a FINDING, not a target. **No evidence says how wide the
+elbows should be with the ball at the chest.**"
 
 Every cell in this table is read on one build, with the locked parameters
 pinned, and the whole row was re-measured rather than the mean alone. An
@@ -147,6 +213,31 @@ the elbow width by 37.91 cm. That is the FREE arm relocating rather than the
 elbow width changing, and it would dominate anything a person watched on that
 drill. The comparison drill is `deflect_high`, where both hands are on the ball
 and nothing else moves.
+
+**THE SCOPE OF WHATEVER SHE ANSWERS.** `ELBOW_POLE_ANGLE_DEGREES` is one module
+constant and it is what every drill uses. A per-drill override exists,
+`elbowAngleDegrees` in a technique file's grip block, and `spikes/technique.py:57`
+says "None means the engine's own". **Not one of the twelve technique files sets
+it.** So a change to this number moves twelve drills, and using the override would
+be the library's first use of it.
+
+**THE PREVIEW PAIR DEMONSTRATES A PER-DRILL CHANGE**, because it is produced by
+setting the override in a copy of one drill's technique file. **A caption implying
+it shows a global change would over-claim**, and the picture and this document
+must agree on that.
+
+**AND THE FILE SAYS THIS ABOUT ITS OWN CONSTANT**, at `contact_solve.py:357-363`:
+
+> "`ELBOW_POLE_ANGLE_DEGREES` was **bisected through the whole solve rather than
+> derived from the geometry**, so it had absorbed the basis error: correcting a
+> 12.30 cm geometry fault moved the two-handed mean contact separation from
+> 36.58 cm to 36.43, and the angle needed no re-read. **That is worth reading
+> twice. A calibration robust to a 12 cm geometry error is robust because it is
+> loosely coupled to the geometry, which is not entirely a compliment.**"
+
+**A constant that a 12.30 cm geometry correction did not move is a constant whose
+value is not really about the geometry.** That is what her answer will and will
+not control, and the file says it about itself.
 
 **The guard that this section said it had dissolved was right.**
 `test_elbow_pole.py` holds a tripwire on the distance between the two means.
