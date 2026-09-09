@@ -957,11 +957,26 @@ difference between consecutive positions. Section 0 adds that no code in
 
 **And the release speed is not solved from the body. It is one authored
 constant.** `author_flight.DEFAULT_SPEED_CM` is `600.0` cm/s, the one speed the
-whole library uses. The bounce pass's ball file records what that means:
+whole library uses. `docs/KNOWN_ISSUES.md:2096` records what that means:
 
-> 600 cm/s is `author_flight.DEFAULT_SPEED_CM`, the one speed the whole library
-> uses, recorded in `docs/KNOWN_ISSUES.md` as having no coach, no measurement
-> and no source.
+> 600 cm/s has no coach, no measurement and no source, and its own comment says
+> a game pass is faster. Nothing grades it.
+
+**The second half of that sentence matters and a first version of this section
+dropped it.** It quoted the bounce pass's shorter form, which stops at "no
+source", because that file was already open. The constant is not a blank. It
+carries its own statement of intent at `spikes/author_flight.py:39`:
+
+```python
+# A drill feed. A game pass is faster, and the flight gets shorter with it.
+DEFAULT_SPEED_CM = 600.0
+```
+
+**A number that says what it was for can be put to a coach in one sentence. A
+number that says nothing cannot.** The science lane draws that distinction in its
+register, and it changes the sense of this paragraph: 600 cm/s is not a gap
+waiting to be filled, it is a drill feed whose author recorded that a game pass
+is faster.
 
 It is the horizontal component only; the vertical is solved so the ball reaches
 its target. On the bounce pass the same file measures the constant as visibly
@@ -1092,6 +1107,69 @@ The paper reaches the same boundary from the other side, as its own fifth
 question to Marius: "Fifteen channels carry no hand. A flick reaches the coach's
 figure and the receipt and stops there unless the contract gains channels." Both
 lanes are asking one question, and neither can answer it alone.
+
+### What the ball does during the carry, and a correction of my own trace
+
+Ruled by the movement lane on 2026-09-09, measured across all 76 held frames of
+each of the four passes. Cited from `15d9857` on `lane/movement-release-hand`,
+which is **NOT merged**, so these figures may move.
+
+**There is no authored carry path.** `ball.offset_at` returns one identical
+offset at every phase of the carry, in all four passes. Each ball file authors
+two keys at the same triple, both before phase 0.02, and the function clamps
+every later phase to the nearest end.
+
+**The offset is expressed in the athlete's frame, and she moves, so the ball
+rides her.** It travels 0.36 cm per frame on the chest pass and up to 1.60 on the
+one-hand-high, and every centimetre of that is her own motion.
+
+**I traced this through the wrong module, and the correction is worth more than
+the finding.** I read `contact_solve.solve_contact`, which places the ball centre
+from `ball.offset_at(phase)` into the grip constraints, and inferred that the
+wrist is held at a stationary point. `solve_contact` has exactly one caller in
+the repository, at `contact_solve.py:724`, inside that file's own `main()`. **It
+is a spike entry point and it is not the library path.** The library route runs
+from `possession.py`'s frames into `possession_solve.py:245`, which takes
+`frame.centre` for a holding side.
+
+So the reading was right about the code it read and wrong about which code runs.
+**No amount of care inside those two files could have shown that**, which is why
+the finding was held out of this document until the lane that owns the solve
+ruled on it.
+
+### The general lesson, because three lanes reached three different wrong answers
+
+The question was what the ball does during the carry. One lane said an authored
+**path**. This lane said a **held point**. Neither was true.
+
+**The position is authored constant in one frame and moving in another.** That is
+a third thing, and neither of the first two contains it. "Constant offset" and
+"stationary ball" are the same sentence only if the frame is fixed, and nobody
+asked what frame it was.
+
+The movement lane met the same fault from the other side within the hour, by
+measuring the ball against the shoulder midpoint instead of the engine's chest
+anchor, and nearly published a refutation on it. **One phrase, two origins, two
+lanes, one morning.** That pairing is why it is recorded here as a rule rather
+than as an anecdote: **a position is not a value until its frame is stated**, and
+this contract has now met that in three places — the ball anchor in section 5,
+the trunk lean in section 9, and the carry here.
+
+### What this does to the sixth question
+
+It moves it upstream, and it now has two legs rather than one.
+
+1. **A mechanical flick has to move the ball**, and the ball's carry position is
+   an authored constant riding her chest. So a carry that ACCELERATES must be
+   authored where none exists, and there is no source for its shape. That is
+   upstream of the Tactics boundary entirely.
+2. **The speed a flick would replace is a drill feed**, and its own comment says
+   a game pass is faster. So the mechanical route is not only a way to source an
+   unsourced number. It is a way to replace a number the author already recorded
+   as the wrong kind.
+
+Neither leg changes what the boundary would have to carry. Both change what has
+to exist upstream before the boundary question can be answered at all.
 
 ---
 
