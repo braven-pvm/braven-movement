@@ -59,19 +59,30 @@ her own motion.**
 That is why the wrist turns only 1.07 to 5.55 degrees through contact: the hand
 grips a ball that has no motion of its own to follow.
 
-## The module the claim was traced in is not on the library path
+## The FUNCTION the claim was traced in is not on the library path. The module is.
 
-The contract lane read `contact_solve.py:530`, where the ball centre is derived
-when a caller passes none, and named its own limit: it had not traced the
-callers.
+**A first version of this section was headed "the module ... is not on the
+library path", and its own body said `solve_contact`.** The heading overstated
+the text under it, which is the fault this repository records most often, and
+two lanes were within one sentence of generalising it. It is corrected here and
+the distinction is the point.
 
-**`solve_contact` has exactly one caller in the repository, and it is that
-module's own `main()`.** It is a spike entry point. The path the library build
-uses is `possession.py`'s frames into `possession_solve.py:245`, which takes
-`frame.centre` for a holding side.
+**The function is not reached.** `solve_contact`, which contains the
+`contact_solve.py:530` fallback the contract lane read, has exactly one caller in
+the repository and it is that module's own `main()`. It is a spike entry point.
+The path the library build uses is `possession.py`'s frames into
+`possession_solve.py:245`, which takes `frame.centre` for a holding side.
 
-So that reading was **right about the code it read and wrong about which code
-runs**. The mechanism it described is real and lives elsewhere.
+**The MODULE is reached, and its constants are load-bearing.**
+`possession_solve.py` imports `elbow_poles` and `upper_arm_aim` from
+`contact_solve` at lines 35 and 36 and calls them at 304 and 308. Both sit
+outside `solve_contact`. So `ELBOW_POLE_ANGLE_DEGREES` at line 127 —
+**the 31.3 a coach is being asked to move to 37.3** — is reached by every solve
+the library performs. Found by the movement-science lane and verified here.
+
+So the contract lane's reading was **right about the code it read and wrong about
+which code runs**, and "`contact_solve` is a spike" would be wrong in the other
+direction. **A file is not on or off the path. Its functions are.**
 
 ## The wrong origin, kept rather than deleted
 
