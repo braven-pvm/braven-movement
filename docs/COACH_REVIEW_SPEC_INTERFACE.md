@@ -208,6 +208,36 @@ rather than defaulting to degrees. **A question that cites a measure must cite i
 by that key**, and the generator asks the engine for the unit rather than
 trusting the specification's prose.
 
+**REFUSAL 3b: A FIGURE THAT IS A POSITION OR A DIRECTION MUST NAME ITS FRAME,
+EXACTLY AS A MEASURE MUST NAME ITS UNIT.**
+
+**A unit stops a width being read as an angle. A frame stops a body-relative
+offset being read as a world one. Neither can be recovered from the number.**
+
+**This is not hypothetical and it cost an afternoon.** The word `ahead` means two
+different things on the two sides of the job boundary, and **both are correct**.
+The engine AUTHORS in her frame: `motion_track` and `ball_track` both place a
+point as `chest + rotation @ [across, up, ahead]`, and `possession.to_offset`
+inverts it with the same rotation. **The JOB TRANSMITS world geometry**, which
+the renderer adds with no rotation at all.
+
+**The two agree exactly on a square athlete and diverge with her turn.** On
+`hooks_outside_hand`, 48.22 degrees turned at the first frame, reading item 5's
+travel in the wrong frame gave 14.48 cm instead of 12.71 and **reversed the
+finding**: the drill appeared to be the wider of the two when it is the milder.
+Two lanes published that reversal and both withdrew it. Treating a job vector as
+her frame puts the ball 154.7 cm from where the receipt records it, against
+20.45 mm, **a factor of about seventy-five**.
+
+**So the generator refuses a vector or a position that does not declare its
+frame**, and the declaration is the field's own rather than the prose's.
+
+**This rule is the video lane's, from the rendering lane's finding.** It
+generalises the unit rule above rather than adding a case beside it, and it is
+recorded in `docs/FOOTAGE_PIPELINE.md` as a requirement on the generator. **No
+refusal in this document would have caught a caption that mixed the two frames**,
+which is why it is here and not only there.
+
 **Every closed question must offer a way to decline.** "Cannot tell from this" is
 not a courtesy. A coach forced to choose gives an answer that reads as data and
 is not.
