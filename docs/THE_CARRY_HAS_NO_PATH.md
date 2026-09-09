@@ -8,6 +8,24 @@ Everything below is the correction.
 Measured against `13148a7`. The instrument is `scripts/carry_path.py`.
 `spikes/movements/` is gate 4 and untouched.
 
+## The withdrawal index: the false sentences, verbatim
+
+**So that a reader who finds a false sentence also finds its death, in one
+search.** Each is quoted exactly as it was written, with the commit that wrote it
+and the commit that withdrew it.
+
+| the false sentence, verbatim | written | withdrawn |
+|---|---|---|
+| `# The carry has no path, and the ball is pinned to her` | `48f7a77` | `0edb900` |
+| `**So reading 1 is wrong: there is no path.**` | `48f7a77` | `0edb900` |
+| `**THE BALL IS PINNED TO HER. Every centimetre it travels before the release is her own motion.**` | `48f7a77` | `0edb900` |
+| `**The question is no longer how many numbers change. It is how many must be CREATED, and from what.**` | `48f7a77` | `0edb900` |
+| `## The module the claim was traced in is not on the library path` | `f410ec3` | `bfd411e` |
+
+**The branch is merged whole and the false commits stay in the history.**
+Rewriting them out would be a silent edit one level up, which is the fault this
+lane has spent the day recording. The withdrawals are the record.
+
 ## What was claimed, and what is true
 
 | claimed on 2026-09-09 | true |
