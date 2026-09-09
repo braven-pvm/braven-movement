@@ -280,16 +280,73 @@ class NoProducerOnThisBranchTest(unittest.TestCase):
     def setUp(self):
         self.module = _load()
 
-    def test_no_producer_on_this_branch_writes_the_field(self):
+    # The producer's key count, once one exists here. Not asserted while none
+    # does, because there is nothing to count.
+    EXPECTED_KEYS = 1
+
+    # The sentence in `render_receipt.py` that becomes FALSE the moment a
+    # producer lands here. Asserted absent once one exists, so the note cannot
+    # outlive the fact it describes.
+    STALE_NOTE = "ON THIS BRANCH NO PRODUCER WRITES THE FIELD AT ALL"
+
+    def test_the_producer_in_THIS_repository_decides_the_field(self):
+        """NO SKIP ON ANY PATH, and both paths assert.
+
+        The artefact is `spikes/export_blender_job.py` in THIS repository, which
+        is tracked, so the answer is reproducible and does not depend on what any
+        other session has checked out.
+
+            the function is ABSENT   assert the field appears nowhere in the file.
+                                     Today's state: the producer has not merged,
+                                     and checks 2 to 4 are unreachable.
+            the function is PRESENT  parse the keys it returns and assert the
+                                     count. Reaching this branch at all means the
+                                     notes calling the field unreachable are now
+                                     wrong and must be corrected.
+
+        The earlier version skipped when a PATH was missing, which is a statement
+        about one machine. This fails or asserts on a statement about the
+        repository.
+        """
+        import ast
+
         producer = REPO / "spikes" / "export_blender_job.py"
         self.assertTrue(producer.is_file(), producer)
         source = producer.read_text(encoding="utf-8")
-        for spelling in ("solveParameters", "solve_parameters"):
-            self.assertNotIn(
-                spelling, source,
-                "a producer now writes the field on THIS branch; checks 2 to 4 "
-                "have become reachable and every note calling them unreachable "
-                "must be corrected")
+
+        if "def solve_parameters" not in source:
+            for spelling in ("solveParameters", "solve_parameters"):
+                self.assertNotIn(
+                    spelling, source,
+                    "the field is mentioned here without a producer function; "
+                    "read the file before trusting any note about reachability")
+            return
+
+        keys = []
+        for node in ast.walk(ast.parse(source)):
+            if isinstance(node, ast.FunctionDef) and node.name == "solve_parameters":
+                for sub in ast.walk(node):
+                    if isinstance(sub, ast.Dict):
+                        keys = [k.value for k in sub.keys
+                                if isinstance(k, ast.Constant)]
+        self.assertEqual(
+            len(keys), self.EXPECTED_KEYS,
+            "A PRODUCER HAS MERGED AND ITS KEY COUNT IS NOT WHAT THE NOTES SAY. "
+            "Check 3 is live as soon as this count exceeds one. Correct "
+            "`render_receipt.py`, this file and `docs/HANDOFF_RENDERING.md` "
+            "together.")
+
+        # AND THE NOTE MUST MOVE WITH THE CODE. A producer arriving with ONE key
+        # would otherwise pass every assertion above while `render_receipt.py`
+        # still tells a reader that checks 2 to 4 cannot be reached. Tying the
+        # two together is the only thing that stops the note going stale on an
+        # ordinary, expected event.
+        guard = (REPO / "render_receipt.py").read_text(encoding="utf-8")
+        self.assertNotIn(
+            self.STALE_NOTE, guard,
+            "A PRODUCER NOW WRITES THE FIELD ON THIS BRANCH, so checks 2 and 4 "
+            "are reachable, and `render_receipt.py` still says they are not. "
+            "Correct that note, this docstring and `docs/HANDOFF_RENDERING.md`.")
 
     def test_a_real_job_on_this_branch_yields_none(self):
         """Read from an artefact this branch actually has, not from a belief."""
