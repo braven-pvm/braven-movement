@@ -268,6 +268,45 @@ durable half**, which is the split the document argues for everywhere else.
 **Naming the gap is not a commitment to close it.** Whether twelve more documents
 are worth classifying is a decision, and this document does not take it.
 
+### And a second rule, because the same sentence was wrong twice: check a correction before committing it
+
+**A CORRECTION ARRIVES WITH THE SAME PROVENANCE PROBLEM AS THE CLAIM IT
+CORRECTS.** On 2026-09-09 one sentence was wrong twice in a row, in the same way,
+and the second attempt was written by the lane that had just been told about the
+first.
+
+The rendering lane sent replacement text saying its fifth refusal was dormant
+because "the producer records exactly ONE parameter". **This lane checked instead
+of committing, and the tree said the producer records NONE.** A second
+replacement followed, and it described code sitting on two unmerged branches.
+
+**Had either been committed in good faith, main would carry a second false
+sentence behind the first**, and the record would show this lane putting it there
+twice.
+
+> **A correction is checked against the tree before it is committed, exactly as a
+> claim is. A correction from a lane with more standing on the file is checked
+> HARDER, not less**, because standing is what makes it easy to accept.
+
+### The case that makes both rules necessary: one contract, two branches
+
+**`solveParameters` has a READER on one branch and a PRODUCER on another.**
+
+| tree | producer | reader | what the guard can do |
+|---|---|---|---|
+| main | absent | absent | the field does not exist |
+| main and the rendering lane's branch | absent | present | **only refusal 1 can fire** |
+| main and both branches | present, one key | present | 1 unreachable, 2, 3 and 4 live, 5 dormant at one key |
+
+**REACHABILITY IS A PROPERTY OF THE MERGE AND NOT OF EITHER BRANCH.** Two lanes
+answered correctly about their own trees and got different answers, and **a gate
+on either branch alone cannot settle it.**
+
+**So a document describing that contract is false on main, false on either branch
+alone, and true only after both land.** That is why the tense rule says "not on
+main" rather than "not written yet": **a thing can exist, twice, and still not be
+true anywhere.**
+
 ---
 
 ## This document is MIXED by its own rule
