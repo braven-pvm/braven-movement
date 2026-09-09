@@ -268,9 +268,27 @@ class NoProducerOnThisBranchTest(unittest.TestCase):
 
     ONE TEST IN THIS CLASS DOES SKIP, AND AN EARLIER VERSION OF THIS DOCSTRING
     SAID NONE DID. `test_a_real_job_on_this_branch_yields_none` reads a job file
-    from `spikes/poc-output/`, which is in `.gitignore` at line 13 with ZERO job
-    files tracked anywhere. So it skips on every clean clone and on the runner,
-    and it runs only on a machine that has rendered.
+    from `spikes/poc-output/`, which is in `.gitignore` at line 13.
+
+        git ls-files "*.job.json"      0
+        git ls-files "*.render.json"   0
+
+    So no clone of any kind has committed input for it, which is why the answer
+    was never a fixture.
+
+    AND IT VARIES BY WORKTREE, NOT BY MACHINE, which is worse than the first
+    version of this note said. Enumerated across the ten checkouts on this one
+    machine on 2026-09-09: five have no job files and five have between one and
+    twelve. THE MAIN CHECKOUT IS ONE OF THE FIVE WITH NONE. So "it ran here" is a
+    statement about a working DIRECTORY, and the runner at least fails
+    consistently.
+
+    THE COUNTS ALSO MOVE WHILE YOU MEASURE THEM. The orchestrator enumerated the
+    same ten minutes earlier and got 2 and 4 where this lane got 0 and 3, on two
+    worktrees belonging to lanes that were committing at the time. Neither count
+    is wrong. `spikes/poc-output` is each lane's own untracked accumulation, so
+    the population is not stable enough to state a split as a fact -- only the
+    shape is: some skip, some run, and which is which changes.
 
     That claim was checked here, on a machine that HAS rendered, and reported as
     "nothing skips". Moving the job files aside for one run shows the skip. The
