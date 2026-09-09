@@ -1,6 +1,8 @@
 # The coach morning: what to ask, and the evidence behind each question
 
-**Items 1 to 9 were re-measured on `ac240b2` with a clean tree.** Items 10 and
+**Items 1 to 9 were re-measured on `ac240b2` with a clean tree. ITEM 6 IS THE
+EXCEPTION AND ITS TABLE NAMES ITS OWN BUILD**, because one of its eight rows was
+read on a pose that drill no longer holds. Items 10 and
 above were added later, as each drill was authored, and **each names the commit
 its own figures were read on, or says that it carries no figure** — item 18 is
 the one that carries none — do not read the `ac240b2` line as covering
@@ -17,8 +19,8 @@ The questions are for Erin and Marius. They are written to be answerable by a
 coach watching the athlete, not by reading a number. Where the engine has an
 opinion it is stated as a measurement and never as a recommendation.
 
-**Eighteen numbered items.** One, item 7, is STRUCK, because it was raised on a
-measurement the solver read from a second solution for that drill. **Fourteen
+**Nineteen numbered items.** One, item 7, is STRUCK, because it was raised on a
+measurement the solver read from a second solution for that drill. **Fifteen
 carry engine measurements. Items 8, 10 and 18 do not**, and neither claims to: item
 8 names the constant that follows from item 2's answer, item 10 compares two
 written vocabularies, and item 18 asks for two angles that nothing sources.
@@ -261,21 +263,49 @@ to Marius with this evidence before anybody touches it.
 
 **The question.** Watch the ready position. Is she showing the passer a target?
 
-**What the engine does.** Wrist to wrist at the first frame:
+**What the engine does.** Wrist to wrist at the first frame, on the engine's
+solved skeleton, checked against archive `coach-figures-2413f9d`:
 
-| drill | wrist to wrist |
-|---|---|
-| `deflect_high` | 18.29 cm |
-| `hooks_jump_pull_in` | 19.83 cm |
-| `double_foot_landing` | 19.91 cm |
-| `two_hand_snatch_pull_in` | 20.08 cm |
-| `two_hand_snatch_straight_back` | 20.08 cm |
-| `two_hand_catch_chest` | 20.10 cm |
-| `one_hand_snatch_to_other_hand` | 32.15 cm |
-| `hooks_outside_hand` | 45.68 cm |
+| drill | wrist to wrist | as this item read it on `ac240b2` |
+|---|---|---|
+| `deflect_high` | 18.29 cm | 18.29 |
+| `hooks_jump_pull_in` | 19.83 cm | 19.83 |
+| `double_foot_landing` | 19.91 cm | 19.91 |
+| `two_hand_snatch_pull_in` | 20.08 cm | 20.08 |
+| `two_hand_snatch_straight_back` | 20.08 cm | 20.08 |
+| `two_hand_catch_chest` | 20.10 cm | 20.10 |
+| `one_hand_snatch_to_other_hand` | 32.15 cm | 32.15 |
+| `hooks_outside_hand` | **40.36 cm** | 45.68, **MOVED** |
+
+**AMENDED 2026-09-09. SEVEN OF THE EIGHT ROWS REPRODUCE TO TWO DECIMAL PLACES AND
+THE EIGHTH DOES NOT.** The eighth is `hooks_outside_hand`. All eight were re-read
+rather than the one already known to be wrong, because a single corrected row
+leaves seven unchecked rows from an earlier build under one heading.
+
+**Seven right and one wrong names the mechanism. One wrong row alone could have
+been anything.** That drill has two solved poses about 33 degrees apart. The turn
+of the shoulder line at the first frame is 48.22 degrees on the engine and 45.48
+on the rendered figure, and struck item 7 records 48.22 as the corrected pose and
+15.44 as the pose the shipped parameter set reached. **Both bodies hold the
+corrected pose and only this row was behind.**
+
+**ITEM 7 WAS STRUCK FOR THAT POSE AND NOBODY RE-MEASURED THE OTHER ROWS READ ON
+THE SAME DRILL.** This row carried a figure from it for a week.
+
+**THIS MEASUREMENT HAS NO AXIS, WHICH IS WHY IT IS SETTLED.** Wrist to wrist is a
+straight-line distance between two points, so it reads the same in her frame and
+in the room's. **Item 5's figures are a component along an axis and they are not
+settled**, which is a difference between the two items and not a difference in
+how carefully each was measured.
 
 Six of the eight hold their hands about 20 cm apart. The manual's cue for the
 snatch asks for the arm span to be shown.
+
+**THIS TABLE IS THE ENGINE AND THE COACH LOOKS AT THE FIGURE.** The two bodies do
+not hold the same pose at the ready frame, and the gap is not small on any row.
+**That measurement belongs to the rendering lane and it is in
+`docs/TWO_BODIES_PAPER.md`, which is not on main.** It is named here so that this
+table is not read as a description of what she will be shown.
 
 **Not settled.** Whether 20 cm is a shown arm span or a pair of hands held
 together. No checkpoint grades this today, so nothing in the engine will notice
@@ -783,6 +813,60 @@ If the paper changes before the morning, this item's account of what is sourced
 changes with it. **Its account of the RULING has already changed once**, and the
 sequence above is the record of that.
 
+## 19. Which of the cues you teach are distances rather than shapes?
+
+**The question, and it is for Erin.** The manual's cues are written in the words
+a coach uses. Some name a SHAPE, such as how wide the elbows sit. Some name a
+DISTANCE, such as how far the ball is from the chest. **Which of yours are
+distances?**
+
+**Why it is asked.** This engine grades angles. **A cue that names a distance has
+no instrument here, and a checkpoint has been authored for one and withdrawn
+twice.** Her answer sizes the gap, and no measurement in this repository can.
+
+### Two experiments, and the second is the one that matters
+
+**THE FIRST FAILED OPENLY.** A checkpoint for the manual's "don't pull ball back
+behind head" was authored on `netball_chest_pass` and mutation-tested. Moving the
+step key 13.2 cm, which is more than half a netball's diameter, moved every
+measure this engine has by at most 5.1 degrees. **That is the threshold this
+repository calls meaningless. It passed the mutation, so it was not a check, and
+it was deleted rather than kept green.**
+
+**THE SECOND LOOKED LIKE IT WORKED.** The same checkpoint was authored again on
+`netball_overhead_pass`. Swept against its band, **a 26 cm pull-back, with the
+ball well behind her head, PASSED at 114.99**, and the whole range from 0 to 26 cm
+moved the measure 7.7 degrees. The failure at 27.7 cm was a SOLVER BASIN FLIP.
+The elbow's z ran +8.5 to -12.0, swinging 20.5 cm from in front of the shoulder to
+behind it, while the wrist moved 0.2 cm and the ball did not move at all.
+
+**A GREEN CHECK THAT WOULD HAVE SHIPPED IS WORSE EVIDENCE ABOUT THE ENGINE THAN A
+CHECK THAT PLAINLY DID NOTHING.** The first deletion suggests the answer is a
+linear measure. **The second shows an angle measure that appeared to supply one
+and did not.**
+
+### Four drills, counted from the list rather than summarised
+
+| drill | the cue, and what quantity it names |
+|---|---|
+| `netball_chest_pass` | "don't pull ball back behind head" — a DISTANCE. Checkpoint deleted |
+| `netball_overhead_pass` | the same cue — checkpoint deleted for the worse reason above |
+| `netball_bounce_pass` | "bounce approximately 1m in front of receiver" — a POSITION; "keep ball low" — a HEIGHT; "pull the ball to the side" — a LATERAL position |
+| `netball_one_hand_high_pass` | "pull the ball up as high as arm can go" — a HEIGHT, and it is the sentence that drill exists for |
+
+Refer to the row in `docs/KNOWN_ISSUES.md` that records both deletions and all
+four drills. It states the pattern once: **the manual cues lengths, and a length
+needs a measure whose unit says so.**
+
+**THIS ITEM IS NOT A REQUEST FOR AN INSTRUMENT.** It asks which class of cue she
+teaches in. Whether the engine should grow a linear measure is a separate
+decision, and it belongs to Marius after her answer rather than before it.
+
+**Not settled.** How much of her coaching is distance and how much is shape.
+**That number does not exist and only she can supply it.**
+
+---
+
 ## Three items with no engine evidence
 
 These are on the agenda and this document has nothing to add to them.
@@ -799,7 +883,8 @@ These are on the agenda and this document has nothing to add to them.
 
 ## Provenance
 
-**Items 1 to 9** were read on `ac240b2` with a clean tree, the tip that passed
+**Items 1 to 9, EXCEPT ITEM 6**, were read on `ac240b2` with a clean tree, the
+tip that passed
 the suite at 564 tests and passed the clip gate on the morning of 2026-09-02.
 Those figures come from one solve of each of the eight drills that existed then,
 plus one preview solve at 37.3 degrees.

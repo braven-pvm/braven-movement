@@ -159,6 +159,13 @@ NO_SOLVE_PARAMETERS = (
 )
 
 
+MALFORMED_SOLVE_PARAMETERS = (
+    "the job's `{field}` is a {kind}, not a mapping of name to value. A job that "
+    "says something unreadable is not a job that says nothing, and rendering it "
+    "would write a receipt claiming no parameters were recorded."
+)
+
+
 def solve_parameters(job: dict) -> dict | None:
     """What the job says the solve was set to. None when it says nothing.
 
@@ -166,11 +173,27 @@ def solve_parameters(job: dict) -> dict | None:
     and a receipt with the key set to null read the same to a careless reader
     and mean different things: one predates the field and one was rendered from
     a job that carried no parameters. The renderer writes null for the second.
+
+    AND A THIRD STATE WAS COLLAPSED INTO THE SECOND UNTIL THE CHARACTER AND
+    ANIMATION LANE READ THIS. A job whose `solveParameters` is a list or a
+    string returned None, so the receipt said null, which reads as "this job
+    carried no parameters". It carried some and they were unreadable. That is
+    the same fault this docstring was written to guard, one state further along.
+
+    So a WRONG TYPE now raises. It is not this lane's fact to correct and not
+    this lane's fact to paper over: a broken contract is refused rather than
+    guessed at. An EMPTY mapping still returns None, because `{}` is a
+    well-formed statement that there are none.
     """
-    found = job.get(SOLVE_PARAMETERS)
-    if not isinstance(found, dict) or not found:
+    if SOLVE_PARAMETERS not in job:
         return None
-    return found
+    found = job[SOLVE_PARAMETERS]
+    if found is None:
+        return None
+    if not isinstance(found, dict):
+        raise SystemExit("REFUSED: " + MALFORMED_SOLVE_PARAMETERS.format(
+            field=SOLVE_PARAMETERS, kind=type(found).__name__))
+    return found or None
 
 
 def refuse_unverifiable_pair(parameter: str, receipt_a: dict,

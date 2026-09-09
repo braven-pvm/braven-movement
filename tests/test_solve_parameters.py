@@ -47,14 +47,36 @@ class SolveParametersTest(unittest.TestCase):
         self.assertIsNone(self.module.solve_parameters({}))
 
     def test_an_empty_mapping_is_not_parameters(self):
-        """An empty dict says nothing and must not read as "recorded"."""
+        """An empty dict is a well-formed statement that there are none."""
         self.assertIsNone(self.module.solve_parameters({"solveParameters": {}}))
 
-    def test_a_wrong_type_is_not_parameters(self):
-        for wrong in ("31.3", 31.3, ["a"], None):
+    def test_an_explicit_null_is_not_parameters(self):
+        """A receipt rendered from a job that predates the field round-trips."""
+        self.assertIsNone(self.module.solve_parameters({"solveParameters": None}))
+
+    def test_a_wrong_type_REFUSES_rather_than_reading_as_none(self):
+        """THE THIRD STATE ON THE LINE THIS FIELD DRAWS.
+
+        Raised by the character and animation lane on 2026-09-09. A job whose
+        `solveParameters` is a list or a string used to return None, so the
+        receipt said null, which reads as "this job carried no parameters". It
+        carried some and they were unreadable, and those are different facts
+        about a picture. A broken contract is refused, never guessed at.
+        """
+        for wrong in ("31.3", 31.3, ["ELBOW_POLE_ANGLE_DEGREES"], 0, True):
             with self.subTest(wrong=wrong):
-                self.assertIsNone(
-                    self.module.solve_parameters({"solveParameters": wrong}))
+                with self.assertRaises(SystemExit) as caught:
+                    self.module.solve_parameters({"solveParameters": wrong})
+                self.assertIn("not a mapping", str(caught.exception))
+                self.assertIn(type(wrong).__name__, str(caught.exception))
+
+    def test_the_three_states_are_distinguishable(self):
+        """Absent, null-or-empty, and malformed must not read the same."""
+        module = self.module
+        self.assertIsNone(module.solve_parameters({}))
+        self.assertIsNone(module.solve_parameters({"solveParameters": {}}))
+        with self.assertRaises(SystemExit):
+            module.solve_parameters({"solveParameters": "31.3"})
 
 
 class RefuseUnverifiablePairTest(unittest.TestCase):

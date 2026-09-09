@@ -39,6 +39,9 @@ from render_receipt import (  # noqa: E402
     render_outcome,
     solve_parameters,
 )
+# What the receipt may claim about the assets that drew the figure. It has no
+# Blender in it, so a test can call it; this module's own tests skip.
+from asset_licences import source_asset_records  # noqa: E402
 # The repository's ONE build stamp, shared with every other receipt this
 # project writes, and the shape `archive_receipts.py` reads. It is cached
 # for the life of the process, so every receipt of one run names one build.
@@ -640,6 +643,13 @@ class Studio:
             self.assets,
             self.source_assets,
         ) = create_athlete(config.athlete, config.presentation)
+        # THE LICENCE IS CHECKED HERE, BEFORE ANY FIGURE IS DRAWN, and not at
+        # the receipt. An asset this repository has not licensed must not cost
+        # a coach half an hour of rendering before it is refused, and a receipt
+        # written for such a run would claim a licence it does not have.
+        # `docs/LICENSING.md` requires every newly selected MPFB asset to be
+        # reconfirmed before publication; until now nothing enforced it.
+        self.source_asset_records = source_asset_records(self.source_assets, sha256)
         self.basis = {
             bone.name: bone.matrix_basis.copy() for bone in self.rig.pose.bones
         }
@@ -908,7 +918,16 @@ def render_job(studio: Studio, job: dict, job_path: Path, args,
         # receipt that predates the field and one rendered from a job without
         # parameters do not read the same.
         SOLVE_PARAMETERS: solve_parameters(job),
-        "sourceAssets": [str(path) for path in studio.source_assets],
+        # Path, sha256 AND licence per asset, the shape the reference generator
+        # already writes. A path alone cannot tell two MPFB installations apart,
+        # and `docs/ARCHITECTURE.md` rule 7 asks for the hashes. Resolved once
+        # when the athlete was built, so this line cannot fail here.
+        #
+        # BOTH KEYS SURVIVE THIS MERGE DELIBERATELY. They were inserted and
+        # replaced on ADJACENT lines of one dict by two lanes on one day, and a
+        # resolution keeping the old `[str(path) for path in ...]` comprehension
+        # would drop every hash and licence without failing anything.
+        "sourceAssets": studio.source_asset_records,
         "animation": animation,
         # The phases that DREW, then the phases that could not, each with its
         # reason. A reader counting `phases` alone would see a short list and
