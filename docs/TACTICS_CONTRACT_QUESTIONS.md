@@ -1108,20 +1108,34 @@ question to Marius: "Fifteen channels carry no hand. A flick reaches the coach's
 figure and the receipt and stops there unless the contract gains channels." Both
 lanes are asking one question, and neither can answer it alone.
 
-### What the ball does during the carry, and a correction of my own trace
+### What the ball does during the carry: under measurement, and not stated here
 
-Ruled by the movement lane on 2026-09-09, measured across all 76 held frames of
-each of the four passes. Cited from `15d9857` on `lane/movement-release-hand`,
-which is **NOT merged**, so these figures may move.
+**This subsection carried two claims on 2026-09-09 and both were withdrawn the
+same day.** They said there is no authored carry path, and that the ball's
+pre-release travel is the athlete's own motion. **Both are false.**
 
-**There is no authored carry path.** `ball.offset_at` returns one identical
-offset at every phase of the carry, in all four passes. Each ball file authors
-two keys at the same triple, both before phase 0.02, and the function clamps
-every later phase to the nearest end.
+**The carry is authored, in the technique file rather than the ball file.** Every
+one of the twelve technique files in `spikes/movements/` carries an
+`afterContact` path, and `spikes/possession.py` reads it: `carry_path` at line
+238, called at 419, sampled at 525. On the chest pass that path has four keys
+and it moves.
 
-**The offset is expressed in the athlete's frame, and she moves, so the ball
-rides her.** It travels 0.36 cm per frame on the chest pass and up to 1.60 on the
-one-hand-high, and every centimetre of that is her own motion.
+**The mechanism is being measured by the movement lane and is deliberately NOT
+restated here.** It has been reported to this lane twice with different content,
+so a third-hand account in a contract document would be worth less than a
+pointer. The files above are the pointer. When that lane packs a corrected
+result, this subsection cites it.
+
+**What was wrong with my reading, because that part is mine and it is useful.** I
+read `ball_track.offset_at`, found two identical keys and a clamp, and reported
+it as the carry. That reading is CORRECT and it is about the FLIGHT offset. The
+carry is a different authored thing in a different file, and I never opened it.
+
+**That is the same fault as the one below it, one level up.** Below, a
+single-caller check on a FUNCTION became a claim about a MODULE. Here, a check on
+one FILE became a claim about a mechanism authored in another. The rule is the
+same at both levels: **a sentence must have the scope of the check that was
+run**, and "the ball file authors no carry" is not "there is no authored carry".
 
 **I traced this through the wrong module, and the correction is worth more than
 the finding.** I read `contact_solve.solve_contact`, which places the ball centre
@@ -1167,32 +1181,38 @@ So the reading was right about the code it read and wrong about which code runs.
 the finding was held out of this document until the lane that owns the solve
 ruled on it.
 
-### The general lesson, because three lanes reached three different wrong answers
+### The general lesson, and it is about scope rather than about the carry
 
-The question was what the ball does during the carry. One lane said an authored
-**path**. This lane said a **held point**. Neither was true.
+**A first version of this subsection drew its lesson from the carry, and the
+carry turned out to be the wrong example.** It said one lane had answered "a
+path", this lane "a held point", and that neither was true. The path answer was
+right, and it was this lane that was wrong.
 
-**The position is authored constant in one frame and moving in another.** That is
-a third thing, and neither of the first two contains it. "Constant offset" and
-"stationary ball" are the same sentence only if the frame is fixed, and nobody
-asked what frame it was.
+The rule that survives is the one the carry actually demonstrates, and it is
+stated above: **a sentence must have the scope of the check that was run.** It
+appeared three times in one morning at three different levels — a field against a
+record, a function against a module, and one authored file against another — and
+in two of those three the error was made independently by two readers of the same
+evidence.
 
-The movement lane met the same fault from the other side within the hour, by
-measuring the ball against the shoulder midpoint instead of the engine's chest
-anchor, and nearly published a refutation on it. **One phrase, two origins, two
-lanes, one morning.** That pairing is why it is recorded here as a rule rather
-than as an anecdote: **a position is not a value until its frame is stated**, and
-this contract has now met that in three places — the ball anchor in section 5,
-the trunk lean in section 9, and the carry here.
+**A separate rule stands on its own two instances and does not need the carry.**
+**A position is not a value until its frame is stated.** The ball anchor in
+section 5 is expressed in arm lengths the clip never sends. The trunk lean in
+section 9 is measured from two different origins with the same apparent meaning.
+Neither of those depends on anything the movement lane is still measuring, which
+is why the rule is left resting on them.
 
 ### What this does to the sixth question
 
 It moves it upstream, and it now has two legs rather than one.
 
-1. **A mechanical flick has to move the ball**, and the ball's carry position is
-   an authored constant riding her chest. So a carry that ACCELERATES must be
-   authored where none exists, and there is no source for its shape. That is
-   upstream of the Tactics boundary entirely.
+1. **A mechanical flick has to move the ball, and the carry is already authored
+   rather than solved.** Twelve technique files carry an `afterContact` path and
+   `possession.py` reads it. So the flick's speed would have to come from a body
+   whose carry is currently written by hand, and whether that path would then be
+   solved, kept or replaced is a question for the lane that owns it. **The shape
+   of that path is under measurement and this document does not state it.** What
+   is settled is only that the question is upstream of the Tactics boundary.
 2. **The speed a flick would replace is a drill feed**, and its own comment says
    a game pass is faster. So the mechanical route is not only a way to source an
    unsourced number. It is a way to replace a number the author already recorded
