@@ -208,11 +208,33 @@ rather than defaulting to degrees. **A question that cites a measure must cite i
 by that key**, and the generator asks the engine for the unit rather than
 trusting the specification's prose.
 
-**REFUSAL 3b: A FIGURE THAT IS A POSITION OR A DIRECTION MUST NAME ITS FRAME,
-EXACTLY AS A MEASURE MUST NAME ITS UNIT.**
+**REFUSAL 3b: A FIGURE THAT IS A POSITION OR A DIRECTION MUST NAME ITS
+COORDINATE FRAME, THE WAY A MEASURE NAMES ITS UNIT.**
 
-**A unit stops a width being read as an angle. A frame stops a body-relative
-offset being read as a world one. Neither can be recovered from the number.**
+**A unit stops a width being read as an angle. A coordinate frame stops a
+body-relative offset being read as a world one. Neither can be recovered from the
+number.**
+
+**THE TWO RULES DO NOT CARRY THE SAME WEIGHT. An earlier version of this
+paragraph said "exactly as", and the video lane measured that it overstates it.**
+
+| | |
+|---|---|
+| the unit is **DERIVED** | `segment_measures.MEASURE_UNITS` declares twelve measures and `unit_of` RAISES for one it does not know. **A specification cannot lie about a unit**, because the generator asks the engine rather than the specification. |
+| the coordinate frame is **DECLARED** | **There is no equivalent register anywhere in `spikes/`.** Nothing checks a declared frame against a source of truth, so a wrong declaration passes. |
+
+**So this refusal makes a mixed caption a VISIBLE error rather than an IMPOSSIBLE
+one.** That is worth having and it is less than the unit rule earns. **Closing the
+gap needs an engine-side register of coordinate frames**, which belongs to neither
+this lane nor the video lane. It is recorded here as a want and not proposed as a
+task.
+
+**AND THE WORD `frame` ALREADY DOES TWO JOBS IN THIS PIPELINE, INSIDE THE RULE
+WRITTEN TO STOP ONE WORD DOING TWO JOBS.** The shoot manifest's
+`frameOffsetToReference` is a VIDEO FRAME INDEX. This refusal means a COORDINATE
+FRAME. **The specification will call the second `coordinateFrame` so that the two
+never meet in one schema**, and this document says "coordinate frame" throughout
+for the same reason.
 
 **This is not hypothetical and it cost an afternoon.** The word `ahead` means two
 different things on the two sides of the job boundary, and **both are correct**.
@@ -230,7 +252,8 @@ her frame puts the ball 154.7 cm from where the receipt records it, against
 20.45 mm, **a factor of about seventy-five**.
 
 **So the generator refuses a vector or a position that does not declare its
-frame**, and the declaration is the field's own rather than the prose's.
+coordinate frame**, and the declaration is the field's own rather than the
+prose's.
 
 **This rule is the video lane's, from the rendering lane's finding.** It
 generalises the unit rule above rather than adding a case beside it, and it is
