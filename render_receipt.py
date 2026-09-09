@@ -231,9 +231,30 @@ def refuse_unverifiable_pair(parameter: str, receipt_a: dict,
     1. Both receipts name the parameter. Without it the pair is two pictures.
     2. Their values DIFFER. Two pictures at one value are not a pair, and a
        caller that fetched the same job twice would otherwise be told they are.
-    3. Every OTHER parameter is EQUAL. This is the rule that carries the weight:
-       a pair whose second parameter also moved shows a difference the caption
-       attributes to the first one.
+    3. Every OTHER parameter is EQUAL. A pair whose second parameter also moved
+       shows a difference the caption attributes to the first one.
+
+       THIS RULE IS CORRECT AND TODAY IT IS DORMANT, and calling it "the rule
+       that carries the weight" was wrong. The producer records exactly ONE
+       parameter, so `set(left) | set(right)` holds one key, `key != parameter`
+       empties it, and `moved` is ALWAYS `[]`. It cannot fire against any
+       receipt this repository can currently produce.
+
+       It has no power for the same reason a reproduction test on a square
+       athlete had none: the thing it compares cannot differ. The tests build a
+       two-key pair and prove it CAN fail, which is a different claim from its
+       being able to fail on real data.
+
+       WHAT MAKES IT LIVE is the producer recording a second parameter.
+       `contact_solve.py` holds fifteen module-level constants and the movement
+       lane names four as affecting the solve and unrecorded. Until then, every
+       unrecorded parameter is equal BY CONSTRUCTION rather than by check,
+       because both jobs of a pair are built in one process from one build.
+
+       SO THE HAZARD IS A PAIR SPANNING TWO BUILDS. It could differ in all four
+       and pass every refusal, and the caption would attribute the whole
+       difference to the one recorded parameter. A coach-morning comparison is
+       exactly that case.
     4. Both are the same drill. Two drills are not a pair however the parameters
        read.
     """

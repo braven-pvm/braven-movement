@@ -213,10 +213,12 @@ class RefuseUnverifiablePairTest(unittest.TestCase):
         self.assertIn("not a pair", self._refuse(a, b))
 
     def test_it_refuses_when_another_parameter_also_moved(self):
-        """The rule that carries the weight.
+        """It CAN fail, which is not the same as being able to fail on real data.
 
         A pair whose second parameter also moved shows a difference the caption
-        attributes to the first one.
+        attributes to the first one. This test BUILDS that pair, because the
+        producer cannot produce one. Refer to
+        `TheFifthRefusalIsDormantTest` below.
         """
         a = receipt_for("netball_deflect_high",
                         {self.PARAMETER: 31.3, "STANCE_WIDTH": 0.40})
@@ -236,6 +238,72 @@ class RefuseUnverifiablePairTest(unittest.TestCase):
         a = receipt_for("netball_deflect_high", {self.PARAMETER: 31.3})
         b = receipt_for("netball_chest_pass", {self.PARAMETER: 37.3})
         self.assertIn("not a pair", self._refuse(a, b))
+
+
+class TheFifthRefusalIsDormantTest(unittest.TestCase):
+    """THE FIFTH REFUSAL CANNOT FIRE AGAINST ANY RECEIPT THIS REPOSITORY MAKES.
+
+    Found by the movement lane and the orchestrator on 2026-09-09, after this
+    lane's docstring had called it "the rule that carries the weight" and after
+    a gate had passed it three checks. It is correct and it is DORMANT.
+
+    `refuse_unverifiable_pair` compares every key EXCEPT the one under test. The
+    producer records exactly one key, so the set it iterates is empty and `moved`
+    is always `[]`. It has no power for the same reason a reproduction test on a
+    square athlete had none: the thing it compares cannot differ.
+
+    THIS TEST EXISTS TO MAKE THE DORMANCY VISIBLE RATHER THAN SILENT. It pins the
+    precondition, so the day the producer records a SECOND parameter this goes
+    RED. That is not a regression. It is the refusal becoming live, and the
+    signal to correct every note that calls it dormant -- in this file,
+    `render_receipt.py` and `docs/HANDOFF_RENDERING.md`.
+
+    A pair spanning two builds could differ in an unrecorded parameter and pass
+    every refusal, and the caption would attribute the whole difference to the
+    one recorded parameter. Today both jobs are built in one process from one
+    build, so the unrecorded ones are equal BY CONSTRUCTION and not by check.
+    """
+
+    PARAMETER = "ELBOW_POLE_ANGLE_DEGREES"
+    PRODUCER_KEYS = 1
+
+    def setUp(self):
+        self.module = _load()
+
+    def test_the_producer_records_one_parameter(self):
+        """Read from the producer's SYNTAX, not from this lane's belief.
+
+        Skipped rather than guessed when that branch is not on this machine: a
+        test that silently passes because it could not look is worse than one
+        that says it could not look.
+        """
+        import ast
+
+        producer = (REPO.parent / "amazing-chatelet-ed2e1c" / "spikes"
+                    / "export_blender_job.py")
+        if not producer.is_file():
+            self.skipTest(f"the producer is not on this machine: {producer}")
+        tree = ast.parse(producer.read_text(encoding="utf-8"))
+        keys = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.FunctionDef) and node.name == "solve_parameters":
+                for sub in ast.walk(node):
+                    if isinstance(sub, ast.Dict):
+                        keys = [k.value for k in sub.keys
+                                if isinstance(k, ast.Constant)]
+        self.assertEqual(
+            len(keys), self.PRODUCER_KEYS,
+            "the producer's key count changed; the fifth refusal may no longer "
+            "be dormant, and every note calling it so must be corrected")
+
+    def test_it_cannot_fire_on_the_producers_one_key_shape(self):
+        """The dormancy itself, pinned without needing the producer present."""
+        a = receipt_for("netball_deflect_high", {self.PARAMETER: 31.3})
+        b = receipt_for("netball_deflect_high", {self.PARAMETER: 37.3})
+        self.assertEqual(
+            self.module.refuse_unverifiable_pair(self.PARAMETER, a, b),
+            (31.3, 37.3),
+            "a one-key pair reached the fifth refusal; it is no longer dormant")
 
 
 class RendererWritesItTest(unittest.TestCase):

@@ -988,7 +988,13 @@ value is READ from the job and is not a literal or an argument.
     two receipts at the SAME value           two pictures at one value
     two DIFFERENT drills                     not a pair however they read
 
-**And the fifth, which carries the weight: every OTHER parameter must be EQUAL.**
+**And the fifth: every OTHER parameter must be EQUAL. IT IS CORRECT AND TODAY IT IS
+DORMANT**, because the producer records one parameter, so there is never another to
+compare and it cannot fire against any receipt this repository can produce. It becomes
+live when the producer records a second. Until then every unrecorded parameter is equal
+BY CONSTRUCTION, because both jobs of a pair are built in one process from one build —
+**so a pair spanning two builds could differ in an unrecorded parameter and pass every
+refusal.**
 A pair whose second parameter also moved shows a difference the caption
 attributes to the first one. So the two jobs must differ in that one name and in
 nothing else, and the rule reads the mapping to check it rather than trusting how
