@@ -110,30 +110,81 @@ of spread among the other five. **An inversion is not a tie broken two ways.**
 
 ## 6. Item 5, the second hand: the quantity crosses, the question does not
 
-**The axis is not this lane's choice.** `docs/KNOWN_ISSUES.md` records the hand
-as "11.9 cm ahead of her shoulders", so the quantity is the AHEAD component from
-the shoulder midpoint. Of four components on that origin, only world-ahead
-reproduces the recorded numbers, to 0.18, 0.00 and 0.01 cm.
+**THE AGREEMENT IS BETTER ON BOTH DRILLS THAN THIS LANE FIRST PUBLISHED ON ONE.**
+Every gap is positive and between 0.56 and 2.20 cm, on both join drills.
 
     one_hand_snatch_to_other_hand    engine  rendered    gap
-    ready f0                          11.92     11.03   0.90
-    reach f34                         11.92     11.02   0.90
-    contact f48                       12.03     11.05   0.98
-    join f70                          20.22     18.08   2.13
-    pull_in f97                       12.06     10.51   1.55
+    ready f0                          12.02     11.08   0.94
+    reach f34                         12.01     11.07   0.94
+    contact f48                       12.02     11.06   0.96
+    join f70                          20.23     18.10   2.13
+    pull_in f97                       12.07     10.52   1.55
 
-**This is the closest agreement in the pack.** Item 5's quantity crosses.
+    hooks_outside_hand               engine  rendered    gap
+    facing_away f0                    12.08     11.52   0.56
+    contact f48                       12.35     11.57   0.78
+    gather f72                        19.47     17.27   2.20
+    pull_in f97                       12.07     10.48   1.60
 
-**The question does not, and that belongs in section 1.** It asks about the
-TRAVEL, and the travel needs the frame where the hand is furthest out. The engine
-puts that at frames 58 and 60 and neither is a phase frame, so no rendered figure
-exists at the moment the question is about. The travel stays engine-only: 13.94
-and 14.48 cm.
+**This is the closest agreement in the paper.** Item 5's quantity crosses.
+
+### The axis, and how it was settled
+
+The quantity is the AHEAD component from the shoulder midpoint, **in the
+athlete's own frame**. Four reasons, in the order they carry weight:
+
+1. **The cue is stated in body terms.** Erin's note says the other hand should
+   not go away from the CENTRE OF BODY towards the ball, and the ledger says
+   AHEAD OF HER SHOULDERS. An instrument must measure the quantity the cue names.
+2. **A world number adds shoulder rotation to hand travel.** `hooks_outside_hand`
+   turns, and the turn unwinds from 48.22 degrees at the first frame to 21.76 at
+   contact to 4.06 at the last. A number carrying that rotation cannot answer a
+   question about the hand.
+3. **The engine's own `ahead` field is body-relative**, at
+   `motion_track.py:426`, `ball_track.py:368` and, inverted,
+   `possession.py:275`. There is no world-ahead anywhere in the engine.
+4. **Reproduction settles nothing here**, and this lane published a wrong axis by
+   trusting it. Refer to the record below.
+
+### The question still does not cross, and that belongs in part one
+
+It asks about the TRAVEL, and the travel needs the frame where the hand is
+furthest out. The engine puts those at frames 58 and 60 and neither is a phase
+frame, so no rendered figure exists at the moment the question is about.
+
+    travel, engine only    snatch 13.96 cm    hooks 12.71 cm
 
 **A CLIP WOULD NOT SETTLE IT, and the running order plans one.** `animation` is
 null on every archived receipt, and the animate path records frame counts and
-file hashes, never a per-frame joint position. A clip would DRAW the peak and
-record nothing about it.
+file hashes, never a per-frame joint position.
+
+### What this lane published on the wrong axis, and withdrew
+
+**EVERYTHING MEASURED ON THE WORLD AXIS IS WITHDRAWN. EVERYTHING ON THE BODY
+AXIS OR AXIS-FREE STANDS.** That is the whole episode in one line.
+
+    withdrawn   "item 5's conclusion reverses"
+    withdrawn   "the two drills are not the same shape"
+    withdrawn   "the hooks drill has no distinct ramp start"
+    withdrawn   the travel figure 14.48 cm and every world-axis ramp number
+    withdrawn   "the ledger's 35.6 cm is a unit conversion of the engine's key"
+    stands      the agenda's hooks row is from the struck pose, 10.73 cm off
+    stands      every item 6 row, because a 3D distance has no axis
+
+**How the wrong axis was chosen.** Four components were tried on
+`one_hand_snatch_to_other_hand` and the one that reproduced the recorded numbers
+was kept. **That athlete is square — 0.07 degrees of turn at contact — so two of
+the four are the same axis there and agreed to 0.01 cm.** The winning margin was
+0.17 against 0.18, inside the noise, and it was published as a choice.
+
+**A test with no power to separate two answers looks exactly like a test that
+chose between them.** The check is to ask what the instrument would report if the
+opposite were true.
+
+**And a second false settlement was refused rather than published.** The ledger's
+35.6 cm can be fitted to 0.13 cm by choosing one of two scales and one of four
+spine joints. **Eight combinations will produce a near-miss by chance**, so the
+fit is not evidence. Count the free choices before believing one.
 
 ## 7. Two rows of the coach morning were read on the struck pose
 

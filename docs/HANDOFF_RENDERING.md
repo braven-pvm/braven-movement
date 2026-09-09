@@ -310,9 +310,22 @@ Render the phase stills, three views each.
 ```
 
 `--job` repeats. Give it every job and one session renders the lot, which
-matters because building the athlete costs about two minutes and a phase view
-costs about seventeen seconds. Eight drills are 33 phases and 99 views, so
-about half an hour.
+matters because the athlete is built once per session.
+
+**MEASURED 2026-09-09 on `aa247ad`, on this machine, rather than remembered.**
+The previous figures said two minutes for the build and eight drills, and both
+had gone stale.
+
+    the whole process with --no-stills, which builds the athlete   7 seconds
+    one phase, three views, including that build                  64 seconds
+    so one view                                                   about 19 seconds
+
+The library is ELEVEN drills, 48 graded phases and 144 views, so a full session
+is about **46 minutes**. The old sentence said 33 phases and 99 views, which was
+the eight-drill library.
+
+**Time it again rather than trusting this.** It is one command and the number is
+a property of the machine as much as of the code.
 
 Add `--turntable 12` for twelve angles of each phase, `--animate` for the GLB
 and the video, `--no-stills` to skip the phase pictures, and
@@ -740,6 +753,41 @@ Ignoring these will cost hours. Each one already did.
     makes you kill a build goes to the coordinator at the time. Milestones can
     be batched; stoppages cannot, because the other lanes are planning around
     a build you have just abandoned.
+
+## `ahead` means two different things, one on each side of this boundary
+
+**Written 2026-09-09 after this lane published a wrong axis and withdrew it.**
+Nothing in either document said this, and it is a hazard for anyone measuring a
+quantity a coach's cue names.
+
+    UPSTREAM of the job, the engine AUTHORS in the athlete's own frame
+
+      spikes/movements/*.technique.json   `afterContact[].ahead`
+      motion_track.py:426                 chest + rotation @ [across, up, ahead]
+      ball_track.py:368                   chest + rotation @ (offset * arm)
+      possession.py:275                   the inverse, rotation.T @ (p - chest)
+
+    DOWNSTREAM, the JOB transmits WORLD geometry
+
+      ball.fromShouldersInArms            a Blender-frame vector
+      blender_movement_render.py:529      shoulders + Vector(...) * arm, NO rotation
+
+**Both are right where they are**, and the boundary rule in this document already
+explains why: a POSE crosses as GEOMETRY, because a rotation only means something
+against the rest pose it was measured in.
+
+**THE JOB'S VECTOR IS WORLD, AND THAT IS PROVEN RATHER THAN ASSUMED.** Measured
+on `2413f9d`, whose job files are byte-identical to what its receipts recorded.
+On `hooks_outside_hand/facing_away` the athlete is turned 48.22 degrees and the
+ball sits 3.5952 arm lengths out. If that vector were the athlete's frame and the
+renderer applied it as world, the ball would land **154.7 cm** from where it
+belongs. That build's receipt records **20.45 mm**, which is the worst ball anchor
+error in the library.
+
+**SO: a cue, a coach's note or an authored key speaks the athlete's frame. A job
+field speaks the world.** This lane works downstream and reached for the world
+frame to answer a question posed upstream, and every number it published on that
+axis had to be withdrawn.
 
 ## `solveParameters`, for the lane that owns a dial
 

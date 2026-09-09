@@ -10,10 +10,36 @@ This measures the ramp on each drill separately, so neither is assumed from the
 other.
 
 THE QUANTITY IS THE AHEAD COMPONENT from the midpoint of the two upper-arm
-joints, which is the origin the agenda and the ledger both state, and the
-component that reproduces their numbers. A 3D distance from the same origin
-disagrees by more than 5 cm, and that difference is in the component and not in
-the origin.
+joints, IN THE ATHLETE'S OWN FRAME. The origin is the one the agenda and the
+ledger both state. The frame is not.
+
+THE FIRST VERSION OF THIS FILE USED THE WORLD FRAME AND EVERY NUMBER IT PRINTED
+WAS WITHDRAWN. The frame was chosen by trying four components on
+`one_hand_snatch_to_other_hand` and keeping the one that reproduced the recorded
+figures. That athlete is SQUARE — 0.07 degrees of turn at contact — so world-ahead
+and body-ahead are the same axis there and agreed to 0.01 cm. A test with no
+power to separate two answers looks exactly like a test that chose between them.
+
+ON THE TURNED DRILL THEY DISAGREE ABOUT THE FINDING, not merely about a value:
+
+    hooks_outside_hand, 20 frames before contact    world +4.14 cm   body +0.28 cm
+    the ramp start over three thresholds            world 42 frames  body  2 frames
+
+The world reading carries her shoulders rotating back to square, because the turn
+unwinds from 48.22 degrees at the first frame to 4.06 at the last. A number that
+adds shoulder rotation to hand travel cannot answer a question about the hand.
+
+WHY THE ATHLETE'S FRAME IS RIGHT, in the order the reasons carry weight:
+
+  1. The cue is stated in body terms. Erin's note says the other hand should not
+     go away from the CENTRE OF BODY towards the ball.
+  2. A world number answers a different question on a turning athlete, as above.
+  3. The engine AUTHORS in her frame: `technique.json`'s `afterContact[].ahead`
+     is applied through the turn at `motion_track.py:426` and
+     `ball_track.py:368`, and inverted at `possession.py:275`.
+
+  NOT reproduction. It cannot separate the two here, and this file's own history
+  is why that is written down.
 
 WHERE THE MOVEMENT STARTS IS A THRESHOLD, SO THE THRESHOLD IS SWEPT. A single
 value would make the frame count an artefact of a choice nobody stated. Three are
@@ -63,8 +89,21 @@ def archives() -> Path:
     raise SystemExit("no .assets/archives found from this file")
 
 
+def body_forward(shoulder_l, shoulder_r):
+    """The direction the athlete faces, from her own shoulder line.
+
+    Taken from the shoulders rather than from the world, because the drill this
+    file exists for turns 48.22 degrees and unwinds to 4.06.
+    """
+    across = np.asarray(shoulder_l, dtype=float) - np.asarray(shoulder_r, dtype=float)
+    across[2] = 0.0
+    across /= np.linalg.norm(across)
+    forward = np.cross(across, np.array([0.0, 0.0, 1.0]))
+    return forward / np.linalg.norm(forward)
+
+
 def ahead_track(character, movement_id: str) -> list[float]:
-    """The free hand's ahead component, from the shoulder midpoint, every frame."""
+    """The free hand's ahead component IN HER FRAME, from the shoulder midpoint."""
     result = solve_movement(character, movement_id)
     index, points = result["index"], result["points"]
     track = []
@@ -74,7 +113,7 @@ def ahead_track(character, movement_id: str) -> list[float]:
         right = to_blender(here[index["r_uparm"]])
         wrist = to_blender(here[index["l_wrist"]])
         midpoint = (left + right) / 2.0
-        track.append(float(midpoint[1] - wrist[1]) * 100.0)
+        track.append(float((wrist - midpoint) @ body_forward(left, right)) * 100.0)
     return track
 
 
@@ -171,9 +210,18 @@ def main() -> None:
               f"{track[biggest + 1] - track[biggest]:+.2f} cm")
         print()
 
-    print("THE TWO DRILLS DO NOT SHARE A RAMP. Their peaks are at different")
-    print("frames, so the out and back windows differ in length, and any figure")
-    print("quoted once for both was measured on one of them.")
+    print("BOTH DRILLS WAIT, THEN GO. On the athlete's own axis each is nearly")
+    print("still before contact and each has a ramp start that a threshold sweep")
+    print("finds to within two frames. `docs/KNOWN_ISSUES.md` calls them the same")
+    print("shape and that is right.")
+    print()
+    print("WHAT IS NOT SHARED IS THE FRAME COUNT. The peaks sit at f58 and f60, so")
+    print("the out and back windows differ in length, and a count quoted once for")
+    print("both was measured on one of them.")
+    print()
+    print("AN EARLIER VERSION OF THIS FILE REPORTED THE OPPOSITE, on the world")
+    print("axis: that one drill had no start at all. That was her shoulders")
+    print("rotating back to square, not her hand travelling.")
 
 
 if __name__ == "__main__":

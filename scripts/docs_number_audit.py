@@ -23,6 +23,12 @@ from pathlib import Path
 DOCS = Path(__file__).resolve().parents[1] / "docs"
 
 BUILD = re.compile(r"\b[0-9a-f]{7}\b")
+# A LIMIT WORTH KNOWING: this sees only numbers with a DECIMAL POINT. An
+# integer measurement — "7 seconds", "144 views", "46 minutes" — is invisible
+# to it, and several are. Widening it to integers floods the report with every
+# count, index and version in the documents, so the narrow pattern stays and
+# the gap is written down instead of being discovered by someone trusting a
+# clean report. An integer measurement still needs its build named.
 NUMBER = re.compile(r"(?<![\w.])-?\d+\.\d+(?![\w])")
 HEADING = re.compile(r"^#{1,6}\s+(.*)")
 
