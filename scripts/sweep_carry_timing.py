@@ -105,6 +105,41 @@ def main() -> int:
         character = load_character()
         readings: dict = {}
         moved_keys: dict = {}
+        seams: dict = {}
+
+        def seam_of(result) -> tuple:
+            """The release seam: the step in hand speed the ease-out makes.
+
+            `docs/KNOWN_ISSUES.md` names this the seam and measures it two ways:
+            the wrist's speed multiplying at the release frame, and the shoulder
+            elevation stepping there. Both are taken.
+
+            THE HYPOTHESIS THIS TESTS. The ease-out begins at FULL SPEED, which
+            is right only if the incoming speed matches it. Today it does not,
+            and the mismatch is the seam. If an accelerating carry supplies that
+            speed, the seam should shrink WITHOUT the easing changing.
+            """
+            frames = result["possession"].frames
+            index, points = result["index"], result["points"]
+            rate = float(result["track"].frames_per_second)
+            release = min(n for n, f in enumerate(frames) if not f.holding)
+            sides = frames[release - 1].sides
+            side = sorted(sides)[0] if len(sides) == 1 else "l"
+            joint = index[f"{side}_wrist"]
+
+            def speed(n: int) -> float:
+                step = points[n][joint] - points[n - 1][joint]
+                return float(np.linalg.norm(step)) * rate
+
+            into = speed(release)
+            after = speed(release + 1)
+            shoulder = result["measurements"]
+            elevation = f"{'left' if side == 'l' else 'right'}ShoulderElevationDegrees"
+            step = abs(
+                float(shoulder[release + 1].get(elevation, 0.0))
+                - float(shoulder[release].get(elevation, 0.0))
+            )
+            return into, after, after / into, step
         for shift in SHIFTS:
             shutil.rmtree(movements)
             patched_movements(workspace)
@@ -118,6 +153,7 @@ def main() -> int:
                     for row in rows:
                         key = (movement_id, phase, row["measure"])
                         readings.setdefault(key, {})[shift] = row["measured"]
+                seams[(movement_id, shift)] = seam_of(result)
 
         print("    THE KEY THAT MOVED, per drill")
         for movement_id in DRILLS:
@@ -163,6 +199,20 @@ def main() -> int:
                 print(line)
 
         print()
+        print("    THE RELEASE SEAM, against the same shifts")
+        print("    does an accelerating carry close what the ease-out opens?")
+        print()
+        print(f"    {'drill':22s} {'shift':>7s} {'into cm/s':>10s} "
+              f"{'after cm/s':>11s} {'step':>7s} {'elevation deg':>14s}")
+        for movement_id in DRILLS:
+            for shift in SHIFTS:
+                into, after, ratio, elevation = seams[(movement_id, shift)]
+                mark = "  <- shipped" if shift == 0.0 else ""
+                print(f"    {movement_id.replace('netball_', ''):22s} "
+                      f"{shift:+7.2f} {into:10.1f} {after:11.1f} "
+                      f"{ratio:6.1f}x {elevation:14.2f}{mark}")
+            print()
+
         print(f"    the largest move anywhere: {worst:.2f}")
         print(f"    the largest move in a phase the change CANNOT reach: "
               f"{unreachable:.2f}")

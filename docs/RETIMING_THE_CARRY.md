@@ -88,6 +88,65 @@ Marius's ruling assumed, and both halves are now measured rather than argued.
 Erin grades by up to 22 degrees. If it lands after she grades, she has graded a
 build the engine no longer is.
 
+## The seam test: the hypothesis is HALF right, and the failing half is the one the ledger measures
+
+The orchestrator's hypothesis: the ease-out `out = 1 - (1 - t)^2` begins at full
+speed, which is right only if the INCOMING speed matches it. Today it does not,
+and the mismatch is the release seam. **If an accelerating carry supplies that
+speed, the seam should close with no change to the easing, and two decisions
+become one.**
+
+Measured on the same sweep, two ways, because `docs/KNOWN_ISSUES.md` measures the
+seam two ways.
+
+### The hand's SPEED step closes, monotonically
+
+| drill | −0.25 | shipped | +0.25 | +0.50 | +0.75 |
+|---|---|---|---|---|---|
+| `chest_pass` | 9.1x | **7.3x** | 5.6x | 3.6x | **1.7x** |
+| `overhead_pass` | 12.9x | **10.2x** | 7.5x | 4.8x | **2.3x** |
+| `bounce_pass` | 10.9x | **8.5x** | 6.3x | 4.0x | **1.9x** |
+| `one_hand_high_pass` | 0.6x | **0.6x** | 0.6x | 0.6x | 0.7x |
+
+**The mechanism is visible in the two columns underneath.** On the chest pass the
+speed INTO the release rises 33.6 to 144.3 cm/s across the sweep while the speed
+AFTER it stays at 245. **The carry supplies the incoming speed and the step
+shrinks. The follow-through is untouched.**
+
+`one_hand_high_pass` has no step to close, which is consistent: it is the drill
+whose wrist already peaks AT the release frame.
+
+### The shoulder's ANGLE step does not move at all
+
+| drill | −0.25 | shipped | +0.25 | +0.50 | +0.75 |
+|---|---|---|---|---|---|
+| `chest_pass` | 5.32 | **5.32** | 5.31 | 5.31 | 5.31 |
+| `overhead_pass` | 7.10 | **7.02** | 7.10 | 7.10 | 7.10 |
+| `bounce_pass` | 6.67 | **6.66** | 6.66 | 6.67 | 6.67 |
+
+**Flat to two decimals across a sweep that cuts the speed step by four times.**
+
+**AND THE SHIPPED COLUMN REPRODUCES THE LEDGER EXACTLY.**
+`docs/KNOWN_ISSUES.md` records "seam at 76 to 77, elevation" as **7.02 / 5.32**,
+overhead first and chest second. This instrument, built independently, reads
+7.02 and 5.32. **That is the instrument validating itself against a number it
+was not built from.**
+
+### So the two decisions do NOT collapse
+
+**The seam that closes is the one this lane named. The seam that does not is the
+one the ledger measures and the one a reviewer reported.** A retimed carry fixes
+the hand's velocity discontinuity and leaves the shoulder's angle step exactly
+where it was.
+
+**The reading, offered as a reading and not as a measurement:** the carry decides
+where the hand comes FROM, and the ease-out decides where it goes TO. The
+elevation step is in the second, so nothing on the carry side reaches it.
+
+**The easing therefore still needs its own ruling.** The hypothesis was worth
+testing and it would have been worth acting on if it had held. It does not, and
+finding that out cost one run of an instrument that already existed.
+
 ## What this does NOT say
 
 **It does not say the retiming is right.** It says it is visible. Whether the
