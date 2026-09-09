@@ -97,8 +97,16 @@ will assume whichever they met first.
 today. The manual's figure, read from photographs, is 38.6 cm between the
 elbows at contact.
 
-**EVERY LINE NUMBER QUOTED BELOW IS READ ON `4bad91b`.** A line number is true of
-one tip, the same way a figure is, so it names the tip it was read on.
+**EVERY LINE NUMBER QUOTED BELOW WAS READ ON `4bad91b` AND RE-VERIFIED ON
+`a02d9b4`.** All six ranges still contain what they are quoted for. **A CITATION
+TO A LINE IS A CLAIM ABOUT A TREE**, the same way a figure is, so it names the
+tip it was read on.
+
+**The re-verification is not ceremony.** These three files belong to lanes that
+are actively changing them. **A reader who follows an unstamped citation to the
+wrong line concludes the quotation is wrong, when the file has moved** — which is
+a worse outcome than an obviously stale number, because it discredits a correct
+quotation.
 
 **WHY THE QUESTION IS IN DEGREES AT ALL, AND IT IS NOT A DETAIL.** The dial before
 this one was `elbowWidth`, a dimensionless multiplier. Its own reader records what
