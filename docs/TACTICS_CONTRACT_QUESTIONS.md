@@ -1141,10 +1141,26 @@ file. `spikes/contact_solve.py` is very much on the library path:
 308. Those two are defined at 327 and 402, before `solve_contact` at 508 and
 outside it.
 
+Five of that file's constants sit on the library path through those two
+functions:
+
+| constant | defined | used |
+|---|---|---|
+| `ELBOW_POLE_ANGLE_DEGREES` = 31.3 | 127 | 376, inside `elbow_poles` |
+| `UPPER_ARM_AIM_OUT` = 0.55 | 146 | 434, inside `upper_arm_aim` |
+| `UPPER_ARM_AIM_DOWN` = 0.84 | 147 | 434, inside `upper_arm_aim` |
+
 **"This function is not called by the library" and "this file is not reached" are
 different claims, and only the first was measured.** The second would have
-removed the elbow pole angle from the unsourced-number register, and that
-constant is used by `elbow_poles`, which the library build does call.
+removed `ELBOW_POLE_ANGLE_DEGREES` from the unsourced-number register. That is
+the 31.3 a coach is being asked to move to 37.3, and `elbow_poles` is called by
+the library build at `possession_solve.py:304`.
+
+**Both the orchestrator and I wrote the wide sentence, an hour apart.** The
+narrow claim was measured and the wide one was published, twice, by two readers
+of the same evidence. The guard that catches it is the same one section 8 uses on
+its own carry inference: **a sentence must have the scope of the check that was
+run.**
 
 So the reading was right about the code it read and wrong about which code runs.
 **No amount of care inside those two files could have shown that**, which is why
