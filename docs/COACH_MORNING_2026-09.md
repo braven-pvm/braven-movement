@@ -216,46 +216,85 @@ defect.
 the centre of the body towards the ball. Watch the second hand join. Does it go
 too far?
 
-**What the engine does.** On the two drills where one hand takes the ball and
-the other joins, the free hand goes out ahead of her shoulders and comes back:
+**AMENDED 2026-09-09, AND ONE LINE SORTS THIS SECTION: EVERYTHING MEASURED ON THE
+WORLD AXIS IS WITHDRAWN, AND EVERYTHING MEASURED ON HER OWN AXIS OR WITH NO AXIS
+STANDS.**
 
-Measured from the midpoint of her two upper-arm joints, which is the origin
-`docs/KNOWN_ISSUES.md` used, so the two readings can be compared at all:
+**What the engine does.** On the two drills where one hand takes the ball and the
+other joins, the free hand goes out ahead of her shoulders and comes back.
+
+Measured on `2413f9d` from the midpoint of her two upper-arm joints, **along her
+own forward axis**, which is the origin and the axis `docs/KNOWN_ISSUES.md` uses:
 
 | drill | at contact | furthest out | back to | travel |
 |---|---|---|---|---|
-| `one_hand_snatch_to_other_hand` | 11.85 cm | 25.97 cm | 12.07 cm | **14.12 cm** |
-| `hooks_outside_hand` | 3.43 cm | 14.33 cm | 3.48 cm | **10.90 cm** |
+| `one_hand_snatch_to_other_hand` | 12.02 cm | 25.98 cm, frame 58 | 12.07 cm | **13.96 cm** |
+| `hooks_outside_hand` | 12.35 cm | 25.06 cm, frame 60 | 12.07 cm | **12.71 cm** |
+
+**BOTH ROWS WERE RE-READ ON ONE BUILD**, not the one that was wrong, because a
+corrected row beside an uncorrected one is a two-build table that does not say it
+is one.
+
+**BOTH DRILLS ARE THE SAME SHAPE.** Each waits, then goes, and each comes back to
+12.07 cm. The first ends 0.05 cm further out than at contact and the second ends
+0.28 cm closer. **What they do not share is the frame count**: the peaks sit at
+frames 58 and 60, so a count quoted once for both was measured on one of them.
+
+**AHEAD IS A DIRECTION IN HER FRAME AND NOT IN THE ROOM.** The engine places
+every hand and every ball as `chest + rotation @ [across, up, ahead]`, and
+`possession.to_offset` inverts it with the same rotation. **There is no
+world-forward axis in the engine.** On the second drill she stands 48.22 degrees
+turned at the first frame and about 4 degrees at the last, so a reading taken
+along the room's forward adds her shoulders unwinding to her hand's travel, and
+answers a different question.
+
+### The row this item published was wrong, and its correction of the ledger was wronger
+
+**RETRACTED.** This item stated 3.43 out to 14.33 and back to 3.48 on the second
+drill, a travel of 10.90 cm, and told a coach the drill "has moved" and "sits
+closer in" against the ledger's 13.3.
+
+**Those figures reproduce on NEITHER axis**: 7.80 cm out along the room's forward
+and 10.73 cm out along hers. **They were read on the pose that drill no longer
+holds**, which is the pose that struck item 7.
+
+**AND THE LEDGER WAS RIGHT.** Its row, introduced in `1106617` on 2026-08-27,
+records 11.9 to 26.0 to 12.0 on the first drill and 11.8 to 25.1 to 12.0 on the
+second.
+
+| against `2413f9d`, worst of the three readings | |
+|---|---|
+| the ledger, first drill | **0.12 cm** |
+| the ledger, second drill | **0.55 cm** |
+| this item's retracted row, second drill | **10.73 cm** |
+
+**A row that stood for two weeks reproduces to half a centimetre, and the
+correction published against it was nineteen times further out.** Nothing in
+`docs/KNOWN_ISSUES.md` needed changing.
+
+### Two retractions on one item, from two different causes
+
+**The first.** An earlier draft gave 17.6 and 13.1 cm at contact, from the trunk
+frame's own shoulder places rather than the solved upper-arm joints. **The origin
+was wrong.**
+
+**The second.** This item then published 10.90 cm and called it a correction of
+the ledger. **The origin was right and the pose was wrong.**
+
+**Neither was caught by its author.** The first was caught by a reader; the second
+by another lane reviewing a draft that quoted it.
 
 **WATCH THE TRAVEL, NOT THE HEIGHT ABOVE ZERO.** "Ahead of her shoulders" needs
-an origin, and the number changes completely with the choice while the movement
-does not. On the first drill, across four defensible origins, the contact
-reading ranges from 7.46 to 20.66 cm and the travel stays between 14.12 and
-14.67. The travel is the movement. The level is a choice of where to measure
-from.
-
-**Against the older reading in `docs/KNOWN_ISSUES.md`**, which records 11.9 out
-to 26.0 and back to 12.0 on the first drill and 11.8 to 25.1 to 12.0 on the
-second, both introduced in `1106617` on 2026-08-27:
-
-- **The first drill has not moved.** 11.85 to 25.97 to 12.07 against 11.9 to
-  26.0 to 12.0. The older reading reproduces on `ac240b2`.
-- **The second drill has moved**, and it is the drill the hand fix changed most.
-  Travel 10.90 cm against 13.3, and it sits closer in.
-
-**A correction to an earlier draft of this document.** It gave 17.6 and 13.1 cm
-at contact and said the hand now sits further forward on both drills. Those
-figures came from a DIFFERENT ORIGIN — the trunk frame's own shoulder places
-rather than the solved upper-arm joints — so the difference was in the
-measurement and not in the athlete. One drill had not moved at all. Retracted
-rather than corrected in place, because a coach could have repeated it.
-
-The movement is smooth either way. The hand ramps out over about thirteen
-frames and back over about thirty-nine.
+an origin AND an axis, and the number changes completely with either while the
+movement does not. On `ac240b2`, across four defensible origins, the first
+drill's contact reading ranged from 7.46 to 20.66 cm while its travel stayed
+between 14.12 and 14.67. **That survey named its origins and not its axis, and
+this amendment is what happens when the axis is the thing that moves.** Read it
+as a demonstration of the point rather than as current figures.
 
 **Not settled.** Whether travel of this size is what the cue forbids. If it is,
-the change is to the `join` and `gather` keys, which is a key retune and goes
-to Marius with this evidence before anybody touches it.
+the change is to the `join` and `gather` keys, which is a key retune and goes to
+Marius with this evidence before anybody touches it.
 
 ---
 
