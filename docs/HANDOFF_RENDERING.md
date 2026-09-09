@@ -741,6 +741,80 @@ Ignoring these will cost hours. Each one already did.
     be batched; stoppages cannot, because the other lanes are planning around
     a build you have just abandoned.
 
+## The render receipt, for anyone changing its shape
+
+Written 2026-09-09 by the rendering lane, for the character and animation lane,
+which is adding source-asset hashes and a licence to `sourceAssets`. The finding
+behind that change is correct: `blender_movement_render.py:899` writes
+`[str(path) for path in studio.source_assets]`, while the reference generator at
+`blender_mpfb_reference_catch.py:1686` writes `{"path": ..., "sha256": ...}` for
+the same assets. One of the two paths in a shipped receipt is
+`C:\Users\<name>\AppData\Roaming\...`, so it names a machine as well as a
+file.
+
+### Nothing reads `sourceAssets`, and that is measured
+
+`git grep` over the tracked tree finds ONE occurrence of `sourceAssets`, and it
+is the line that writes it. Searching for `source_assets` as well finds only the
+producer chain: `create_athlete` returns the list, `Studio` holds it,
+`render_job` writes it. No test, no script, no template and no document reads
+the field.
+
+**So this field's shape is free to change.** That is not the usual answer here,
+and it is why it is written down rather than assumed. On 2026-09-07 this lane
+widened a receipt in a way that WAS read: adding `failedPhases` created a
+partial-receipt path, and `export_manual_page.py` walked straight down it and
+built a two-figure page for a three-phase drill without saying so. Before you
+widen any other key, run the same two searches, and treat an empty result as a
+result only after the second one.
+
+### What the other keys are read by, so they are not free
+
+    generatedFrom     `spikes/archive_receipts.py` refuses a directory whose
+                      receipts carry two different stamps. It compares the WHOLE
+                      stamp dict, timestamp included, so two render processes
+                      cannot make one archive.
+    phases            `spikes/export_manual_page.py` builds one figure per entry.
+    failedPhases      both of the above refuse a receipt that carries a non-empty
+                      one, unless `--allow-partial` is passed. The rule is
+                      `render_receipt.refuse_partial_receipt`.
+    views[*].path     `export_manual_page.still_path` resolves the still beside
+                      the receipt when the recorded absolute path is not on this
+                      machine. That fallback exists because the path is absolute,
+                      which is the same defect the hashes are being added to fix.
+
+### Which builds carry `failedPhases`
+
+**None of the archived ones.** The key arrives in `f89eafd`, and every archive in
+`.assets/archives` predates it:
+
+    coach-figures-2413f9d              11 receipts, commit 2413f9d, 0 carry it
+    coach-figures-aa3f244              10 receipts, commit aa3f244, 0 carry it
+    rerender-hand-mirror-2026-09-02    16 receipts, unstamped,     0 carry it
+
+A reader that requires the key must treat its ABSENCE as "every phase drew", not
+as "unknown". `render_receipt.undrawn_phases` does exactly that, and its test
+pins it. Absence is safe here for one reason only: before `f89eafd` a drill that
+could not be fully drawn produced NO receipt at all, because the run raised and
+the stale receipt had already been unlinked. Do not carry that reasoning to a
+key where it does not hold.
+
+### Two things that will fail a run if they are forgotten
+
+1. **The run owns the working tree.** `Studio.__init__` fixes one build stamp for
+   the whole session. Edit a tracked file while a render is going and the receipt
+   records a clean tree that is no longer clean.
+2. **`sha256(path)` costs a read per asset.** There are 15 of them and they
+   include the body mesh, so hash once at `create_athlete` and carry the result,
+   rather than hashing inside the per-drill receipt block, which runs once per
+   job in a multi-job session.
+
+### The licence belongs beside the hash, not in place of it
+
+`docs/LICENSING.md` carries the CC0 determination. A receipt that names a licence
+without naming the bytes it applies to repeats the fault it is fixing, because
+the licence is then paired to a path.
+
 ## Do not grow the rasteriser
 
 `spikes/render_figure.py` draws a figure with a depth buffer in numpy. It was
