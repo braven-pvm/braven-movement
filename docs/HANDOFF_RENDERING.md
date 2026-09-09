@@ -834,10 +834,35 @@ exit 9, no receipt, the asset named in the console — and different causes.**
 **So a probe of the licence guard must use a REAL asset that is absent from the
 table.** `clothes/female_sportsuit01` is one, and it is the kit case.
 
-**AND THE TWO GUARDS COVER DIFFERENT FAULTS**, which variant A shows: the syntax
-reader catches an asset DECLARED but unlicensed, and `source_asset_records`
-catches one LOADED but unlicensed. An asset loaded without being declared would
-pass the first and be caught by the second.
+**AND THE TWO GUARDS COVER DIFFERENT FAULTS**, which variant A shows:
+
+    declared but not loaded    only the syntax reader sees it     variant A
+    loaded but not declared    only `source_asset_records` sees it
+    both                       both fire                          variant C
+
+**The second is the one that matters and it is covered**, because
+`source_asset_records` fires on anything undetermined however it entered the
+list. The first is a false positive that costs a person a look. That is the
+right way round.
+
+**A READER OF VARIANT A WOULD REASONABLY CONCLUDE THE SYNTAX GUARD IS MISSING
+EIGHT ASSETS. IT IS NOT, AND THE REASON IS A DESIGN FACT** raised by the
+character and animation lane on 2026-09-09 and checked here:
+
+    asset_path calls in the generator    7    lines 1102 to 1108
+    names in `SELECTED_MPFB_ASSETS`      7
+    entries the receipt records         15
+
+**The other eight are the `faceunits01.json` manifest and seven face targets, and
+none of them passes through `asset_path` at all.** The manifest is built from
+`ASSET_DATA / "packs" / ...` and the targets come from
+`TargetService.target_full_path`. **They are licensed by a RULE rather than by a
+name in a table** — `FACEUNITS_RULE` and `FACEUNITS_MANIFEST` in
+`asset_licences.py`.
+
+**A rule cannot drift against a list, so there is nothing there for a syntax
+guard to bind.** The seven that ARE named are the only ones that can drift, and
+they are exactly the seven it binds.
 
 **A NOTE FOR WHOEVER MEETS THE RED TEST.** Every installed MPFB asset declares
 CC0 in its own file header, 78 of 78. **That makes it tempting to add a table
