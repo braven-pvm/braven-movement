@@ -56,16 +56,18 @@ what a target asks for.
 
 ## 2. A question, as data
 
-The unit is a QUESTION, not a section. Proposed fields, with the reason for each.
+The unit is a QUESTION, not a section. **There is no `type` field**: section 3
+replaced four types with one type and an ordered answer list, so the shape a
+question takes is carried by its answer list rather than by a name.
 
 | field | what it holds | why |
 |---|---|---|
 | `key` | a stable identifier, never reused, never renamed | a coach's archived marks are stored under it |
 | `serves` | the agenda item or items it answers | no question that answers nothing; no item that silently loses its home |
-| `type` | one of the four in section 3 | the generator implements types, not one-off layouts |
 | `artefacts` | references, never paths | refer to section 4 |
 | `ask` | the text, in her language | |
-| `answer` | the options, or a unit and a range | refer to section 5 |
+| `answer` | an ORDERED LIST of parts, each with a kind | refer to section 3 |
+| `gated` | whether a part may be shown before the one before it is answered | the anti-anchoring rule, as data |
 | `basis` | what this question is measured on | refer to section 6 |
 | `movesWith` | open work that will change its numbers | refer to section 7 |
 | `renderings` | which targets this question suits | section 1's consequence |
@@ -77,55 +79,43 @@ reading two documents side by side, which is how both were found today.
 
 ---
 
-## 3. Four types
+## 3. One type, with an ordered answer list
 
-Named from what the five-four-one split actually produced.
+**AGREED WITH THE VIDEO LANE, 2026-09-09, and this is their shape rather than
+mine.** I proposed four types. The orchestrator proposed one type with three
+parts. **The video lane proposed one type with an ordered ANSWER LIST, which is
+better than either.**
 
-**`look`** — show an artefact, ask a closed question. Items 12, 13 and 15.
-The artefact carries the argument; the text only frames it.
+A question is: **artefacts to show, text to ask, and a list of answer parts, each
+with a kind.** The kinds are a choice, a number with its unit, free text, and
+none.
 
-**`open_then_closed`** — ask an open question with a free text answer, and only
-then a closed one. Item 16, and it is the type most easily destroyed by a later
-editor who wants the page tidier.
+| what I called a type | what it is |
+|---|---|
+| `look` | artefacts + `[choice]` |
+| `number` | artefacts + `[number]` |
+| `brief` | artefacts + `[]` |
+| `open_then_closed` | artefacts + `[text, choice]`, **gated** |
 
-**THE GENERATOR MUST NOT RENDER THE CLOSED HALF BEFORE THE OPEN HALF IS
-ANSWERED.** If she sees the closed options first she will very likely agree with
-them, and the answer records only that our own option was plausible. **That
-belongs in the type, not in a comment**, or it will be reordered for layout.
+**Three things follow that four types do not give.**
 
-**`number`** — ask for a value in a named unit, with the current value and the
-band shown. Items 2, 3, 8 and 11 are all of this type: a band she sets, a speed
-she sets, an angle she sets.
+- **Item 2 needs no new type.** It shows two renders AND asks for an angle, which
+  is artefacts + `[number]`. Under four types it was a hybrid that forced a
+  fourth.
+- **A brief's answer list is empty, so it CANNOT have an answer key.** That stops
+  being a rule a person must keep and becomes a property of the data.
+- **THE ANTI-ANCHORING RULE GENERALISES.** A question declares its answer list
+  **gated**, and no rendering may present part n+1 before part n is answered.
+  **That is the same rule for a survey, a room and a page**, and a machine can
+  check it. My version was a rule about one type that a generator had to
+  remember to honour.
 
-**`brief`** — no question. Item 14. It tells her something she needs before she
-looks at something else. **A brief has no answer key and must not have one**, or
-it will be counted as an unanswered question for ever.
+**Why this falls on the generator's side, in their words:** a type is a thing
+they implement, an answer kind is a thing they render. Four types means four
+layouts. One type with four answer kinds means one layout and four widgets.
 
-### Where I may be wrong
-
-**I am not sure `number` and `look` are different types.** Item 2 shows two
-renders AND asks for an angle. **The video lane should decide this**, because it
-falls on the generator's side.
-
-### A proposal to put to you, from the orchestrator
-
-**One type with three parts, rather than four types**: an OPTIONAL artefact, a
-prompt, and an answer kind. The kinds are **a choice, a number with its unit,
-free text, and none.**
-
-Item 2 is then a question with two renders and a choice, rather than a hybrid
-that needs a fourth type. **Three types force every mixed item to pick a side,
-and item 2 shows that mixed items are normal rather than exceptional.**
-
-**I agree with this and I did not see it.** My four names came from sorting ten
-items by what they need, which is a rendering question, and I turned the answer
-into types. Under the proposal `open_then_closed` is not a type either: it is
-**two questions with an ordering constraint between them**, which is a better
-description of what item 16 actually is.
-
-**The ordering constraint must survive whatever shape you choose.** However it is
-expressed, the generator must not render the closed half before the open half is
-answered. That is the one part of section 3 I would not trade.
+**I withdraw my four names.** They came from sorting ten items by what each needs
+in a room, which is a rendering question, and I turned that answer into types.
 
 ---
 
@@ -133,10 +123,35 @@ answered. That is the one part of section 3 I would not trade.
 
 **A question names what it needs. It never names a file.**
 
-- a clip, by drill and moment: `clip(netball_bounce_pass, release)`
-- a still, by drill, moment and build: `still(netball_double_foot_landing, land, <build>)`
-- a player, by the dataset it reads
-- a pair of renders, by the parameter and its two values
+**AGREED WITH THE VIDEO LANE, AND THE LIST SPLITS BY LANE.** Every form carries
+the lane that resolves it, because two forms with one name is the fault this
+project counts most often.
+
+**The video lane resolves these:**
+
+- `clip_footage(shoot, pair, moment)` — cut by frame index from each camera's own
+  frame list, both views, equal lengths
+- `still_footage(shoot, pair, moment)` — at a frame index, with the digest pinned
+- `measurement(shoot, quantity)` — from the footage manifest
+
+**These belong to the character and render lane and NEITHER OF US MAY PROMISE
+THEM:**
+
+- `still_render(drill, moment, build)` — a render still, which is what my first
+  draft called `still` and is a different thing from a footage still
+- `player(dataset)`
+- `render_pair(parameter, value_a, value_b)`
+
+**A THIRD LANE IS NEEDED TO CLOSE THIS INTERFACE, and that is a finding rather
+than an obstacle.** Four of the twenty questions — items 2, 4, 17 and 18 — need
+render artefacts, and they are **exactly the four missing renders** the running
+order identified as the reason a morning date is hard to set. Neither the content
+lane nor the video lane owns them.
+
+**The engine also resolves one form**, which needs no lane agreement because it
+reads the tree:
+
+- `clip_engine(drill, moment)` — an exported clip from `clip-baseline.json`
 
 **REFUSAL 1: the generator refuses when an artefact does not resolve.** It must
 not emit a section with a hole in it, and it must not silently drop the question,
@@ -155,8 +170,21 @@ an artefact reference names a moment, the clip's own manifest declares which
 moments it contains, and the two must agree.
 
 **So a caption never states a moment in prose.** It states it in the reference,
-and the prose is generated from the reference or checked against it. **A moment a
-clip does not contain becomes impossible rather than caught.**
+and the prose is generated from the reference or checked against it.
+
+**AND THE VIDEO LANE STRENGTHENED THIS, BECAUSE MY VERSION WOULD NOT HAVE CAUGHT
+THEIR OWN DEFECT.** Their caption named a pull-in that the clip does not contain.
+A manifest declaring which moments a clip contains **does not help when the
+person writing the manifest declares the wrong one**, which is what happened: the
+section was cut under a label and the label was believed.
+
+**The check must be against evidence, not against a label.** The moment must be a
+**named event in the event ledger**, read on the pictures under a stated rule,
+and **the clip's frame window must contain that event's frame**.
+
+**That turns a label match into an evidence match**, and a caption can then name
+no moment that no ledger event supports. **This is their amendment and it is
+better than what I wrote.**
 
 ---
 
@@ -182,8 +210,19 @@ is not.
 not.** The generator can check a cited measure against the receipt's declared
 measures.
 
-**CHECK AGAINST THE RECEIPT, NEVER AGAINST THE CLIP. I got this wrong in a first
-draft of this document and measured it before sending.** On
+**ASK THE DEFINITION, NOT THE RECEIPT AND NEVER THE CLIP.** The video lane found
+a cheaper route than mine and I ran it before agreeing:
+**`MovementDefinition.graded_measures()`** returns the graded measures **from the
+definition alone, with no solver run and no receipt file**. On
+`netball_double_foot_landing` it returns exactly the five the receipt declares.
+Its own docstring says what it is for: several consumers pick their own list of
+measures and none was ever reconciled with what the coaching layer grades.
+
+**The finding below stands unchanged. The definition is simply a cheaper way to
+ask the same question.**
+
+**CHECK AGAINST THE GRADING RECORD, NEVER AGAINST THE CLIP. I got this wrong in a
+first draft of this document and measured it before sending.** On
 `netball_double_foot_landing` the two disagree in both directions:
 
 | source | measures it names |
@@ -253,24 +292,76 @@ a page whose questions move with work that has landed since the page was built**
 it shows a coach numbers that are no longer true, and nothing today would catch
 that.
 
+### What "landed" means, which the video lane asked me to define
+
+**`movesWith` names work in a form a machine can resolve, or it names nothing.**
+Three forms, and the third is the honest one:
+
+| form | resolved by | when it counts as landed |
+|---|---|---|
+| `pr(<number>)` | the forge | the pull request is merged |
+| `commit(<sha>)` | `git merge-base --is-ancestor <sha> main` | it is an ancestor of main |
+| `ruling(<heading>, <date>)` | **nothing. It cannot be resolved.** | **never** |
+
+**AN UNRESOLVABLE `movesWith` IS TREATED AS STILL MOVING, NEVER AS LANDED.** That
+is the safe direction and it must be the default. Work that has been ruled but
+not started has no pull request and no commit, and a generator that read "no
+reference found" as "nothing is moving" would publish exactly the numbers this
+field exists to protect.
+
+**The release retiming is a `ruling` today.** It is ruled and in progress, so it
+has no merged reference, so every question that moves with it stays marked. That
+is correct, and it is the case the design must not get wrong.
+
 ---
 
-## 8. What I need from the video lane
+## 7a. Two rules from the video lane, both from defects of the last two days
 
-1. **Agree or reject "questions, not a page".** Everything else follows from it.
-2. **Rule on section 3's uncertainty**: four types, or one type with three answer
-   kinds? It falls on the generator's side.
-3. **Say which refusals you can implement cheaply.** I have proposed five. If
-   any is expensive, I would rather drop it than have it half-built: a refusal
-   that sometimes fires is worse than none, because it is trusted.
-4. **Name the artefact reference forms you can resolve.** I have guessed four in
-   section 4 and I do not know what your manifests carry.
+**Both are theirs and both are adopted.**
+
+**A FIGURE THAT APPEARS TWICE IS GENERATED ONCE.** A mutation that changed a
+number on a printable card and left the same number in the page's prose passed
+all 94 of their tests. **A coach follows the card.** So a figure has one source in
+the specification and every rendering derives from it; a figure written twice is
+a defect the generator refuses rather than a discrepancy a reader may notice.
+
+**THE GENERATOR REFUSES A FIGURE THAT IS NOT IN THE MERGED TREE.** They kept a
+four-drill table off the page yesterday because those figures were real, measured
+and not on main. **A coach's mark is scored against a build**, so the page must
+quote what is merged. This is the same rule as `movesWith` seen from the other
+end: one refuses a figure whose work has moved, the other refuses a figure whose
+work has not arrived.
+
+---
+
+## 8. Agreed with the video lane, 2026-09-09
+
+**All four questions are answered and nothing is outstanding between us.**
+
+1. **Questions, not a page.** Agreed.
+2. **One type with an ordered answer list**, which is their shape and better than
+   both mine and the orchestrator's. Refer to section 3.
+3. **All five refusals are implementable.** Two are cheaper than I thought:
+   refusal 3 is free, and refusal 4 has a cheaper route through the definition.
+   **They strengthened refusal 2**, because my version would not have caught the
+   defect it was written for.
+4. **The artefact forms split by lane**, and **a third lane is needed to close
+   the interface**. Refer to section 4.
+
+**What each of us gave the other.** They took my `serves` field, the questions
+-not-a-page decision and the receipt-not-clip finding. I took their answer-list
+shape, their evidence-match version of refusal 2, their cheaper route to refusal
+4, their two rules in section 7a, and JSON.
+
+**Neither of us has built anything.**
 
 ## 9. What this interface does not settle
 
-**Where the specification lives, and in what format.** It is a data file and I
-have deliberately not proposed JSON or anything else, because the generator reads
-it and its owner should choose.
+**Where the specification lives, and in what format — SETTLED.** The video lane
+proposes **JSON**, because every artefact on their side is already JSON with a
+schema and a refusal, and because a specification a test can parse is one a test
+can check `serves` against in both directions. **Agreed.** I had left it to them
+and they chose for a reason that improves my own field.
 
 **Whether the existing page is regenerated or left alone.** It is held until
 Marius is happy with it. Regenerating it is a bigger decision than this interface.
