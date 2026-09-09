@@ -1,0 +1,196 @@
+# Capability and result: which document is which
+
+Written 2026-09-09 by the content lane, on `a5d60da`. **This document classifies
+and proposes. It rewrites nothing.** A rewrite is a second unit, after Marius
+rules on the classification.
+
+Principle 4 of `.remember/PRINCIPLES.md` asks for two documents and never one:
+capability is durable, result is per shoot or per build, and mixing them is why a
+finding from a test recording keeps reading as a conclusion about the sport.
+
+**This asks which of the two each document under `docs/` already is.**
+
+---
+
+## The count, stated because a count is a claim about a list
+
+**`docs/` holds 25 markdown documents on `a5d60da`.** Three more are in flight in
+PR #99 and are classified at the end, separately, because they are not on main.
+
+**6 capability. 4 result. 15 mixed.** 6 plus 4 plus 15 is 25.
+
+**THE DANGEROUS CLASS IS THE MAJORITY**, and that is the finding rather than any
+individual placement.
+
+---
+
+## The rule used, so a reader can disagree with the rule rather than the verdict
+
+- **CAPABILITY** if every sentence would still be true after a new shoot and a
+  new build.
+- **RESULT** if it describes what one shoot or one build produced.
+- **MIXED** if it holds both, **so that a durable sentence and a per-shoot
+  sentence cannot be cited apart.**
+
+**Mixed is not a criticism of a document.** Most of the fifteen are mixed because
+a finding and its method were written down together, which is the natural way to
+write them. It is a statement that the document cannot be cited safely by
+someone reading one section.
+
+---
+
+## Capability: 6
+
+| document | why |
+|---|---|
+| `ARCHITECTURE.md` | what the system is and where its boundary sits |
+| `DESIGN.md` | a candidate design, and it marks itself not agreed |
+| `FILMING_GUIDE.md` | how to film. Principle 6 names it as iterative, second edition |
+| `LICENSING.md` | licensing decisions |
+| `REQUIREMENTS.md` | what the system must do |
+| `TACTICS_CLIP_CONTRACT.md` | the boundary between two repositories |
+
+**`TACTICS_CLIP_CONTRACT.md` is the only document under `docs/` with no
+commit-like reference anywhere in it.** That is what a capability document looks
+like when it is doing its job.
+
+## Result: 4
+
+**All four carry the identity of what they measured.**
+
+| document | what it measured | identity carried |
+|---|---|---|
+| `COACH_FIGURES_PACK_aa3f244.md` | library `2413f9d`, 11 drills, 144 stills | **in the filename AND the text**, with an archive digest |
+| `COACH_REVIEW_2026-08-30.md` | the build of 2026-08-30 | in the filename and in a warning at the head |
+| `FAN_AND_RELEASE_PACK.md` | the shipped library `2413f9d` | named, with the archive path |
+| `HAND_MIRROR_EVIDENCE.md` | the fix at `fde5d5a` | named in its first line |
+
+**No result document is missing its identity.** That is better than I expected
+and it is worth saying plainly, because the risk this unit was set to find is not
+where I would have guessed.
+
+## Mixed: 15
+
+| document | the durable half | the per-shoot or per-build half |
+|---|---|---|
+| `KNOWN_ISSUES.md` | the rules of method, the fault classes | every measured row, per build |
+| `HANDOFF_RENDERING.md` | the procedure for the next run | what this shoot produced |
+| `VIDEO_CAPTURE_FINDINGS.md` | "what to change", "method notes for whoever runs this next" | "what was measured, and how well" |
+| `WRIST_AND_PACE.md` | what this footage cannot resolve; the pace has no author | what Marius saw on this build |
+| `BALL_SPEED_PROVENANCE.md` | the constant has no source | what it costs on today's drills |
+| `BOUNCE_PASS_INSTRUMENT_AUDIT.md` | which measures exist and which cue each can read | the flight figures |
+| `ONE_HAND_HIGH_INSTRUMENT_AUDIT.md` | the same instrument survey | the reach and sweep figures |
+| `CLAVICLE_ARTEFACT.md` | how a solver basin misleads | which builds it misled |
+| `RELEASE_SEAM.md` | the mechanism | the four hitches measured |
+| `RELEASE_TIMING_COST.md` | why an anchor in the wrong place costs | what it costs on these four drills |
+| `SEAM_SWEEP.md` | the question asked of every boundary | the answers on this library |
+| `REFERENCE_CURVE_WIDENING.md` | the design | that it landed, and what the columns hold |
+| `LOB_AUTHORING_BRIEF.md` | how a lob's ball file should be authored | the measured apex figures |
+| `TACTICS_CONTRACT_QUESTIONS.md` | six questions about the contract | "today's gap read, with its inputs" |
+| `COACH_MORNING_2026-09.md` | the twenty questions and why each is asked | every figure quoted under them |
+
+**Several of these announce their own mixing in their first lines**, which is the
+honest form of the fault rather than a hidden one. `VIDEO_CAPTURE_FINDINGS.md`
+and `HANDOFF_RENDERING.md` both open with a warning that the source files were
+renamed after much of the document was written.
+
+---
+
+## One stamping rule
+
+**IDENTITY ATTACHES TO THE HEADING THAT OWNS THE FIGURES, NOT TO THE DOCUMENT.**
+
+Every heading that states a figure names what that figure was read on: a build
+commit, a footage sha256, a receipt path, or "nothing measured". **A document
+whose headings all name the same thing may hoist it to the head** and say so.
+
+### Why the heading and not the document
+
+**A document-level stamp is a lie for half the sections of a mixed document**, and
+fifteen of twenty-five are mixed. Stamping `KNOWN_ISSUES.md` with one build would
+be false on nearly four thousand lines.
+
+**The heading is also the smallest unit anyone cites.** Every cross-reference in
+this repository points at a document and a heading, so the identity arrives with
+the citation rather than being left behind.
+
+### It is not a new invention. One document already does it
+
+`docs/BOUNCE_PASS_INSTRUMENT_AUDIT.md` carries this at its head:
+
+> **TWO BUILDS APPEAR IN THIS DOCUMENT AND THE SPLIT IS DELIBERATE.** The
+> instrument survey below is from `32663a9` and is unchanged, because
+> `MEASURE_UNITS` has not moved since. **Every FLIGHT figure was re-measured on
+> the engine at `eaecbb2`.**
+
+**That was written because the document could not be cited safely without it**,
+and it was written by hand after a review found figures from three builds in one
+pack. **The rule is that paragraph, generalised.**
+
+### What it costs, honestly
+
+**Fifteen documents need it and one of them is 3952 lines.** This is not an
+afternoon. The proposal is therefore an ORDER rather than a sweep:
+
+1. **The four result documents already comply.** Nothing to do.
+2. **The six capability documents need one line each** saying they are durable
+   and hold no per-shoot figure. **That is the cheapest and it is also the one
+   that protects most**, because a capability document quoted as a result is the
+   fault principle 4 names.
+3. **The mixed documents, worst first by how often they are cited.**
+
+**AND `KNOWN_ISSUES.md` NEEDS ITS OWN DECISION RATHER THAN A PLACE IN THAT
+QUEUE.** A first version of this section put it last, on the reasoning that its
+rows already name their builds individually and the unstamped ones are the
+exception. **I counted, and that is false.**
+
+| the ledger, counted | |
+|---|---|
+| `##` headings | 76 |
+| `###` headings | 100 |
+| **sections in total** | **176** |
+| lines carrying any build-naming phrase | **41** |
+| lines with the strict "measured on `<sha>`" form | **15** |
+
+**Fewer than a quarter of its sections name what they were read on.** So the
+ledger is not the document that mostly complies. **It is the largest unstamped
+surface in the repository, and it is also the most cited.**
+
+That combination is why it needs a decision rather than a queue position: it is
+both the highest value to stamp and the most expensive, and the choice between
+stamping its 176 headings and splitting it into rules and findings changes the
+cost by an order of magnitude. **Refer to the last section: that choice is
+Marius's and this document does not take it.**
+
+---
+
+## The three documents in flight
+
+**Not on `a5d60da`. They are in PR #99 and are classified here so the list is
+complete when it merges.**
+
+| document | class | note |
+|---|---|---|
+| `COACH_MORNING_RUNNING_ORDER.md` | **mixed** | the order is durable, the time estimates and the artefact state are not |
+| `COACH_MORNING_PAGE_SPEC.md` | **mixed** | the five specifications are durable, the "can be built today" column is not |
+| `COACH_REVIEW_SPEC_INTERFACE.md` | **capability** | it describes what a generator must refuse, and holds no figure of its own |
+
+**Two of my three are mixed, by my own rule.** The running order's three-hour
+estimate and its "four renders missing" are true of today, and its ordering and
+dependencies are durable. I did not see that when I wrote them.
+
+---
+
+## What this document does not do
+
+**It does not rewrite anything**, per the boundary set for this unit.
+
+**It does not rule on whether a mixed document should be SPLIT or STAMPED.**
+Splitting `KNOWN_ISSUES.md` into a rules document and a findings document is a
+much larger decision than stamping its headings, and it is Marius's. The rule
+above works either way: after a split, each half's headings still name what they
+were read on.
+
+**It classifies by reading, not by measurement.** Every verdict above is a
+judgement against the stated rule, and the rule is written down so a reader can
+disagree with the rule rather than with twenty-five separate calls.
