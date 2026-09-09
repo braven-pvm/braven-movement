@@ -104,6 +104,78 @@ readings.
 **So angles cross better than distances and not cleanly.** Elbow flexion is the
 closest quantity in this paper. Shoulder elevation is the worst.
 
+## Item 6: the ready pose. The figure shows half of what the question asks about
+
+The morning asks Erin whether 20 cm between the wrists is a shown arm span or a
+pair of hands held together. Wrist to wrist at the first frame:
+
+    drill                          engine  rendered    gap   eng/span  ren/span
+    two_hand_catch_chest            20.10     11.41   8.69      0.511     0.392
+    two_hand_snatch_pull_in         20.08     11.40   8.68      0.511     0.391
+    two_hand_snatch_straight_back   20.08     11.40   8.68      0.511     0.391
+    double_foot_landing             19.91     11.37   8.54      0.508     0.390
+    hooks_jump_pull_in              19.83     11.35   8.49      0.506     0.389
+    deflect_high                    18.29     13.76   4.53      0.527     0.476
+
+**The number in the question is not the number on the page.** She is asked about
+20 cm and shown 11.4 cm. That is 43 percent of the quantity removed, and it is
+not a scale difference, because as a fraction of each body's own shoulder span it
+is still 0.511 against 0.392.
+
+**The disagreement pushes the answer one way.** 11.4 cm reads as a pair of hands
+held together far more plainly than 20 cm does. Whatever Erin rules, she rules it
+on a figure that argues for one of the two answers.
+
+### The rendered figure invents a grouping the skeleton does not have
+
+The three passes are not in the morning's table. They belong in this comparison,
+because a coach sees the whole library:
+
+    bounce_pass                     21.41     20.91   0.50      0.542     0.720
+    chest_pass                      21.41     20.92   0.50      0.542     0.720
+    overhead_pass                   21.41     20.92   0.50      0.542     0.720
+
+On the engine, all nine sit between 18.29 and 21.41, a spread of 3.12 cm. On the
+rendered figure they split in two: the passes at 20.9 and the catches at 11.4, a
+spread of 9.57 cm. **A coach turning the pages sees two families. The skeleton
+has one.**
+
+### The rank order inverts at the top
+
+`deflect_high` is the NARROWEST ready pose on the engine at 18.29 cm and the
+WIDEST of the six on the rendered figure at 13.76 cm. It is 1.54 cm below its
+neighbour on one body and 2.35 cm above it on the other, against a spread of
+0.06 cm among the other five. **This is an inversion and not a tie broken two
+ways.** A coach ranking the drills by shown arm span would rank them differently
+on the two bodies.
+
+## Item 5: the second hand. The quantity crosses. The question does not
+
+The morning asks whether the free hand travels too far to meet the ball. The
+axis is not chosen here: `docs/KNOWN_ISSUES.md` records the hand as "11.9 cm
+ahead of her shoulders", so the quantity is the AHEAD component from the shoulder
+midpoint. Of four axes tried, only world-ahead reproduces the recorded numbers,
+and it reproduces them to 0.18, 0.00 and 0.01 cm on the first drill.
+
+    one_hand_snatch_to_other_hand    engine  rendered    gap
+    ready f0                          11.92     11.03   0.90
+    reach f34                         11.92     11.02   0.90
+    contact f48                       12.03     11.05   0.98
+    join f70                          20.22     18.08   2.13
+    pull_in f97                       12.06     10.51   1.55
+
+**This is the closest agreement in the paper.** Under 1 cm at rest and 2.13 cm at
+the widest. Item 5's quantity crosses between the two bodies.
+
+**The question it is asked about does not cross.** The morning asks about the
+TRAVEL, and the travel needs the frame where the hand is furthest out. The engine
+puts that at frame 58 and at frame 60, and neither is a phase frame. A receipt
+carries one pose per phase, so the archive does not hold the peak on either
+drill. The travel is an engine-only number: 13.94 cm and 14.48 cm.
+
+**So item 5 is measurable on both bodies at every frame the archive holds, and
+the one frame the question needs is the one frame it does not hold.**
+
 ## The consequence for item 11, which nobody has raised
 
 The morning asks Erin to set **a shoulder elevation floor at contact, currently
@@ -137,8 +209,52 @@ moved.** The build differs, the population differs, and the dial is the movement
 lane's. It should be re-measured on `2413f9d` before Erin is asked to close a
 gap that may not be the size the question describes.
 
+## Two rows of the coach morning were read on the struck pose
+
+Item 7 is STRUCK because `hooks_outside_hand` has two solved poses about 33
+degrees apart at the first frame. On `ac240b2` the agenda records 48.22 degrees
+as the corrected pose and 15.44 as the pose the shipped parameter set reached,
+and it states that items 1 to 9 were re-measured on the tree that gave 15.44.
+
+**Both bodies now hold the corrected pose.** Measured on `2413f9d`, as the turn
+of the shoulder line at the first frame, the engine gives 48.22 degrees and the
+rendered figure 45.48. So two rows measured on the other pose are still in the
+agenda, unmarked.
+
+The quantity here is the shoulder line, not the feet. Nothing below the hips is
+presented as a graded value anywhere in this paper.
+
+On `ac240b2`, as the agenda states them:
+
+    item 6, hooks_outside_hand    45.68 cm wrist to wrist
+    item 5, hooks_outside_hand    3.43 cm out to 14.33, back to 3.48, travel 10.90
+
+On `2413f9d`, this tree and the rendered library:
+
+    item 6, hooks_outside_hand    40.36 cm wrist to wrist
+    item 5, hooks_outside_hand    7.45 cm out to 21.93, back to 11.28, travel 14.48
+
+**The engine side of item 6 reproduces exactly on seven of its eight rows.** The
+eighth is this drill. That is the pattern the artefact predicts, and it is why
+the cause is named rather than guessed.
+
+**Item 5's conclusion reverses.** The agenda says the second drill "sits closer
+in". Its `ac240b2` figures are a travel of 10.90 cm on the second drill against
+14.12 on the first.
+On `2413f9d` the second drill travels 14.48 cm and the first 13.94.
+**The two drills agree, and the second is the wider of the two.** So the question of whether about 14 cm of
+travel is too much applies equally to both, where the agenda presents one of them
+as the milder case.
+
+**This lane does not change the agenda.** To strike or amend an item is the
+orchestrator's, and the drill is the movement lane's. This is the measurement,
+with the instrument beside it.
+
 ## What is still not measured
 
+- The travel of the second hand, item 5, on the rendered figure. The peak frame
+  is not a phase frame and the archive holds no pose there. Every phase frame IS
+  measured, above.
 - The ball speeds, item 3. They are not a body quantity and no two-body
   disagreement exists for them.
 - The finger closing speed, item 4. The receipts carry one pose per phase, so a
@@ -149,8 +265,9 @@ gap that may not be the size the question describes.
 
 ## Instruments
 
-    scripts/two_bodies_compare.py     the distances, raw and per shoulder span
-    scripts/two_bodies_angles.py      shoulder elevation, elbow flexion, trunk lean
+    scripts/two_bodies_compare.py        the distances, raw and per shoulder span
+    scripts/two_bodies_angles.py         shoulder elevation, elbow flexion, trunk lean
+    scripts/two_bodies_ready_and_join.py items 6 and 5, and the ready-stance turn
 
 Both solve the engine side on this tree and read the rendered side from the
 archive, and both name the build they read.
