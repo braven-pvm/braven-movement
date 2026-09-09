@@ -38,6 +38,38 @@ which is true — and replaced a right answer obtained by an imperfect route wit
 a wrong answer obtained by a clean-looking one. **The reasoning about the origin
 was sound and the conclusion it licensed was false.**
 
+## A CORRECTION CAN BE THE ERROR: the trap, named
+
+**The next person to meet this will be somebody who thinks they are being
+careful, so it is named here with its conditions rather than left as an
+anecdote.**
+
+1. **a result that CONTRADICTS the expected story** — the shoulder-midpoint
+   instrument said the ball moves relative to her body, against two people
+   telling me the carry was static;
+2. **a plausible methodological objection to that result** — the shoulder
+   midpoint is genuinely not the engine's frame, and that objection was TRUE;
+3. **a replacement whose answer AGREES with what you were told** —
+   `ball.offset_at` returned one constant triple.
+
+**Condition 3 is the alarm, and it is the one that reads as success.** Three
+sources agreeing is not corroboration when two of them are the same claim and
+the third is measuring the wrong quantity.
+
+**A measurement that confirms the story is the one to re-check, not the one to
+publish.**
+
+**And the write-up was the proof I had stopped checking.** The retracted version
+of this document contained a section praising the catch of the imperfect route.
+When you correct your own method, **re-run the old instrument beside the new one
+and explain the difference before discarding either.**
+
+**The root cause is a file-level version of this repository's most common
+fault.** `ball.offset_at` is the FLIGHT offset in the ball file.
+`carried_offsets` is the CARRY path in the technique file. **Two authored
+things, two files, one word.** Say which file a number lives in before quoting
+it: **the carry and the flight are separate authorings.**
+
 ## The authored path, read from the engine
 
 `possession.carry_path` and `possession.sample_offsets`, on the technique loaded
