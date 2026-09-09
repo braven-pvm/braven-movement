@@ -143,10 +143,18 @@ THEM:**
 - `render_pair(parameter, value_a, value_b)`
 
 **A THIRD LANE IS NEEDED TO CLOSE THIS INTERFACE, and that is a finding rather
-than an obstacle.** Four of the twenty questions — items 2, 4, 17 and 18 — need
-render artefacts, and they are **exactly the four missing renders** the running
-order identified as the reason a morning date is hard to set. Neither the content
-lane nor the video lane owns them.
+than an obstacle.**
+
+**Five of the twenty-one questions need render artefacts: items 2, 4, 13, 17 and
+18.** Four of them are the missing renders the running order identifies as the
+reason a morning date is hard to set. Neither the content lane nor the video lane
+owns them.
+
+**THE FIFTH IS ITEM 13, ADDED TO THIS LIST ON 2026-09-09, AND IT IS DIFFERENT IN
+KIND.** The other four are renders nobody has made yet. **Item 13's drill cannot
+be posed on this rig at all**, so its artefact is not merely unmade and no date
+can be given for it. **A generator that treats the five alike will report the
+wrong reason for the one that cannot be satisfied.**
 
 **The engine also resolves one form**, which needs no lane agreement because it
 reads the tree:

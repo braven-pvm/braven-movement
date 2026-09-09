@@ -95,7 +95,7 @@ where I would have guessed.
 | `REFERENCE_CURVE_WIDENING.md` | the design | that it landed, and what the columns hold |
 | `LOB_AUTHORING_BRIEF.md` | how a lob's ball file should be authored | the measured apex figures |
 | `TACTICS_CONTRACT_QUESTIONS.md` | six questions about the contract | "today's gap read, with its inputs" |
-| `COACH_MORNING_2026-09.md` | the twenty questions and why each is asked | every figure quoted under them |
+| `COACH_MORNING_2026-09.md` | the twenty-one questions and why each is asked | every figure quoted under them |
 | `COACH_MORNING_RUNNING_ORDER.md` | the order and its dependencies | the three hours, and which artefacts exist today |
 | `COACH_MORNING_PAGE_SPEC.md` | the five section specifications | "can be built today", which is true of one tip |
 | **`CAPABILITY_AND_RESULT.md`** | **the rule and the stamping proposal** | **every count in it, including this one** |
@@ -217,4 +217,4 @@ reader does not think this rule already covers it.
 
 **It classifies by reading, not by measurement.** Every verdict above is a
 judgement against the stated rule, and the rule is written down so a reader can
-disagree with the rule rather than with twenty-five separate calls.
+disagree with the rule rather than with twenty-nine separate calls.
