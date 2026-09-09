@@ -92,9 +92,11 @@ def refuse_if_the_tree_has_moved(archive: Path, jobs: Path = JOBS) -> dict:
 def state_the_agreement(archive: Path, jobs: Path = JOBS) -> None:
     """Print the check's verdict, so a table carries its own warrant."""
     result = refuse_if_the_tree_has_moved(archive, jobs)
-    print(f"{len(result['identical'])} of {len(result['identical'])} job files on "
-          f"this tree are byte-identical to the `jobSha256` their receipt recorded, "
-          f"and the archive carries one build stamp.")
+    # ONE NUMBER, NOT TWO. "11 of 11" would read as a ratio and both halves come
+    # from the same list, because anything else has already raised.
+    print(f"All {len(result['identical'])} job files on this tree are "
+          f"byte-identical to the `jobSha256` their receipt recorded, and the "
+          f"archive carries one build stamp.")
     print("So the solve below IS the solve those figures were rendered from. "
           "Checked, not assumed.")
     print()
