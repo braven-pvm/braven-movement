@@ -1127,10 +1127,24 @@ one-hand-high, and every centimetre of that is her own motion.
 the finding.** I read `contact_solve.solve_contact`, which places the ball centre
 from `ball.offset_at(phase)` into the grip constraints, and inferred that the
 wrist is held at a stationary point. `solve_contact` has exactly one caller in
-the repository, at `contact_solve.py:724`, inside that file's own `main()`. **It
-is a spike entry point and it is not the library path.** The library route runs
-from `possession.py`'s frames into `possession_solve.py:245`, which takes
-`frame.centre` for a holding side.
+the repository, at `contact_solve.py:724`, inside that file's own `main()`. **That
+FUNCTION is a spike entry point and is not on the library path.** The library
+route runs from `possession.py`'s frames into `possession_solve.py:245`, which
+takes `frame.centre` for a holding side.
+
+**Read that scope narrowly, because a wider reading of it is false and the
+science lane caught me at it.** The claim is about the function and NOT about the
+file. `spikes/contact_solve.py` is very much on the library path:
+`possession_solve.py` imports six names from it — `contact_constraints`,
+`contact_miss`, `elbow_poles`, `upper_arm_aim`, `foot_constraints` and
+`measure_contact` — and calls `elbow_poles` and `upper_arm_aim` at lines 304 and
+308. Those two are defined at 327 and 402, before `solve_contact` at 508 and
+outside it.
+
+**"This function is not called by the library" and "this file is not reached" are
+different claims, and only the first was measured.** The second would have
+removed the elbow pole angle from the unsourced-number register, and that
+constant is used by `elbow_poles`, which the library build does call.
 
 So the reading was right about the code it read and wrong about which code runs.
 **No amount of care inside those two files could have shown that**, which is why
