@@ -16,6 +16,7 @@ for extra in (REPO, REPO / "spikes"):
 import numpy as np
 from export_blender_job import load_character, to_blender
 from possession_solve import solve_movement
+from archive_agreement import state_the_agreement
 
 def archives() -> Path:
     for base in [Path(__file__).resolve()] + list(Path(__file__).resolve().parents):
@@ -47,6 +48,8 @@ def flexion(shoulder, elbow, wrist):
         return float("nan")
     return math.degrees(math.acos(max(-1.0, min(1.0, float(a @ b) / d))))
 
+
+state_the_agreement(A)
 
 character = load_character()
 rows = []

@@ -34,6 +34,7 @@ for extra in (REPO, REPO / "spikes"):
 import numpy as np  # noqa: E402
 from export_blender_job import load_character, to_blender  # noqa: E402
 from possession_solve import solve_movement  # noqa: E402
+from archive_agreement import state_the_agreement  # noqa: E402
 
 ARCHIVE = "coach-figures-2413f9d"
 
@@ -59,6 +60,8 @@ def main() -> None:
         receipts[receipt["movementId"]] = receipt
     if not receipts:
         raise SystemExit(f"no receipts in {directory}")
+
+    state_the_agreement(directory)
 
     character = load_character()
     print(f"{'drill / phase':<38}{'quantity':<11}{'engine':>8}{'rendered':>9}"

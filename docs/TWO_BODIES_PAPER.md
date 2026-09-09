@@ -52,7 +52,14 @@ this tree for the engine side.
 
 **Why the two sides are comparable.** All eleven job files on this tree are
 byte-identical to the `jobSha256` each receipt recorded, so the solve here is
-the solve those figures were rendered from. That is checked, not assumed.
+the solve those figures were rendered from.
+
+**That sentence used to be a claim and is now a guard.** It was true when each
+instrument was written and nothing read it afterwards, so a job file changing
+under a lane would have left every number below comparing two different solves,
+silently, with this paper still asserting they agree.
+`scripts/archive_agreement.py` now REFUSES rather than reports, and all three
+instruments call it before they print a row.
 
 ## A correction to this lane's own number, before anything else
 
@@ -293,9 +300,11 @@ with the instrument beside it.
 
 ## Instruments
 
+    scripts/archive_agreement.py         REFUSES unless this tree still solves
+                                         what the archived figures were drawn from
     scripts/two_bodies_compare.py        the distances, raw and per shoulder span
     scripts/two_bodies_angles.py         shoulder elevation, elbow flexion, trunk lean
-    scripts/two_bodies_ready_and_join.py items 6 and 5, and the ready-stance turn
+    scripts/two_bodies_ready_and_join.py items 6 and 5, and the turn at the first frame
 
 Both solve the engine side on this tree and read the rendered side from the
 archive, and both name the build they read.
