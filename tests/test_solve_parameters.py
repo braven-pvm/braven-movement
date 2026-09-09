@@ -265,6 +265,14 @@ class NoProducerOnThisBranchTest(unittest.TestCase):
 
     SO THIS PINS ONLY WHAT THIS BRANCH CAN SEE. When a producer lands here, the
     first test goes RED, and that red is the field becoming reachable.
+
+    PROVEN ABLE TO FAIL on 2026-09-09, and the first attempt at that proof did
+    NOT run: its anchor string was absent, the assertion fired before any
+    rewrite, and the claim "proven able to fail" reached a commit message
+    unearned. The real run inserts a producer above `knuckle_limits` and kills
+    `test_no_producer_on_this_branch_writes_the_field`. An assertion that a
+    mutation string is present protects against a silent no-op; it does not
+    protect against reporting the attempt as a result.
     """
 
     PARAMETER = "ELBOW_POLE_ANGLE_DEGREES"
