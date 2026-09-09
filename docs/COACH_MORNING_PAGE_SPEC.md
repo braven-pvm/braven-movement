@@ -24,13 +24,20 @@ Neither adds to the homeless count.
 | 15, clips stopping short | **a page section**, sharing 12's clip | **yes** |
 | 16, the landing's foot gap | **a page section** | **yes** |
 | B, vocabulary conflicts | a written question | no |
-| 10, which passes the board needs | nothing but the room | no |
-| 14, one-handed determinacy | nothing but the room | no |
-| A, a second grader | nothing but the room | no |
-| C, two manual titles | nothing but the room | no |
+| 10, which passes the board needs | asked in the room only | no |
+| 14, one-handed determinacy | asked in the room only | no |
+| A, a second grader | asked in the room only | no |
+| C, two manual titles | asked in the room only | no |
 
-**Five of the ten are worth a page section. Four need nothing but the room. One
+**Five of the ten are worth a page section. Four are asked in the room only. One
 is a written question.**
+
+**"ASKED IN THE ROOM ONLY" IS A RENDERING TARGET, NOT A KIND OF QUESTION, AND AN
+EARLIER VERSION OF THIS DOCUMENT WROTE IT AS ONE.** It said four items "need
+nothing but the room", as though that were a property of the item. It is not. It
+says only that **the page rendering is not worth building for them**. Those four
+questions still exist, still need a stable answer key, and still need their
+answers recorded. Refer to `docs/COACH_REVIEW_SPEC_INTERFACE.md`, section 1.
 
 **Four of the five have their clip already.** `spikes/clip-baseline.json` carries
 twelve exported clips, and they include all four passes and the landing. **Items
@@ -172,10 +179,11 @@ decision after she has spoken.
 
 ---
 
-## The four that need nothing but the room
+## The four asked in the room only
 
 **None of these is improved by a page section, and building one would cost the
-video lane time for no gain.**
+video lane time for no gain. All four are still questions**, with answers that
+must be recorded under their own keys wherever they are asked.
 
 - **Item 10, which passes the board needs.** A decision Marius takes AFTER her
   answers to items 12 and 13. Asking it on a page before those answers exist

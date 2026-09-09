@@ -104,10 +104,28 @@ it will be counted as an unanswered question for ever.
 ### Where I may be wrong
 
 **I am not sure `number` and `look` are different types.** Item 2 shows two
-renders AND asks for an angle. It may be that every type is `look` plus an answer
-shape, and that `look`, `number` and `brief` are one type with three answer
-kinds. **The video lane should decide this**, because it falls on the generator's
-side. My four names are a starting point and not a boundary.
+renders AND asks for an angle. **The video lane should decide this**, because it
+falls on the generator's side.
+
+### A proposal to put to you, from the orchestrator
+
+**One type with three parts, rather than four types**: an OPTIONAL artefact, a
+prompt, and an answer kind. The kinds are **a choice, a number with its unit,
+free text, and none.**
+
+Item 2 is then a question with two renders and a choice, rather than a hybrid
+that needs a fourth type. **Three types force every mixed item to pick a side,
+and item 2 shows that mixed items are normal rather than exceptional.**
+
+**I agree with this and I did not see it.** My four names came from sorting ten
+items by what they need, which is a rendering question, and I turned the answer
+into types. Under the proposal `open_then_closed` is not a type either: it is
+**two questions with an ordering constraint between them**, which is a better
+description of what item 16 actually is.
+
+**The ordering constraint must survive whatever shape you choose.** However it is
+expressed, the generator must not render the closed half before the open half is
+answered. That is the one part of section 3 I would not trade.
 
 ---
 
