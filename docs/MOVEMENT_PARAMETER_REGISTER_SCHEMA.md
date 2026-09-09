@@ -141,6 +141,45 @@ not, and neither half is visible without following the chain.**
 
 ---
 
+## The search procedure, and why it is a procedure fault
+
+Five ways a search failed on 2026-09-09. **Four lanes, five modes, one morning,
+and every one of them was following the rule.** That makes it a procedure fault
+and not a diligence fault, which is why the answer is a procedure and not "be
+careful".
+
+| mode | what happened | the rule |
+|---|---|---|
+| stale corpus | a lane grepped its own tree, 42 commits behind main, and duplicated a document that had merged the day before | **fetch before you grep.** The grep was right and the corpus was old |
+| wrong vocabulary | "pelvis yaw" returned nothing because the document says "the pelvis line" | **search by the figure.** `15.7` found it at once. A number is stable across vocabularies and a name is not |
+| wrong place | a finding lived in `.remember/`, which is untracked, so no clone has it | a finding another lane must not re-derive belongs in `docs/`, in git |
+| line wrapping | a grep for a phrase returned nothing because the sentence wraps mid-phrase | search the shortest distinctive **fragment**, or grep with context |
+| enclosing scope | a table was called unsourced while the two lines above it named the source and its population | **read the enclosing scope before asserting an absence** |
+
+**And the other half, which is for whoever WRITES.** A document declaring
+itself the single place for a number must be findable BY ITS FIGURES and not
+only by its title. One note in this repository has been missed by three
+separate lanes and its own text records the first two. A searcher searching by
+figure and a document carrying its figures are one rule, and neither half works
+alone.
+
+### Two lines of it are implemented as a refusal, not as discipline
+
+`scripts/register_survey_prose.py` searches the consumer repository as well as
+this one. **When that repository is not on the machine it exits 2 and marks
+every otherwise-absent row untested**, rather than reporting twelve
+cross-repository names as absent.
+
+That is the stale-corpus and wrong-place modes solved by construction. Three
+findings were manufactured by what was not on a machine today: a manual the
+code could not locate, a pixi manifest one directory down, and this. **Only the
+third could not happen, because the instrument refuses.**
+
+A rule a person must remember is a rule that fails on a busy morning. The same
+rule expressed as an exit code does not.
+
+---
+
 ## The rule above the rules
 
 The movement lane found the general form, after four instances in one morning:
