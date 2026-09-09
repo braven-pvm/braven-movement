@@ -800,6 +800,50 @@ field speaks the world.** This lane works downstream and reached for the world
 frame to answer a question posed upstream, and every number it published on that
 axis had to be withdrawn.
 
+## The two asset guards are ORDERED, and an invented asset never reaches the second
+
+**Measured 2026-09-09 by mutating the real generator, at the character and
+animation lane's request.** It had proved the licence refusal by removing a table
+entry and the syntax reader on a COPY of the generator. **Nobody had run the real
+test against a real edit to the real generator**, which is what a lane adding a
+kit asset will actually do.
+
+Three variants, each restoring the file from git afterwards with the status
+confirmed clean:
+
+    A  the `asset_path(...)` call ONLY, invented asset
+       syntax test RED. The render is untouched, because `source_assets` is a
+       SEPARATE explicit list, so the asset is DECLARED and never LOADED.
+
+    B  the call AND the `source_assets` entry, INVENTED asset
+       syntax test RED. Blender exits 9 and writes no receipt -- but the cause is
+       `FileNotFoundError` from `asset_path` itself. `source_asset_records`
+       NEVER RUNS.
+
+    C  the call AND the entry, a REAL unlicensed asset
+       syntax test RED. Blender exits 9, no receipt, and the traceback names
+       `source_asset_records` -> `source_asset_record` -> `licence_for` ->
+       `LicenceUndetermined`. BOTH GUARDS FIRE.
+
+**THE ORDER IS THE FINDING AND IT WAS PREDICTED WRONGLY BEFORE THE RUN.** This
+lane wrote down that variant B would exercise the licence refusal. It does not:
+`asset_path` validates existence first, so an invented asset stops there and the
+licence guard is unreachable from it. **B and C produce the same outward signs —
+exit 9, no receipt, the asset named in the console — and different causes.**
+
+**So a probe of the licence guard must use a REAL asset that is absent from the
+table.** `clothes/female_sportsuit01` is one, and it is the kit case.
+
+**AND THE TWO GUARDS COVER DIFFERENT FAULTS**, which variant A shows: the syntax
+reader catches an asset DECLARED but unlicensed, and `source_asset_records`
+catches one LOADED but unlicensed. An asset loaded without being declared would
+pass the first and be caught by the second.
+
+**A NOTE FOR WHOEVER MEETS THE RED TEST.** Every installed MPFB asset declares
+CC0 in its own file header, 78 of 78. **That makes it tempting to add a table
+entry and move on.** The refusal exists to force the reading of that header, and
+a guard whose answer you can guess is the one you stop consulting.
+
 ## Where a name lives is decided by WEIGHT, not by meaning
 
 **A second hazard of the same shape as the `ahead` one above, and it is worth
