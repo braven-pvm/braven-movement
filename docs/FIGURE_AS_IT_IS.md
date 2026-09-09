@@ -292,6 +292,22 @@ each mutation was killed by a named test:
 | move the licence check out of `Studio` | `test_the_licence_check_runs_before_any_figure_is_drawn` |
 | hash the path text instead of the bytes | `test_the_hash_follows_the_bytes_and_not_the_name` |
 
+**And it was proved in Blender, not only in the tests.** A unit test proving
+that a function raises is not proof that a RUN stops.
+
+- **The good path.** `netball_chest_pass`, phase `ready`, rendered on this
+  branch. The receipt names commit `9ea602b` with `treeWasClean` true, and all
+  15 source assets carry a path, a 64-character sha256, `CC0`, and the sentence
+  the licence is quoted from.
+- **The refusal path.** The same render, with `ponytail01` removed from the
+  licensed table. Blender exited **9**, the output directory was **empty**, and
+  **no receipt was written**. The console named the asset and the rule:
+  `no licence is recorded for 'ponytail01.mhclo' ... docs/LICENSING.md requires
+  the licence of every newly selected MPFB asset to be reconfirmed before
+  publication.` The mutation was asserted present before it was applied, so the
+  experiment could not have been a silent no-op, and the file was restored from
+  git afterwards with a clean `git status`.
+
 **One guard was too weak and the mutation set found it.** The first version of
 the receipt test asserted only that `source_asset_records` is called somewhere
 in the module. It PASSED with the old bare-path list back in the receipt,
