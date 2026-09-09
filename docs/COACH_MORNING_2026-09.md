@@ -2,7 +2,8 @@
 
 **Items 1 to 9 were re-measured on `ac240b2` with a clean tree.** Items 10 and
 above were added later, as each drill was authored, and **each names the commit
-its own figures were read on** — do not read the `ac240b2` line as covering
+its own figures were read on, or says that it carries no figure** — item 18 is
+the one that carries none — do not read the `ac240b2` line as covering
 them. Where an older document gives a different number, both are shown with the
 build each was read on. Nothing in this document changes any code.
 
@@ -16,12 +17,12 @@ The questions are for Erin and Marius. They are written to be answerable by a
 coach watching the athlete, not by reading a number. Where the engine has an
 opinion it is stated as a measurement and never as a recommendation.
 
-**Sixteen numbered items.** One, item 7, is STRUCK, because it was raised on a
-measurement the solver read from a second solution for that drill. **Thirteen
-carry engine measurements. Items 8 and 10 do not**, and neither claims to: item
-8 names the constant that follows from item 2's answer, and item 10 compares two
-written vocabularies. Three further items at the end carry no evidence either,
-and say so.
+**Eighteen numbered items.** One, item 7, is STRUCK, because it was raised on a
+measurement the solver read from a second solution for that drill. **Fourteen
+carry engine measurements. Items 8, 10 and 18 do not**, and neither claims to: item
+8 names the constant that follows from item 2's answer, item 10 compares two
+written vocabularies, and item 18 asks for two angles that nothing sources.
+Three further items at the end carry no evidence either, and say so.
 
 **Items 10 to 15 were added as the pass family was authored** and are the newest
 part of this agenda: the vocabulary mismatch, a band floor, **an item for two of
@@ -674,6 +675,77 @@ So one was silenced by the readings and the other by the bands, and a drill that
 differed in either respect would have shown a coach a length wearing an angle's
 unit. **That substitution is the fault the ledger row above exists to track**,
 which is why both are recorded here rather than left as fixed code.
+
+## 17. The hand that was posed wrongly, and whether the fix reads right
+
+Added 2026-09-09 by the content lane. **Figures read on `fde5d5a`**, the commit
+that fixed it. **This item is on Erin's page as its FIRST question and has never
+been on this agenda.** It is added here because the morning needs it and no
+agenda document carried it.
+
+**What was wrong.** The model's right hand was anti-mirrored. Its fingertips
+bunched to about the width of two fingers while the left hand opened a full
+hand-span. **It is the likely reason the thumbs looked wrong to her** when she
+said they should not be.
+
+**What the fix did, measured.** On the corrected build the right hand opens like
+the left: at the chest catch **the two hands match to the decimal**.
+
+**Why it is a LOOK item and not a closed defect.** The measurement says the two
+hands now agree. It does not say the catch looks right to a coach. **That is her
+eye and nothing else can supply it.** The page puts a corrected catch in a player
+she can turn, zoom and step frame by frame, and asks one question: do the right
+hand's fingertips spread like the left's, and does the catch look right?
+
+**What it also cost, which is why it is worth her minute.** A whole ledger entry
+of elbow-width figures — the 44.60 one-handed average, the 36.57 two-handed one
+and the 37.3 degree sweep — **was measured on the anti-mirrored build** and had
+to be marked superseded. **Item 2 and item 8 are that entry's question.** If the
+hand still looks wrong to her, those two items are being asked about a pose she
+does not accept, and the order in `docs/COACH_MORNING_RUNNING_ORDER.md` puts this
+item before both for that reason.
+
+---
+
+## 18. The two angles of the release hand, which nothing sources
+
+Added 2026-09-09 by the content lane. **THIS ITEM NAMES NO BUILD BECAUSE IT
+CARRIES NO ENGINE FIGURE**, which is the whole of its content: the two angles it
+asks about are unsourced. Its source is `.remember/RELEASE_HAND_PAPER-f7af647.md`
+at `f7af647`, **which is not on main** — refer to the last paragraph.
+
+**This item exists because Marius answered two of three questions and the third
+is hers.** It has never been on this agenda and it lives today only in the
+orchestrator's state notes.
+
+**What was already ruled.** Marius ruled the release hand **cosmetic for now**,
+with his own debt note attached: the wrist and finger action is one of the key
+differentiators top athletes use. He ruled the shape **option B, ball-relative,
+at the release frame**.
+
+**What is not ruled, and cannot be ruled by measurement.** The flick model takes
+seven parameters. **Four are sourced** — the footage's timescale, the engine's
+own start angles, the manual's end state and its aim. **Two are not:
+`wristToDegrees` and `fingerToDegrees` are named and not filled.** No footage,
+no manual line and no engine reading supplies them.
+
+**So the two angles are a coaching judgement, and the proposal is that she makes
+it by looking.** Render a small set of candidates, show her the hand at the
+release frame in each, and let her choose. That is the orchestrator's
+recommendation and it is why this is a morning item rather than an engine one.
+
+**What she would be setting.** The receipt for that work carries two angles and a
+wrist speed in centimetres per second, which is a new unit needing its own floor.
+**The coach grades the angles.** The speed is the engine's business.
+
+**It is the one morning item whose artefact does not exist and cannot yet be
+made.** The candidates cannot be rendered until the movement lane's flick model
+does, so this item is the last of the four missing renders to become possible.
+
+**CITED FROM AN UNMERGED BRANCH AND LABELLED SO.** The parameter list above comes
+from `.remember/RELEASE_HAND_PAPER-f7af647.md` and `f7af647` is **not on main**.
+If that paper changes before the morning, this item's description of what is
+sourced changes with it.
 
 ## Three items with no engine evidence
 
