@@ -111,14 +111,49 @@ const p = fetch(url)
 ```
 
 `r.json() as Promise<ClipSet>` is a bare assertion. No schema check, no
-rejection of an unknown field, no error. **Nine shipped fields sit in the
-browser and are never read**, which the tool's own comment states: "Nothing
-below this line is read at play time."
+rejection of an unknown field, no error. **Nine shipped fields are never read by
+the app**, which the tool's own comment states: "Nothing below this line is read
+at play time."
 
-I searched for a consumer of each. Every `frame.ball` reference in
-`src/engine/` is the board's OWN ball, off `frame.ball.holderId` and
-`frame.ball.pos`, which comes from the project timeline. `techniqueBall.test.ts`
-reads `capturedAction(...)!.pose` and not the clip's ball. **No code in
+### Those nine are not one group, and reading them as one is a mistake
+
+**A first version of this section gave the flat count alone.** That is true and
+it misleads, because it invites the obvious economy: stop shipping the nine. Five
+of them are the reason a bad clip does not reach a board silently. Checked field
+by field against `braven-tactics` `fb0c1b6`:
+
+| field | read by |
+|---|---|
+| `stride` `seconds` `hit` `frames` | **the app** |
+| `movementId` `skill` `graded` `inPlace` `hitPhase` | **tests only** |
+| `rootTravelM` `phases` `ballRadiusM` `ball` | **nothing at all** |
+
+**The middle five are assertions, not cargo.** `technique.test.ts` and
+`techniqueSet.test.ts` read them to check that a shipped clip is what it claims:
+that it is graded, that it stays in place, that its moment is the contact, that
+it names a movement and a skill. Delete the fields and those guards cannot run.
+
+**Only the bottom four are a cost with no benefit today**, and one of them is a
+deliberate cost with a stated reason. `tools/add-technique-clip.mjs` says why it
+carries the ball track:
+
+> Where the ball is on every frame, which nothing reads yet.
+>
+> Carried because the alternative is a second trip to Braven Movement the day
+> somebody fixes the thing it is for: a carried ball sits at one fixed point in
+> front of the chest for as long as a player holds it, so `withCatchHands` pins
+> her arms there and the pull-in of a catching technique is never drawn.
+
+**So the honest bill for an unread field is four, not nine.** Anywhere else in
+this document that weighs the cost of a field, that is the number it means.
+
+I searched for a consumer of each by name, and then by fixed string for
+`clip.ball`, `clip.phases`, `clip.ballRadiusM` and `clip.rootTravelM`. Every
+`frame.ball` reference in `src/engine/` is the board's OWN ball, off
+`frame.ball.holderId` and `frame.ball.pos`, which comes from the project
+timeline. Every `.phases` reference is `timeline.phases`, a document field that a
+migration reads, and not a clip's. `techniqueBall.test.ts` reads
+`capturedAction(...)!.pose` and not the clip's ball. **No code in
 `braven-tactics`, in the app or in its tests, reads a clip's `ball` array.**
 
 Three consequences run through the rest of this document.
