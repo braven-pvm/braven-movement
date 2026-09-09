@@ -909,3 +909,144 @@ Stated here so that nobody reads silence as a finding.
   readings, and that it must not be reported as a failure on its own.
 - **Whether the eight live clips should be restaged.** That is Marius's open
   decision. Section 6 is the number it needs.
+
+---
+
+## 9. The clip's rows and the grading receipt are different lists, on purpose
+
+Added 2026-09-09 against `braven-movement` main at `a5d60da`. The content lane
+found the divergence while designing a generator's refusal, measured it, and
+asked whether it is deliberate rather than filing it as a defect. **It is
+deliberate, it is written down, and it is written down in the wrong place.**
+
+### The finding, verified
+
+On `netball_double_foot_landing`:
+
+| | |
+|---|---|
+| graded, absent from the clip's rows | `footHeightGapCm` at three phases, `trunkLeanDegrees` at one |
+| in the clip's rows, never graded | both elbows, the right shoulder, at every phase |
+
+Both halves reproduce. The drill grades eight checkpoints. The clip's baseline
+carries twenty-four rows.
+
+### Why: the rows are a fidelity check, not a grading record
+
+The twenty-four rows are a cross product. **Four phases times the same six
+measures**, and the six are not chosen for this drill. They are the entire
+contents of two tables in `spikes/verify_tactics_clip.py`:
+
+```python
+CHANNEL = {
+    "leftKneeFlexionDegrees": 4,
+    "rightKneeFlexionDegrees": 6,
+    "leftElbowFlexionDegrees": 8,
+    "rightElbowFlexionDegrees": 10,
+}
+REPORTED_ONLY = {
+    "leftShoulderElevationDegrees": 7,
+    "rightShoulderElevationDegrees": 9,
+}
+```
+
+**Those numbers are frame channel indices.** The table maps an engine measure to
+the position in the clip that carries it. The rows exist to answer one question,
+and the module docstring states it:
+
+> A clip is a lossy description of a solved movement, and the only honest way to
+> say a retarget worked is to measure the clip against what the engine measured.
+
+It also says which comparisons mean what: the elbow and the knee **must** agree,
+because `LimbPose.lower` is the angle between the two segments and that is what
+flexion is. The shoulder **cannot** agree, because ISB shoulder elevation is
+three dimensional and a pose carries two axes, so it is reported and never
+asserted.
+
+**So the two lists answer different questions.** The receipt asks whether the
+athlete performed the technique. The rows ask whether the export kept the pose
+the engine solved. Nothing about the second is a claim about coaching.
+
+### Where it is written down, and the part that is a real gap
+
+The purpose is stated in the module docstring of `spikes/verify_tactics_clip.py`
+and in the comment above `CHANNEL`. That is a complete statement, and it is at
+the **instrument**.
+
+**`spikes/clip-baseline.json` carries no statement of what its rows are.** A
+reader who opens the artefact, which is what the content lane did, finds a list
+of measures beside a movement id and no way to know it is not the grading list.
+Naming its measures the same way the receipt names them completes the trap.
+
+**This is section 4's problem in a second place.** A clip cannot say which engine
+build made it, and a baseline cannot say what its rows mean. In both, the
+artefact is separated from its provenance, and the reader is expected to find the
+code. The content lane did the correct thing and still had to ask.
+
+### Why the only centimetre measure is missing, and it is not one reason
+
+The question was whether the omission is deliberate or a consequence of a rule
+written when every measure was an angle. **Neither. There are two measures
+missing and they are missing for two different reasons.**
+
+**`footHeightGapCm` cannot be carried at all.** The engine computes it as
+`round(abs(left_up - right_up), 2)`: the difference between the two feet's
+heights. The clip's channels are radians except `bob`, which the contract's own
+table describes as "Rise off the lowest point of the clip, in metres" — a whole
+body rise, not a per-foot height. There is no foot height in a clip and no leg
+length to derive one from.
+
+**That is section 5's gap, in a second place.** The ball's position is expressed
+in arm lengths the clip does not send. A foot height gap is a length between two
+body points the clip does not describe. **The clip carries a body's angles and
+not its dimensions**, so any graded measure that is a length is outside it by
+construction, and `footHeightGapCm` is the library's only one.
+
+**`trunkLeanDegrees` is an angle, the clip has a lean channel, and they are still
+not the same quantity.** This one looks like a simple omission and is not:
+
+| | engine `trunkLeanDegrees` | clip channel 1, `lean` |
+|---|---|---|
+| from | `root` | the hips |
+| to | `c_neck` | `c_spine3`, the highest spine joint |
+| axes | three dimensional | planar, forward and up only |
+| sign | unsigned magnitude | signed |
+
+Both choices are deliberate and both are documented. `chest_joint` in
+`clip_geometry.py` says why the clip uses the spine and not the neck: "Tactics
+reads the trunk as a direction from the hips to the chest rather than as
+anybody's idea of a local axis."
+
+**A trunk that leans sideways moves the engine's measure and not the clip's.**
+That is the same planar-against-true class as the bend error this very verifier
+was written to catch, surviving in a channel the verifier does not check.
+
+### What this means for a generator, which was the original question
+
+A check written against the clip's rows is a check on **retarget fidelity**. It
+is not a check on what a drill grades, and it must not be used as one. For
+`netball_double_foot_landing` it would refuse a question about the foot height
+gap, which is graded three times, and accept one about an elbow the landing never
+grades.
+
+**The grading record is the receipt.** A generator that wants to know what a
+drill grades must read the drill's checkpoints, and nothing in the clip or its
+baseline is a substitute.
+
+### Is this a seventh question for Marius?
+
+**No, and I want to say why rather than only say no.** Nothing here is a defect.
+Two lists answer two questions and each is correct for its own. The clip is not
+missing a channel it ought to have, because the one missing measure that could be
+carried as an angle is a different quantity from the channel that resembles it,
+and the one that could not be carried is a length.
+
+**Two things are worth recording, and neither needs a ruling.**
+
+- A baseline row and a receipt row can share a measure name and mean different
+  things. `trunkLeanDegrees` and `lean` is the sharper case, because there the
+  names differ and the quantity looks the same.
+- The artefact does not carry its own meaning. That is already question four's
+  subject for clips, and this is the same argument for baselines. **If
+  `generatedFrom` is accepted, the same reasoning applies here**, and it would be
+  worth deciding both at once rather than finding this again.
