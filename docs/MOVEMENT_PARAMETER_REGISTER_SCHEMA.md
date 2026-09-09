@@ -221,12 +221,24 @@ It does not re-derive another lane's measurement. It cites it.
 
 ## Open rows recorded on 2026-09-09
 
-- **The AAOS limits.** `spikes/isb_angles.py:241` holds `"elbow.flexion":
-  RangeLimit(0.0, 150.0, "AAOS")`, and `build_library.py` checks every drill
-  against it. Four letters, no edition, no page, no population. A literature
-  value is a source only with its citation AND its population, so the library's
-  anatomical authority does not meet the bar its rows are held to. The limits
-  may be correct. Nothing states which document they came from.
+- **The AAOS limits: an incomplete citation, and NOT an unsourced number.**
+  `spikes/isb_angles.py:240` holds eight joint limits and sixteen numbers, and
+  `build_library.py` checks every drill against them. The two lines above the
+  table read: "Clinical norms from the American Academy of Orthopaedic
+  Surgeons. These are guidance for a healthy adult. An athlete population needs
+  its own bands." **So the organisation is named in full and the population is
+  stated, and the author already recorded the limitation this register would
+  have raised.** What is missing is narrower: the organisation is not a
+  publication, so there is no edition, no page and no way for a reader to check
+  the sixteen numbers. `sourceKind: LITERATURE`, population STATED, citation
+  INCOMPLETE.
+
+  *This lane first reported the row as "four letters, no edition, no page, no
+  population", to three lanes, and one of them repeated it. It had read the
+  table and not the two lines above it. That is the third time in one morning
+  this lane scoped a read to the thing named and missed what sat one line up.
+  Refer to the habit section below: what was measured was "the dict entries say
+  AAOS", and what was published was "there is no population".*
 - **The secured-ball parent.** The torso-length values that four drills' carry
   geometry descends from. The parent drill's ball file has no key after its
   arrival at 0.45, so the values live somewhere not yet found. Whether they
