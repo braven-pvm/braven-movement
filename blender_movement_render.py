@@ -917,14 +917,21 @@ def render_job(studio: Studio, job: dict, job_path: Path, args,
         # which value. NULL when the job carries none, rather than absent, so a
         # receipt that predates the field and one rendered from a job without
         # parameters do not read the same.
-        # AND ON THIS BRANCH IT IS ALWAYS NULL, because no producer here writes
-        # the field: `spikes/export_blender_job.py` has zero mentions of it and
-        # real job files carry no such key. A one-entry producer exists on the
-        # movement lane's UNMERGED branch. When it lands this records that one
-        # entry, and it will still not be every parameter the solve used. `CONTACT_WEIGHT`, `UPPER_ARM_AIM_OUT`,
-        # `TWIST_SEEDS` and every other solver constant are outside it. The
-        # field is plural and a reader of a receipt never opens
-        # `spikes/export_blender_job.py`, so the caution belongs here too.
+        #
+        # ON THIS BRANCH IT IS ALWAYS NULL, because no producer here writes the
+        # field: `spikes/export_blender_job.py` has zero mentions of it and real
+        # job files carry no such key. So every receipt this branch produces
+        # records null, and `refuse_unverifiable_pair` raises at its FIRST check.
+        #
+        # A one-entry producer exists on the movement lane's UNMERGED branch, and
+        # REACHABILITY IS A PROPERTY OF THE MERGE RATHER THAN OF EITHER BRANCH.
+        # When the two land together this records that one entry.
+        #
+        # AND IT WILL STILL NOT BE EVERY PARAMETER THE SOLVE USED.
+        # `CONTACT_WEIGHT`, `UPPER_ARM_AIM_OUT`, `TWIST_SEEDS` and the other
+        # solver constants are outside it. The field is plural and a reader of a
+        # receipt never opens `spikes/export_blender_job.py`, so the caution
+        # belongs here too.
         SOLVE_PARAMETERS: solve_parameters(job),
         # Path, sha256 AND licence per asset, the shape the reference generator
         # already writes. A path alone cannot tell two MPFB installations apart,
