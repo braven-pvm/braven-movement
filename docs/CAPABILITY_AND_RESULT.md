@@ -175,6 +175,101 @@ Marius's and this document does not take it.**
 
 ---
 
+## A second rule, and it is for CAPABILITY documents: the tense
+
+**THE STAMPING RULE ABOVE ASKS NOTHING OF A CAPABILITY DOCUMENT**, because a
+capability document holds no per-build figure. **It can still be false, and in
+exactly the way a result document can.**
+
+`docs/COACH_REVIEW_SPEC_INTERFACE.md` merged on 2026-09-09 saying, in the present
+tense, that the render receipt "now carries `solveParameters`" and that
+`render_receipt.refuse_unverifiable_pair` refuses a pair it cannot read.
+**Neither is on main.** Both are on a gated branch. The document is not wrong
+about the machinery. **It is wrong about which build has it**, and the word "now"
+is what makes that a claim rather than a plan.
+
+**THE RULE, AND BOTH HALVES MATTER:**
+
+> **A document may not use the present tense for code that is not on main, and
+> TEXT RECEIVED FROM ANOTHER LANE IS REWRITTEN INTO THIS DOCUMENT'S TENSE BEFORE
+> IT IS COMMITTED.**
+
+**The second half is the one that catches the fault.** The rendering lane wrote
+"the render receipt NOW carries `solveParameters`" and it was TRUE, of its own
+branch, where the code is. This lane committed that text into a document on main,
+where "now" means main, **and the sentence became false in transit.**
+
+**TEXT HANDED BETWEEN LANES CARRIES THE SENDER'S TENSE**, because the sender is
+standing on the branch that makes it true. **Neither lane wrote a false sentence
+and a false sentence is on main.**
+
+### Why a rule and not a stamp, and the measurement that decided it
+
+**A per-claim build stamp was the other candidate, and it was measured and
+rejected rather than argued away.**
+
+`scripts/docs_present_tense_audit.py` reads every backticked span under `docs/`,
+keeps those shaped like code identifiers, and checks each against every tracked
+non-document file at a named commit. **On `b011d39`:**
+
+| | |
+|---|---|
+| backticked spans | 3636 |
+| distinct identifiers kept | **513** |
+| identifiers that resolve | **462**, or 90.1% |
+| identifiers that do not | 51 |
+| **faults, after reading the sentence for all 51** | **3** |
+
+**The three sit in two documents.** Two are the one sentence above. The third is
+`docs/KNOWN_ISSUES.md` citing a test as
+`test_the_target_is_on_the_elbow_circle_where_the_basis_is_orthogonal`, where the
+method is `test_the_target_is_on_the_elbow_circle`. **A reader who searches for
+the cited name finds nothing and concludes the citation is invented**, which is
+the harsher of the two readings available.
+
+**THE OTHER FORTY-EIGHT ARE CORRECT, AND A HEADER IS WHY.** The documents most
+exposed to this declare their tense in their opening lines:
+
+| document | what it says of itself | identifiers absent | faults |
+|---|---|---|---|
+| `RELEASE_HAND_PAPER.md` | "It proposes a model and changes nothing" | 12 | 0 |
+| `TACTICS_CLIP_CONTRACT.md` and its questions | "the boundary between the two products" | 15 | 0 |
+| `WHAT_BETTER_ANIMATION_MEANS.md` | "Untracked, so no clone has it" | 1 | 0 |
+
+**Twenty-eight identifiers absent from the code, and not one is a fault, because
+the document said what it was.** A per-claim stamp would have added twenty-eight
+stamps and prevented nothing.
+
+### The instrument was wrong twice, and both counts are in it
+
+**A first version reported 129** and counted `.md` filenames, OCR page markers
+and dotted paths whose last segment exists. **A second reported 75 and searched
+file CONTENTS for a FILENAME.** A Python file does not contain its own name, so
+seventy-six real test files were listed as missing.
+
+**That second one is a HAYSTACK error rather than a NEEDLE error, and it fails in
+the direction that manufactures work.** The script now refuses to report until
+three known-present names are found in its haystack, and that refusal is
+exercised rather than assumed.
+
+**Both failed counts stay in the script**, because a number is worth what its
+predecessors' failures show it survived.
+
+### And the audit read this document's own count back to it
+
+**The classification above covers 29 documents on `40e1f2f`. `docs/` holds 41 on
+`b011d39`.** Twelve have been added since and none of them is classified.
+
+**That is this document's own rule working rather than failing.** The count names
+the tip it was taken on, so it is stale and not false, and a reader can see the
+gap without measuring anything. **The tables are a snapshot and the rule is the
+durable half**, which is the split the document argues for everywhere else.
+
+**Naming the gap is not a commitment to close it.** Whether twelve more documents
+are worth classifying is a decision, and this document does not take it.
+
+---
+
 ## This document is MIXED by its own rule
 
 **It classifies itself, and the answer is the uncomfortable one.**
