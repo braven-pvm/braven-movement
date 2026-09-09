@@ -171,6 +171,22 @@ key does not exist and inventing it would answer an open contract question by
 accident. Under this interface that is not a paragraph a person must read. It is
 a refusal with a named cause, and the item stays visibly unanswered.
 
+**AND THE CAUSE MUST DISTINGUISH UNMADE FROM CANNOT BE POSED.** The two look
+alike to a generator and only one of them is fixed by rendering.
+
+| items 2, 4, 17 and 18 | the render has not been made |
+|---|---|
+| **item 13** | **the drill cannot be posed on this rig at all** |
+
+**A generator that emits one cause for both tells a reader to wait for a render
+that no schedule can produce.** `netball_one_hand_high_pass` is absent from every
+archive because its `ready` phase raises on a knuckle axis, and
+`.assets/archives/coach-figures-2413f9d/PROVENANCE.md` records exactly that.
+
+**So the second cause must not carry a date.** This is the rendering lane's
+requirement, and it reached this document as text because the document has one
+author.
+
 ### Refusal 2: a caption that describes what the clip does not contain
 
 **This nearly shipped today and was found by eye.** The generator can check it:
@@ -193,6 +209,48 @@ and **the clip's frame window must contain that event's frame**.
 **That turns a label match into an evidence match**, and a caption can then name
 no moment that no ledger event supports. **This is their amendment and it is
 better than what I wrote.**
+
+### Refusal 2b: `render_pair` refuses five ways, and this document asked for four
+
+**The rendering lane's, sent as text.** A picture whose parameter cannot be named
+is a picture a coach cannot mark against a build. **Until 2026-09-09 a receipt
+could not name one.** Two jobs at two parameter values produce two different
+`jobSha256`, so the receipts are distinguishable, and nothing said which hash
+meant which value.
+
+The render receipt now carries `solveParameters`, copied from the job, and
+`render_receipt.refuse_unverifiable_pair` refuses a pair it cannot read:
+
+| what it sees | why it refuses |
+|---|---|
+| a receipt with no `solveParameters` | the pair is two pictures |
+| a receipt that does not name the value | it cannot be half of that pair |
+| two receipts at the SAME value | two pictures at one value |
+| two DIFFERENT drills | not a pair, however they read |
+
+**THE FIFTH CARRIES THE WEIGHT AND THIS DOCUMENT DID NOT ASK FOR IT: EVERY OTHER
+PARAMETER MUST BE EQUAL.** A pair whose second parameter also moved shows a
+difference the caption attributes to the first one. **The rule reads both
+mappings and compares them rather than trusting how the two jobs were produced.**
+
+**That makes the choice of comparison drill a checkable thing rather than a
+judgment.** `deflect_high` is the right drill for item 2 because both hands are on
+the ball and nothing else moves, and the fifth refusal is what stops a later lane
+picking a worse drill and getting a picture anyway.
+
+**NO ARCHIVED RECEIPT CAN NAME A PARAMETER, AND THE RULE IS RIGHT TO REFUSE THEM
+ALL.** The whole key set of all three archives was walked and there is no pole,
+dial, variant or parameter key in any of them. **So a render pair cannot be
+assembled from what is already drawn.**
+
+It needs two new jobs carrying `solveParameters`, **and the order matters**. The
+receipt records the parameter, then the solves are made, then the pictures.
+**Rendering before the receipt can record the value produces two pictures nobody
+can attribute**, which is worse than no pictures.
+
+The receipt half is committed on the rendering lane's branch at `34716e7`, which
+amends `12cccbe` after the character and animation lane found a defect in it.
+**It is not on main.**
 
 ---
 
