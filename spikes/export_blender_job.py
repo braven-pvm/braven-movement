@@ -438,7 +438,35 @@ def phase_job(result, index, frame: int, method, rest_points) -> dict:
 
 
 def solve_parameters(method) -> dict:
-    """Every solve parameter this job's pose was produced with, name to value.
+    """ONE solve parameter this job's pose was produced with, name to value.
+
+    **IT RECORDS ONE OF TEN AND THE NAME OVERSTATES IT.** The field is called
+    `solveParameters`, plural, and this returns a single entry. Measured by
+    walking `contact_solve`'s module-level constants and asking which are read
+    by the eleven functions `possession_solve` imports: **ten are, and this
+    records `ELBOW_POLE_ANGLE_DEGREES` alone.**
+
+        recorded     ELBOW_POLE_ANGLE_DEGREES
+        not recorded CONTACT_POLE_WEIGHT, CONTACT_WEIGHT, PINNED_FRACTION,
+                     TWIST_SEEDS, UPPER_ARM_AIM_DOWN, UPPER_ARM_AIM_OUT,
+                     UPPER_ARM_AIM_WEIGHT, UPPER_ARM_FRACTION,
+                     UPPER_ARM_LOCAL_AXIS
+
+    Ten is the total under a one-module call graph over direct calls, so a call
+    through an attribute or an alias would be invisible to it, and constants in
+    OTHER modules are a separate count nobody has taken. `LIMIT_WEIGHT` at
+    `movement_engine.py:90` is the first known member of that uncounted set.
+
+    **WHY THIS MATTERS TO A CONSUMER.** `render_receipt.refuse_unverifiable_pair`
+    refuses a pair whose parameters other than the varied one differ. **It reads
+    THIS mapping**, so at one key that refusal compares an empty set and cannot
+    fire. The nine unrecorded constants are equal between two jobs only because
+    both are built in one process from one build — **a construction that does
+    not hold for a pair drawn from two builds, which this project already makes.**
+
+    Recording all ten is a decision, not a tidy-up: two of them are solver
+    weights rather than quantities a coach could hold, and the checker below
+    compares as a float, which `TWIST_SEEDS` and `UPPER_ARM_LOCAL_AXIS` are not.
 
     A parameter is a fact about the solve, so it crosses the job boundary in
     the PRODUCER's direction. The rendering lane refuses to call two pictures a
@@ -462,7 +490,13 @@ def solve_parameters(method) -> dict:
 
 
 def check_solve_parameters(job: dict, method) -> None:
-    """Refuse a job that does not record every parameter its solve used.
+    """Refuse a job that disagrees with `solve_parameters` about what it used.
+
+    **NOT "every parameter its solve used", which an earlier version of this
+    docstring claimed.** It compares the job's mapping against the parameters
+    `solve_parameters` knows about, and that is one of the ten the solve path
+    reads. **A job passing this check is complete about that one and silent
+    about the other nine.**
 
     THE FAILURE THIS EXISTS FOR IS INVISIBLE IN THE ARTEFACT. A job solved with
     an override and recording the default looks exactly like a job solved with
