@@ -74,18 +74,45 @@ Every passing drill in the passing block uses it.
 Released and caught at the same height, which is the flattest a pass can be and
 therefore the kindest case for the constant:
 
+**CORRECTION, 2026-09-09. THIS IS THE LEDGER'S OWN RECURRING FAULT, COMMITTED
+INSIDE THE DOCUMENT TRACING ANOTHER INSTANCE OF IT.** The first version of this
+section read `DEFAULT_PASSER_AHEAD = 4.0` as **4.0 metres**. It is **4.0 ARM
+LENGTHS**: `author_flight.py:123` places the passer at `chest + passer_ahead *
+arm_cm`. The engine's rest arm is 52.68 cm, so the span is **2.107 m**, and
+`netball_two_hand_catch_chest` records exactly that as `passerAheadCm: 210.7`.
+The withdrawn row said the engine feeds at 4.0 m and throws at 28.6 degrees.
+Both figures are wrong. A number measured in one unit and spent in another, by
+the lane that keeps the count of them.
+
+Player to player, released and caught at the same height:
+
 | span | flight | vertical | launch speed | angle | apex above release |
 |---|---|---|---|---|---|
-| **4.0 m**, the engine's own | 0.667 s | 327.0 | 683.3 cm/s | 28.6 deg | 54.5 cm |
+| **2.11 m**, the engine's own | 0.351 s | 172.3 | 624.2 cm/s | 16.0 deg | 15.1 cm |
 | 5.0 m | 0.833 s | 408.8 | 726.0 | 34.3 deg | 85.2 cm |
 | 6.0 m | 1.000 s | 490.5 | 775.0 | 39.3 deg | 122.6 cm |
 | 7.0 m | 1.167 s | 572.2 | 829.1 | 43.6 deg | 166.9 cm |
 
-**At the manual's own drill distance the authored constant produces a lob.** A
-pass thrown at 43.6 degrees, rising 1.67 m above the release, is not a netball
-pass. **And the engine feeds from 4.0 m, which is below the manual's entire
-stated range**, so even the 28.6 degrees in the first row is measured at a
-distance no drill in the manual uses.
+**THE CORRECTION MAKES THE FINDING STRONGER, NOT WEAKER.**
+
+**At its own span the constant is defensible.** A 16 degree feed rising 15 cm is
+a flat drill pass. The engine's own file agrees: `two_hand_catch_chest` records
+6.24 m/s at 16.1 degrees with a peak of 150.2 cm. Whoever chose 600 chose it for
+THIS distance, and at this distance it works.
+
+**At the manual's distance the same constant produces a lob.** A pass thrown at
+43.6 degrees, rising 1.67 m above the release, is not a netball pass.
+
+**And the engine's span is less than HALF the manual's minimum.** Every passing
+drill in the manual is 5 to 7 m apart. The engine feeds from 2.11 m, and so does
+every drill in the library. **The speed and the span are one choice and not two**,
+and neither has a source: a flat feed at 2.11 m and a lob at 6 m are the same
+constant.
+
+**The span above is player to player, which is what the manual states.** The
+ball flies less than that, because the catch happens in front of the receiver's
+chest: on `netball_two_hand_catch_chest` the passer is 210.7 cm away and the
+recorded flight of 0.276 s covers 165.6 cm at 600 cm/s.
 
 **A level pass's apex depends only on its flight time**, because the vertical
 must cancel gravity exactly: `apex = g * t * t / 8`. A flatter pass over the
@@ -141,9 +168,10 @@ Two constraints are already available for whatever value arrives:
 1. **It must be stated as a horizontal component or converted to one**, because
    that is what `solve_launch` consumes. A measured ball speed is a magnitude.
 2. **It must be checked at the manual's 5 to 7 m and not only at the engine's
-   4.0 m**, because the flight's shape changes with the span and the current
-   constant is defensible at neither.
+   2.11 m**, because the flight's shape changes with the span. The current
+   constant is defensible at 2.11 m and is a lob at the manual's distance.
 
-**And `DEFAULT_PASSER_AHEAD = 4.0` is a second unsourced number on the same
-line.** It is below every distance the manual states. Changing the speed without
-it would derive a launch for a drill the manual does not describe.
+**And `DEFAULT_PASSER_AHEAD = 4.0` arm lengths is a second unsourced number on
+the same line.** At 2.11 m it is less than half the manual's minimum. **Changing
+the speed without changing the span would derive a launch for a distance no
+drill uses.** The two were chosen together and must be ruled on together.
