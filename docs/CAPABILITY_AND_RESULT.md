@@ -206,6 +206,15 @@ much larger decision than stamping its headings, and it is Marius's. The rule
 above works either way: after a split, each half's headings still name what they
 were read on.
 
+**It covers documents under `docs/` and nothing else, and that boundary matters.**
+The video lane measured the same fault outside this unit's scope this morning:
+**the page's submission payload carries no build at all.** The build appears
+eight times in the page's own text and in none of what leaves the browser, so an
+answer is attributable to a build only by inferring it from a timestamp. **That
+is the same fault this rule addresses, in a data payload rather than a
+document.** It is theirs and they are routing it; it is named here only so a
+reader does not think this rule already covers it.
+
 **It classifies by reading, not by measurement.** Every verdict above is a
 judgement against the stated rule, and the rule is written down so a reader can
 disagree with the rule rather than with twenty-five separate calls.
