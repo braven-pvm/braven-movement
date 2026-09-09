@@ -16,6 +16,44 @@ disk and hard-codes no answer.
 | 4, the finger clip | a clip at full speed, then slowed | **NO** | 16 clips exist and none is usable | none |
 | 18, the release angles | rendered candidates to choose from | **NO** | nothing, and nothing to render yet | none |
 
+## What each NO would cost to make a YES
+
+**Added 2026-09-09 so the date decision can be made rather than deferred.** Costs
+are on this machine, from the timings in this document.
+
+    item 17   EXISTS NOW, zero cost. Three views, openable today:
+              .assets/archives/coach-figures-2413f9d/
+                netball_two_hand_catch_chest.contact.{front,quarter,side}.png
+              1080x1350, about 1.4 MB each, build 2413f9d, hand fix included.
+              The BEFORE pair is in rerender-hand-mirror-2026-09-02/pre-fix-31aug/
+              under the SAME file names.
+
+    item 2    BLOCKED ON ANOTHER LANE, THEN CHEAP. Needs the movement lane's
+              37.3 solve and a job carrying it. The render is then one phase of
+              `deflect_high` at two values: 6 views at about 19 s, plus a 7 s
+              build, so UNDER THREE MINUTES. The wait is a solve, not a render.
+
+    item 4    RENDERABLE, AND IT MAY NOT ANSWER THE QUESTION. It needs a job
+              re-exported at every frame and an `--animate` pass; the per-frame
+              cost is NOT measured here, because the exporter writes only to
+              `spikes/poc-output` and regenerating it would break this lane's
+              hash guard against the archive.
+              THE DEEPER PROBLEM IS NOT TIME. Item 4 asks whether the hand closes
+              like a hand, and the change is 89.95 degrees in ONE frame at 60 a
+              second. A clip at full rate shows that in a sixtieth of a second.
+              WHAT THE QUESTION NEEDS IS SLOWED PLAYBACK, which is a property of
+              the player and not of the render. Rendering more frames does not
+              buy it.
+
+    item 18   NOT A RENDER PROBLEM. No candidate angles have been chosen, so
+              there is nothing to draw. A `render_pair` needs two values and this
+              item has none. It is blocked upstream of this lane entirely.
+
+**SO THE FOUR ARE NOT ONE BLOCKER.** One is available now, one waits on a solve
+and then costs three minutes, one needs a decision about what would answer it,
+and one has no input at all. **The running order holds the date for "four missing
+renders"; only one of the four is a render this lane can produce on request.**
+
 ## The three rules that decide a row, and why the answer is not a file count
 
 1. **EXISTS MEANS A PERSON IN A ROOM CAN LOOK AT IT.** A dataset a page can play
