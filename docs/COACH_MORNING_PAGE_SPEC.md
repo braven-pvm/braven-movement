@@ -44,6 +44,10 @@ Each follows the page's existing pattern: a short explanation in her language,
 the artefact, one question, then named options including one that lets her say
 she cannot tell.
 
+**Item 16 is the one exception and it is deliberate.** It asks two questions, an
+open one before a closed one, for the reason given in its own section. **Do not
+make it match the others.**
+
 ### Item 12: the bounce pass has no bounce
 
 **Artefact:** `pass.netball.bounce-pass`, the exported clip. **The clip is the
@@ -105,14 +109,31 @@ angle. It measures how far apart her two feet are in height. Over the whole clip
 that distance never exceeds 1.22 cm, and the three graded readings are 0.00, 0.00
 and 0.01 against bands six to fourteen centimetres wide.
 
-**Question:** when you watch a landing, is the height difference between the feet
-what you look at? If not, what is?
+**ASK THE OPEN QUESTION FIRST, AND DO NOT SHOW THE OPTIONS UNTIL SHE HAS
+ANSWERED IT.** The order is the specification here, not a preference.
 
-**Options:** yes, that is the thing / no, I watch something else, with a free
-text field / partly / cannot tell.
+**First, a free text field and one question:** when you watch a landing, what are
+you looking at?
 
-**The free text field matters more here than the options.** If she names what she
-watches and the engine has no measure for it, that is the item's real output.
+**Only then, a second question:** is the height difference between her two feet
+part of it?
+
+**Options for the second:** yes, that is one of the things / no / only on some
+landings / cannot tell.
+
+**WHY THIS ORDER AND NOT THE TIDIER ONE. If she is shown "a foot-height gap" as
+an option before she has said what she watches, she will very likely agree with
+it**, and we will have learnt nothing except that our own option is plausible.
+That is anchoring, and it would make the item look answered while answering
+nothing.
+
+**A second reason, weaker but real:** if she names something the engine has no
+measure for, that is the item's real output, and a multiple choice throws it
+away.
+
+**Do not reorder these two questions for tidiness.** A later reader will be
+tempted to put the closed question first because it renders better. That
+destroys the item.
 
 ### Item 11: the band floor missed by 0.05 degrees — SPECIFIED BUT BLOCKED
 
