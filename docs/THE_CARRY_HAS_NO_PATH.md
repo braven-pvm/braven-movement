@@ -1,126 +1,105 @@
-# The carry has no path, and the ball is pinned to her
+# RETRACTED. The carry HAS a path, and it is in the technique file
 
-Measured on 2026-09-09 against `13148a7`, for the release-timing unit Marius
-ruled mechanical on 2026-09-08. **Nothing is built and nothing is proposed.**
-`spikes/movements/` is gate 4 and untouched. The instrument is
-`scripts/carry_path.py`, committed beside this document.
+**THE FILENAME OF THIS DOCUMENT IS WRONG AND IS KEPT ONLY SO EXISTING CITATIONS
+RESOLVE.** The claim it was written to make — that the carry has no authored
+path — is false. It was published on 2026-09-09 and retracted the same morning.
+Everything below is the correction.
 
-This exists because **three lanes now depend on the answer**: it reshapes gate 4
-for Marius, it corrects a reading in the contract lane's section 8, and it is
-the mechanical explanation of the movement lane's own wrist figures.
+Measured against `13148a7`. The instrument is `scripts/carry_path.py`.
+`spikes/movements/` is gate 4 and untouched.
 
-## The two readings that were offered
+## What was claimed, and what is true
 
-Both were plausible, both were held by someone, and they cannot both be true.
-
-1. **"The pre-release hand follows the AUTHORED CARRY PATH in each drill's
-   `.ball.json` keys."** Held by the orchestrator and repeated by this lane.
-2. **"The wrist is constrained to a STATIONARY authored point for the entire
-   carry."** Read by the contract lane from `ball_track.offset_at` and
-   `contact_solve.py:530`.
-
-**Neither is right, and the truth is the third thing.**
-
-## The population, stated before the result
-
-| | |
+| claimed on 2026-09-09 | true |
 |---|---|
-| drills | the four passes: `chest_pass`, `overhead_pass`, `bounce_pass`, `one_hand_high_pass` |
-| frames | every held frame of each, **76 per drill** |
-| the offset | read from **`ball.offset_at(phase)`**, the engine's own call, at each held frame's own phase |
-| the world position | `possession.frames[n].centre`, the engine's own |
-| rebuilt | **nothing.** No parabola, no frame, no offset is reconstructed here |
+| the carry has no authored path | **every drill authors one**, and the four passes author four keys each |
+| the ball is pinned to her | **it is not**: it travels 22.6 to 110.6 cm relative to her body |
+| every centimetre before release is her own motion | **backwards**: 83 to 100 per cent of it is the authored path |
+| gate 4 asks how many numbers must be CREATED | **it asks how many change.** The keys exist |
 
-## The result
+## How the error was made, in two steps
 
-**THE AUTHORED OFFSET IS ONE TRIPLE, HELD FOR THE WHOLE CARRY.** Counting the
-distinct values of `ball.offset_at` across all 76 held frames:
+**1. I read an engine value, but the WRONG engine value.** I measured
+`ball.offset_at(phase)`, found one triple held at every phase, and reported it as
+the carry. **`ball.offset_at` is the BALL file's FLIGHT offset.** The carry does
+not use it. `possession.carry_path` builds the carried offsets from the
+**TECHNIQUE file's `afterContact`**, passed at `possession_solve.py:198` as
+`after_contact=method.after_contact`.
 
-| drill | held frames | distinct authored offsets | world motion, mean | max |
+The wrong value was constant, and a constant agreed with the claim I had been
+given and was checking. **A measurement that confirms the story is the one to
+re-check, not the one to publish.**
+
+**2. I talked myself out of the correct result.** The first version of the
+instrument measured the ball against the shoulder midpoint and found it moving
+0.28 cm per frame relative to her body. **That was the real carry path, detected
+correctly.** I reasoned that the shoulder midpoint is not the engine's frame —
+which is true — and replaced a right answer obtained by an imperfect route with
+a wrong answer obtained by a clean-looking one. **The reasoning about the origin
+was sound and the conclusion it licensed was false.**
+
+## The authored path, read from the engine
+
+`possession.carry_path` and `possession.sample_offsets`, on the technique loaded
+by `load_technique`. Nothing is rebuilt.
+
+| drill | held frames | travel relative to her | travel in the world | the path's share |
 |---|---|---|---|---|
-| `chest_pass` | 76 | **1** | 0.36 cm/frame | 0.71 |
-| `overhead_pass` | 76 | **1** | 0.98 | 2.14 |
-| `bounce_pass` | 76 | **1** | 0.56 | 0.70 |
-| `one_hand_high_pass` | 76 | **1** | 1.60 | 2.82 |
+| `chest_pass` | 76 | 22.59 cm | 27.24 cm | **83%** |
+| `overhead_pass` | 76 | 72.94 | 73.25 | **100%** |
+| `bounce_pass` | 76 | 41.86 | 42.31 | **99%** |
+| `one_hand_high_pass` | 76 | 110.60 | 120.24 | **92%** |
 
-The triple is `across 0.0, up 0.12, ahead 0.55` on all four.
+**The authored path is most of the ball's travel on every drill.** On the
+overhead pass it is all of it.
 
-**So reading 1 is wrong: there is no path.** Every pass authors two keys, both
-before phase 0.02, at the same point, and `offset_at` clamps to the nearest end
-of the flight for every later phase.
+## Gate 4, in its real shape
 
-**And reading 2 is wrong: the point is not stationary.** The ball moves through
-the carry on every drill. The engine places that constant offset in the
-**athlete's frame**, and she moves.
+**A retiming is a retune of existing numbers, which is what the orchestrator said
+before I contradicted it.** The numbers are these:
 
-**THE BALL IS PINNED TO HER. Every centimetre it travels before the release is
-her own motion.**
+| drill | keys in the file | keys the engine uses | numbers |
+|---|---|---|---|
+| `chest_pass` | 4 | 3 | 12 |
+| `overhead_pass` | 4 | 3 | 12 |
+| `bounce_pass` | 4 | 3 | 12 |
+| `one_hand_high_pass` | 4 | 3 | 12 |
+| **total** | 16 | **12** | **48** |
 
-That is why the wrist turns only 1.07 to 5.55 degrees through contact: the hand
-grips a ball that has no motion of its own to follow.
+Each used key carries four numbers: `atPhase`, `across`, `up`, `ahead`.
 
-## The FUNCTION the claim was traced in is not on the library path. The module is.
+**AND EACH FILE CARRIES A KEY THE ENGINE IGNORES.** The `held` key at phase 0.00
+is never used, because `carry_path` appends only keys **after** the contact
+phase, and the passes arrive at 0.02. Four keys are authored, three are read.
+That is a separate small finding and it is not a defect: `carry_path`'s docstring
+says the author writes where the ball goes and never where it starts.
 
-**A first version of this section was headed "the module ... is not on the
-library path", and its own body said `solve_contact`.** The heading overstated
-the text under it, which is the fault this repository records most often, and
-two lanes were within one sentence of generalising it. It is corrected here and
-the distinction is the point.
+**What a retiming would change.** The release key sits at phase 0.80 on all
+four. The acceleration is in the interval between `drive` (or `step`) and
+`release`. Moving it earlier means moving an `atPhase`, an offset, or both.
 
-**The function is not reached.** `solve_contact`, which contains the
-`contact_solve.py:530` fallback the contract lane read, has exactly one caller in
-the repository and it is that module's own `main()`. It is a spike entry point.
-The path the library build uses is `possession.py`'s frames into
-`possession_solve.py:245`, which takes `frame.centre` for a holding side.
+## What each number would inherit, and what would need a source
 
-**The MODULE is reached, and its constants are load-bearing.**
-`possession_solve.py` imports `elbow_poles` and `upper_arm_aim` from
-`contact_solve` at lines 35 and 36 and calls them at 304 and 308. Both sit
-outside `solve_contact`. So `ELBOW_POLE_ANGLE_DEGREES` at line 127 —
-**the 31.3 a coach is being asked to move to 37.3** — is reached by every solve
-the library performs. Found by the movement-science lane and verified here.
+| number | parent today |
+|---|---|
+| `ahead` at the held offset, 0.5594 | traced three hops to a measured elbow-flexion sweep against `RangeLimit(0.0, 150.0, "AAOS")`. Refer to the movement-science lane |
+| `up` at the held offset, 0.1221 | **no derivation anywhere.** An open row |
+| the secured-ball parent, in torso lengths | `netball_two_hand_catch_chest.technique.json`, `afterContact` `pull_in` at 0.76. Its own origin is **open and unguessed** |
+| every `atPhase` | **no source.** They are authored phases |
+| the `across` components | zero on the chest and overhead passes; non-zero only on `bounce_pass` and `one_hand_high_pass`, which are the two that move the ball sideways |
 
-So the contract lane's reading was **right about the code it read and wrong about
-which code runs**, and "`contact_solve` is a spike" would be wrong in the other
-direction. **A file is not on or off the path. Its functions are.**
+**So a retimed path would inherit a parent for one component, inherit an open row
+for a second, and need a new source for the timing itself.** A path authored
+without inheriting from the first would silently break a chain that currently
+holds.
 
-## The wrong origin, kept rather than deleted
+## What survives from the retracted version
 
-**The first version of the instrument measured the ball against the SHOULDER
-MIDPOINT** and reported it moving 0.28 cm per frame relative to the body. That
-reads as a refutation of a body-fixed offset. **It is not, and it was nearly
-published as one.**
+The trace of `contact_solve`, which was a separate question: `solve_contact` has
+one caller and it is that module's own `main()`, while `elbow_poles` and
+`upper_arm_aim` are called from `possession_solve.py:304` and `:308`. **A file is
+not on or off the library path. Its functions are.** That stands and is
+unaffected.
 
-The engine's frame is anchored at the **chest** and carries the athlete's
-orientation. The shoulder midpoint is a different origin, and it moves
-differently when the trunk turns. A constant offset in one frame is a changing
-offset in the other. **One phrase, two origins**, which is the fault this
-repository records more often than any other.
-
-The wrong proxy is named in the instrument's own docstring rather than removed,
-because the next person will reach for the same one.
-
-## What it does to the unit
-
-**Gate 4 changes shape.** "Retime the carry" is not a retune of existing keys,
-because there are no keys to retune: there is one triple.
-
-**The question is no longer how many numbers change. It is how many must be
-CREATED, and from what.** A mechanical release needs a carry that accelerates
-into the release. That is a path authored where none exists, and **its shape has
-no source**: not the manual, not the footage, not a coach. It is a coaching
-judgment nobody has made.
-
-**No path is authored until Marius has scoped it.**
-
-## What is now cheap to test, and was not before
-
-The orchestrator's hypothesis is well posed in these terms: today the hand's
-incoming speed at the release is her trunk's, the ease-out
-`out = 1 - (1 - t)^2` begins at full speed and therefore assumes a matching
-incoming speed, and **the mismatch is the release seam**. If a carry that
-accelerates supplies that speed, the seam may close without any change to the
-easing, and one decision replaces two.
-
-That is the carry-side half of the sweep, and this measurement is what makes it
-a defined experiment rather than a guess.
+The easing sweep and its null are also unaffected, because they vary a line that
+runs after the release and measure graded checkpoints directly.
