@@ -69,6 +69,38 @@ BACKTICKED = re.compile(r"`([^`\n]{1,80})`")
 CAMEL = re.compile(r"[a-z]+[A-Z][A-Za-z0-9]*")
 UPPER = re.compile(r"[A-Z][A-Z0-9_]{2,}")
 
+# A NAME A DOCUMENT DEFINES IS NOT A NAME A DOCUMENT ASSUMES, and only a reader
+# can tell them apart. The check asks "is this name in the code". The sentence
+# that matters asks "is this name CLAIMED to be in the code", and no text test
+# answers that. So this list is HAND-WRITTEN, with the evidence per entry.
+#
+# A specification that did not name its own fields would be no specification.
+# `movesWith` sits in COACH_REVIEW_SPEC_INTERFACE.md's field table at line 72
+# and has its own section 7 at line 282, "movesWith, and why a specification
+# needs it", setting out its three resolvable forms. It is being specified.
+#
+# The register's own schema columns are the same thing: naming `sourceKind` and
+# `unitEvidence` specifies them, it does not claim they exist. They stop being
+# population C when the sidecar and the renderer are built.
+#
+# THE DEFAULT IS THE LOUD ONE ON PURPOSE. A name not listed here is reported as
+# ASSUMED, so a new one appears in the dangerous class rather than the safe one.
+DEFINED_NOT_ASSUMED = {
+    "movesWith": "COACH_REVIEW_SPEC_INTERFACE.md field table line 72, and its "
+                 "own section 7 at line 282",
+    "sourceKind": "a column of this register's own schema, not yet built",
+    "unitDeclared": "a column of this register's own schema, not yet built",
+    "unitImplied": "a column of this register's own schema, not yet built",
+    "unitEvidence": "a column of this register's own schema, not yet built",
+    "derivedFrom": "a column of this register's own schema, not yet built",
+    "rootSource": "a column of this register's own schema, not yet built",
+    "reachedBy": "a column of this register's own schema, not yet built",
+    "existsInCode": "a column of this register's own schema, not yet built",
+    "whatWouldChangeIt": "a column of this register's own schema, not yet built",
+    "AUTHOR_INTENT": "a sourceKind of this register's own schema, not yet built",
+    "LITERATURE": "a sourceKind of this register's own schema, not yet built",
+}
+
 # A word that is upper case in prose and is not a parameter.
 NOT_A_PARAMETER = {
     "KNOWN_ISSUES", "README", "MEASURE_UNITS", "TODO", "NOTE", "AND", "NOT",
@@ -78,8 +110,20 @@ NOT_A_PARAMETER = {
 }
 
 
+# THIS REGISTER'S OWN FILES ARE NOT PART OF THE CORPUS, AND THE REASON IS A
+# DEFECT THIS FILE CAUSED. Once `register_survey_prose.py` was committed it
+# became a tracked file, so `git ls-files` handed its own source to the
+# presence test. Its docstring names `wristToDegrees` and `fingerToDegrees`,
+# and its DEFINED_NOT_ASSUMED table names ten more. The absent count fell from
+# 25 to 7 and the population's entire dangerous class vanished, because the
+# instrument had found its own mentions of the names it was searching for.
+#
+# An instrument that searches for a name must not count its own mention of it.
+OWN_FILES = "scripts/register_"
+
+
 def code_text() -> str:
-    """Every tracked .py and .json file, as one string.
+    """Every tracked .py and .json file, as one string, minus this register's.
 
     A DELIBERATELY WEAK PRESENCE TEST. Refer to the docstring.
     """
@@ -91,6 +135,8 @@ def code_text() -> str:
         raise SystemExit(f"git ls-files exited {listing.returncode}")
     parts = []
     for name in listing.stdout.split():
+        if name.startswith(OWN_FILES):
+            continue
         path = ROOT / name
         try:
             parts.append(path.read_text(encoding="utf-8", errors="replace"))
@@ -168,9 +214,23 @@ def main() -> int:
     print("stronger. Everything below is absent under the most generous reading.")
     print()
 
-    for token, where in sorted(absent.items()):
-        docs_named = ", ".join(sorted(where))
-        print(f"  {token:34s} {docs_named}")
+    defined = {t_: w for t_, w in absent.items() if t_ in DEFINED_NOT_ASSUMED}
+    assumed = {t_: w for t_, w in absent.items() if t_ not in DEFINED_NOT_ASSUMED}
+
+    print(f"  DEFINED, absent by design: {len(defined)}")
+    print(f"  ASSUMED, and absent:       {len(assumed)}")
+    print()
+    print("**ASSUMED IS THE POPULATION. DEFINED IS ITS MEASUREMENT ARTEFACT.**")
+    print("A specification that did not name its own fields would be no")
+    print("specification. A document that reasons about a parameter, names its")
+    print("unit and puts it in front of a coach, while nothing carries it, is")
+    print("the defect this lane exists to catch.")
+    print()
+    for token, where in sorted(assumed.items()):
+        print(f"  ASSUMED  {token:22s} {', '.join(sorted(where))}")
+    print()
+    for token, where in sorted(defined.items()):
+        print(f"  defined  {token:22s} {DEFINED_NOT_ASSUMED[token]}")
 
     if elsewhere:
         print()
