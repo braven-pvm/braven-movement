@@ -163,47 +163,61 @@ Five plus one plus one is seven.
 the seven things it cannot mean, and six of the seven are this lane's to fix
 before any of them can be claimed.
 
-## 8. The method fault, recorded because it is the useful part
+## 8. How to search this repository, written as a procedure
 
 **Both of the defects the brief named as already recorded were missing from the
-first version of this list, and I dropped them silently.**
+first version of this list, and I dropped them silently.** They are R2 and R3.
+The account of that is below the procedure, because the procedure is the part a
+reader can use.
 
-The brief named "the hand is flat through the release and snaps open in one
-frame" and "the pelvis yaws 10 to 24 degrees on drills whose authored turn is
-zero". I searched `docs/` for both, found neither, and omitted both without
-saying so. They are R2 and R3 above.
+**FOUR LANES HIT FOUR DIFFERENT MODES OF THIS IN ONE MORNING, and every one of
+them was following the search rule.** The orchestrator collected them:
 
-**The two failed for DIFFERENT reasons, and only one of them is a search
-failure.**
+| # | mode | what happened | what to do |
+|---|---|---|---|
+| 1 | **STALE CORPUS** | a lane grepped its own tree, 42 commits behind main, and duplicated a document that had merged the day before | **FETCH BEFORE YOU GREP.** The grep was correct and the corpus was old |
+| 2 | **WRONG VOCABULARY** | "pelvis yaw" returns nothing. The document calls it "the pelvis LINE" | **SEARCH BY THE FIGURE.** `15.7` found it at once. A number is stable across vocabularies |
+| 3 | **WRONG PLACE** | the finger snap lived in `.remember/`, which is untracked, so no clone has it | **A finding belongs in `docs/`, in git.** Searching harder cannot fix this one |
+| 4 | **LINE WRAPPING** | a grep for a phrase returned nothing because the sentence wraps mid-phrase | **Search the shortest distinctive FRAGMENT**, or grep with context |
 
-**R2 was outside the repository entirely.** `docs/RELEASE_HAND_PAPER.md` is not
-on main, and neither `175.87` nor `56.2` appears anywhere under `docs/` on main.
-The paper has sat on an unmerged branch. **No search of the repository could have
-found it.** That is a failure of the record, not of the search, and the
-orchestrator has taken it.
+**Modes 2 and 3 are this lane's**, and they are the two halves of the same
+failure: R3 was inside the repository under a different name, and R2 was outside
+the repository entirely.
 
-**R3 was inside the repository under a different name.** `docs/CLAVICLE_ARTEFACT.md`
-calls it "the pelvis LINE" and records its magnitude as 15.7. I read that
-entry — this lane quoted the knee figures from the section beside it — and did
-not connect it, because I was matching the brief's WORDS and the brief's FIGURE
-and both differed.
+**And a fifth, which is not about searching at all: READ THE ENCLOSING SCOPE
+BEFORE ASSERTING AN ABSENCE.** A comment above a table, a `source` field above a
+key. A lane published a judgment this morning after reading a dictionary and not
+the two lines above it, and reported a population as missing when the comment
+stated it.
 
-**THE RULE THAT FOLLOWS IS TO GREP FOR THE FIGURE AND NOT THE PHRASE.** `15.7`
-finds it in one command where "pelvis yaw" finds nothing. **A number is stable
-across vocabularies and a name is not**, which is this repository's own "a name
-is not a correspondence" applied to a search rather than to an artefact. The
-brief's own "10 to 24" would also have failed; `24.5` would have worked.
+### The other half, for whoever writes the document
 
-**AND THE OBVIOUS FIX TO THE SEARCH RULE IS THE WRONG ONE.** "Search `.remember/`
-as well" was this lane's first proposal and it is wrong: **`.remember/` holds
-zero tracked files.** Telling every lane to search it would make every lane
-depend on local state that no clone has. **A finding a lane must not re-derive
-belongs in `docs/`, in git.**
+**A document that declares itself the single place for a number must be findable
+BY ITS FIGURES and not only by its title.** One note in this repository has now
+been missed by three separate lanes, and its own text records the first two.
 
-**The honest form of the fault, in one sentence:** the search rule was correct,
-one finding was outside the repository, the other was inside it under a different
-name, and the only part that was mine was matching on the name instead of the
-number.
+That is why every figure in this document sits beside the words a reader would
+search for, and why R3 quotes `docs/CLAVICLE_ARTEFACT.md`'s own phrase "the
+pelvis line" as well as the number.
+
+### What was mine, in one sentence
+
+The search rule was correct. One finding was outside the repository, the other
+was inside it under a different name, and **the only part that was mine was
+matching on the name instead of the number** — which is this repository's own "a
+name is not a correspondence", applied to a search rather than to an artefact.
+
+**The brief's own figure would have failed too.** It says "10 to 24"; the record
+says 10.5 to 24.5. `24.5` finds it and `10 to 24` does not.
+
+### The obvious fix to the search rule is the wrong one
+
+"Search `.remember/` as well" was this lane's first proposal to the orchestrator
+and it is wrong. **`.remember/` holds ZERO tracked files**, verified with
+`git ls-files .remember`. Telling every lane to search it would make every lane
+depend on local state that no clone has, which is a worse rule than the one with
+the hole. The orchestrator has taken mode 3 as the record's failure rather than
+the searcher's, and the movement lane is merging the paper that carries R2.
 
 ## 9. The instruments this lane would have to build
 
