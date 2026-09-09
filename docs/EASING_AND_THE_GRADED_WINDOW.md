@@ -1,4 +1,4 @@
-# The follow-through easing is invisible to grading
+# The easing's effect on grading is below the solver's own noise
 
 Measured on 2026-09-09 against `13148a7`. The instrument is
 `scripts/sweep_release_easing.py`, committed beside this document.
@@ -35,13 +35,34 @@ that was swept**, which is what makes this a sweep and not three builds:
 every drill that releases. These are the four where the release is the
 technique.
 
-## The result
+## The result, stated against this sweep's own null
 
-**NO GRADED CHECKPOINT MOVES BY AS MUCH AS THE BAND FLOOR ANYWHERE IN THE
-SWEEP.** The floor is 5.0 degrees. Of sixteen checkpoints that moved at all,
-fourteen moved by **less than 1.3 degrees** across every variant.
+**A FIRST VERSION OF THIS SECTION SAID "no graded checkpoint moves by as much as
+the 5.0 degree band floor anywhere in the sweep". THAT SENTENCE IS WITHDRAWN AND
+IT WAS DISPROVED BY THE TABLE FOUR LINES BELOW IT**, which carries +8.40 and
++8.30. A summary sentence contradicted by its own list is the fault this
+repository records most often, and it was written here in the document that
+catches a basin. Count the items, then write the sentence.
 
-The two that moved further did not move because of the easing. Refer below.
+**THE HONEST STATEMENT USES THIS SWEEP'S OWN NULL RATHER THAN AN ABSOLUTE
+FLOOR.**
+
+> **At every graded checkpoint the easing's effect is indistinguishable from the
+> solver's own noise, measured independently at 1.7 degrees on a knee in a phase
+> the easing cannot reach. The two rows that exceed it are basin crossings,
+> non-monotonic in the parameter, and a basin is not an easing effect.**
+
+**Where the null comes from, and why it is not borrowed.**
+`one_hand_high_pass/ready/leftKneeFlexionDegrees` sits at a `ready` phase, which
+happens BEFORE the release. The easing shapes only frames after the release, so
+**it cannot reach that checkpoint at all.** Every number in that row is solver
+variation with no effect present to contaminate it, and its largest excursion is
+1.71 degrees. That is this sweep measuring its own noise, on its own drills, in
+its own units.
+
+**Fourteen of the sixteen rows that moved sit below that null.** They are not
+"small". They are **unresolvable**: this instrument cannot tell them from the
+solver restarting.
 
 ## The two large moves are basin crossings
 
@@ -98,9 +119,51 @@ in a specific direction:
 - **The EASING is outside it.** It governs the seam and the frame-81 stall,
   which are animation defects a coach sees in motion and not in a graded still.
 
+## The caveat that must travel with the scheduling finding
+
+**"Not urgent" is true of the DECISION and not of every ANSWER.** A ruling that
+said "any easing is fine, it does not reach her" would be wrong at two of the
+six values tested. Measured, the largest move at any graded checkpoint:
+
+| variant | largest move at any checkpoint | against the 1.7 null |
+|---|---|---|
+| `linear` | 0.79 | below |
+| `p = 1.25` | 0.88 | below |
+| **`p = 1.5`** | **8.40** | **five times above** |
+| `p = 2.0` | the baseline, zero by construction | — |
+| `p = 2.5` | 1.54 | below |
+| **`p = 3.0`** | **8.30** | **five times above** |
+| `smoothstep` | 0.91 | below |
+
+**At p = 1.5 or p = 3.0 a knee Erin grades moves 8.4 degrees**, and it does not
+matter to her mark that the cause is a solver basin rather than the easing. So
+the constraint is on the answer, not on the timing: **four of the six are safe
+and two are not.**
+
+**"Safe" here means no basin was crossed on THESE FOUR DRILLS at THESE VALUES.**
+It is not a guarantee. The lower body is discontinuous in its inputs, so another
+drill may cross at another value, and any chosen easing must be re-swept across
+the drills it will ship on.
+
 **The easing still needs its ruling.** `KNOWN_ISSUES` shows no easing wins on
 the spike instrument, and this document adds only that grading cannot break the
 tie either. **It is not urgent against Erin's date**, which is the finding.
+
+## The guard that makes a null result trustworthy
+
+A sweep reporting "no effect" is worthless unless it can be shown to be capable
+of reporting an effect. Three guards, and the third is the one that matters:
+
+1. the run fails if `possession.py:658` no longer matches the line it patches;
+2. it asserts the substitution changed the file;
+3. **it asserts that the PATCHED module is the one that got imported.**
+
+**Without the third, a sweep that silently imported the repository's own module
+would report exactly the no-effect result this one superficially resembles**, and
+the conclusion would be unfalsifiable. The instrument also refuses a flat result
+outright: if nothing moves anywhere, it exits with an error rather than
+reporting "no effect", because a sweep that cannot move anything is more likely
+to be disconnected than to be evidence.
 
 ## What is not answered here
 
