@@ -126,6 +126,21 @@ range of motion as visible bend. It never shipped.
 
 ### C. The limit is applied about the axis that turned
 
+**RULED ON 2026-09-09 BY THE ORCHESTRATOR. This is the option.** Recorded here
+rather than in a message, because a ruling that lives in a message is a ruling
+nobody can find.
+
+**THE LIMITATION OF THE RULING, WHICH IS NOT A CAVEAT ON THE OPTION.** C would
+draw the figure. It would not show the figure is anatomically right. The guard
+exists because a wrongly named axis lets a joint run past its licence silently,
+and **C does not restore that protection for this drill. It moves the question**
+to whether that grip is a pose this engine should hold, which is the fourth
+possibility below and is the movement lane's.
+
+**NOT IMPLEMENTED, and deliberately.** The fourth possibility is open with that
+lane, and implementing C first would draw a figure whose pose may be the actual
+defect. The ruling settles which option, not when.
+
 This is the only option that keeps the boundary rule intact, because it changes
 nothing about what crosses it: the job keeps bounding the motion about the
 knuckle's own curl axis, and the consumer stops ASSUMING which component that is
@@ -167,6 +182,11 @@ name and one by content:
     every worktree's out/, 940 stills and 16 clips absent
     spikes/movements/, the authored definition     PRESENT
     spikes/poc-output/, the job file               PRESENT
+
+**THE ARCHIVES ARE THE AUTHORITY AND THE WORKTREE SWEEP IS NOT.** Nine worktrees
+were swept at their current tips and none was fetched first, so that row is an
+absence in those trees as they stood. The archives decide the question, and they
+sit at `.assets/archives`, outside every checkout.
 
 So the drill is authored and jobbed and never drawn, and the cause is the
 refusal this paper measures. The archive's own `PROVENANCE.md` records the
