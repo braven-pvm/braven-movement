@@ -152,7 +152,46 @@ named. That is the movement lane's grip and this lane does not rule on it. It is
 listed because a paper that offered only the three options would have implied
 the pose was sound, and nothing here shows that.
 
-## 5. What is not measured
+## 5. The consequence for the coach morning, which nobody has connected
+
+**THE REFUSAL IS NOT A LIBRARY GAP. IT IS A MORNING ITEM WITH NO PICTURE.**
+
+`netball_one_hand_high_pass` is item 13 of `docs/COACH_MORNING_2026-09.md`, and
+that item opens: "**What she can see.** The ball taken up on one arm to the top
+of its reach, a step, the release, and the arm coming through."
+
+**There is no render of that drill anywhere.** Two searches agree, one by file
+name and one by content:
+
+    .assets/archives, all three sets              absent
+    every worktree's out/, 940 stills and 16 clips absent
+    spikes/movements/, the authored definition     PRESENT
+    spikes/poc-output/, the job file               PRESENT
+
+So the drill is authored and jobbed and never drawn, and the cause is the
+refusal this paper measures. The archive's own `PROVENANCE.md` records the
+absence correctly. **What no document connects is the agenda item on the other
+side of it.**
+
+**AND THE RUNNING ORDER PLACES IT IN A BLOCK IT BELIEVES IS SAFE.**
+`docs/COACH_MORNING_RUNNING_ORDER.md` puts item 13 in block 3 and says of that
+block: "none needs a render, so none can be blocked by a missing artefact". Its
+artefact table marks item 13 **ready**, needing "the drill's own figures".
+
+**Three of that block's four items are fine and the fourth is not.** Item 12's
+`bounce_pass` has 15 stills in the archive, and item 16's `double_foot_landing`
+has 12. Item 13's drill has none.
+
+**AND ITEM 10 DEPENDS ON IT.** The running order's own reason for placing item 10
+last is that it "needs her answer to item 13". So a question in block 4 waits on
+a question in block 3 that has nothing to show.
+
+This lane states the fact and proposes no change to the running order. **What it
+does say is that the option chosen in section 4 decides whether item 13 has a
+picture at all**, which makes this a morning decision rather than a library
+tidy-up.
+
+## 6. What is not measured
 
 - Whether the engine's own athlete turns that knuckle about the same axis. This
   lane cannot read MHR's knuckle frames.
@@ -162,7 +201,7 @@ the pose was sound, and nothing here shows that.
   sits between 0.4239 and 1.0000, so the library cannot distinguish 0.5 from any
   value in that gap.
 
-## 6. Instruments
+## 7. Instruments
 
     scripts/flexion_axis_survey.py   the eleven, from the archived receipts
     scripts/ball_off_finger_line.py  where the ball sits relative to each hand
