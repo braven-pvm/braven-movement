@@ -220,6 +220,12 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
         "computations of the SAME quantity. Changing it changes whether two "
         "numbers are called equal, never what either number says about a body.",
         {
+            # FILED 2026-09-09 AFTER THIS FILE'S OWN GUARD CAUGHT IT. The
+            # collapse instrument introduced UNIFORM_TOLERANCE three commits
+            # earlier and nobody filed it, so this classifier exited 2 through
+            # four pushed commits and nothing said so, because nothing re-ran
+            # it. It is a tolerance set from atPhase's four stored decimals.
+            ("scripts/register_collapse.py", "UNIFORM_TOLERANCE"),
             ("spikes/isb_angles.py", "_EPSILON"),
             ("spikes/segment_measures.py", "_EPSILON"),
             ("spikes/movement_engine.py", "ZERO_WIDTH_RADIANS"),

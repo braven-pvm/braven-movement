@@ -86,6 +86,36 @@ already holds both halves in one sentence and has no word for the distinction.
 
 ---
 
+## `sourceScope`: a source can prove less than it appears to
+
+Three states a row can be in, and they are independent:
+
+| state | example |
+|---|---|
+| unsourced, correctly described | `author_flight.DEFAULT_SPEED_CM = 600.0` |
+| unsourced AND wrongly described | `release@0.80` in three of five files |
+| **sourced, for a claim narrower than its use** | `contact_solve.TWIST_SEEDS` |
+
+The third is the commonest and the hardest to see. `TWIST_SEEDS` is not
+unsourced. Its comment gives a mechanism, a cost of 20 ms, and a named failure
+it removes: from rest the hand "rolled the wrong way round and jammed against
+the pronation limit with the palm facing away", and several seeds remove that
+entirely.
+
+**That is a claim about a LIMIT JAM. It is not a claim about basin stability.**
+The movement lane's sweeps on 2026-09-09 measured the library still crossing
+basins with the seeds in place, on parameters the seeds do not touch: the
+overhead pass's step knee reads 0.00 degrees at one spacing, +8.40 at the next,
+0.00 at the third and +8.30 at the fourth. **A reader who filed that comment as
+evidence of a stable solve would be reading a scoped claim as a general one.**
+
+So a row records what its source proves, not only that it has one. This is the
+repository's arm-constants fault class, recorded sixteen times: a quantity
+measured in one regime and spent in another. **The register may be the first
+place it becomes visible before it is spent.**
+
+---
+
 ## `rootSource`, and why a chain needs following
 
 **A chain that terminates in NONE is unsourced however many hops it has. A
