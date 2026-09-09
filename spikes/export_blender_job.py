@@ -39,6 +39,7 @@ from movement_engine import (  # noqa: E402
     library,
     load_character,
 )
+from contact_solve import ELBOW_POLE_ANGLE_DEGREES  # noqa: E402
 from possession_solve import solve_movement  # noqa: E402
 from technique import has_technique, load_technique, technique_path  # noqa: E402
 
@@ -436,6 +437,62 @@ def phase_job(result, index, frame: int, method, rest_points) -> dict:
     return job
 
 
+def solve_parameters(method) -> dict:
+    """Every solve parameter this job's pose was produced with, name to value.
+
+    A parameter is a fact about the solve, so it crosses the job boundary in
+    the PRODUCER's direction. The rendering lane refuses to call two pictures a
+    pair unless every other parameter is equal, and it cannot check that
+    against a job that does not say.
+
+    THE VALUE IS WHAT THE SOLVE USED, NEVER WHAT THE FILE SAID. A technique
+    naming no override solved on the engine's default, and this records the
+    DEFAULT rather than nothing. If it recorded nothing, a job that solved on
+    the default and a job that recorded no mapping would be the same artefact,
+    and a consumer comparing two of them could not tell an override from an
+    omission.
+    """
+    return {
+        "ELBOW_POLE_ANGLE_DEGREES": float(
+            ELBOW_POLE_ANGLE_DEGREES
+            if method.elbow_angle_degrees is None
+            else method.elbow_angle_degrees
+        ),
+    }
+
+
+def check_solve_parameters(job: dict, method) -> None:
+    """Refuse a job that does not record every parameter its solve used.
+
+    THE FAILURE THIS EXISTS FOR IS INVISIBLE IN THE ARTEFACT. A job solved with
+    an override and recording the default looks exactly like a job solved with
+    the default. Two such jobs would be captioned as a pair differing in one
+    parameter while differing in none, and the caption is the whole artefact.
+
+    Raised at the end of `build`, so a job cannot leave this module without a
+    correct mapping.
+    """
+    recorded = job.get("solveParameters")
+    if not isinstance(recorded, dict):
+        raise ValueError(
+            "the job records no solveParameters mapping, so nothing can say "
+            "which parameters its pose was solved with"
+        )
+    used = solve_parameters(method)
+    missing = sorted(name for name in used if name not in recorded)
+    if missing:
+        raise ValueError(
+            f"the solve used {missing} and the job does not record them"
+        )
+    wrong = sorted(
+        f"{name}: solved with {value}, recorded {recorded[name]}"
+        for name, value in used.items()
+        if float(recorded[name]) != value
+    )
+    if wrong:
+        raise ValueError(f"the job records the wrong value for {wrong}")
+
+
 def build(character, movement_id: str, every: int = 0) -> dict:
     definition = load_definition(definition_path(movement_id))
     method = load_technique(technique_path(movement_id))
@@ -458,7 +515,7 @@ def build(character, movement_id: str, every: int = 0) -> dict:
         for frame in range(0, frames, every):
             frames_out.append(phase_job(result, index, frame, method, rest_points))
 
-    return {
+    job = {
         "schemaVersion": 1,
         "movementId": movement_id,
         "skill": definition.skill,
@@ -488,9 +545,15 @@ def build(character, movement_id: str, every: int = 0) -> dict:
         },
         "framesPerSecond": float(result["track"].frames_per_second),
         "frameStep": int(every),
+        # WHAT THE POSE WAS SOLVED WITH, not what the file asked for. Refer to
+        # `solve_parameters`. Checked below, so a job cannot leave this module
+        # recording a parameter its solve did not use.
+        "solveParameters": solve_parameters(method),
         "phases": phases,
         "frames": frames_out,
     }
+    check_solve_parameters(job, method)
+    return job
 
 
 def main(argv: list[str]) -> int:
