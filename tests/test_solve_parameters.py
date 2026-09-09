@@ -283,12 +283,30 @@ class NoProducerOnThisBranchTest(unittest.TestCase):
     statement about a working DIRECTORY, and the runner at least fails
     consistently.
 
-    THE COUNTS ALSO MOVE WHILE YOU MEASURE THEM. The orchestrator enumerated the
-    same ten minutes earlier and got 2 and 4 where this lane got 0 and 3, on two
-    worktrees belonging to lanes that were committing at the time. Neither count
-    is wrong. `spikes/poc-output` is each lane's own untracked accumulation, so
-    the population is not stable enough to state a split as a fact -- only the
-    shape is: some skip, some run, and which is which changes.
+    TWO ENUMERATIONS OF THE SAME MACHINE DISAGREED, AND THE CAUSE IS DEPTH, NOT
+    TIME. This lane got 0 and 3 where the orchestrator got 2 and 4 on two
+    worktrees. The first explanation offered here was that the population moves
+    while it is read, because one of those worktrees had committed five minutes
+    earlier. THAT WAS WRONG AND IT WAS TESTED:
+
+        worktree                       direct  recursive
+        amazing-chatelet-ed2e1c             0          2   nests elbow-pole-pair
+        gracious-blackburn-7375ce           3          4   nests poc-output
+        the three we agreed on          equal      equal   no nesting
+
+    EVERY WORKTREE THE TWO COUNTS AGREED ON HAS NO NESTING, AND BOTH THEY
+    DISAGREED ON HAVE IT. A non-recursive glob against a recursive one. Nothing
+    moved.
+
+    The commit five minutes earlier was a TRUE FACT STANDING BESIDE AN UNRELATED
+    DISAGREEMENT, and it made time the plausible explanation. The boring cause
+    was the same class of fault -- a matcher of the wrong reach -- that this
+    lane had spent the previous twenty minutes on with an unbounded grep.
+
+    SO THE SHAPE STANDS AND THE REASON IS DIFFERENT: some worktrees skip and some
+    run, the main checkout is one that skips, and any count of build output must
+    STATE ITS DEPTH. "This cannot be measured" is the wrong lesson; "this must be
+    measured to a stated depth" is the right one.
 
     That claim was checked here, on a machine that HAS rendered, and reported as
     "nothing skips". Moving the job files aside for one run shows the skip. The

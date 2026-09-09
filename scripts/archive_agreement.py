@@ -30,6 +30,24 @@ JOBS = Path(__file__).resolve().parents[1] / "spikes" / "poc-output"
 def job_agreement(archive: Path, jobs: Path = JOBS) -> dict:
     """Compare each receipt's recorded job hash against the job file on disk.
 
+    THE GLOB IS NON-RECURSIVE AND THAT IS AN ASSUMPTION ABOUT THE ARCHIVE'S
+    SHAPE. Two of the three archived sets are flat and one nests:
+
+        coach-figures-2413f9d              11 receipts, flat
+        coach-figures-aa3f244              10 receipts, flat
+        rerender-hand-mirror-2026-09-02    16 receipts in FOUR subdirectories
+
+    So this function sees ZERO in the third. IT FAILS SAFE, because
+    `refuse_if_the_tree_has_moved` refuses an empty archive rather than reporting
+    agreement over nothing -- which is the branch that looked like belt and
+    braces when it was written and turns out to be what stops a depth mismatch
+    becoming a silent pass.
+
+    Do not "fix" this by switching to `rglob` without deciding what a nested set
+    MEANS. That archive holds a pre-fix batch, an interim batch and contact
+    sheets, and treating them as one set would compare receipts from three
+    different builds.
+
     Returns the three groups by name, so a caller can say WHICH drill moved
     rather than only how many did.
     """
