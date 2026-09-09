@@ -113,6 +113,42 @@ about where the licence text lives continues on the next line.
 On an asset whose CC0 sentence wraps mid-claim, a one-line reader would capture
 half a determination and it would still look like a quotation.
 
+**AND THE BLOCK IS FOURTEEN LINES, NOT FOUR. What a one-line reader drops is
+not the end of a sentence.** Read from
+`clothes/female_sportsuit01/female_sportsuit01.mhclo`, whose sha256 begins
+`6df057d3116db93a`, the same file section 6's receipt entry names:
+
+    # This is a clothes file for MakeHuman
+    #
+    # This asset was explicitly released as CC0 in september 2020. The license
+    # text for CC0 can be found in the root of this repository.
+    #
+    # The copyright holders at the point of the release to CC0 were:
+    #
+    # Copyright (C) 2020 Data Collection AB, https://www.datacollection.se
+    # Copyright (C) 2020 Joel Palmius
+    # Copyright (C) 2020 Jonas Hauquier
+    #
+    # The primary legal contact for MakeHuman is Data Collection AB.
+    #
+    # For more information, see homepage at http://www.makehumancommunity.org
+
+**THREE NAMED COPYRIGHT HOLDERS AND A NAMED LEGAL CONTACT.** A one-line reader
+captures the word `CC0` and drops every one of them.
+
+**That is why the requirement is to read the BLOCK and not a line, and the reason
+is bigger than the truncation.** A determination that records `CC0` alone is a
+claim with its attribution removed, **and attribution is precisely what a
+commercial licence review asks for.** Refer to `LICENCE-RISK.md`: this project
+intends to sell manuals, and "who released this, and when" is the second question
+after "under what licence".
+
+**This is an OBSERVATION and not a determination**, on the same footing as
+section 5. Nothing has been recorded in
+`asset_licences.SELECTED_MPFB_ASSETS`, and the copyright holders above are
+quoted as what the file says rather than transcribed as a finding of this
+repository.
+
 **That is mode 4 of the search procedure in
 `docs/WHAT_BETTER_ANIMATION_MEANS.md` section 8 — line wrapping — hit by an
 instrument written after that procedure was published.** Anything that reads
