@@ -35,6 +35,9 @@ if str(SPIKE_DIR) not in sys.path:
     sys.path.insert(0, str(SPIKE_DIR))
 
 from render_receipt import render_outcome  # noqa: E402
+# What the receipt may claim about the assets that drew the figure. It has no
+# Blender in it, so a test can call it; this module's own tests skip.
+from asset_licences import source_asset_records  # noqa: E402
 # The repository's ONE build stamp, shared with every other receipt this
 # project writes, and the shape `archive_receipts.py` reads. It is cached
 # for the life of the process, so every receipt of one run names one build.
@@ -636,6 +639,13 @@ class Studio:
             self.assets,
             self.source_assets,
         ) = create_athlete(config.athlete, config.presentation)
+        # THE LICENCE IS CHECKED HERE, BEFORE ANY FIGURE IS DRAWN, and not at
+        # the receipt. An asset this repository has not licensed must not cost
+        # a coach half an hour of rendering before it is refused, and a receipt
+        # written for such a run would claim a licence it does not have.
+        # `docs/LICENSING.md` requires every newly selected MPFB asset to be
+        # reconfirmed before publication; until now nothing enforced it.
+        self.source_asset_records = source_asset_records(self.source_assets, sha256)
         self.basis = {
             bone.name: bone.matrix_basis.copy() for bone in self.rig.pose.bones
         }
@@ -896,7 +906,11 @@ def render_job(studio: Studio, job: dict, job_path: Path, args,
         # project's own tool because of this line.
         "generatedFrom": stamp,
         "jobSha256": sha256(job_path),
-        "sourceAssets": [str(path) for path in studio.source_assets],
+        # Path, sha256 AND licence per asset, the shape the reference generator
+        # already writes. A path alone cannot tell two MPFB installations apart,
+        # and `docs/ARCHITECTURE.md` rule 7 asks for the hashes. Resolved once
+        # when the athlete was built, so this line cannot fail here.
+        "sourceAssets": studio.source_asset_records,
         "animation": animation,
         # The phases that DREW, then the phases that could not, each with its
         # reason. A reader counting `phases` alone would see a short list and

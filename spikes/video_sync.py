@@ -253,7 +253,7 @@ def main(argv: list[str]) -> int:
             print(
                 f"  {measure_entry['method']:16s} "
                 f"offset {measure_entry['milliseconds']:+9.2f} ms   "
-                f"peak {measure_entry["peak"]:.4f}   "
+                f"peak {measure_entry['peak']:.4f}   "
                 f"peak/sidelobe {measure_entry['peakToSidelobe']:6.2f}"
             )
         print(
