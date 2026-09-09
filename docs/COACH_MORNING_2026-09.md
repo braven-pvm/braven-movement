@@ -718,10 +718,40 @@ at `f7af647`, **which is not on main** — refer to the last paragraph.
 is hers.** It has never been on this agenda and it lives today only in the
 orchestrator's state notes.
 
-**What was already ruled.** Marius ruled the release hand **cosmetic for now**,
-with his own debt note attached: the wrist and finger action is one of the key
-differentiators top athletes use. He ruled the shape **option B, ball-relative,
-at the release frame**.
+**What was already ruled, and the first ruling was WITHDRAWN the same
+afternoon.** The order matters, because the paper this item cites still
+recommends the first one.
+
+1. **Marius first ruled the hand COSMETIC**, reluctantly, with his own debt note:
+   the wrist and finger action is one of the key differentiators top athletes
+   use.
+2. **He was then told the premise of that ruling was wrong.** He had been given
+   the engine's hand speed as about 0.3 m/s against the athlete's 2.5 to 5.4.
+   **That figure was measured only BEFORE the release.** The frame after, the
+   engine's hand reaches 2.46 on the chest pass, 3.02 on the bounce, 4.42 on the
+   overhead and 5.61 on the one hand high. **The arm is not slow. It is LATE**:
+   three of the four reach her speeds one frame after the ball has gone, and the
+   fourth peaks at the release frame itself.
+3. **He asked whether that made it mechanical.**
+4. **The recommendation was mechanical on one condition**: it must land before
+   Erin grades, because retiming moves the arm inside the last frames of contact,
+   and that is the window her checkpoints measure. She must not grade a build we
+   already intend to replace.
+5. **He ruled it**, in his words: *"yes, I am holding back her page/feedback
+   until I am happy with what we are giving her - so push ahead."*
+
+**SO THE RULING IS MECHANICAL. Cosmetic is superseded.** He also ruled the
+shape: **option B, ball-relative, at the release frame.**
+
+**Two of those four speeds sit just outside her band, and that is not evidence
+against any of this.** The chest pass's 2.46 is 0.04 below her 2.5 and the one
+hand high's 5.61 is 0.21 above her 5.4. **The band's width is its resolution**,
+so margins of that size carry no weight in either direction.
+
+**What the correction does to THIS item.** Nothing to its question and everything
+to its frame. The two angles are still unsourced and still hers. But she is no
+longer choosing how a decorative hand looks beside a launch the engine assigns.
+**She is choosing part of a release the engine will actually perform.**
 
 **What is not ruled, and cannot be ruled by measurement.** The flick model takes
 seven parameters. **Four are sourced** — the footage's timescale, the engine's
@@ -742,10 +772,16 @@ wrist speed in centimetres per second, which is a new unit needing its own floor
 made.** The candidates cannot be rendered until the movement lane's flick model
 does, so this item is the last of the four missing renders to become possible.
 
-**CITED FROM AN UNMERGED BRANCH AND LABELLED SO.** The parameter list above comes
-from `.remember/RELEASE_HAND_PAPER-f7af647.md` and `f7af647` is **not on main**.
-If that paper changes before the morning, this item's description of what is
-sourced changes with it.
+**CITED FROM AN UNMERGED BRANCH AND LABELLED SO, AND ONE PART OF IT IS ALREADY
+OUT OF DATE.** The parameter list above comes from
+`.remember/RELEASE_HAND_PAPER-f7af647.md`, and `f7af647` is **not on main**.
+**That paper recommends COSMETIC**, which the ruling above supersedes. So a
+reader who meets only the word "mechanical" here cannot reconcile it with the
+paper, which is why both rulings are written out in order.
+
+If the paper changes before the morning, this item's account of what is sourced
+changes with it. **Its account of the RULING has already changed once**, and the
+sequence above is the record of that.
 
 ## Three items with no engine evidence
 
