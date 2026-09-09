@@ -16,6 +16,7 @@ from __future__ import annotations
 import ast
 import importlib.util
 import unittest
+import pathlib
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -238,6 +239,39 @@ class RefuseUnverifiablePairTest(unittest.TestCase):
         a = receipt_for("netball_deflect_high", {self.PARAMETER: 31.3})
         b = receipt_for("netball_chest_pass", {self.PARAMETER: 37.3})
         self.assertIn("not a pair", self._refuse(a, b))
+
+
+class OnlyOneTestHereCanSkipTest(unittest.TestCase):
+    """The invariant `tests/test_asset_licences.py` states in prose, asserted.
+
+    That file, in main, reads an archive by absolute machine path and says at its
+    constant: "Outside git, so a machine without it skips the one test that uses
+    it, and only that one", and in the class: "It is the only test in this file
+    that can skip, and it skips on the ARCHIVE and on nothing else."
+
+    THAT CONVENTION IS THE ESTABLISHED ONE HERE and this file follows it. The
+    difference is only the artefact: that one skips on an archive outside git,
+    this one on build output inside a `.gitignore`d directory.
+
+    A PROSE INVARIANT IS NOT CHECKED, so this asserts it. Adding a second skip to
+    this file makes it red, which is the point: a file with one named skip is
+    auditable and a file with several is not, because the reader must then work
+    out which ones are legitimate.
+    """
+
+    def test_exactly_one_test_in_this_file_can_skip(self):
+        import ast
+
+        tree = ast.parse(pathlib.Path(__file__).read_text(encoding="utf-8"))
+        skips = [node for node in ast.walk(tree)
+                 if isinstance(node, ast.Call)
+                 and isinstance(node.func, ast.Attribute)
+                 and node.func.attr == "skipTest"]
+        self.assertEqual(
+            len(skips), 1,
+            "this file must have exactly ONE skip and it must be the job-file "
+            "one. A second skip means a second thing can silently not run, and "
+            "the reader can no longer tell which absences are expected.")
 
 
 class NoProducerOnThisBranchTest(unittest.TestCase):
