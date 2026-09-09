@@ -111,6 +111,30 @@ not, and neither half is visible without following the chain.**
 
 ---
 
+## The rule above the rules
+
+The movement lane found the general form, after four instances in one morning:
+
+> **The thing that answers the question sits one level away from where the
+> question was asked.**
+
+| the question | where the answer was |
+|---|---|
+| where did this release key come from? | the file's `source`, one level up |
+| where is the carry authored? | the technique file, not the ball file |
+| is this code on the library path? | the function, not the module |
+| what population do these limits describe? | the comment, not the field |
+
+Four different levels and one shape. Two lanes made two of these while telling
+each other to check the source rather than the message. **It is not ignorance
+of the rule that causes it. It is that a read stops at the level the question
+named.**
+
+So a read that fails to find something states which levels it read. The rules
+below are the specific forms this took.
+
+---
+
 ## The five rules that produce a row, and the defect that bought each
 
 A rule with its defect attached is followed. A rule without one is a slogan.
