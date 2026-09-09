@@ -320,6 +320,17 @@ had gone stale.
     one phase, three views, including that build                  64 seconds
     so one view                                                   about 19 seconds
 
+**MEASURED TWICE, BY TWO LANES, WITH DIFFERENT METHODS, AND BOTH ARE REPORTED.**
+The character and animation lane timed bare Blender at 1.2 to 1.3 s and the whole
+process with the athlete built at 5.7 to 6.0 s over three runs, so **the build
+alone is about 4.5 s**. It timed three views separately at 16.55, 16.43 and 15.23
+s. The figures above are whole-process and per-view-including-overhead, on this
+machine, and the two sets agree once the method is named.
+
+**The number that matters for batching is the per-session cost, and it is
+SECONDS.** Batching eight drills saves about 40 seconds, not the fourteen minutes
+the old two-minute figure implied.
+
 The library is ELEVEN drills, 48 graded phases and 144 views, so a full session
 is about **46 minutes**. The old sentence said 33 phases and 99 views, which was
 the eight-drill library.
@@ -788,6 +799,37 @@ error in the library.
 field speaks the world.** This lane works downstream and reached for the world
 frame to answer a question posed upstream, and every number it published on that
 axis had to be withdrawn.
+
+## Which receipt fields REFUSE and which write null
+
+**The distinction was raised by the character and animation lane on 2026-09-09,
+after two fields grew on this receipt in one day from two lanes. The rule is
+theirs; the wording is this lane's.**
+
+    A field the renderer OWNS refuses the run when it cannot be resolved.
+    A field the renderer CARRIES writes null.
+
+**Ownership is the whole rule, and the two fields added that day show both
+sides.**
+
+`sourceAssets` is OWNED. The renderer loaded those bytes and
+`docs/LICENSING.md` is this repository's own determination. Its absence is the
+renderer's failure, so `source_asset_records` RAISES, and a receipt that wrote
+null there would be claiming nothing about something it is responsible for.
+
+`solveParameters` is CARRIED. The name and the value are the producer's fact and
+this lane must not invent them. Its absence is the producer's business, so the
+receipt records null and says so honestly.
+
+**Converging the two shapes would mean refusing on a fact this lane does not own,
+or writing null about one it does.** They are not two conventions. They are one
+rule applied to two kinds of fact.
+
+**A THIRD STATE SITS ON THAT LINE AND IT IS NEITHER.** A job whose
+`solveParameters` is a list or a string has said something UNREADABLE, which is
+not the same as having said nothing. `solve_parameters` raises on it. A broken
+contract is refused rather than guessed at, and refusing there is not a claim of
+ownership: it is a refusal to translate.
 
 ## `solveParameters`, for the lane that owns a dial
 
