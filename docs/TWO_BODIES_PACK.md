@@ -171,6 +171,14 @@ AXIS OR AXIS-FREE STANDS.** That is the whole episode in one line.
     stands      the agenda's hooks row is from the struck pose, 10.73 cm off
     stands      every item 6 row, because a 3D distance has no axis
 
+**AND ONE COMMIT MESSAGE ON THIS BRANCH ASSERTS THE WITHDRAWN FINDING.**
+`7484059` is titled "measure: the two join drills do not share a ramp, and one of
+them has no start". **That title is wrong and it is not being rewritten**, because
+rewriting a branch's history to hide a withdrawal is worse than carrying it. The
+instrument itself now states the reversal in its own docstring and closing lines,
+and this paragraph is here so a reader of the log is not misled by the subject
+line.
+
 **How the wrong axis was chosen.** Four components were tried on
 `one_hand_snatch_to_other_hand` and the one that reproduced the recorded numbers
 was kept. **That athlete is square — 0.07 degrees of turn at contact — so two of
@@ -203,20 +211,31 @@ On `2413f9d`, this tree and the rendered library:
     the turn, engine                  48.22 degrees
     the turn, rendered figure         45.48 degrees
     item 6, wrist to wrist            40.36 cm
-    item 5, the free hand              7.45 out to 21.93, back to 11.28, travel 14.48
+    item 5, the free hand             12.35 out to 25.06, back to 12.07, travel 12.71
 
 **Both bodies now hold the corrected pose**, so only the agenda's figures are
 behind.
+
+The item 5 row is on the ATHLETE'S OWN AXIS, which is the axis the cue names. An
+earlier version of this section printed 7.45 out to 21.93, back to 11.28 and a
+travel of 14.48. **Those are world-axis numbers and they are withdrawn**, for the
+reason section 6 sets out.
 
 **SEVEN OF ITEM 6's EIGHT ROWS REPRODUCE EXACTLY, AND THE EIGHTH IS THAT DRILL.**
 A single wrong row could be anything. Seven right and one wrong, where the one is
 the drill with two solutions, names the mechanism instead of asserting it.
 
-**Item 5's conclusion reverses.** The agenda calls that drill the milder case.
-Its `ac240b2` figures are 10.90 cm of travel against the other drill's 14.12.
-On `2413f9d` it travels 14.48 against 13.94.
-So the two drills agree and it is the WIDER of the two. **That item does not need a
-new number, it needs a new question.**
+**ITEM 5'S CONCLUSION DOES NOT REVERSE, AND THIS LANE PUBLISHED THAT IT DID.**
+The agenda calls that drill the milder case, on `ac240b2` figures of 10.90 cm of
+travel against the other drill's 14.12.
+On `2413f9d`, on the athlete's own axis, it travels 12.71 against 13.96.
+**So it IS the milder case and the agenda's contrast STANDS.**
+
+The reversal this lane reported was measured on the world axis, where the drill
+appeared to travel 14.48 against 13.94. It is withdrawn. **The item needs a new
+NUMBER and not a new question**, which is the opposite of what this pack said.
+What is wrong is the row itself: 3.43 out to 14.33 and back to 3.48 reproduces on
+NEITHER axis and is 10.73 cm out on the correct one.
 
 The orchestrator has ordered the amendment and it is the content lane's. This
 lane measured and ruled on nothing.

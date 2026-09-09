@@ -219,6 +219,14 @@ AXIS OR AXIS-FREE STANDS.** That is the whole episode in one line.
     stands      the agenda's hooks row is from the struck pose, 10.73 cm off
     stands      every item 6 row, because a 3D distance has no axis
 
+**AND ONE COMMIT MESSAGE ON THIS BRANCH ASSERTS THE WITHDRAWN FINDING.**
+`7484059` is titled "measure: the two join drills do not share a ramp, and one of
+them has no start". **That title is wrong and it is not being rewritten**, because
+rewriting a branch's history to hide a withdrawal is worse than carrying it. The
+instrument itself now states the reversal in its own docstring and closing lines,
+and this paragraph is here so a reader of the log is not misled by the subject
+line.
+
 **How the wrong axis was chosen.** Four components were tried on
 `one_hand_snatch_to_other_hand` and the one that reproduced the recorded numbers
 was kept. **That athlete is square — 0.07 degrees of turn at contact — so two of
@@ -285,19 +293,29 @@ On `ac240b2`, as the agenda states them:
 On `2413f9d`, this tree and the rendered library:
 
     item 6, hooks_outside_hand    40.36 cm wrist to wrist
-    item 5, hooks_outside_hand    7.45 cm out to 21.93, back to 11.28, travel 14.48
+    item 5, hooks_outside_hand    12.35 cm out to 25.06, back to 12.07, travel 12.71
+
+The item 5 row is on the ATHLETE'S OWN AXIS, which is the axis the cue names.
+An earlier version of this section printed 7.45 out to 21.93, back to 11.28 and
+a travel of 14.48. **Those are world-axis numbers and they are withdrawn**, for
+the reason the item 5 section above sets out.
 
 **The engine side of item 6 reproduces exactly on seven of its eight rows.** The
 eighth is this drill. That is the pattern the artefact predicts, and it is why
 the cause is named rather than guessed.
 
-**Item 5's conclusion reverses.** The agenda says the second drill "sits closer
-in". Its `ac240b2` figures are a travel of 10.90 cm on the second drill against
-14.12 on the first.
-On `2413f9d` the second drill travels 14.48 cm and the first 13.94.
-**The two drills agree, and the second is the wider of the two.** So the question of whether about 14 cm of
-travel is too much applies equally to both, where the agenda presents one of them
-as the milder case.
+**ITEM 5'S CONCLUSION DOES NOT REVERSE, AND THIS LANE PUBLISHED THAT IT DID.**
+The agenda says the second drill "sits closer in", on `ac240b2` figures of 10.90
+cm of travel against 14.12 on the first.
+On `2413f9d`, on the athlete's own axis, the second drill travels 12.71 cm and
+the first 13.96.
+**So the second drill IS the milder case and the agenda's contrast STANDS.**
+
+The reversal this lane reported was measured on the world axis, where the second
+drill appeared to travel 14.48 against 13.94. It is withdrawn. **What is still
+wrong with the agenda's row is the row itself**, not the contrast it draws: its
+3.43 out to 14.33 and back to 3.48 reproduces on NEITHER axis, and it is 10.73 cm
+out on the correct one.
 
 **This lane does not change the agenda.** To strike or amend an item is the
 orchestrator's, and the drill is the movement lane's. This is the measurement,
