@@ -296,7 +296,7 @@ twice.
 |---|---|---|---|
 | main | absent | absent | the field does not exist |
 | main and the rendering lane's branch | absent | present | **only refusal 1 can fire** |
-| main and both branches | present, one key | present | 1 unreachable, 2, 3 and 4 live, 5 dormant at one key |
+| main and both branches | present, one key | present | **1 stays reachable**, 2, 3 and 4 become live on a NEW pair, 5 dormant at one key |
 
 **REACHABILITY IS A PROPERTY OF THE MERGE AND NOT OF EITHER BRANCH.** Two lanes
 answered correctly about their own trees and got different answers, and **a gate
@@ -306,6 +306,24 @@ on either branch alone cannot settle it.**
 alone, and true only after both land.** That is why the tense rule says "not on
 main" rather than "not written yet": **a thing can exist, twice, and still not be
 true anywhere.**
+
+**AND THE THIRD ROW WAS WRONG WHEN FIRST WRITTEN, WHICH IS THE POINT OF WRITING
+IT AS THREE ROWS.** It said check 1 becomes unreachable after the merge. **The
+archived receipts predate the field entirely**, so any pair drawn from them
+refuses at check 1 whatever the producer records later.
+
+    37 receipts across FOUR archives      coach-figures-2413f9d, coach-figures-aa3f244,
+                                          interim-05e58cd, pre-fix-31aug
+    carrying `solveParameters`            NONE
+
+**So the guard protects comparisons this project has not yet made, rather than
+the ones already on disk.** A pair can only be assembled from two receipts
+rendered after the producer lands.
+
+**The row was REASONED and the archives were READ**, and the reading disagreed.
+**A row about a tree that does not exist yet is a prediction**, and this one is
+kept as three rows so the third can be checked when it becomes a statement about
+main rather than carried forward as settled.
 
 ---
 
