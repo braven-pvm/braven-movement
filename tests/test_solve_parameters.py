@@ -240,70 +240,74 @@ class RefuseUnverifiablePairTest(unittest.TestCase):
         self.assertIn("not a pair", self._refuse(a, b))
 
 
-class TheFifthRefusalIsDormantTest(unittest.TestCase):
-    """THE FIFTH REFUSAL CANNOT FIRE AGAINST ANY RECEIPT THIS REPOSITORY MAKES.
+class NoProducerOnThisBranchTest(unittest.TestCase):
+    """CHECKS 2, 3 AND 4 CANNOT BE REACHED BY ANY RECEIPT THIS BRANCH PRODUCES.
 
-    Found by the movement lane and the orchestrator on 2026-09-09, after this
-    lane's docstring had called it "the rule that carries the weight" and after
-    a gate had passed it three checks. It is correct and it is DORMANT.
+    Found by the content lane on 2026-09-09, one step further back than this
+    lane's own correction had gone.
 
-    `refuse_unverifiable_pair` compares every key EXCEPT the one under test. The
-    producer records exactly one key, so the set it iterates is empty and `moved`
-    is always `[]`. It has no power for the same reason a reproduction test on a
-    square athlete had none: the thing it compares cannot differ.
+    NO PRODUCER HERE WRITES THE FIELD. `spikes/export_blender_job.py` on this
+    branch has zero mentions of it, real job files carry no such key, and
+    `solve_parameters` therefore returns None for every one. So every receipt
+    records `solveParameters: null` and two real receipts refuse at CHECK 1.
 
-    THIS TEST EXISTS TO MAKE THE DORMANCY VISIBLE RATHER THAN SILENT. It pins the
-    precondition, so the day the producer records a SECOND parameter this goes
-    RED. That is not a regression. It is the refusal becoming live, and the
-    signal to correct every note that calls it dormant -- in this file,
-    `render_receipt.py` and `docs/HANDOFF_RENDERING.md`.
+    A ONE-KEY PRODUCER EXISTS ON THE MOVEMENT LANE'S UNMERGED BRANCH, and check
+    3 stays dormant even after it lands, because one recorded key leaves nothing
+    to compare.
 
-    A pair spanning two builds could differ in an unrecorded parameter and pass
-    every refusal, and the caption would attribute the whole difference to the
-    one recorded parameter. Today both jobs are built in one process from one
-    build, so the unrecorded ones are equal BY CONSTRUCTION and not by check.
+    AND THE TEST THIS REPLACES READ THAT OTHER LANE'S WORKTREE. It parsed
+    `../amazing-chatelet-ed2e1c/spikes/export_blender_job.py` and pinned its key
+    count. That is a test depending on a sibling worktree's unmerged, moving
+    branch: it would pass, fail or skip according to what another lane had done
+    since, and it made a fact about SOMEBODY ELSE'S branch look like a fact about
+    this repository. That is exactly how the wrong claim was made in the first
+    place -- the producer was read from there and reported as the tree's.
+
+    SO THIS PINS ONLY WHAT THIS BRANCH CAN SEE. When a producer lands here, the
+    first test goes RED, and that red is the field becoming reachable.
     """
 
     PARAMETER = "ELBOW_POLE_ANGLE_DEGREES"
-    PRODUCER_KEYS = 1
 
     def setUp(self):
         self.module = _load()
 
-    def test_the_producer_records_one_parameter(self):
-        """Read from the producer's SYNTAX, not from this lane's belief.
+    def test_no_producer_on_this_branch_writes_the_field(self):
+        producer = REPO / "spikes" / "export_blender_job.py"
+        self.assertTrue(producer.is_file(), producer)
+        source = producer.read_text(encoding="utf-8")
+        for spelling in ("solveParameters", "solve_parameters"):
+            self.assertNotIn(
+                spelling, source,
+                "a producer now writes the field on THIS branch; checks 2 to 4 "
+                "have become reachable and every note calling them unreachable "
+                "must be corrected")
 
-        Skipped rather than guessed when that branch is not on this machine: a
-        test that silently passes because it could not look is worse than one
-        that says it could not look.
-        """
-        import ast
+    def test_a_real_job_on_this_branch_yields_none(self):
+        """Read from an artefact this branch actually has, not from a belief."""
+        jobs = sorted((REPO / "spikes" / "poc-output").glob("*.job.json"))
+        if not jobs:
+            self.skipTest("no job files on this machine; they are build output")
+        import json
 
-        producer = (REPO.parent / "amazing-chatelet-ed2e1c" / "spikes"
-                    / "export_blender_job.py")
-        if not producer.is_file():
-            self.skipTest(f"the producer is not on this machine: {producer}")
-        tree = ast.parse(producer.read_text(encoding="utf-8"))
-        keys = []
-        for node in ast.walk(tree):
-            if isinstance(node, ast.FunctionDef) and node.name == "solve_parameters":
-                for sub in ast.walk(node):
-                    if isinstance(sub, ast.Dict):
-                        keys = [k.value for k in sub.keys
-                                if isinstance(k, ast.Constant)]
-        self.assertEqual(
-            len(keys), self.PRODUCER_KEYS,
-            "the producer's key count changed; the fifth refusal may no longer "
-            "be dormant, and every note calling it so must be corrected")
+        job = json.loads(jobs[0].read_text(encoding="utf-8"))
+        self.assertIsNone(self.module.solve_parameters(job))
 
-    def test_it_cannot_fire_on_the_producers_one_key_shape(self):
-        """The dormancy itself, pinned without needing the producer present."""
+    def test_two_real_receipts_refuse_at_check_one(self):
+        """Not at check 3, which is where this lane first said the wall was."""
+        null = receipt_for("netball_deflect_high", None)
+        with self.assertRaises(SystemExit) as caught:
+            self.module.refuse_unverifiable_pair(self.PARAMETER, null, null)
+        self.assertIn("no `solveParameters`", str(caught.exception))
+
+    def test_check_three_stays_dormant_even_with_a_one_key_producer(self):
+        """The movement lane's producer records one key, which compares nothing."""
         a = receipt_for("netball_deflect_high", {self.PARAMETER: 31.3})
         b = receipt_for("netball_deflect_high", {self.PARAMETER: 37.3})
         self.assertEqual(
             self.module.refuse_unverifiable_pair(self.PARAMETER, a, b),
             (31.3, 37.3),
-            "a one-key pair reached the fifth refusal; it is no longer dormant")
+            "a one-key pair reached check 3; it is no longer dormant")
 
 
 class RendererWritesItTest(unittest.TestCase):

@@ -234,18 +234,30 @@ def refuse_unverifiable_pair(parameter: str, receipt_a: dict,
     3. Every OTHER parameter is EQUAL. A pair whose second parameter also moved
        shows a difference the caption attributes to the first one.
 
-       THIS RULE IS CORRECT AND TODAY IT IS DORMANT, and calling it "the rule
-       that carries the weight" was wrong. The producer records exactly ONE
-       parameter, so `set(left) | set(right)` holds one key, `key != parameter`
-       empties it, and `moved` is ALWAYS `[]`. It cannot fire against any
-       receipt this repository can currently produce.
+       THIS RULE IS CORRECT AND TODAY IT IS UNREACHABLE, and calling it "the
+       rule that carries the weight" was wrong twice over.
+
+       ON THIS BRANCH NO PRODUCER WRITES THE FIELD AT ALL. `spikes/
+       export_blender_job.py` here has zero mentions of it, real job files carry
+       no such key, and `solve_parameters` therefore returns None for every one.
+       So every receipt records `solveParameters: null`, and TWO REAL RECEIPTS
+       REFUSE AT CHECK 1 -- "receipt a has no `solveParameters`". Checks 2, 3 and
+       4 are ALL unreachable on any receipt this branch can produce, not only
+       the third.
+
+       A ONE-KEY PRODUCER EXISTS ON THE MOVEMENT LANE'S UNMERGED BRANCH. Even
+       after it merges, check 3 stays dormant while one parameter is recorded,
+       because `set(left) | set(right)` then holds one key and `key != parameter`
+       empties it.
 
        It has no power for the same reason a reproduction test on a square
        athlete had none: the thing it compares cannot differ. The tests build a
        two-key pair and prove it CAN fail, which is a different claim from its
        being able to fail on real data.
 
-       WHAT MAKES IT LIVE is the producer recording a second parameter.
+       WHAT MAKES CHECKS 2 TO 4 REACHABLE AT ALL is a producer writing the
+       field on this branch. WHAT MAKES CHECK 3 LIVE is that producer recording
+       a SECOND parameter.
        `contact_solve.py` holds fifteen module-level constants and the movement
        lane names four as affecting the solve and unrecorded. Until then, every
        unrecorded parameter is equal BY CONSTRUCTION rather than by check,
