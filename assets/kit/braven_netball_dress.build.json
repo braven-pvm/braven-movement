@@ -1,0 +1,75 @@
+{
+  "asset": "braven_netball_dress.mhclo",
+  "obj": "braven_netball_dress.obj",
+  "kitFile": "config/kit/netball_dress.v1.json",
+  "kitSha256": "704d196a9070859deb49a2494d4575b5635ea2f168525ba42093561919875fd0",
+  "authoringConfig": "config/reference_catch.v1.json",
+  "authoringConfigSha256": "b1520a824510cce59d2f92db57b7c29c036defd493142b33c6fca18c2a3e8b66",
+  "landmarks": {
+    "shoulderJointM": [
+      0.1506,
+      -0.0176,
+      1.3426
+    ],
+    "strapEdgeX": 0.1306,
+    "shoulderTopAtStrapZ": 1.4134,
+    "neckRingTopZ": 1.4853,
+    "chestFrontYAtScoop": -0.0917,
+    "backYAtScoop": 0.0568,
+    "topCutZ": 1.4803
+  },
+  "parts": [
+    {
+      "part": "bodysuit",
+      "vertices": 1477,
+      "faces": 2800,
+      "faceSizes": [
+        3
+      ],
+      "zMinM": 0.79,
+      "zMaxM": 1.4425,
+      "looseVerticesRemoved": 0,
+      "verticesPrunedToOneGroup": 0,
+      "facesDeletedByClassification": 2076
+    },
+    {
+      "part": "skirt",
+      "vertices": 252,
+      "faces": 432,
+      "faceSizes": [
+        3
+      ],
+      "zMinM": 0.78,
+      "zMaxM": 1.0202,
+      "looseVerticesRemoved": 0,
+      "verticesPrunedToOneGroup": 0,
+      "verticesHung": 246,
+      "axisXY": [
+        0.0,
+        -0.011
+      ],
+      "waistRingZ": 1.0202
+    }
+  ],
+  "nBodysuitVertices": 1477,
+  "nSkirtVertices": 252,
+  "check": {
+    "is_valid_object": true,
+    "has_any_vertices": true,
+    "has_any_vgroups": true,
+    "all_verts_have_max_one_vgroup": true,
+    "all_verts_have_min_one_vgroup": true,
+    "all_verts_belong_to_faces": true,
+    "all_faces_same_type": true,
+    "all_checks_ok": true,
+    "clothes_groups_exist_on_basemesh": true,
+    "objs_same_scale": true
+  },
+  "stagesS": {
+    "athleteS": 4.54,
+    "cutsS": 0.17,
+    "checkMatchWriteS": 2.64,
+    "totalS": 7.35
+  },
+  "blender": "4.5.12 LTS"
+}

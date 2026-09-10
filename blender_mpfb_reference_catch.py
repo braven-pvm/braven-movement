@@ -8,6 +8,7 @@ import re
 import sys
 from pathlib import Path
 
+import bmesh
 import bpy
 from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Matrix, Vector
@@ -40,6 +41,7 @@ from reference_pose_config import (  # noqa: E402
     PresentationConfig,
     ReferenceCatchConfig,
     ViewConfig,
+    kit_asset_path,
     load_reference_catch_config,
 )
 from reference_pose_contract import validate_reference_catch_receipt  # noqa: E402
@@ -927,6 +929,7 @@ def make_material(
 
 def make_fabric_material(
     presentation: PresentationConfig,
+    bib_image: Path | None = None,
 ) -> bpy.types.Material:
     material = bpy.data.materials.new("BRAVEN_Graphite_Training_Kit")
     material.use_nodes = True
@@ -938,6 +941,26 @@ def make_fabric_material(
     sheen = shader.inputs.get("Sheen Weight")
     if sheen is not None:
         sheen.default_value = 0.08
+
+    if bib_image is not None:
+        # THE BIB IS AN IMAGE OVER THE FABRIC, placed by the garment's own UV
+        # map. `scripts/author_netball_dress.py` lays that map as a planar
+        # projection, front faces on the left half and back faces mirrored on
+        # the right, and `scripts/make_bib_image.py` draws the square in the
+        # same frame, so the letters read the right way round from both sides.
+        # Where the image is transparent the fabric colour shows through.
+        base = nodes.new("ShaderNodeRGB")
+        base.outputs[0].default_value = presentation.kit.base_color
+        uv_map = nodes.new("ShaderNodeUVMap")
+        image = nodes.new("ShaderNodeTexImage")
+        image.image = bpy.data.images.load(str(bib_image))
+        mix = nodes.new("ShaderNodeMix")
+        mix.data_type = "RGBA"
+        links.new(uv_map.outputs["UV"], image.inputs["Vector"])
+        links.new(image.outputs["Alpha"], mix.inputs[0])
+        links.new(base.outputs[0], mix.inputs[6])
+        links.new(image.outputs["Color"], mix.inputs[7])
+        links.new(mix.outputs[2], shader.inputs["Base Color"])
 
     coordinates = nodes.new("ShaderNodeTexCoord")
     weave = nodes.new("ShaderNodeTexNoise")
@@ -1100,7 +1123,18 @@ def create_athlete(
     rig.name = "BRAVEN_Athlete_Rig"
 
     skin = asset_path("skins", "young_caucasian_female", "young_caucasian_female.mhmat")
-    suit = asset_path("clothes", "female_casualsuit02", "female_casualsuit02.mhclo")
+    # THE GARMENT COMES FROM THE CONFIG WHEN IT NAMES ONE. The MPFB casual suit
+    # stays the default, so every config without `presentation.kit.garment`
+    # builds the figure it always built. A repository-authored kit lives under
+    # `assets/kit/` and is refused anywhere else, and `asset_licences.py` has a
+    # determination for that directory, so the receipt records it like any
+    # other source asset: path, sha256 and licence.
+    kit = presentation.kit
+    if kit.garment:
+        suit = kit_asset_path(kit.garment, TOOL_DIR)
+    else:
+        suit = asset_path("clothes", "female_casualsuit02", "female_casualsuit02.mhclo")
+    bib_image = kit_asset_path(kit.bib_image, TOOL_DIR) if kit.bib_image else None
     trainers = asset_path("clothes", "shoes05", "shoes05.mhclo")
     hair = asset_path("hair", "ponytail01", "ponytail01.mhclo")
     eyes = asset_path("eyes", "high-poly", "high-poly.mhclo")
@@ -1126,6 +1160,7 @@ def create_athlete(
         lashes,
         face_pack_manifest,
         *face_targets,
+        *([bib_image] if bib_image is not None else []),
     ]
 
     HumanService.set_character_skin(
@@ -1152,9 +1187,40 @@ def create_athlete(
         )
     ]
     sportswear = assets[0]
+    if kit.sock_top_m is not None:
+        trim_sock(assets[1], kit.sock_top_m)
     sportswear.data.materials.clear()
-    sportswear.data.materials.append(make_fabric_material(presentation))
+    sportswear.data.materials.append(make_fabric_material(presentation, bib_image))
     return human, rig, assets, source_assets
+
+
+def trim_sock(shoe: bpy.types.Object, top_m: float) -> int:
+    """Cut the shoe asset's tall sock at a height and close the ring.
+
+    Every one of the six MPFB shoe assets is one mesh carrying a sock to
+    mid-calf, so a short sock is a cut and not a choice. The cut is a plane
+    bisect, which splits the faces it crosses and leaves a level edge, where a
+    vertex delete on a quad mesh leaves a stair-step. The cut ring is filled so
+    the tube does not show its inside from above. Returns the number of edges
+    on the cut.
+    """
+    mesh = bmesh.new()
+    mesh.from_mesh(shoe.data)
+    result = bmesh.ops.bisect_plane(
+        mesh,
+        geom=mesh.verts[:] + mesh.edges[:] + mesh.faces[:],
+        dist=1e-5,
+        plane_co=(0.0, 0.0, top_m),
+        plane_no=(0.0, 0.0, -1.0),
+        clear_inner=True,
+        clear_outer=False,
+    )
+    cut = [item for item in result["geom_cut"] if isinstance(item, bmesh.types.BMEdge)]
+    bmesh.ops.holes_fill(mesh, edges=cut, sides=0)
+    mesh.to_mesh(shoe.data)
+    mesh.free()
+    shoe.data.update()
+    return len(cut)
 
 
 def select_only(objects: list[bpy.types.Object]) -> None:
@@ -1734,6 +1800,9 @@ def main() -> None:
                 "material": "procedural_fabric",
                 "roughness": config.presentation.kit.roughness,
                 "footwear": "sports_trainers",
+                "garment": config.presentation.kit.garment or "female_casualsuit02",
+                "bibImage": config.presentation.kit.bib_image,
+                "sockTopM": config.presentation.kit.sock_top_m,
             },
             "ball": {
                 "type": "panelled_netball",

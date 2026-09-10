@@ -14,9 +14,12 @@ receipt can tell the two builds apart. This project has already paid a day for
 pairing by name, so the record carries the bytes.
 
 **THE LICENCE IS QUOTED, NEVER INVENTED.** `docs/LICENSING.md` makes exactly two
-asset determinations, and both are transcribed below with the sentence they come
-from. Nothing here decides a licence. An asset that neither determination covers
-has no licence in this repository, and this module says so rather than guessing.
+asset licence determinations, and both are transcribed below with the sentence
+they come from. A third family, the kit this repository authors under
+`assets/kit/`, is recorded as the owner's work with the document's own words
+that no licence has been chosen for it. Nothing here decides a licence. An asset
+that no family covers has no licence in this repository, and this module says
+so rather than guessing.
 
 **AN UNDETERMINED ASSET IS REFUSED.** `docs/LICENSING.md` requires the licence of
 every NEWLY selected MPFB asset to be reconfirmed before publication. That
@@ -87,6 +90,23 @@ FACEUNITS_MANIFEST = ("packs", "faceunits01.json")
 # Every target file of that pack lives under these two segments.
 FACEUNITS_TARGETS = ("targets", "faceunits")
 
+# THE REPOSITORY'S OWN KIT. The config loader refuses a kit path anywhere but
+# under `assets/kit/`, so that directory pair is the whole family. What the
+# receipt records for these is OWNERSHIP and not a licence: the document says
+# no redistribution licence has been chosen, and this module quotes it rather
+# than choosing one.
+KIT_ASSETS = ("assets", "kit")
+OWN_WORK = "Braven Performance Lab (own work)"
+KIT_RULE = (
+    "They are the work of Braven Performance Lab and no redistribution licence "
+    "has been selected for them yet, as for the source code."
+)
+KIT_SOURCE = (
+    f"docs/LICENSING.md, 'Kit assets authored in this repository': {KIT_RULE} "
+    "The licence word is the repository owner's to set; until then the receipt "
+    "records who made the asset and not the terms it is offered under."
+)
+
 
 class LicenceUndetermined(Exception):
     """An asset this repository has not licensed reached a receipt."""
@@ -118,6 +138,10 @@ def licence_for(path: object) -> tuple[str, str]:
             return CC0, FACEUNITS_SOURCE
     if lowered[-2:] == FACEUNITS_MANIFEST:
         return CC0, FACEUNITS_SOURCE
+
+    for index in range(len(lowered) - 1):
+        if lowered[index : index + 2] == KIT_ASSETS:
+            return OWN_WORK, KIT_SOURCE
 
     if lowered[-3:] in SELECTED_MPFB_ASSETS:
         return CC0, MPFB_SOURCE
