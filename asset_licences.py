@@ -155,13 +155,15 @@ def licence_for(path: object) -> tuple[str, str]:
         # THE ADVICE ABOVE SENDS A PERSON TO THE WRONG TABLE when the file is
         # one THIS REPOSITORY made. A painted kit texture reached this refusal
         # on 2026-09-10 and the message told its author to add it to a table
-        # keyed by an MPFB category, folder and file.
+        # keyed by an MPFB category, folder and file. The third family is the
+        # answer for such a file, and the message says so.
         f"IF THIS FILE IS ONE THIS REPOSITORY GENERATED, that table is the "
-        f"wrong place: it is keyed by an MPFB category, folder and file, and "
-        f"this module has no way to say 'we made it'. docs/LICENSING.md makes "
-        f"no determination about a generated file, and its first bullet "
-        f"records that no licence has been chosen for this repository's own "
-        f"source code either. That is a decision for the repository owner."
+        f"wrong place: it is keyed by an MPFB category, folder and file. Put "
+        f"the file under assets/kit/ and it is recorded as own work; refer to "
+        f"the third family, 'Kit assets authored in this repository', in "
+        f"docs/LICENSING.md. That bullet records that no licence has been "
+        f"chosen for the repository's own files, as for its source code, "
+        f"which is a decision for the repository owner."
     )
 
 
