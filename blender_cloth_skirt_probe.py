@@ -76,15 +76,27 @@ SKIRT = {
     "waistStandoffM": 0.012,
     # THE FLARE. This one number is the difference between a skirt and a tube,
     # and it is the number the fitted-proxy route cannot express at all.
+    # AT REST, ONLY SLIGHTLY WIDER THAN THE HIP.
+    #
+    # THE REFERENCE SKIRT DOES NOT FLARE STANDING STILL. Eight photographs show
+    # it hanging close to the thigh, opening at the hem by very little; the wide
+    # flare appears only on a JUMP, and it is a property of LIGHT FABRIC IN
+    # MOTION rather than of the garment's cut. Every earlier value here was the
+    # IN-FLIGHT shape built as a rest shape, which is a heavy static cone: the
+    # towel. 0.195 against a 0.170 hip is a near-tube, and the air does the rest.
     "hemRadiusM": 0.255,
     # Waist to hem. Mid-thigh: long enough to be a skirt, short enough that the
     # knee this drill grades stays visible.
+    # SHORT. The reference hem sits at UPPER thigh, roughly a third of the way
+    # from crotch to knee, which is about 20 to 25 cm of panel below the hip.
     "lengthM": 0.310,
     # WHERE THE WIDENING HAPPENS, and the first version had no such control.
     # 1.0 is a straight cone, which widens from the very top and gave a short
     # wide TUBE that Marius called a blanket. Above 1.0 the panel stays near the
     # hip through the upper skirt and opens near the hem, which is what an
     # A-line is.
+    # Matters much less once the static flare is small. Kept gentle so the
+    # panel follows the hip and opens a little towards the hem.
     "flarePower": 2.4,
     # HOW FAR DOWN THE PANEL IS FITTED TO THE FIGURE rather than to the cone.
     # 0 is the old behaviour, a band fit and nothing else. The upper skirt has
@@ -112,6 +124,10 @@ CLOTH = {
     # and a mass of small folds reads as MORE fabric, like crushed velvet, not
     # less. A thin garment reads thin from its HEM EDGE, its MATERIAL and how
     # close it sits, never from how easily it creases.
+    # LIGHT, because the hem has to LIFT on a jump. The 0.45 that drapes a wide
+    # static cone is a fabric that cannot fly, and the reference flare is
+    # entirely a flying hem. The crumpling this caused before was on a WIDE
+    # skirt with excess fabric to fold; a near-fitted panel has far less.
     "massKg": 0.45,
     "tensionStiffness": 8.0,
     # HIGH, AND IT IS NOT THE SAME KNOB AS BENDING. A soft cloth pinned on a
