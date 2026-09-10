@@ -378,9 +378,7 @@ def main() -> int:
     # that is hashed into receipts must not change bytes with the machine that
     # authored it. `.gitattributes` keeps these files verbatim from here on.
     for written in (target, target.with_suffix(".obj")):
-        written.write_bytes(written.read_bytes().replace(b"
-", b"
-"))
+        written.write_bytes(written.read_bytes().replace(b"\r\n", b"\n"))
     stages["checkMatchWriteS"] = round(time.perf_counter() - started - stages["athleteS"] - stages["cutsS"], 2)
     stages["totalS"] = round(time.perf_counter() - started, 2)
 

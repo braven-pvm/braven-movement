@@ -4,7 +4,8 @@
   "kitFile": "config/kit/netball_dress.v1.json",
   "kitSha256": "704d196a9070859deb49a2494d4575b5635ea2f168525ba42093561919875fd0",
   "authoringConfig": "config/reference_catch.v1.json",
-  "authoringConfigSha256": "b1520a824510cce59d2f92db57b7c29c036defd493142b33c6fca18c2a3e8b66",
+  "authoringConfigSha256": "8c317a6c3d6e52c924f19cb9e1677e8f6794a9c1eb2dc7c612dba27738a20178",
+  "hashNote": "sha256 of the input with CRLF folded to LF",
   "landmarks": {
     "shoulderJointM": [
       0.1506,
@@ -66,10 +67,10 @@
     "objs_same_scale": true
   },
   "stagesS": {
-    "athleteS": 4.54,
-    "cutsS": 0.17,
-    "checkMatchWriteS": 2.64,
-    "totalS": 7.35
+    "athleteS": 3.79,
+    "cutsS": 0.14,
+    "checkMatchWriteS": 1.92,
+    "totalS": 5.85
   },
   "blender": "4.5.12 LTS"
 }
