@@ -25,8 +25,8 @@ should drape over her body naturally and/or be more tightly fit".
 | `scripts/make_bib_image.py` | Draws the bib square with the position letters into the dress's UV frame. |
 | `scripts/kit_studio_sheet.py` | Ten studio views, standing and in a drill phase, plus the skirt clearance measurement. |
 | `assets/kit/braven_netball_dress.mhclo`, `.obj` | The dress, 1477 bodysuit vertices and 252 skirt vertices, all triangles. |
-| `assets/kit/braven_netball_dress.build.json` | The sidecar: landmarks, counts, the check, the hashes of the two inputs, seconds per stage. |
-| `assets/kit/bib_GS.png` | The bib image for a goal shooter. |
+| `assets/kit/braven_netball_dress.build.json` | The sidecar: landmarks, counts, the check, the hashes of the two inputs and of the two outputs, seconds per stage, and the provenance claim `readsNoSkin: true` with `derivedFrom`. |
+| `assets/kit/bib_GS.png`, `.json` | The bib image for a goal shooter, and its sidecar with the same claim and the output hash. |
 | `config/netball_kit.v1.json` | The reference config with `presentation.kit` set: the dress, the bib, a sock top, team green. |
 
 The pipeline reads three optional keys under `presentation.kit`: `garment`,
