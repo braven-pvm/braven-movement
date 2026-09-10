@@ -56,7 +56,12 @@ SKIRT = {
     # skirt's band actually sits and where it stops reading as a separate lump.
     "waistDropM": -0.020,
     # The waistband. Snug, because it is pinned and never simulated.
+    # Only a FALLBACK now. The band is measured off the body ray by ray; this
+    # is what a ray that hits nothing uses, and a run that reports many misses
+    # is a run whose band is a circle again.
     "waistRadiusM": 0.170,
+    # How far outside the skin the band sits. A waistband is not painted on.
+    "waistStandoffM": 0.012,
     # THE FLARE. This one number is the difference between a skirt and a tube,
     # and it is the number the fitted-proxy route cannot express at all.
     "hemRadiusM": 0.255,
@@ -118,8 +123,53 @@ CLOTH = {
 }
 
 
-def build_skirt(name: str, origin: Vector, params: dict) -> bpy.types.Object:
-    """A truncated cone from the waist ring to the hem ring, and its pin group.
+def fit_waist(surfaces: list, origin: Vector, top: float, segments: int,
+              fallback: float, standoff: float) -> tuple[list, int]:
+    """The worn figure's own radius at the waistband height, angle by angle.
+
+    A HIP IS NOT A CIRCLE. It is roughly an ellipse, wider across than front to
+    back, and a circular waistband on it touches at the sides and stands off at
+    the front and back. That gap is what made the third attempt read as a hoop
+    the skirt hangs from rather than as a band on a body.
+
+    SO THE BAND IS MEASURED, AND IT IS MEASURED AGAINST WHAT IS ACTUALLY THERE.
+    A first version cast against the body alone and got 0 hits out of 72. MPFB
+    DELETES THE BODY UNDER THE CLOTHES: the human carries a mask modifier named
+    `Delete.female_casualsuit02`, so at the hip there is no skin to hit, from
+    inside or out. The surface at a waistband is the garment, which is also
+    where a real skirt sits. Every candidate is cast and the NEAREST hit wins.
+
+    A miss keeps the fallback radius, and the caller is told how many missed,
+    because a band fitted from nothing is a circle again and looks fitted.
+    """
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    evaluated = [surface.evaluated_get(depsgraph) for surface in surfaces]
+    start = Vector((origin.x, origin.y, top))
+    radii, hits = [], 0
+    for step in range(segments):
+        angle = 2.0 * math.pi * step / segments
+        direction = Vector((math.cos(angle), math.sin(angle), 0.0))
+        nearest = None
+        for surface in evaluated:
+            to_local = surface.matrix_world.inverted()
+            found, location, _, _ = surface.ray_cast(
+                to_local @ start, to_local.to_3x3() @ direction, distance=0.6,
+            )
+            if not found:
+                continue
+            reach = (surface.matrix_world @ location - start).length
+            nearest = reach if nearest is None else min(nearest, reach)
+        if nearest is None:
+            radii.append(fallback)
+        else:
+            hits += 1
+            radii.append(nearest + standoff)
+    return radii, hits
+
+
+def build_skirt(name: str, origin: Vector, params: dict,
+                body: list | None = None) -> bpy.types.Object:
+    """A skirt from a fitted waistband to a circular hem, and its pin group.
 
     Built in world space around `origin`, which is the posed pelvis, so the
     skirt starts OUTSIDE the body it is about to fall onto. Built around the
@@ -131,15 +181,29 @@ def build_skirt(name: str, origin: Vector, params: dict) -> bpy.types.Object:
     length = params["lengthM"]
     top = origin.z - params["waistDropM"]
 
+    if body is not None:
+        waist, hits = fit_waist(body, origin, top, segments, waist_r,
+                                params["waistStandoffM"])
+        if hits == 0:
+            print("[skirt] WARNING: no ray hit anything, so the band is a "
+                  "circle and only looks fitted", flush=True)
+        print(f"[skirt] waistband fitted to the body on {hits}/{segments} rays",
+              flush=True)
+    else:
+        waist, hits = [waist_r] * segments, 0
+
     vertices, faces = [], []
     for ring in range(rings + 1):
         fraction = ring / rings
-        # A-LINE, NOT A CONE. The radius opens late, so the panel follows the
-        # hip through the upper skirt and flares towards the hem.
-        radius = waist_r + (hem_r - waist_r) * (fraction ** params["flarePower"])
         height = top - length * fraction
         for step in range(segments):
             angle = 2.0 * math.pi * step / segments
+            # A-LINE, NOT A CONE, and it opens from the FITTED waist rather
+            # than from a circle: the hem is round because a hanging hem is
+            # round, and everything above it remembers the hip it started on.
+            radius = waist[step] + (hem_r - waist[step]) * (
+                fraction ** params["flarePower"]
+            )
             vertices.append((
                 origin.x + radius * math.cos(angle),
                 origin.y + radius * math.sin(angle),
@@ -260,7 +324,8 @@ def main() -> None:
         skirt = None
         if not args.no_skirt:
             pelvis = rig.matrix_world @ rig.pose.bones["pelvis"].head
-            skirt = build_skirt(f"skirt_{phase['name']}", pelvis, SKIRT)
+            skirt = build_skirt(f"skirt_{phase['name']}", pelvis, SKIRT,
+                                [human] + list(assets))
             dress(skirt, [human] + list(assets), CLOTH)
             seconds = settle(skirt, CLOTH["settleFrames"])
             timings.append({"phase": phase["name"], "settleSeconds": round(seconds, 2)})
