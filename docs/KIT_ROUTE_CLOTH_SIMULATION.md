@@ -204,11 +204,24 @@ changing them does not have to be the person who wrote the file.
 
 - **The waist ROLL is gone. A CREASE remains, and it is not attributed.** The
   roll was `waistStandoffM` at 0.012 and it is a crease at 0.004. Refer to
-  section 2.5. The crease survived every one of five further candidates and no
-  cause is known. **Worst on `absorb.side`**, which is the view a coach reads
-  the hip on. I first called `land.quarter` the worst panel and was wrong: I
-  picked the view where the defect was most VISIBLE rather than the view where
-  it most damaged the garment.
+  section 2.5. **Worst on `absorb.side`**, which is the view a coach reads the
+  hip on. I first called `land.quarter` the worst panel and was wrong: I picked
+  the view where the defect was most VISIBLE rather than the view where it most
+  damaged the garment.
+
+  **THE FIVE CANDIDATES THAT DID NOT MOVE IT ARE NAMED, so the next person does
+  not spend the afternoon I spent.** The crease is present in all nine bakes,
+  unchanged, under every one of these:
+
+  1. `waistDropM` moved from −0.020 to +0.030, which put the pin on the hip.
+  2. `fitToBodyFraction` raised from 0.05 to 0.20.
+  3. `fitToBodyFraction` raised to 0.35, which fits nine rings instead of two.
+  4. The band floor removed, so every ray's own hit decides its vertex.
+  5. The whole panel rebuilt as an offset from the band's measured profile.
+
+  `flarePower` at 1.5 is a sixth that changed the panel and not the crease.
+  **A defect with its eliminated causes listed is worth more than a defect with
+  a guessed one**, and none of these is the cause.
 - **It is longer and fuller than a netball skirt.** It falls to mid-thigh and
   reads closer to a tennis skirt. The reference sits higher and flares lower.
   That is `lengthM` and `flarePower`, not a limit of the method.
@@ -267,9 +280,17 @@ has to pass 0.1963 m at 45% down, and a sheet that cannot stretch gathers
 instead. `waistRadiusM` is the clearance that lets it pass. **It was doing that
 job under a fallback's name, and the name is what I trusted.**
 
-The same table sets `flarePower`. At 2.4 the cone is 0.1825 m at 45% down,
-**1.4 cm inside the thigh**, so the collision had to push the panel out. 1.5 is
-the exponent that meets 0.1963 there.
+The same table sets `flarePower`, and **that makes it the first parameter in
+this file whose value comes from a measurement rather than from looking at a
+render.** At 2.4 the cone is 0.1825 m at 45% down, **1.4 cm inside her thigh**,
+so the collision had to push the panel out on every frame. 1.5 is the exponent
+that meets 0.1963 m there.
+
+**`report_clearance` is the deliverable from the two failures, not a
+by-product.** It costs one ring of rays per height, decides no vertex, and it
+would have saved both bakes had it existed first. The general form: **when a
+constant and a measurement disagree, print the measurement beside the constant
+before changing either.** I changed the code twice on the strength of a name.
 
 **And a null result kept as a null result.** `fitToBodyFraction` stays at 0.05.
 At 0.05 the measurement beats the clearance on 5 vertices of 1800; at 0.35 it
