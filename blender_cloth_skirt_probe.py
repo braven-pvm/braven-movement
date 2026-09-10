@@ -52,18 +52,27 @@ from blender_mpfb_reference_catch import (  # noqa: E402
 # what a second skirt changes.
 SKIRT = {
     # Where the waistband sits, as a drop below the pelvis bone's head.
-    "waistDropM": 0.010,
+    # Negative tucks it UP under the bodice hem, which is where a netball
+    # skirt's band actually sits and where it stops reading as a separate lump.
+    "waistDropM": -0.020,
     # The waistband. Snug, because it is pinned and never simulated.
-    "waistRadiusM": 0.150,
+    "waistRadiusM": 0.170,
     # THE FLARE. This one number is the difference between a skirt and a tube,
     # and it is the number the fitted-proxy route cannot express at all.
-    "hemRadiusM": 0.300,
-    # Waist to hem. A netball skirt is short; the knee must stay visible.
-    "lengthM": 0.200,
+    "hemRadiusM": 0.255,
+    # Waist to hem. Mid-thigh: long enough to be a skirt, short enough that the
+    # knee this drill grades stays visible.
+    "lengthM": 0.310,
+    # WHERE THE WIDENING HAPPENS, and the first version had no such control.
+    # 1.0 is a straight cone, which widens from the very top and gave a short
+    # wide TUBE that Marius called a blanket. Above 1.0 the panel stays near the
+    # hip through the upper skirt and opens near the hem, which is what an
+    # A-line is.
+    "flarePower": 2.4,
     # Resolution. Radial segments decide how round the hem reads; rings decide
-    # how the fabric folds. Both cost simulation time and nothing else.
-    "segments": 56,
-    "rings": 12,
+    # how many folds the fabric can carry. Twelve rings cannot fold at all.
+    "segments": 72,
+    "rings": 24,
 }
 
 # THE CLOTH, all Blender's own settings.
@@ -72,22 +81,40 @@ SKIRT = {
 # sports fabric is lighter, stiffer against stretch and much softer in bending.
 CLOTH = {
     "quality": 10,
-    "massKg": 0.12,
-    "tensionStiffness": 20.0,
-    "compressionStiffness": 20.0,
-    "shearStiffness": 5.0,
-    "bendingStiffness": 0.20,
+    # Heavier than the first attempt. A light cloth with stiff bending holds its
+    # own shape and stands off the leg; a heavier, softer one falls.
+    "massKg": 0.45,
+    "tensionStiffness": 8.0,
+    # HIGH, AND IT IS NOT THE SAME KNOB AS BENDING. A soft cloth pinned on a
+    # ring narrower than the hip beneath it is pushed outward, and with low
+    # compression it BUCKLES into a roll at the waist. That roll is what made
+    # the second attempt read as a towel tucked in at the top.
+    "compressionStiffness": 15.0,
+    "shearStiffness": 2.0,
+    # THE NUMBER THAT DECIDES DRAPE. At 0.20 the skirt was a rigid shell that
+    # happened not to intersect the leg. Sports fabric bends almost freely.
+    # BENDING SETS THE SIZE OF A FOLD, and it is not a drape/rigid switch.
+    # At 0.20 with twelve rings the skirt was a rigid shell. At 0.02 with
+    # thirty-two it corrugated into fine horizontal ripples, like a lampshade:
+    # near-zero bending folds at the smallest scale the mesh allows. The fold
+    # scale is set by this number AGAINST the ring spacing, so raising the
+    # resolution without raising this trades a stiff skirt for a ribbed one.
+    "bendingStiffness": 0.30,
     "airDamping": 1.0,
     # How far the cloth stays off the body. Too small and it passes through;
     # too large and the skirt floats.
-    "collisionDistanceM": 0.010,
+    # Thinner. At 0.010 the fabric floats a centimetre off the body on every
+    # side, which reads as felt rather than as a jersey knit.
+    "collisionDistanceM": 0.004,
     "collisionQuality": 5,
     "selfCollision": True,
     "selfDistanceM": 0.006,
     # How many frames the skirt is given to fall from its build shape onto the
     # pose. THIS IS THE PER-POSE COST and it is the number that decides whether
     # the method scales to an animation.
-    "settleFrames": 30,
+    # More frames, because a softer cloth takes longer to stop moving. A skirt
+    # still swinging when the shutter opens is a skirt in the wrong place.
+    "settleFrames": 45,
 }
 
 
@@ -107,7 +134,9 @@ def build_skirt(name: str, origin: Vector, params: dict) -> bpy.types.Object:
     vertices, faces = [], []
     for ring in range(rings + 1):
         fraction = ring / rings
-        radius = waist_r + (hem_r - waist_r) * fraction
+        # A-LINE, NOT A CONE. The radius opens late, so the panel follows the
+        # hip through the upper skirt and flares towards the hem.
+        radius = waist_r + (hem_r - waist_r) * (fraction ** params["flarePower"])
         height = top - length * fraction
         for step in range(segments):
             angle = 2.0 * math.pi * step / segments
@@ -136,7 +165,11 @@ def build_skirt(name: str, origin: Vector, params: dict) -> bpy.types.Object:
     # THE PIN GROUP IS THE WAISTBAND. Without it the whole skirt falls to the
     # floor: a cloth object with no pinned vertices is a dropped sheet.
     group = obj.vertex_groups.new(name="pin")
-    group.add(list(range(segments)), 1.0, "REPLACE")
+    # TWO RINGS, NOT ONE. A single pinned ring is a pinned LINE: the fabric
+    # immediately below it is free to fold back on itself, which is the other
+    # half of the waist roll. Two rings give the band a height and it reads as
+    # a band.
+    group.add(list(range(segments * 2)), 1.0, "REPLACE")
     return obj
 
 
