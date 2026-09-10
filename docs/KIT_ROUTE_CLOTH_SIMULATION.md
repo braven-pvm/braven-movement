@@ -133,7 +133,38 @@ reason this is not a second hoop wearing a measurement's name: a band fitted
 from nothing falls back to the circle and LOOKS fitted. The count was added
 before it was needed.
 
-### 2.3 What is still broken
+### 2.3 Against the reference, and the knob that would move each difference
+
+**There is no reference photograph in this repository and there will not be
+one.** The images are third-party and for internal review only. So the
+comparison is made against the kit described in words, which names the knob and
+is more useful than a picture would have been.
+
+**The reference, a one-piece SPAR Proteas netball dress:** a fitted sleeveless
+bodice with racer shoulders; a SHORT A-line skirt sitting at upper to mid thigh,
+well above the knee, fitted at the hip and flaring only in its lower half,
+attached FLAT under the bodice hem with no separate waistband visible; a clean
+hem with slight movement, neither full nor gathered.
+
+**The three differences a coach would name, worst last:**
+
+| | this skirt | the reference | the knob |
+|---|---|---|---|
+| **length** | mid-thigh, approaching the knee | stops higher | `lengthM`, now 0.310 |
+| **fullness** | flares earlier and wider | flares less and later | `flarePower`, now 2.4, wants MORE; and `hemRadiusM`, now 0.255 |
+| **the waist** | a visible rolled band of its own | the skirt meets the bodice flat, no band at all | **not a parameter** |
+
+**The waistband is the largest difference and it is the one that is not a
+number.** `waistDropM` tucks the band higher, but the reference has no band to
+tuck: its skirt is attached under the bodice hem. That is a construction change
+— pinning the top ring to the bodice rather than building a band of its own —
+and it is the next thing this route should do.
+
+**The other two are one line each.** That is the whole argument for the
+parameter list: two of the three named faults are a number, and the person
+changing them does not have to be the person who wrote the file.
+
+### 2.4 What is still broken
 
 - **The waist roll is not gone, it is smaller.** The fabric still bunches where
   the fitted band meets the flare. **Worst on `absorb.side`**, where it reads as
@@ -257,9 +288,11 @@ is a large saving and it is not zero work.
   the parallel lane.
 - **I did not price a commercial tool.** The hard stop was Blender first, and
   Blender produced a skirt.
-- **I did not put the render beside a reference photograph.** There is no netball
-  kit reference in this repository. That comparison is the criterion that would
-  have caught the blanket, and it is still owed.
+- **I did not put the render beside a reference photograph**, because there is
+  none in this repository and there will not be: the images are third-party and
+  internal only. The comparison is made against the kit described in words in
+  section 2.3 instead, which names the parameter behind each difference. **That
+  is the criterion that would have caught the blanket**, and it is now run.
 - **I did not test another drill or another sport.** The claim is about this
   landing.
 - **I did not message the character lane**, as instructed.
