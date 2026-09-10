@@ -278,12 +278,12 @@ most 2.9 mm. **The parameter moves the mesh and does not move the picture.**
 That is not a proof that it is useless, so it stays at the cheap end rather than
 being deleted.
 
-### 2.6 The hem-lift test cannot run here, and the reason is not cloth
+### 2.6 The hem-lift test cannot run through this RENDERER, and the reason is not cloth
 
 The reference photographs get their flare from a **flying hem**, so the test a
 continuous bake exists for is whether the hem lifts on the jump and drops on the
-landing. **It cannot be run on this pipeline.** Every bake prints the same two
-lines:
+landing. **It cannot be run through this renderer today.** Every bake prints the
+same two lines:
 
     the pelvis moves 13.0 cm vertically, and the lower foot takes
     1 distinct height(s) over 55 frames
@@ -294,15 +294,63 @@ foot sits on a floor height read off the rig at rest, and `pose_phase` resets
 the rig before each frame, so that height is the same constant every time. The
 13 cm is the crouch going down and coming back up.
 
-**`netball_double_foot_landing` has a phase named `flight` and nothing in it
-leaves the ground.** This is a property of the posing code and it applies to
-every drill, every still and the glTF export, not to this skirt. Whether it is a
-defect or a deliberate simplification is not a question this route can answer,
-and it belongs to the rendering lane.
+**`netball_double_foot_landing` has a phase named `flight`, and in every render
+this repository makes, nothing in it leaves the ground.** It applies to every
+drill, every still and the glTF export, not to this skirt.
+
+**AN EARLIER VERSION OF THAT SENTENCE READ "and nothing in it leaves the
+ground". THAT IS WITHDRAWN, AND IT IS A SCOPE ERROR OF THE USUAL SHAPE.** My
+instrument reads the posed rig, which is the RENDER, and the render is flat by
+construction. It is not evidence about the SOLVE. The rendering lane measured
+the solve on the same drill and it has flight:
+
+| phase | frame | lowest ankle | above the floor |
+|---|---|---|---|
+| approach | 0 | 0.0740 | 0.01 cm |
+| **flight** | **54** | **0.2319** | **15.80 cm** |
+| land | 89 | 0.0740 | 0.01 cm |
+| absorb | 109 | 0.0739 | 0.00 cm |
+
+**The solve carries 104 distinct heights over 110 frames and the renderer shows
+one.** The four figures above are that lane's measurement and are not
+re-measured here.
+
+**The two lines they name ARE read here, because a mechanism is cheap to check
+and a relayed one is a claim.** Both hold:
+
+- `export_blender_job.py` stores the stance as
+  `ankles[side] = (ankle - pelvis) / leg`, under the key
+  `ankleFromPelvisInLegs`. **The ankle is relative to the pelvis and the
+  pelvis's own world height is never written**, so no height survives the job
+  file.
+- `pose_stance` in `blender_movement_render.py` then reconstructs one:
+  `floor = min(world_head(rig, f"foot_{side}").z ...)`, read off the rig after
+  `pose_phase` has reset it, and the pelvis is translated to put the lower foot
+  there.
+
+**Two places, and the first one alone is enough**: a renderer cannot restore a
+height that is not in its input.
+
+So the finding is about the RENDERER and not about the engine. Whether it is a
+defect or a deliberate simplification belongs to the rendering lane, whose file
+it is. `pose_stance` says in its own docstring why it exists: the engine has no
+floor constraint in the posing path and holds the ankle 48 to 62 degrees
+plantarflexed, which drove the ball of the foot through the floor.
+
+**One thing is unreconciled and is not mine to rule on.** The orchestrator read
+the source footage for this drill frame by frame and reports no airborne phase
+in it, and the rendering lane reports 15.80 cm of flight in the solve of the
+same drill. Both statements reached me today from different lanes. They are
+about different surfaces — the video and the solve — and I have not measured
+either.
 
 **What the hem does instead is measured.** The hem radius swings 1.5 cm and its
 widest frame is `absorb`, the deepest crouch, where the thighs push the panel
 out. That is the opposite of the reference, whose widest frame is airborne.
+
+**THE TEST BECOMES RUNNABLE THE DAY THOSE TWO LINES CHANGE, AND THIS BAKE IS
+WHAT WOULD SHOW IT.** Nothing in the cloth route has to change for it. Whether
+to spend that day is Marius's call and not this route's.
 
 ---
 
