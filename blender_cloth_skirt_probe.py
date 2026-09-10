@@ -40,6 +40,7 @@ from blender_movement_render import (  # noqa: E402
 )
 from blender_mpfb_reference_catch import (  # noqa: E402
     load_reference_catch_config,
+    make_fabric_material,
     render_view,
 )
 
@@ -54,6 +55,14 @@ SKIRT = {
     # Where the waistband sits, as a drop below the pelvis bone's head.
     # Negative tucks it UP under the bodice hem, which is where a netball
     # skirt's band actually sits and where it stops reading as a separate lump.
+    # ON THE HIP, NOT THE WAIST, and the sign of this reversed twice.
+    #
+    # Tucked UP under the bodice at -0.020 the panel is pinned ABOVE THE WIDEST
+    # PART OF THE FIGURE, and fabric hung from there has to pass over a wider
+    # hip. It cannot, so it catches and GATHERS into a ruche at the top. No
+    # stiffness setting fixes that: it is a circumference problem, not a
+    # material one. A netball skirt sits ON the hips, where nothing below the
+    # pin is wider than the pin.
     "waistDropM": -0.020,
     # The waistband. Snug, because it is pinned and never simulated.
     # Only a FALLBACK now. The band is measured off the body ray by ray; this
@@ -61,6 +70,9 @@ SKIRT = {
     # is a run whose band is a circle again.
     "waistRadiusM": 0.170,
     # How far outside the skin the band sits. A waistband is not painted on.
+    # FLAT AGAINST THE BODICE. At 0.012 the band stood off far enough to read
+    # as a band of its own, and a netball dress has none: the skirt is attached
+    # under the bodice hem. This is now a seam allowance, not a waistband.
     "waistStandoffM": 0.012,
     # THE FLARE. This one number is the difference between a skirt and a tube,
     # and it is the number the fitted-proxy route cannot express at all.
@@ -74,6 +86,11 @@ SKIRT = {
     # hip through the upper skirt and opens near the hem, which is what an
     # A-line is.
     "flarePower": 2.4,
+    # HOW FAR DOWN THE PANEL IS FITTED TO THE FIGURE rather than to the cone.
+    # 0 is the old behaviour, a band fit and nothing else. The upper skirt has
+    # to clear the hip, which is wider than the waist; below this the skirt is
+    # free and the flare decides it.
+    "fitToBodyFraction": 0.05,
     # Resolution. Radial segments decide how round the hem reads; rings decide
     # how many folds the fabric can carry. Twelve rings cannot fold at all.
     "segments": 72,
@@ -88,6 +105,13 @@ CLOTH = {
     "quality": 10,
     # Heavier than the first attempt. A light cloth with stiff bending holds its
     # own shape and stands off the leg; a heavier, softer one falls.
+    # BACK UP, AND THIS IS THE FINDING OF THE THIN PASS.
+    #
+    # "Thin" is not soft. Lowering mass to 0.18 with bending to 0.15 to make the
+    # skirt read as light fabric CRUMPLED it: soft cloth folds at a small scale
+    # and a mass of small folds reads as MORE fabric, like crushed velvet, not
+    # less. A thin garment reads thin from its HEM EDGE, its MATERIAL and how
+    # close it sits, never from how easily it creases.
     "massKg": 0.45,
     "tensionStiffness": 8.0,
     # HIGH, AND IT IS NOT THE SAME KNOB AS BENDING. A soft cloth pinned on a
@@ -123,8 +147,8 @@ CLOTH = {
 }
 
 
-def fit_waist(surfaces: list, origin: Vector, top: float, segments: int,
-              fallback: float, standoff: float) -> tuple[list, int]:
+def fit_ring(surfaces: list, origin: Vector, height: float, segments: int,
+             fallback: float, standoff: float) -> tuple[list, int]:
     """The worn figure's own radius at the waistband height, angle by angle.
 
     A HIP IS NOT A CIRCLE. It is roughly an ellipse, wider across than front to
@@ -144,7 +168,7 @@ def fit_waist(surfaces: list, origin: Vector, top: float, segments: int,
     """
     depsgraph = bpy.context.evaluated_depsgraph_get()
     evaluated = [surface.evaluated_get(depsgraph) for surface in surfaces]
-    start = Vector((origin.x, origin.y, top))
+    start = Vector((origin.x, origin.y, height))
     radii, hits = [], 0
     for step in range(segments):
         angle = 2.0 * math.pi * step / segments
@@ -168,7 +192,8 @@ def fit_waist(surfaces: list, origin: Vector, top: float, segments: int,
 
 
 def build_skirt(name: str, origin: Vector, params: dict,
-                body: list | None = None) -> bpy.types.Object:
+                body: list | None = None,
+                material=None) -> bpy.types.Object:
     """A skirt from a fitted waistband to a circular hem, and its pin group.
 
     Built in world space around `origin`, which is the posed pelvis, so the
@@ -181,34 +206,49 @@ def build_skirt(name: str, origin: Vector, params: dict,
     length = params["lengthM"]
     top = origin.z - params["waistDropM"]
 
-    if body is not None:
-        waist, hits = fit_waist(body, origin, top, segments, waist_r,
-                                params["waistStandoffM"])
-        if hits == 0:
-            print("[skirt] WARNING: no ray hit anything, so the band is a "
-                  "circle and only looks fitted", flush=True)
-        print(f"[skirt] waistband fitted to the body on {hits}/{segments} rays",
-              flush=True)
-    else:
-        waist, hits = [waist_r] * segments, 0
-
     vertices, faces = [], []
+    fitted_rings, total_rays = 0, 0
     for ring in range(rings + 1):
         fraction = ring / rings
         height = top - length * fraction
+        # THE CONE THIS RING WOULD BE ON ITS OWN.
+        cone = waist_r + (hem_r - waist_r) * (fraction ** params["flarePower"])
+
+        # AND THE FIGURE'S OWN RADIUS AT THIS HEIGHT, over the upper skirt.
+        #
+        # Fitting the waistband alone was not enough and the failure is
+        # geometric: THE HIP IS WIDER THAN THE WAIST. A near-straight tube hung
+        # from a fitted band cannot pass over it, so the fabric catches and
+        # GATHERS into a ruche at the top — which is a worse towel cue than the
+        # rolled band it replaced. A skirt is fitted THROUGH the hip and flares
+        # below it, so the body is measured at every ring of the upper skirt.
+        measured = None
+        if body is not None and fraction <= params["fitToBodyFraction"]:
+            radii, hits = fit_ring(body, origin, height, segments, cone,
+                                   params["waistStandoffM"])
+            total_rays += segments
+            if hits:
+                fitted_rings += 1
+                measured = radii
+
         for step in range(segments):
             angle = 2.0 * math.pi * step / segments
-            # A-LINE, NOT A CONE, and it opens from the FITTED waist rather
-            # than from a circle: the hem is round because a hanging hem is
-            # round, and everything above it remembers the hip it started on.
-            radius = waist[step] + (hem_r - waist[step]) * (
-                fraction ** params["flarePower"]
-            )
+            # NEVER INSIDE THE BODY. The larger of the two, so the panel clears
+            # the figure where the figure is wide and follows the cone where it
+            # is not.
+            radius = cone if measured is None else max(measured[step], cone)
             vertices.append((
                 origin.x + radius * math.cos(angle),
                 origin.y + radius * math.sin(angle),
                 height,
             ))
+
+    if body is not None:
+        print(f"[skirt] profile fitted on {fitted_rings} ring(s), "
+              f"{total_rays} rays cast", flush=True)
+        if fitted_rings == 0:
+            print("[skirt] WARNING: no ring found the body, so the panel is a "
+                  "plain cone and only looks fitted", flush=True)
     for ring in range(rings):
         for step in range(segments):
             a = ring * segments + step
@@ -225,14 +265,24 @@ def build_skirt(name: str, origin: Vector, params: dict,
         polygon.use_smooth = True
     obj = bpy.data.objects.new(name, mesh)
     bpy.context.scene.collection.objects.link(obj)
+    if material is not None:
+        # THE SAME KIT MATERIAL THE BODICE WEARS, so the two routes are compared
+        # on SHAPE and not on shading. White matte default is a towel cue of its
+        # own, and it is not the thing under test.
+        obj.data.materials.append(material)
 
     # THE PIN GROUP IS THE WAISTBAND. Without it the whole skirt falls to the
     # floor: a cloth object with no pinned vertices is a dropped sheet.
     group = obj.vertex_groups.new(name="pin")
-    # TWO RINGS, NOT ONE. A single pinned ring is a pinned LINE: the fabric
-    # immediately below it is free to fold back on itself, which is the other
-    # half of the waist roll. Two rings give the band a height and it reads as
-    # a band.
+    # TWO RINGS, AND I REVERSED THIS ONCE AND WAS WRONG.
+    #
+    # A single pinned ring is a pinned LINE, and the fabric immediately below it
+    # folds back on itself into a ruche. I had that finding, bought with a
+    # render, and dropped to one ring on the theory that the second was what
+    # gave the band its HEIGHT and therefore its towel look. It was not. The
+    # HEIGHT came from waistStandoffM holding the panel proud of the body; the
+    # second ring only stops the fold-back. Two separate causes wearing one
+    # symptom, and I changed the wrong one.
     group.add(list(range(segments * 2)), 1.0, "REPLACE")
     return obj
 
@@ -305,6 +355,8 @@ def main() -> None:
     studio.add_ball(job["phases"][0]["ball"]["radiusM"])
     rig, human, assets = studio.rig, studio.human, studio.assets
 
+    fabric = make_fabric_material(studio.config.presentation)
+
     wanted = args.phase or [p["name"] for p in job["phases"]]
     phases = [p for p in job["phases"] if p["name"] in wanted]
     if not phases:
@@ -325,7 +377,7 @@ def main() -> None:
         if not args.no_skirt:
             pelvis = rig.matrix_world @ rig.pose.bones["pelvis"].head
             skirt = build_skirt(f"skirt_{phase['name']}", pelvis, SKIRT,
-                                [human] + list(assets))
+                                [human] + list(assets), fabric)
             dress(skirt, [human] + list(assets), CLOTH)
             seconds = settle(skirt, CLOTH["settleFrames"])
             timings.append({"phase": phase["name"], "settleSeconds": round(seconds, 2)})
