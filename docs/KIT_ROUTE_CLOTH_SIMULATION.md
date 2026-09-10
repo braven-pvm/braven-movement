@@ -44,8 +44,26 @@ pixi run --frozen python -B spikes/export_blender_job.py netball_double_foot_lan
 
 ### 1.2 The run
 
+Two poses, settled one at a time. This is the stills route.
+
 ```bash
 blender -b --python-exit-code 9 -P blender_cloth_skirt_probe.py -- --job spikes/poc-output/netball_double_foot_landing.job.json --output <directory> --phase land --phase absorb
+```
+
+One bake over the whole drill, with the body moving under the skirt. The job
+must carry frames, so export it with `--every=N` first.
+
+```bash
+blender -b --python-exit-code 9 -P blender_cloth_skirt_probe.py -- --job spikes/poc-output/netball_double_foot_landing.job.json --output <directory> --animate --view side
+```
+
+**One value per run, and `--skirt KEY=VALUE` puts it in the command line and in
+the receipt.** Editing six values between two renders produced a worse skirt
+that could not be attributed to any of them, and three one-variable runs then
+answered the same question in an afternoon.
+
+```bash
+blender -b --python-exit-code 9 -P blender_cloth_skirt_probe.py -- --job spikes/poc-output/netball_double_foot_landing.job.json --output <directory> --animate --no-movie --skirt waistDropM=0.030
 ```
 
 ### 1.3 What the script does, in order
@@ -78,6 +96,24 @@ blender -b --python-exit-code 9 -P blender_cloth_skirt_probe.py -- --job spikes/
   explodes rather than settles.
 - **One skirt per pose.** A settled skirt carries the folds of the pose it
   settled on. Reusing it draws the landing's folds on the absorb.
+
+### 1.5 What the animate mode does differently, and why each difference exists
+
+1. **Poses and keys every frame of the job**, then holds the first pose for a
+   pre-roll. The skirt falls onto a body that is not moving, and only then does
+   the movement play. **Every later pose is reached with momentum**, which is
+   the one thing a per-pose settle cannot produce, because a settle is the
+   definition of no motion.
+2. **Carries the waistband on the pelvis with an ARMATURE modifier**, added
+   BEFORE the cloth one. Refer to section 4.3: a pin holds a vertex to the
+   modifier stack's input, not to the body.
+3. **Bakes once**, over the whole scene range, and times every frame separately
+   from every render.
+4. **Measures the hem on every frame**: its radius, its height below the pelvis,
+   the pelvis's own travel and the lower foot's height. **The question a bake
+   exists to answer is whether the hem lifts on the jump, and my eye has been
+   wrong about this garment twice.**
+5. **Refuses the clip** if the point cache does not answer a jump backwards.
 
 ---
 
@@ -177,8 +213,15 @@ changing them does not have to be the person who wrote the file.
   That is `lengthM` and `flarePower`, not a limit of the method.
 - **A real netball dress has the skirt attached flat under the bodice hem.**
   This one has a visible band of its own.
-- **No colour or material.** The skirt is white default, deliberately: the paint
-  lane owns colour and two lanes on one artefact is what principle 5 forbids.
+- **CORRECTED. This bullet used to read "No colour or material. The skirt is
+  white default, deliberately".** It was true when it was written and it stopped
+  being true one commit later, at `b878f27`. The skirt now wears the same fabric
+  material as the bodice, through `make_fabric_material`, so the two routes are
+  compared on SHAPE and not on shading. **Giving it that material was the single
+  largest improvement of the day, larger than any shape change**, and the
+  paragraph that listed the omission as deliberate was quietly carrying the
+  biggest cue in the complaint that started this work. Colour is still the paint
+  lane's and is not set here.
 
 ---
 
@@ -196,11 +239,24 @@ changing them does not have to be the person who wrote the file.
   conversion. It runs inside the renderer that already exists.
 - **Parameterised.** A second skirt is a number list, not a modelling session.
 
-### Cons, and the first one decides against it for animation
+### Cons
 
-- **18 seconds per pose, and it is PER POSE.** For stills that is free. For a 60
-  fps animation it is prohibitive: a cloth simulation must settle for every pose
-  it is asked about.
+**THE FIRST CON IS WITHDRAWN. It said this, and it was wrong by a factor of
+about 57:**
+
+> **18 seconds per pose, and it is PER POSE.** For stills that is free. For a 60
+> fps animation it is prohibitive: a cloth simulation must settle for every pose
+> it is asked about.
+
+**The error was not in the measurement, it was in the method I priced.** I
+measured a settle from a fresh lathe onto a static pose, which is the cost of
+ONE STILL, and then multiplied it by a frame count. That is not how an animation
+is made. The natural method is ONE CONTINUOUS BAKE over the drill's frames with
+the body moving under the skirt, and it was never measured until the orchestrator
+asked for it. Refer to section 4.2 for the numbers. **The whole 55-frame clip
+costs less cloth time than one still did**, because a still pays for its own
+settle and a clip spends one pre-roll on every frame it renders.
+
 - **Not deterministic across a re-pose.** Two renders of the same phase agree,
   but change the pose and the folds are different folds. A drill re-rendered
   after an engine change gets a differently creased skirt.
@@ -214,6 +270,8 @@ changing them does not have to be the person who wrote the file.
 
 ## 4. Speed
 
+### 4.1 Per pose, which is the cost of a still
+
 Measured on this machine, per pose, as printed by the script.
 
 | resolution | settle | result |
@@ -226,9 +284,54 @@ Measured on this machine, per pose, as printed by the script.
 **Resolution buys folds and costs seconds, and the useful setting was not the
 highest one.** The raycast band roughly doubles the cost and is worth it.
 
-**The number that decides scaling is that all of these are PER POSE.** Two
-phases of one drill cost 36 seconds. A second drill costs the same again. A 60
-fps second of animation would cost about eighteen minutes.
+**These are all PER POSE, and that is a still's price, not an animation's.** The
+sentence that used to close this section said a 60 fps second of animation
+"would cost about eighteen minutes". It multiplied a still's price by a frame
+count, and section 4.2 is what it should have measured.
+
+### 4.2 One continuous bake, which is the cost of a clip
+
+`netball_double_foot_landing`, 55 frames at 30 fps, one cloth simulation over
+all of them with the body moving underneath, behind a 30-frame pre-roll. The
+same shape and the same cloth settings as the shipped stills.
+
+| what | seconds |
+|---|---|
+| the whole bake, 84 scene frames | **23.3** |
+| the pre-roll, 29 frames | 6.0 |
+| **the drill itself, 55 frames** | **17.3** |
+| **per frame of the drill** | **0.314** (worst 0.335) |
+| the rig alone, no skirt, same frames | 0.010 per frame |
+| the six sheet renders, excluded from every figure above | 196.9 |
+
+**ONE STILL COSTS 18 SECONDS. THE WHOLE CLIP'S CLOTH COSTS 17.3.** A still pays
+for a 45-frame settle that serves one frame. A clip pays for one pre-roll and
+then spends 0.314 s on each frame it keeps.
+
+**Priced the way section 3 priced it, one second of animation costs 9.4 s of
+cloth at 30 fps and about 19 s at 60 fps. The withdrawn con said eighteen
+minutes.**
+
+**The rig control matters more than it looks.** Stepping this armature and its
+meshes with no skirt costs 0.010 s a frame, so the cloth is 0.30 of the 0.314
+and the figure is a cloth cost, not a scene cost.
+
+### 4.3 Two guards, because both failures produce a plausible picture
+
+**A pinned vertex is pinned to the modifier stack's INPUT, not to the body.** In
+a still the waistband holds because nothing moves. In an animation the skirt
+stays where it was built while the athlete leaves it. The fix is an ARMATURE
+modifier before the cloth one, with every vertex weighted to the pelvis, and the
+mesh has to be UN-POSED first or the pose is applied twice. **A wrong transform
+leaves a skirt somewhere near a hip, on a figure, and no measurement in the
+script would refuse it**, so the run prints the largest distance between a
+vertex as built and the same vertex after the armature runs. It is 0.0000 mm.
+
+**The movie renders the frame range a second time, from the start.** If the
+point cache does not answer a jump backwards, the solver restarts from wherever
+it is and **the clip is of a different simulation from the sheet**. One frame's
+vertices are read during the bake and read again after a jump backwards. The
+drift is 0.0000 mm, and the clip is refused if it is not.
 
 ---
 
