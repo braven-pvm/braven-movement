@@ -63,8 +63,12 @@ from bl_ext.blender_org.mpfb.services.locationservice import LocationService  # 
 from bl_ext.blender_org.mpfb.services.objectservice import ObjectService  # noqa: E402
 
 
-def sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+def sha256_text(path: Path) -> str:
+    """The hash of a text input with CRLF folded to LF, so the value is the
+    same on a Windows checkout and on the Linux runner. The two inputs of
+    this script are JSON; the receipt's own hasher stays on raw bytes, and
+    `.gitattributes` keeps the OUTPUT files verbatim for that reason."""
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def all_geom(mesh):
@@ -370,6 +374,13 @@ def main() -> int:
     args.out.mkdir(parents=True, exist_ok=True)
     target = args.out / f"{kit['name']}.mhclo"
     mhclo.write_mhclo(str(target))
+    # LF ON EVERY PLATFORM. MPFB writes with the platform newline, and a file
+    # that is hashed into receipts must not change bytes with the machine that
+    # authored it. `.gitattributes` keeps these files verbatim from here on.
+    for written in (target, target.with_suffix(".obj")):
+        written.write_bytes(written.read_bytes().replace(b"
+", b"
+"))
     stages["checkMatchWriteS"] = round(time.perf_counter() - started - stages["athleteS"] - stages["cutsS"], 2)
     stages["totalS"] = round(time.perf_counter() - started, 2)
 
@@ -377,9 +388,10 @@ def main() -> int:
         "asset": target.name,
         "obj": target.with_suffix(".obj").name,
         "kitFile": args.kit.relative_to(ROOT).as_posix() if args.kit.is_relative_to(ROOT) else str(args.kit),
-        "kitSha256": sha256(args.kit),
+        "kitSha256": sha256_text(args.kit),
         "authoringConfig": args.config.relative_to(ROOT).as_posix() if args.config.is_relative_to(ROOT) else str(args.config),
-        "authoringConfigSha256": sha256(args.config),
+        "authoringConfigSha256": sha256_text(args.config),
+        "hashNote": "sha256 of the input with CRLF folded to LF",
         "landmarks": landmarks,
         "parts": [body_report, skirt_report],
         "nBodysuitVertices": body_report["vertices"],

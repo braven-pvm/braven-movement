@@ -139,15 +139,15 @@ class TheCommittedDressIsWhatItsSidecarSays(unittest.TestCase):
         self.assertEqual(vertices, self.sidecar["nBodysuitVertices"] + self.sidecar["nSkirtVertices"])
 
     def test_the_sidecar_pins_its_two_inputs_by_hash(self):
+        # CRLF is folded before hashing on both sides, so the same commit
+        # gives the same value on a Windows checkout and on the Linux runner.
         import hashlib
 
-        self.assertEqual(
-            self.sidecar["kitSha256"], hashlib.sha256(KIT_FILE.read_bytes()).hexdigest()
-        )
-        self.assertEqual(
-            self.sidecar["authoringConfigSha256"],
-            hashlib.sha256(DEFAULT_CONFIG_PATH.read_bytes()).hexdigest(),
-        )
+        def folded(path: Path) -> str:
+            return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+        self.assertEqual(self.sidecar["kitSha256"], folded(KIT_FILE))
+        self.assertEqual(self.sidecar["authoringConfigSha256"], folded(DEFAULT_CONFIG_PATH))
 
     def test_the_check_the_sidecar_records_passed(self):
         self.assertTrue(self.sidecar["check"]["all_checks_ok"])
