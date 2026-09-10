@@ -66,17 +66,45 @@ SKIRT = {
     # stiffness setting fixes that: it is a circumference problem, not a
     # material one. A netball skirt sits ON the hips, where nothing below the
     # pin is wider than the pin.
+    #
+    # THE PARAGRAPH ABOVE IS A REAL MECHANISM WITH THE WRONG REMEDY, AND THE
+    # BAKE PROVED IT. Moving the pin down onto the hip at +0.030 made the
+    # gather LARGER, not smaller, and dropped the band below the bodice hem so
+    # a strip of bare body showed with a hole at the front. The gather is not
+    # set by the pin's HEIGHT.
+    #
+    # The mechanism it names is real and `waistRadiusM` is what answers it: the
+    # panel is held out to a hip clearance so it never has to pass a part of
+    # the figure wider than itself. Twice I removed that clearance on this
+    # paragraph's reasoning and twice the gather came back.
     "waistDropM": -0.020,
-    # The waistband. Snug, because it is pinned and never simulated.
-    # Only a FALLBACK now. The band is measured off the body ray by ray; this
-    # is what a ray that hits nothing uses, and a run that reports many misses
-    # is a run whose band is a circle again.
+    # NOT A FALLBACK. HIP CLEARANCE, AND THIS COMMENT USED TO SAY THE OPPOSITE.
+    #
+    # It read "only a FALLBACK now, used where a ray hits nothing". It is not.
+    # The panel radius is `max(measured, cone)` and at the top ring the cone IS
+    # this number, so it is a FLOOR under every vertex of the band. On this
+    # athlete 144 of 144 rays hit and 139 of the results were below it.
+    #
+    # I TOOK THAT FOR THE HOOP FAULT AND REMOVED THE FLOOR, AND THE GARMENT GOT
+    # WORSE. Refer to `build_skirt`. The measured band is 0.1384 m mean and the
+    # figure is 6.4 cm wider across than front to back; the panel must pass the
+    # HIP below the pin, and a tube cut to a 0.1384 m waist cannot. This number
+    # is the clearance that lets it pass, hand-tuned, and it was carrying that
+    # job under a fallback's name. `report_clearance` prints the figure's own
+    # radius beside it on every run so the next person does not have to guess.
     "waistRadiusM": 0.170,
     # How far outside the skin the band sits. A waistband is not painted on.
-    # FLAT AGAINST THE BODICE. At 0.012 the band stood off far enough to read
-    # as a band of its own, and a netball dress has none: the skirt is attached
-    # under the bodice hem. This is now a seam allowance, not a waistband.
-    "waistStandoffM": 0.012,
+    # 0.004, AND THIS TIME THE VALUE MOVED WITH THE COMMENT. The paragraph
+    # below stood over 0.012 for three commits: it said 0.012 reads as a band
+    # of its own and that the value "is now a seam allowance", and the value
+    # was never changed. Three one-variable bakes settled it. At 0.012 the top
+    # of the skirt is a rolled tube standing proud of the hip with a shadow
+    # under it. At 0.004 it is a crease, and the panel sits under the bodice
+    # hem where a netball dress attaches it.
+    #
+    # A netball dress has no waistband of its own: the skirt is attached under
+    # the bodice hem. This is a seam allowance, not a band.
+    "waistStandoffM": 0.004,
     # THE FLARE. This one number is the difference between a skirt and a tube,
     # and it is the number the fitted-proxy route cannot express at all.
     # AT REST, ONLY SLIGHTLY WIDER THAN THE HIP.
@@ -98,13 +126,28 @@ SKIRT = {
     # wide TUBE that Marius called a blanket. Above 1.0 the panel stays near the
     # hip through the upper skirt and opens near the hem, which is what an
     # A-line is.
-    # Matters much less once the static flare is small. Kept gentle so the
-    # panel follows the hip and opens a little towards the hem.
-    "flarePower": 2.4,
-    # HOW FAR DOWN THE PANEL IS FITTED TO THE FIGURE rather than to the cone.
-    # 0 is the old behaviour, a band fit and nothing else. The upper skirt has
-    # to clear the hip, which is wider than the waist; below this the skirt is
-    # free and the flare decides it.
+    # 1.5, AND THE VALUE COMES FROM A MEASUREMENT RATHER THAN FROM LOOKING.
+    # `report_clearance` prints the figure's own widest radius down the panel:
+    # 0.1704 m at the band, 0.1808 at 15% down, 0.1836 at 30%, 0.1963 at 45%.
+    # At 2.4 the cone is 0.1825 m at 45% down, so THE PANEL WAS BUILT 1.4 cm
+    # INSIDE THE THIGH there and the collision had to push it out. 1.5 is the
+    # exponent that makes the cone meet 0.1963 at that height.
+    #
+    # The gain is real and it is modest: a fuller, smoother panel. It does not
+    # touch the crease at the waist, and nothing yet has.
+    "flarePower": 1.5,
+    # HOW FAR DOWN THE PANEL IS RAYCAST AGAINST THE FIGURE rather than left on
+    # the cone. Its stated job is to clear the hip, which is wider than the
+    # waist.
+    #
+    # IT IS KEPT AT 0.05 AND THE TEST COULD NOT SEPARATE 0.05 FROM 0.35. At
+    # 0.05 the measurement beats the clearance on 5 vertices of 1800. At 0.35
+    # it casts four and a half times the rays and beats it on 80, and across
+    # six panels at two poses I could not tell the renders apart; the hem moved
+    # by at most 2.9 mm and on average 0.7. So the parameter DOES move the mesh
+    # and does not move the picture, which is a null result and not a proof
+    # that it is useless. It stays at the cheap end until something separates
+    # them.
     "fitToBodyFraction": 0.05,
     # Resolution. Radial segments decide how round the hem reads; rings decide
     # how many folds the fabric can carry. Twelve rings cannot fold at all.
@@ -181,7 +224,7 @@ PREROLL_FRAMES = 30
 
 
 def fit_ring(surfaces: list, origin: Vector, height: float, segments: int,
-             fallback: float, standoff: float) -> tuple[list, int]:
+             standoff: float) -> tuple[list, int]:
     """The worn figure's own radius at the waistband height, angle by angle.
 
     A HIP IS NOT A CIRCLE. It is roughly an ellipse, wider across than front to
@@ -196,8 +239,10 @@ def fit_ring(surfaces: list, origin: Vector, height: float, segments: int,
     inside or out. The surface at a waistband is the garment, which is also
     where a real skirt sits. Every candidate is cast and the NEAREST hit wins.
 
-    A miss keeps the fallback radius, and the caller is told how many missed,
-    because a band fitted from nothing is a circle again and looks fitted.
+    A MISS RETURNS `None` RATHER THAN A FALLBACK, so the caller can tell a
+    measurement from a guess. Returning the fallback made the two identical,
+    and the caller then discarded 139 real measurements out of 144 against a
+    constant without anything saying so.
     """
     depsgraph = bpy.context.evaluated_depsgraph_get()
     evaluated = [surface.evaluated_get(depsgraph) for surface in surfaces]
@@ -217,11 +262,36 @@ def fit_ring(surfaces: list, origin: Vector, height: float, segments: int,
             reach = (surface.matrix_world @ location - start).length
             nearest = reach if nearest is None else min(nearest, reach)
         if nearest is None:
-            radii.append(fallback)
+            radii.append(None)
         else:
             hits += 1
             radii.append(nearest + standoff)
     return radii, hits
+
+
+def report_clearance(body: list, origin: Vector, top: float, length: float,
+                     segments: int, params: dict) -> None:
+    """Print the figure's own radius down the panel, against the constant.
+
+    THIS DECIDES NO VERTEX. It exists because `waistRadiusM` is documented as
+    a fallback for a missed ray and behaves as a hip clearance, and no run
+    could tell those apart. Every ray here is cast the same way the band's
+    are, at five heights down the skirt, and the mean and the widest are
+    printed with the constant beside them.
+    """
+    print(f"[skirt] clearance check, {params['waistRadiusM']:.3f} m is the "
+          f"floor the panel is held to:", flush=True)
+    for share in (0.0, 0.15, 0.30, 0.45, 0.60):
+        radii, hits = fit_ring(body, origin, top - length * share, segments,
+                               params["waistStandoffM"])
+        found = [r for r in radii if r is not None]
+        if not found:
+            print(f"[skirt]   {share:.2f} down: {hits} of {segments} rays hit",
+                  flush=True)
+            continue
+        print(f"[skirt]   {share:.2f} down: {hits} of {segments} rays hit, "
+              f"mean {sum(found) / len(found):.4f} m, widest "
+              f"{max(found):.4f} m", flush=True)
 
 
 def build_skirt(name: str, origin: Vector, params: dict,
@@ -239,37 +309,58 @@ def build_skirt(name: str, origin: Vector, params: dict,
     length = params["lengthM"]
     top = origin.z - params["waistDropM"]
 
+    # WHAT `waistRadiusM` REALLY IS, MEASURED, AND IT IS NOT WHAT IT SAYS.
+    #
+    # TWO REBUILDS OF THIS FUNCTION MADE THE GARMENT WORSE AND BOTH ARE
+    # WITHDRAWN. The record is worth more than the code they proposed.
+    #
+    # The line below is `max(measured, cone)`, and at the top ring the cone IS
+    # `waistRadiusM`. So on this athlete 144 of 144 rays hit and 139 of the
+    # results were discarded for a circle of 0.170 m, and the band is that
+    # circle. That looks exactly like the hoop fault, so I removed the floor
+    # and let every hit win. THE BAND THEN HUGGED THE FIGURE AND THE GATHER
+    # BELOW IT GOT WORSE. I read that as a step between a fitted band and a
+    # flare anchored on a constant, rebuilt the panel as an offset from the
+    # band's own profile, and IT GOT WORSE AGAIN — the heaviest ruche of the
+    # three.
+    #
+    # THE MEASUREMENT EXPLAINS BOTH REVERSALS. The band ray measures a mean
+    # radius of 0.1384 m at the waistband height, and `waistRadiusM` is 0.170.
+    # THE CONSTANT IS NOT A FALLBACK AND IT IS NOT A WAIST MEASUREMENT. It is
+    # HIP CLEARANCE, hand-tuned: the panel has to pass the widest part of the
+    # figure below the pin, and a tube cut to the waist cannot. Both of my
+    # rebuilds removed that clearance, and the fabric then had to gather to get
+    # over the hip — which is the mechanism the `waistDropM` comment describes,
+    # made real by my own fix.
+    #
+    # So the floor stays, and the print below names what it is measuring
+    # against, because a constant that works for a reason nobody has written
+    # down is the next person's afternoon.
     vertices, faces = [], []
-    fitted_rings, total_rays = 0, 0
+    fitted_rings, total_rays, total_hits, fit_won = 0, 0, 0, 0
     for ring in range(rings + 1):
         fraction = ring / rings
         height = top - length * fraction
         # THE CONE THIS RING WOULD BE ON ITS OWN.
         cone = waist_r + (hem_r - waist_r) * (fraction ** params["flarePower"])
 
-        # AND THE FIGURE'S OWN RADIUS AT THIS HEIGHT, over the upper skirt.
-        #
-        # Fitting the waistband alone was not enough and the failure is
-        # geometric: THE HIP IS WIDER THAN THE WAIST. A near-straight tube hung
-        # from a fitted band cannot pass over it, so the fabric catches and
-        # GATHERS into a ruche at the top — which is a worse towel cue than the
-        # rolled band it replaced. A skirt is fitted THROUGH the hip and flares
-        # below it, so the body is measured at every ring of the upper skirt.
         measured = None
         if body is not None and fraction <= params["fitToBodyFraction"]:
-            radii, hits = fit_ring(body, origin, height, segments, cone,
+            radii, hits = fit_ring(body, origin, height, segments,
                                    params["waistStandoffM"])
             total_rays += segments
+            total_hits += hits
             if hits:
                 fitted_rings += 1
                 measured = radii
 
         for step in range(segments):
             angle = 2.0 * math.pi * step / segments
-            # NEVER INSIDE THE BODY. The larger of the two, so the panel clears
-            # the figure where the figure is wide and follows the cone where it
-            # is not.
-            radius = cone if measured is None else max(measured[step], cone)
+            # NEVER INSIDE THE BODY, AND NEVER INSIDE THE HIP CLEARANCE.
+            found = None if measured is None else measured[step]
+            radius = cone if found is None else max(found, cone)
+            if found is not None and found > cone:
+                fit_won += 1
             vertices.append((
                 origin.x + radius * math.cos(angle),
                 origin.y + radius * math.sin(angle),
@@ -277,11 +368,26 @@ def build_skirt(name: str, origin: Vector, params: dict,
             ))
 
     if body is not None:
-        print(f"[skirt] profile fitted on {fitted_rings} ring(s), "
-              f"{total_rays} rays cast", flush=True)
-        if fitted_rings == 0:
-            print("[skirt] WARNING: no ring found the body, so the panel is a "
+        # THREE NUMBERS, BECAUSE A LOW LAST ONE HAS TWO OPPOSITE CAUSES.
+        #
+        # A vertex is decided by the figure only when the ray HIT and the hit
+        # was WIDER than the cone. A run where few vertices are decided is
+        # either a run whose rays MISSED, which is the 0-of-72 fault returning,
+        # or a run whose cone is already wider than the body, which is this
+        # one. THE TWO LOOK IDENTICAL IN THE RENDER and they need opposite
+        # fixes, so both counts are printed. A hit count alone read 144 of 144
+        # and looked like success while the result was thrown away downstream.
+        print(f"[skirt] profile fitted on {fitted_rings} ring(s): "
+              f"{total_hits} of {total_rays} rays hit, and the measurement "
+              f"beat the {waist_r:.3f} m clearance on {fit_won} of "
+              f"{total_rays} vertices", flush=True)
+        if not total_hits:
+            print("[skirt] WARNING: no ray found the body, so the panel is a "
                   "plain cone and only looks fitted", flush=True)
+        # AND WHAT THE CLEARANCE IS ACTUALLY CLEARING. Pure diagnostic: these
+        # rays decide no vertex. `waistRadiusM` earns its value here or it does
+        # not, and until this was printed nobody could say which.
+        report_clearance(body, origin, top, length, segments, params)
     for ring in range(rings):
         for step in range(segments):
             a = ring * segments + step
