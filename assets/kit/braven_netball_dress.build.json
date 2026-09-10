@@ -1,8 +1,14 @@
 {
-  "asset": "braven_netball_dress.mhclo",
+  "instrument": "author_netball_dress.py",
+  "output": "braven_netball_dress.mhclo",
+  "outputSha256": "d8c681bedea25d7f841a23da3ed4503f3535243b78f9b7089415feb9094d4575",
   "obj": "braven_netball_dress.obj",
+  "objSha256": "87d7bbbe5c4150960a8a336f70471ba39faf584302824346a1c7b8c21f5394fb",
+  "readsNoSkin": true,
+  "derivedFrom": "MakeHuman hm08 basemesh helper-tights and helper-skirt (CC0), and nothing else",
+  "asset": "braven_netball_dress.mhclo",
   "kitFile": "config/kit/netball_dress.v1.json",
-  "kitSha256": "704d196a9070859deb49a2494d4575b5635ea2f168525ba42093561919875fd0",
+  "kitSha256": "b05cf99506ebc4defbbf1052e682df245dea3cbbff73752172afe0a43f5a2b74",
   "authoringConfig": "config/reference_catch.v1.json",
   "authoringConfigSha256": "8c317a6c3d6e52c924f19cb9e1677e8f6794a9c1eb2dc7c612dba27738a20178",
   "hashNote": "sha256 of the input with CRLF folded to LF",
@@ -67,10 +73,10 @@
     "objs_same_scale": true
   },
   "stagesS": {
-    "athleteS": 3.79,
-    "cutsS": 0.14,
-    "checkMatchWriteS": 1.92,
-    "totalS": 5.85
+    "athleteS": 5.34,
+    "cutsS": 0.18,
+    "checkMatchWriteS": 2.64,
+    "totalS": 8.16
   },
   "blender": "4.5.12 LTS"
 }

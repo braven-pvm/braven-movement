@@ -382,9 +382,19 @@ def main() -> int:
     stages["checkMatchWriteS"] = round(time.perf_counter() - started - stages["athleteS"] - stages["cutsS"], 2)
     stages["totalS"] = round(time.perf_counter() - started, 2)
 
+    # THE PROVENANCE CLAIM, under the same key the painted-kit sidecar uses:
+    # this script reads no texture and no third-party mesh file. The dress is
+    # cut from the MakeHuman hm08 basemesh helpers, which are CC0, and from
+    # nothing else, so the claim is one boolean and one sentence.
     sidecar = {
-        "asset": target.name,
+        "instrument": Path(__file__).name,
+        "output": target.name,
+        "outputSha256": hashlib.sha256(target.read_bytes()).hexdigest(),
         "obj": target.with_suffix(".obj").name,
+        "objSha256": hashlib.sha256(target.with_suffix(".obj").read_bytes()).hexdigest(),
+        "readsNoSkin": True,
+        "derivedFrom": "MakeHuman hm08 basemesh helper-tights and helper-skirt (CC0), and nothing else",
+        "asset": target.name,
         "kitFile": args.kit.relative_to(ROOT).as_posix() if args.kit.is_relative_to(ROOT) else str(args.kit),
         "kitSha256": sha256_text(args.kit),
         "authoringConfig": args.config.relative_to(ROOT).as_posix() if args.config.is_relative_to(ROOT) else str(args.config),

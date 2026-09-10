@@ -16,6 +16,7 @@ of the kit file, so a test can check the arithmetic without drawing.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -75,6 +76,23 @@ def main() -> int:
     args.out.mkdir(parents=True, exist_ok=True)
     target = args.out / f"bib_{letters}.png"
     draw(kit, letters, args.font).save(target)
+    # A sidecar beside the image, with the provenance claim under the same
+    # key the painted-kit layer uses: this script reads no texture at all.
+    sidecar = {
+        "instrument": Path(__file__).name,
+        "output": target.name,
+        "outputSha256": hashlib.sha256(target.read_bytes()).hexdigest(),
+        "readsNoSkin": True,
+        "derivedFrom": "drawn from the kit file and a font, and nothing else",
+        "letters": letters,
+        "textureSize": kit["bib"]["imagePx"],
+        "boxesPx": bib_boxes_px(kit),
+        "font": str(args.font) if args.font.is_file() else "PIL default",
+        "kitFile": args.kit.relative_to(ROOT).as_posix() if args.kit.is_relative_to(ROOT) else str(args.kit),
+        "kitSha256": hashlib.sha256(args.kit.read_bytes().replace(b"\r\n", b"\n")).hexdigest(),
+        "hashNote": "kitSha256 is the input with CRLF folded to LF; outputSha256 is the raw bytes",
+    }
+    target.with_suffix(".json").write_text(json.dumps(sidecar, indent=2) + "\n", encoding="utf-8")
     print(f"[bib] {target} {kit['bib']['imagePx']} squares at {bib_boxes_px(kit)}")
     return 0
 

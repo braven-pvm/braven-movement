@@ -1,0 +1,30 @@
+{
+  "instrument": "make_bib_image.py",
+  "output": "bib_GS.png",
+  "outputSha256": "31780048494bf585ce1c3e0c964929ff3a8bf38c8cb6939dceb4cfc1dca42f0b",
+  "readsNoSkin": true,
+  "derivedFrom": "drawn from the kit file and a font, and nothing else",
+  "letters": "GS",
+  "textureSize": [
+    2048,
+    1024
+  ],
+  "boxesPx": [
+    [
+      341,
+      217,
+      682,
+      434
+    ],
+    [
+      1365,
+      217,
+      1706,
+      434
+    ]
+  ],
+  "font": "C:\\Windows\\Fonts\\arialbd.ttf",
+  "kitFile": "config/kit/netball_dress.v1.json",
+  "kitSha256": "b05cf99506ebc4defbbf1052e682df245dea3cbbff73752172afe0a43f5a2b74",
+  "hashNote": "kitSha256 is the input with CRLF folded to LF; outputSha256 is the raw bytes"
+}

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "name": "braven_netball_dress",
   "author": "Braven Performance Lab",
-  "licence": "Braven Performance Lab (own work)",
+  "licence": "Braven Performance Lab (own work, no licence selected)",
   "description": "Netball dress: sleeveless vest bodysuit with integrated briefs and a short skirt that hangs from the hip",
   "helpers": {
     "bodysuit": "helper-tights",

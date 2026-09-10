@@ -88,6 +88,20 @@ def kit_asset_path(relative: str, repository_root: Path | None = None) -> Path:
     return path
 
 
+def mhclo_obj_path(mhclo: Path) -> Path:
+    """The mesh file an `.mhclo` names, beside it.
+
+    A garment is two files: the `.mhclo` holds the fitting and the `.obj` it
+    names holds the geometry. A receipt that hashes only the first has not
+    hashed the shape, so the generator lists both.
+    """
+    for line in mhclo.read_text(encoding="utf-8").splitlines():
+        parts = line.split()
+        if len(parts) == 2 and parts[0] == "obj_file":
+            return mhclo.parent / parts[1]
+    raise ReferencePoseConfigError(f"{mhclo} names no obj_file")
+
+
 def _kit_file(values: Mapping[str, Any], key: str) -> str | None:
     """An optional kit path, checked at load time so a render never starts
     for a garment that is not there or not ours."""

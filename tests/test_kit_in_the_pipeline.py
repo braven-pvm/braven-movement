@@ -32,6 +32,7 @@ from reference_pose_config import (  # noqa: E402
     ReferencePoseConfigError,
     kit_asset_path,
     load_reference_catch_config,
+    mhclo_obj_path,
 )
 
 KIT_CONFIG = MODULE_DIR / "config" / "netball_kit.v1.json"
@@ -159,6 +160,35 @@ class TheCommittedDressIsWhatItsSidecarSays(unittest.TestCase):
         body, skirt = self.sidecar["parts"]
         self.assertAlmostEqual(body["zMinM"], heights["briefsHem"], places=3)
         self.assertAlmostEqual(skirt["zMinM"], heights["skirtHem"], places=3)
+
+    def test_the_sidecar_carries_the_provenance_claim_and_the_output_hashes(self):
+        # `readsNoSkin` is the key the painted-kit sidecar uses for the same
+        # claim, so one family has one provenance claim whatever the arity.
+        import hashlib
+
+        self.assertIs(self.sidecar["readsNoSkin"], True)
+        self.assertIn("CC0", self.sidecar["derivedFrom"])
+        self.assertEqual(self.sidecar["output"], DRESS.name)
+        self.assertEqual(self.sidecar["outputSha256"], hashlib.sha256(DRESS.read_bytes()).hexdigest())
+        self.assertEqual(
+            self.sidecar["objSha256"], hashlib.sha256(DRESS.with_suffix(".obj").read_bytes()).hexdigest()
+        )
+
+    def test_the_mhclo_names_the_obj_the_receipt_must_hash(self):
+        self.assertEqual(mhclo_obj_path(DRESS), DRESS.with_suffix(".obj"))
+        self.assertTrue(mhclo_obj_path(DRESS).is_file())
+
+
+class TheBibImageCarriesItsOwnSidecar(unittest.TestCase):
+    def test_the_sidecar_claims_no_skin_was_read_and_hashes_the_image(self):
+        import hashlib
+
+        sidecar = json.loads(BIB.with_suffix(".json").read_text(encoding="utf-8"))
+        self.assertIs(sidecar["readsNoSkin"], True)
+        self.assertEqual(sidecar["output"], BIB.name)
+        self.assertEqual(sidecar["outputSha256"], hashlib.sha256(BIB.read_bytes()).hexdigest())
+        self.assertEqual(sidecar["letters"], "GS")
+        self.assertEqual(sidecar["kitFile"], "config/kit/netball_dress.v1.json")
 
 
 class TheBibSitsWhereTheKitFileSaysOnTheDress(unittest.TestCase):

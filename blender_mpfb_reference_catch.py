@@ -43,6 +43,7 @@ from reference_pose_config import (  # noqa: E402
     ViewConfig,
     kit_asset_path,
     load_reference_catch_config,
+    mhclo_obj_path,
 )
 from reference_pose_contract import validate_reference_catch_receipt  # noqa: E402
 
@@ -1130,11 +1131,16 @@ def create_athlete(
     # determination for that directory, so the receipt records it like any
     # other source asset: path, sha256 and licence.
     kit = presentation.kit
+    own_kit_files: list[Path] = []
     if kit.garment:
         suit = kit_asset_path(kit.garment, TOOL_DIR)
+        # The geometry is in the .obj the .mhclo names; hash both.
+        own_kit_files.append(mhclo_obj_path(suit))
     else:
         suit = asset_path("clothes", "female_casualsuit02", "female_casualsuit02.mhclo")
     bib_image = kit_asset_path(kit.bib_image, TOOL_DIR) if kit.bib_image else None
+    if bib_image is not None:
+        own_kit_files.append(bib_image)
     trainers = asset_path("clothes", "shoes05", "shoes05.mhclo")
     hair = asset_path("hair", "ponytail01", "ponytail01.mhclo")
     eyes = asset_path("eyes", "high-poly", "high-poly.mhclo")
@@ -1160,7 +1166,7 @@ def create_athlete(
         lashes,
         face_pack_manifest,
         *face_targets,
-        *([bib_image] if bib_image is not None else []),
+        *own_kit_files,
     ]
 
     HumanService.set_character_skin(

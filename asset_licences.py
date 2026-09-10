@@ -96,7 +96,7 @@ FACEUNITS_TARGETS = ("targets", "faceunits")
 # no redistribution licence has been chosen, and this module quotes it rather
 # than choosing one.
 KIT_ASSETS = ("assets", "kit")
-OWN_WORK = "Braven Performance Lab (own work)"
+OWN_WORK = "Braven Performance Lab (own work, no licence selected)"
 KIT_RULE = (
     "They are the work of Braven Performance Lab and no redistribution licence "
     "has been selected for them yet, as for the source code."
