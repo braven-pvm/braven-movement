@@ -62,6 +62,15 @@ the receipt.** Editing six values between two renders produced a worse skirt
 that could not be attributed to any of them, and three one-variable runs then
 answered the same question in an afternoon.
 
+**WHERE THE RUNS BEHIND THIS REPORT ARE WRITTEN, because a reader looked twice
+and found nothing.** `--output` took plain `%TEMP%\claude\waist-<name>` and NOT
+the session scratchpad, which is where the procedure says output goes. Ten
+directories, `waist-control` through `waist-flare15` plus `skirt-bake`, each
+holding six PNGs named `<movement>.bake.<frame>.<phase>.<view>.png` and a
+`cloth-skirt-bake.json` carrying every parameter and the per-frame hem track.
+**A reviewer who cannot find the renders cannot check the reading**, and for two
+messages that is what happened.
+
 ```bash
 blender -b --python-exit-code 9 -P blender_cloth_skirt_probe.py -- --job spikes/poc-output/netball_double_foot_landing.job.json --output <directory> --animate --no-movie --skirt waistDropM=0.030
 ```
@@ -252,6 +261,7 @@ looked at in full, and they are a separate set.
 | control | `waistStandoffM` 0.012 | a rolled tube standing proud, shadow under it |
 | drop | `waistDropM` +0.030 | **worse**: bigger gather, and the band fell below the bodice hem and opened a strip of bare body |
 | **stand** | **`waistStandoffM` 0.004** | **the fix**: the roll becomes a crease and the panel sits under the bodice hem |
+| | | *the orchestrator looked at `absorb.side` and read the same: "a rolled band standing off the hip" against "a soft crease at the bodice hem, the roll is gone", and called the gain real and modest.* |
 | fit20 | `fitToBodyFraction` 0.20 | no visible change |
 | fit35 | `fitToBodyFraction` 0.35 | no visible change |
 | hitwins | every ray's hit decides its vertex | **worse**: the band hugs, the gather below grows |
@@ -358,12 +368,24 @@ it is. `pose_stance` says in its own docstring why it exists: the engine has no
 floor constraint in the posing path and holds the ankle 48 to 62 degrees
 plantarflexed, which drove the ball of the foot through the floor.
 
-**One thing is unreconciled and is not mine to rule on.** The orchestrator read
-the source footage for this drill frame by frame and reports no airborne phase
-in it, and the rendering lane reports 15.80 cm of flight in the solve of the
-same drill. Both statements reached me today from different lanes. They are
-about different surfaces — the video and the solve — and I have not measured
-either.
+**RECONCILED, AND BY THIS SECTION'S OWN DISTINCTION.** Three statements about
+this drill reached me within an hour and looked like a disagreement:
+
+| statement | surface | air |
+|---|---|---|
+| the orchestrator's read of a 110-frame clip, frame by frame | render | none |
+| the rendering lane's 15.80 cm at frame 54 | solve | flight |
+| this route's 1 distinct foot height over 55 frames | render | none |
+
+**Two of the three are the same surface.** The 110-frame clip is a Blender
+render and went through `pose_stance` like every other, so it is flat by
+construction exactly as my own number is. **All three are true and one line of
+code separates them.** I had this filed as unreconciled and it was the scope
+distinction I had just accepted for my own sentence, applied one artefact
+further out.
+
+**The identification of that clip as a render is the orchestrator's and is not
+checked here.** The reconciliation stands or falls on it.
 
 **What the hem does instead is measured.** The hem radius swings 1.5 cm and its
 widest frame is `absorb`, the deepest crouch, where the thighs push the panel
