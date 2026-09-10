@@ -202,11 +202,12 @@ changing them does not have to be the person who wrote the file.
 
 ### 2.4 What is still broken
 
-- **The waist roll is not gone, it is smaller.** The fabric still bunches where
-  the fitted band meets the flare. **Worst on `absorb.side`**, where it reads as
-  a towel rolled at the waist over a skirt below — and that is the view a coach
-  reads the hip on. I first called `land.quarter` the worst panel and was wrong:
-  I picked the view where the defect was most VISIBLE rather than the view where
+- **The waist ROLL is gone. A CREASE remains, and it is not attributed.** The
+  roll was `waistStandoffM` at 0.012 and it is a crease at 0.004. Refer to
+  section 2.5. The crease survived every one of five further candidates and no
+  cause is known. **Worst on `absorb.side`**, which is the view a coach reads
+  the hip on. I first called `land.quarter` the worst panel and was wrong: I
+  picked the view where the defect was most VISIBLE rather than the view where
   it most damaged the garment.
 - **It is longer and fuller than a netball skirt.** It falls to mid-thigh and
   reads closer to a tennis skirt. The reference sits higher and flares lower.
@@ -222,6 +223,86 @@ changing them does not have to be the person who wrote the file.
   paragraph that listed the omission as deliberate was quietly carrying the
   biggest cue in the complaint that started this work. Colour is still the paint
   lane's and is not set here.
+
+### 2.5 Nine bakes on one defect, and two of my own fixes are withdrawn
+
+The thick rolled band at the top of the skirt is the towel cue Marius named.
+Nine continuous bakes, one variable each, on the same drill and the same side
+view. Every run wrote six panels, so the nine wrote 54. **I compared two of the
+six from each run: `approach`, where she stands tallest, and `absorb`, the
+deepest crouch. That is 18 of the 54, and the ranking below is a ranking of
+those 18.** The six panels of the earlier quarter-view bake in section 4.2 were
+looked at in full, and they are a separate set.
+
+| run | one variable | result |
+|---|---|---|
+| control | `waistStandoffM` 0.012 | a rolled tube standing proud, shadow under it |
+| drop | `waistDropM` +0.030 | **worse**: bigger gather, and the band fell below the bodice hem and opened a strip of bare body |
+| **stand** | **`waistStandoffM` 0.004** | **the fix**: the roll becomes a crease and the panel sits under the bodice hem |
+| fit20 | `fitToBodyFraction` 0.20 | no visible change |
+| fit35 | `fitToBodyFraction` 0.35 | no visible change |
+| hitwins | every ray's hit decides its vertex | **worse**: the band hugs, the gather below grows |
+| profile | the panel built as an offset from the band's own profile | **worst of the nine** |
+| final | the construction restored | reproduces `stand` exactly |
+| **flare15** | **`flarePower` 1.5** | a fuller, smoother panel; the crease is untouched |
+
+**THE TWO WITHDRAWN REBUILDS ARE THE USEFUL PART.** `waistRadiusM` reads as a
+fallback and behaves as a floor, so a band whose 144 rays all hit was a circle
+of 0.170 m on 139 of them. Removing that floor is the obvious fix and it made
+the garment worse twice.
+
+**A diagnostic settled it.** `report_clearance` casts the band's own rays at
+five heights and decides no vertex:
+
+| down the panel | rays that hit | mean radius | widest radius |
+|---|---|---|---|
+| 0.00 | 72 of 72 | 0.1384 m | 0.1704 m |
+| 0.15 | 72 of 72 | 0.1411 m | 0.1808 m |
+| 0.30 | 72 of 72 | 0.1374 m | 0.1836 m |
+| 0.45 | 72 of 72 | 0.1151 m | 0.1963 m |
+| 0.60 | 41 of 72 | 0.0339 m | 0.0780 m |
+
+**The figure keeps widening below the pin.** A panel cut to a 0.1384 m waist
+has to pass 0.1963 m at 45% down, and a sheet that cannot stretch gathers
+instead. `waistRadiusM` is the clearance that lets it pass. **It was doing that
+job under a fallback's name, and the name is what I trusted.**
+
+The same table sets `flarePower`. At 2.4 the cone is 0.1825 m at 45% down,
+**1.4 cm inside the thigh**, so the collision had to push the panel out. 1.5 is
+the exponent that meets 0.1963 there.
+
+**And a null result kept as a null result.** `fitToBodyFraction` stays at 0.05.
+At 0.05 the measurement beats the clearance on 5 vertices of 1800; at 0.35 it
+casts four and a half times the rays and beats it on 80, and the hem moves by at
+most 2.9 mm. **The parameter moves the mesh and does not move the picture.**
+That is not a proof that it is useless, so it stays at the cheap end rather than
+being deleted.
+
+### 2.6 The hem-lift test cannot run here, and the reason is not cloth
+
+The reference photographs get their flare from a **flying hem**, so the test a
+continuous bake exists for is whether the hem lifts on the jump and drops on the
+landing. **It cannot be run on this pipeline.** Every bake prints the same two
+lines:
+
+    the pelvis moves 13.0 cm vertically, and the lower foot takes
+    1 distinct height(s) over 55 frames
+
+**The lower foot is at 0.0736 m on all 55 frames.** `pose_stance` in
+`blender_movement_render.py` translates the pelvis every frame so that the lower
+foot sits on a floor height read off the rig at rest, and `pose_phase` resets
+the rig before each frame, so that height is the same constant every time. The
+13 cm is the crouch going down and coming back up.
+
+**`netball_double_foot_landing` has a phase named `flight` and nothing in it
+leaves the ground.** This is a property of the posing code and it applies to
+every drill, every still and the glTF export, not to this skirt. Whether it is a
+defect or a deliberate simplification is not a question this route can answer,
+and it belongs to the rendering lane.
+
+**What the hem does instead is measured.** The hem radius swings 1.5 cm and its
+widest frame is `absorb`, the deepest crouch, where the thighs push the panel
+out. That is the opposite of the reference, whose widest frame is airborne.
 
 ---
 
@@ -358,13 +439,24 @@ is a large saving and it is not zero work.
 | name | value | what it decides |
 |---|---|---|
 | `waistDropM` | −0.020 | band height; negative tucks it under the bodice |
-| `waistRadiusM` | 0.170 | **fallback only** — used where a ray misses |
-| `waistStandoffM` | 0.012 | how far outside the figure the band sits |
+| `waistRadiusM` | 0.170 | **hip clearance**, a floor under every vertex |
+| `waistStandoffM` | 0.004 | how far outside the figure the band sits |
 | `hemRadiusM` | 0.255 | **the flare**, which a fitted proxy cannot express |
 | `lengthM` | 0.310 | waist to hem |
-| `flarePower` | 2.4 | **where** the widening happens; 1 is a cone |
+| `flarePower` | 1.5 | **where** the widening happens; 1 is a cone |
+| `fitToBodyFraction` | 0.05 | how far down the panel is raycast, not left on the cone |
 | `segments` | 72 | radial resolution |
 | `rings` | 24 | vertical resolution, and the fold scale with bending |
+
+**`fitToBodyFraction` was missing from this table** until 2026-09-10. The table
+listed eight of the nine values and read as complete.
+
+**`waistRadiusM` USED TO BE LISTED HERE AS "fallback only — used where a ray
+misses". THAT IS WRONG AND THE ERROR COST TWO REBUILDS.** The panel radius is
+`max(measured, cone)`, and at the top ring the cone IS `waistRadiusM`, so it is
+a FLOOR under every vertex of the band and not a fallback at all. On this
+athlete **144 of 144 rays hit and 139 of the results were below it**. Refer to
+section 2.5.
 
 **The cloth**, all Blender's own settings.
 
