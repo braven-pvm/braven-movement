@@ -127,7 +127,17 @@ def licence_for(path: object) -> tuple[str, str]:
         f"{path}. docs/LICENSING.md requires the licence of every newly "
         f"selected MPFB asset to be reconfirmed before publication. Add the "
         f"determination to asset_licences.SELECTED_MPFB_ASSETS after reading "
-        f"the asset's own licence, and never before."
+        f"the asset's own licence, and never before. "
+        # THE ADVICE ABOVE SENDS A PERSON TO THE WRONG TABLE when the file is
+        # one THIS REPOSITORY made. A painted kit texture reached this refusal
+        # on 2026-09-10 and the message told its author to add it to a table
+        # keyed by an MPFB category, folder and file.
+        f"IF THIS FILE IS ONE THIS REPOSITORY GENERATED, that table is the "
+        f"wrong place: it is keyed by an MPFB category, folder and file, and "
+        f"this module has no way to say 'we made it'. docs/LICENSING.md makes "
+        f"no determination about a generated file, and its first bullet "
+        f"records that no licence has been chosen for this repository's own "
+        f"source code either. That is a decision for the repository owner."
     )
 
 
