@@ -8,7 +8,7 @@
   "derivedFrom": "MakeHuman hm08 basemesh helper-tights and helper-skirt (CC0), and nothing else",
   "asset": "braven_netball_dress.mhclo",
   "kitFile": "config/kit/netball_dress.v1.json",
-  "kitSha256": "b05cf99506ebc4defbbf1052e682df245dea3cbbff73752172afe0a43f5a2b74",
+  "kitSha256": "37c3f08e5737f0db88da9fa2f3f061fb229e49adfa8e7ed607aea4dafaa91de4",
   "authoringConfig": "config/reference_catch.v1.json",
   "authoringConfigSha256": "8c317a6c3d6e52c924f19cb9e1677e8f6794a9c1eb2dc7c612dba27738a20178",
   "hashNote": "sha256 of the input with CRLF folded to LF",
@@ -73,10 +73,10 @@
     "objs_same_scale": true
   },
   "stagesS": {
-    "athleteS": 5.34,
-    "cutsS": 0.18,
-    "checkMatchWriteS": 2.64,
-    "totalS": 8.16
+    "athleteS": 4.41,
+    "cutsS": 0.16,
+    "checkMatchWriteS": 1.91,
+    "totalS": 6.48
   },
   "blender": "4.5.12 LTS"
 }

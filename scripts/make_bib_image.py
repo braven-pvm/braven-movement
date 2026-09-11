@@ -18,12 +18,17 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from kit_font import BUNDLED, resolve as resolve_font  # noqa: E402
+
 DEFAULT_KIT = ROOT / "config" / "kit" / "netball_dress.v1.json"
 DEFAULT_OUT = ROOT / "assets" / "kit"
-DEFAULT_FONT = Path("C:/Windows/Fonts/arialbd.ttf")
 
 
 def bib_boxes_px(kit: dict) -> list[tuple[int, int, int, int]]:
@@ -45,21 +50,38 @@ def bib_boxes_px(kit: dict) -> list[tuple[int, int, int, int]]:
     return boxes
 
 
-def draw(kit: dict, letters: str, font_path: Path | None):
-    from PIL import Image, ImageDraw, ImageFont
+def draw(kit: dict, letters: str, font_request: str | None):
+    """The image, and the label of the font that drew it.
+
+    THE FONT IS RESOLVED BY `kit_font`, which the paint lane wrote after a
+    hard-coded `C:/Windows/Fonts/arialbd.ttf` turned the runner red six times.
+    This script carried the same path and the same fault: its own tests read
+    the committed image and never redrew it, so the suite stayed green while
+    the letters were undrawable on any machine but this one. The default is
+    the face Pillow carries, which is the same face on both machines, and a
+    named font that is absent is refused rather than quietly replaced.
+    """
+    from PIL import Image, ImageDraw
 
     width, height = kit["bib"]["imagePx"]
     image = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     canvas = ImageDraw.Draw(image)
-    if font_path is not None and font_path.is_file():
-        font = ImageFont.truetype(str(font_path), kit["bib"]["fontPx"])
-    else:
-        font = ImageFont.load_default(size=kit["bib"]["fontPx"])
+    font, font_used = resolve_font(font_request, kit["bib"]["fontPx"])
     for box in bib_boxes_px(kit):
         canvas.rounded_rectangle(box, radius=kit["bib"]["cornerRadiusPx"], fill=(245, 245, 245, 255))
         centre = ((box[0] + box[2]) // 2, (box[1] + box[3]) // 2)
-        canvas.text(centre, letters, font=font, fill=(10, 10, 10, 255), anchor="mm")
-    return image
+        # THE WEIGHT IS A STROKE AND NOT A BOLD FACE. A bib reads heavy in the
+        # photographs, Pillow's bundled Aileron is a Regular, and there is no
+        # bold face both machines are known to carry. A stroke on the glyph
+        # thickens whatever face resolved, so the weight is a number in the kit
+        # file rather than a property of a machine's font library. 4 px was
+        # chosen by a rendered sweep: it puts the same amount of ink in the
+        # square as the Arial Bold original, 100.4% of it, and 2 px and 6 px
+        # read visibly light and heavy beside it.
+        stroke = int(kit["bib"].get("strokePx", 0))
+        canvas.text(centre, letters, font=font, fill=(10, 10, 10, 255), anchor="mm",
+                    stroke_width=stroke, stroke_fill=(10, 10, 10, 255))
+    return image, font_used
 
 
 def main() -> int:
@@ -67,7 +89,9 @@ def main() -> int:
     parser.add_argument("letters", help="the position letters, for example GS")
     parser.add_argument("--kit", type=Path, default=DEFAULT_KIT)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
-    parser.add_argument("--font", type=Path, default=DEFAULT_FONT)
+    parser.add_argument("--font", default=None,
+                        help=f"a path to a .ttf or .otf, or {BUNDLED!r} for the "
+                             "face Pillow carries (the default)")
     args = parser.parse_args()
     kit = json.loads(args.kit.read_text(encoding="utf-8"))
     letters = args.letters.upper()
@@ -75,7 +99,8 @@ def main() -> int:
         parser.error("letters must be one to three letters")
     args.out.mkdir(parents=True, exist_ok=True)
     target = args.out / f"bib_{letters}.png"
-    draw(kit, letters, args.font).save(target)
+    image, font_used = draw(kit, letters, args.font)
+    image.save(target)
     # A sidecar beside the image, with the provenance claim under the same
     # key the painted-kit layer uses: this script reads no texture at all.
     sidecar = {
@@ -87,7 +112,9 @@ def main() -> int:
         "letters": letters,
         "textureSize": kit["bib"]["imagePx"],
         "boxesPx": bib_boxes_px(kit),
-        "font": str(args.font) if args.font.is_file() else "PIL default",
+        "fontPx": kit["bib"]["fontPx"],
+        "strokePx": int(kit["bib"].get("strokePx", 0)),
+        "font": font_used,
         "kitFile": args.kit.relative_to(ROOT).as_posix() if args.kit.is_relative_to(ROOT) else str(args.kit),
         "kitSha256": hashlib.sha256(args.kit.read_bytes().replace(b"\r\n", b"\n")).hexdigest(),
         "hashNote": "kitSha256 is the input with CRLF folded to LF; outputSha256 is the raw bytes",

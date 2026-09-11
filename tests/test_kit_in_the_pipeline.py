@@ -15,6 +15,7 @@ around them.
 from __future__ import annotations
 
 import json
+import re
 import sys
 import tempfile
 import unittest
@@ -25,7 +26,8 @@ sys.path.insert(0, str(MODULE_DIR))
 sys.path.insert(0, str(MODULE_DIR / "scripts"))
 
 from asset_licences import OWN_WORK, licence_for  # noqa: E402
-from make_bib_image import bib_boxes_px  # noqa: E402
+from kit_font import BUNDLED  # noqa: E402
+from make_bib_image import bib_boxes_px, draw  # noqa: E402
 from reference_pose_config import (  # noqa: E402
     DEFAULT_CONFIG_PATH,
     MaterialPresentation,
@@ -177,6 +179,53 @@ class TheCommittedDressIsWhatItsSidecarSays(unittest.TestCase):
     def test_the_mhclo_names_the_obj_the_receipt_must_hash(self):
         self.assertEqual(mhclo_obj_path(DRESS), DRESS.with_suffix(".obj"))
         self.assertTrue(mhclo_obj_path(DRESS).is_file())
+
+
+class TheCommittedBibCanBeRedrawnOnAnyMachine(unittest.TestCase):
+    """The guard the first version of this file did not have.
+
+    `make_bib_image.py` hard-coded `C:/Windows/Fonts/arialbd.ttf`. Every test
+    here READ the committed image and none of them REDREW it, so the suite was
+    green on the machine that had that font while the script could not draw the
+    same letters anywhere else, and the sidecar recorded the machine path as
+    the provenance of a file the unit claims is reproducible from a clone.
+
+    This redraws the bib from the kit file and compares PIXELS. It fails on any
+    machine that cannot reproduce the committed bytes, which is the whole
+    claim, and it fails here if the kit file and the image drift apart.
+    """
+
+    def test_redrawing_the_bib_reproduces_the_committed_pixels(self):
+        from PIL import Image
+
+        kit = json.loads(KIT_FILE.read_text(encoding="utf-8"))
+        sidecar = json.loads(BIB.with_suffix(".json").read_text(encoding="utf-8"))
+        redrawn, font_used = draw(kit, sidecar["letters"], None)
+        self.assertEqual(font_used, sidecar["font"], "a different font resolved here")
+        committed = Image.open(BIB).convert("RGBA")
+        self.assertEqual(redrawn.size, committed.size)
+        self.assertEqual(redrawn.convert("RGBA").tobytes(), committed.tobytes())
+
+    def test_the_recorded_font_is_not_a_path_on_one_machine(self):
+        sidecar = json.loads(BIB.with_suffix(".json").read_text(encoding="utf-8"))
+        self.assertTrue(
+            sidecar["font"].startswith(f"{BUNDLED}:"),
+            f"the bib must be drawn with the face Pillow carries, not {sidecar['font']!r}",
+        )
+
+    def test_no_committed_kit_sidecar_records_a_machine_path(self):
+        # A provenance record naming C:/... or /home/... describes a file one
+        # machine had. Both sidecars are checked, not only the bib's.
+        drive_letter = re.compile(r"^[A-Za-z]:[/\\]")
+        for sidecar_path in sorted((MODULE_DIR / "assets" / "kit").glob("*.json")):
+            values = json.loads(sidecar_path.read_text(encoding="utf-8"))
+            for key, value in values.items():
+                if not isinstance(value, str):
+                    continue
+                with self.subTest(file=sidecar_path.name, key=key):
+                    self.assertIsNone(drive_letter.match(value), value)
+                    self.assertFalse(value.startswith("/home/"), value)
+                    self.assertNotIn("\\", value)
 
 
 class TheBibImageCarriesItsOwnSidecar(unittest.TestCase):
