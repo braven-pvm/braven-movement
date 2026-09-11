@@ -114,6 +114,27 @@ def main() -> None:
     parser.add_argument("--sleeve-radius", type=float, default=None,
                         help="metres from the measured shoulder joint; "
                              "replaces the weight-and-height sleeve cut")
+    # HOTPANTS, NOT A LEOTARD LEG-LINE. A straight horizontal cut across the
+    # thigh is what a swimming costume does. Netball shorts sit HIGHER on the
+    # outer thigh and lower on the inner, so the hem is a level that rises with
+    # distance from the centre line rather than one number.
+    parser.add_argument("--hem-rise", type=float, default=0.0,
+                        help="metres the hem climbs from the inner thigh to "
+                             "the outer; 0 is a straight cut")
+    # A PANEL DOWN THE FLANK IS WHAT MAKES A WAIST. Cut exactly as the bib is,
+    # by which way the surface faces, on the side of the body instead of the
+    # front.
+    parser.add_argument("--flank-facing", type=float, default=None,
+                        help="how squarely the surface must face sideways for "
+                             "the flank panel to reach it; omit for no panel")
+    parser.add_argument("--flank-colour", default=None,
+                        help="linear RGB; the bib colour when not given")
+    # A NARROW STRAP INSTEAD OF A CAP SLEEVE. The sleeve is a sphere round the
+    # shoulder; this trims it front to back, so what is left is a strap over
+    # the top of the shoulder.
+    parser.add_argument("--strap-width", type=float, default=None,
+                        help="metres front to back at the shoulder; omit to "
+                             "keep the full cap")
     parser.add_argument("--bib-top-fraction", type=float, default=0.790)
     parser.add_argument("--bib-bottom-fraction", type=float, default=0.640)
     parser.add_argument("--bib-half-width", type=float, default=0.125)
@@ -303,7 +324,24 @@ def main() -> None:
     hem = level(arguments.hem_fraction)
     sleeve = level(arguments.sleeve_fraction)
 
-    torso = covered & (tall < neck) & (tall > hem) & (limb < 0.30) & (skull < 0.10)
+    # THE HEM IS A CURVE WHEN IT IS ASKED TO BE. `outward` is 0 on the inner
+    # thigh and 1 at the widest point of it, measured on THIS body rather than
+    # assumed: the 98th percentile of the across coordinate over the thigh band,
+    # so one wide pixel cannot set the scale.
+    thigh = covered & (tall > level(0.34)) & (tall < level(0.54)) & (limb < 0.30)
+    widest = float(np.percentile(np.abs(across[thigh]), 98)) if thigh.any() else 0.0
+    outward = np.clip(np.abs(across) / max(widest, 1e-6), 0.0, 1.0)
+    hem_here = hem + arguments.hem_rise * outward
+    if arguments.hem_rise:
+        print(
+            f"[kit-paint] hem {hem:.3f} m on the inner thigh, "
+            f"{hem + arguments.hem_rise:.3f} m at the widest point "
+            f"({widest * 100:.1f} cm from the centre line)"
+        )
+    torso = (
+        covered & (tall < neck) & (tall > hem_here)
+        & (limb < 0.30) & (skull < 0.10)
+    )
     if arguments.sleeve_radius is None:
         # A WEIGHT ISOLINE IS NOT A HEM. The sleeve's visible edge is where the
         # upper-arm weight crosses a threshold, and a skinning weight wanders
@@ -342,6 +380,13 @@ def main() -> None:
             & (skull < 0.10)
         )
         cut = f"within {arguments.sleeve_radius:.3f} m of the shoulder"
+        if arguments.strap_width is not None:
+            # The shoulders sit at the same depth on both sides, so one
+            # centre line serves both straps.
+            shoulder_deep = 0.5 * (joints[0][depth] + joints[1][depth])
+            narrow = np.abs(deep - shoulder_deep) < 0.5 * arguments.strap_width
+            cap = cap & narrow
+            cut += f", trimmed to a {arguments.strap_width * 100:.0f} cm strap"
     garment = torso | cap
     edge = garment & ~(
         np.roll(garment, 1, 0) & np.roll(garment, -1, 0)
@@ -383,6 +428,42 @@ def main() -> None:
 
     # NO BIB MEANS NO LETTERS MEANS NO FONT, and the sidecar says so
     # rather than naming a font that drew nothing.
+    # THE FLANK PANEL, CUT THE WAY THE BIB IS. Every reference kit has a panel
+    # down the side, and a panel down the side is most of what makes a
+    # photograph read as a sports kit rather than a unitard: it gives the figure
+    # a waist. Same instrument as the bib, pointed at the across axis instead of
+    # the depth axis.
+    flank_used = None
+    if arguments.flank_facing is not None:
+        sideways = np.abs(
+            normal[:, :, across_axis]
+            / np.maximum(np.linalg.norm(normal, axis=2), 1e-9)
+        )
+        flank = (
+            garment
+            & (sideways > arguments.flank_facing)
+            & (limb < 0.30)
+            & (skull < 0.10)
+        )
+        if flank.sum() < 0.001 * covered.sum():
+            raise SystemExit(
+                f"[kit-paint] the flank panel is empty: {int(flank.sum())} "
+                f"pixels of {int(covered.sum())} covered. Lower "
+                f"--flank-facing."
+            )
+        flank_colour = colour_of(
+            arguments.flank_colour if arguments.flank_colour is not None
+            else arguments.bib_colour,
+            "flank-colour",
+        )
+        flank_alpha = smooth(flank, arguments.edge_pixels)[:, :, None]
+        painted = painted * (1 - flank_alpha) + flank_colour[None, None, :] * flank_alpha
+        flank_used = int(flank.sum())
+        print(
+            f"[kit-paint] flank panels {flank_used} pixels, facing above "
+            f"{arguments.flank_facing}"
+        )
+
     bib_used = None
     font_used = None
     if not arguments.no_bib:
@@ -527,6 +608,10 @@ def main() -> None:
         "edgePixels": arguments.edge_pixels,
         "garmentPixels": int(garment.sum()),
         "bibPixels": bib_used,
+        "flankPixels": flank_used,
+        "flankFacing": arguments.flank_facing,
+        "hemRiseM": arguments.hem_rise,
+        "strapWidthM": arguments.strap_width,
         "coveredPixels": int(covered.sum()),
         "secondsToPaint": elapsed,
     }

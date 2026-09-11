@@ -254,6 +254,56 @@ class PaintedKit(unittest.TestCase):
         _, narrow, _ = self.layer("facing_narrow", "--bib-facing", "0.90")
         self.assertLess(narrow["bibPixels"], wide["bibPixels"])
 
+    def test_the_hem_rises_towards_the_outside_of_the_thigh(self):
+        """Hotpants sit higher on the outer thigh than on the inner.
+
+        The DIRECTION is the whole point and it is the easy thing to get
+        backwards, so this compares the lowest painted row at the side of the
+        body against the lowest at the front. On this tube the "outer thigh" is
+        simply the widest part of it, which is what the painter measures.
+        """
+        straight, _, _ = self.layer("hem_straight", "--no-bib",
+                                    "--hem-fraction", "0.30")
+        risen, receipt, output = self.layer("hem_risen", "--no-bib",
+                                            "--hem-fraction", "0.30",
+                                            "--hem-rise", "0.20")
+        self.assertIn("at the widest point", output)
+        self.assertEqual(receipt["hemRiseM"], 0.20)
+
+        def lowest_row(pixels, column):
+            rows = np.nonzero(pixels[:, column, 3] > 200)[0]
+            self.assertGreater(rows.size, 0, f"column {column} painted nothing")
+            return int(rows.max())
+
+        # The tube's UV runs all the way round, so a quarter of the way across
+        # is its side and halfway is its front.
+        side, front = SIZE // 4, SIZE // 2
+        self.assertEqual(lowest_row(straight, side), lowest_row(straight, front))
+        self.assertLess(
+            lowest_row(risen, side), lowest_row(risen, front),
+            "the hem did not climb towards the outside",
+        )
+
+    def test_a_flank_panel_lands_on_the_flank(self):
+        """The side panel is cut by facing, exactly as the bib is."""
+        pixels, receipt, output = self.layer(
+            "flank", "--no-bib", "--flank-facing", "0.60",
+            "--flank-colour", "0.9,0.1,0.1",
+        )
+        self.assertGreater(receipt["flankPixels"], 0)
+        self.assertEqual(receipt["flankFacing"], 0.60)
+        self.assertIn("flank panels", output)
+
+        # Red where the tube faces sideways, kit colour where it faces the
+        # camera. On this tube the sides are a quarter and three quarters round.
+        def is_red(column):
+            rows = np.nonzero(pixels[:, column, 3] > 200)[0]
+            middle = pixels[rows[rows.size // 2], column, :3]
+            return int(middle[0]) > int(middle[2])
+
+        self.assertTrue(is_red(SIZE // 4), "the panel missed the side")
+        self.assertFalse(is_red(SIZE // 2), "the panel reached the front")
+
     def test_an_empty_garment_is_refused(self):
         """A hem above the neckline and a sleeve above her head paint nothing.
 
@@ -296,8 +346,9 @@ class PaintedKit(unittest.TestCase):
                 "coveredPixels", "depthAxis", "distinctOpaqueColours",
                 "edgePixels", "font", "fractions", "frontSign", "garmentPixels",
                 "heightM", "instrument", "levelsM", "output", "outputSha256",
-                "position", "readsNoSkin", "secondsToPaint", "sleeveRadiusM",
-                "textureSize", "upAxis",
+                "flankFacing", "flankPixels", "hemRiseM", "position",
+                "readsNoSkin", "secondsToPaint", "sleeveRadiusM",
+                "strapWidthM", "textureSize", "upAxis",
             },
         )
         self.assertEqual(
