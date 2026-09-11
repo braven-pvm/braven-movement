@@ -79,43 +79,85 @@ def render(args) -> int:
     camera = studio.camera
 
     # The garment's build sidecar says where its skirt starts in vertex order.
+    # WHICH VERTICES ARE MEASURED. A dress is a bodysuit then a skirt, and the
+    # skirt is the part that can pass through a thigh, so only the skirt is
+    # measured. A SHORTS-ONLY kit has no skirt, and then the whole garment is
+    # the part that stands off the body, so all of it is measured. Measuring
+    # "the vertices after the bodysuit" on a shorts kit would measure none.
     n_body = None
+    measured = "skirt"
+    shorts = None
     if config.presentation.kit.garment:
         sidecar = ROOT / Path(config.presentation.kit.garment).with_suffix(".build.json")
         if sidecar.is_file():
-            n_body = json.loads(sidecar.read_text(encoding="utf-8"))["nBodysuitVertices"]
+            counts = json.loads(sidecar.read_text(encoding="utf-8"))
+            for part in counts.get("parts", []):
+                if part.get("shorts"):
+                    shorts = part["shorts"]
+            if counts.get("nSkirtVertices", 0) > 0:
+                n_body = counts["nBodysuitVertices"]
+            else:
+                n_body = 0
+                measured = "the whole garment"
 
     def clearance(label: str) -> dict | None:
         if n_body is None:
             return None
-        subdivisions = [m for item in (human, garment) for m in item.modifiers if m.type == "SUBSURF"]
-        for modifier in subdivisions:
-            modifier.show_viewport = False
+        # THE SKIN, NOT THE SKIN MINUS WHAT THE CLOTHES HIDE. MPFB gives every
+        # fitted garment a `Delete.<asset>` mask that removes the body under
+        # it, so the first version of this instrument measured the distance to
+        # the nearest SURVIVING skin and overstated the clearance exactly where
+        # a garment sits. The helper mask stays on: the helpers stand outside
+        # the skin, so keeping them would be the opposite error. The vertex
+        # group filter is gone with it, because every face of this mesh is
+        # skin, and filtering EVALUATED polygons by BASE-mesh indices was only
+        # ever correct by accident.
+        off = []
+        for item in (human, garment):
+            for modifier in item.modifiers:
+                if (modifier.type == "SUBSURF" or modifier.name.startswith("Delete.")) \
+                        and modifier.show_viewport:
+                    modifier.show_viewport = False
+                    off.append((item, modifier.name))
         graph = bpy.context.evaluated_depsgraph_get()
         human_eval, garment_eval = human.evaluated_get(graph), garment.evaluated_get(graph)
         points = [human_eval.matrix_world @ v.co for v in human_eval.data.vertices]
-        skin = human.vertex_groups["body"].index if "body" in human.vertex_groups else None
-        skin_ids = {
-            v.index for v in human.data.vertices
-            if skin is None or any(g.group == skin and g.weight > 0.5 for g in v.groups)
-        }
-        faces = [list(p.vertices) for p in human_eval.data.polygons if all(i in skin_ids for i in p.vertices)]
+        faces = [list(p.vertices) for p in human_eval.data.polygons]
         tree = BVHTree.FromPolygons(points, faces)
+        # THE REGIONS ARE REPORTED SEPARATELY. A waistband is meant to hug and
+        # a front panel is meant to stand off, so one minimum over the whole
+        # garment cannot say whether the panel worked. The panel is the region
+        # the authoring script shaped, read from that script's own sidecar, so
+        # the two cannot disagree about where it is.
         signed = []
+        panel = []
         for vertex in garment.data.vertices:
             if vertex.index < n_body:
                 continue
             point = garment_eval.matrix_world @ garment_eval.data.vertices[vertex.index].co
             location, normal, _, distance = tree.find_nearest(point)
-            signed.append(distance if (point - location).dot(normal) >= 0 else -distance)
-        for modifier in subdivisions:
-            modifier.show_viewport = True
+            value = distance if (point - location).dot(normal) >= 0 else -distance
+            signed.append(value)
+            rest = garment.data.vertices[vertex.index].co
+            if (shorts and rest.y < 0.0 and abs(rest.x) <= shorts["frontSpanM"]
+                    and rest.z <= shorts["crotchTopZ"]):
+                panel.append(value)
+        for item, name in off:
+            for modifier in item.modifiers:
+                if modifier.name == name:
+                    modifier.show_viewport = True
         report = {
             "state": label,
+            "measured": measured,
+            "skinFaces": len(faces),
+            "modifiersOff": [name for _, name in off],
             "skirtVertices": len(signed),
             "insideSkin": sum(1 for value in signed if value < 0),
             "within4mm": sum(1 for value in signed if 0 <= value < 0.004),
             "minimumMm": round(min(signed) * 1000, 1),
+            "frontPanelVertices": len(panel),
+            "frontPanelMinimumMm": round(min(panel) * 1000, 1) if panel else None,
+            "frontPanelInsideSkin": sum(1 for value in panel if value < 0),
         }
         print(f"[kit-studio] clearance {report}")
         return report
