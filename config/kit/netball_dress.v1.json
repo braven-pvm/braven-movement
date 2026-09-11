@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "name": "braven_netball_dress",
+  "author": "Braven Performance Lab",
+  "licence": "Braven Performance Lab (own work, no licence selected)",
+  "description": "Netball dress: sleeveless vest bodysuit with integrated briefs and a short skirt that hangs from the hip",
+  "helpers": {
+    "bodysuit": "helper-tights",
+    "skirt": "helper-skirt",
+    "skirtMatchesGroup": "body"
+  },
+  "heightsM": {
+    "skirtHem": 0.78,
+    "briefsHem": 0.79,
+    "sockTop": 0.175
+  },
+  "armCutX": 0.205,
+  "skirt": {
+    "easeM": 0.012,
+    "easeBlendM": 0.04,
+    "angularBins": 72
+  },
+  "vest": {
+    "strapOuterInboardM": 0.02,
+    "strapInnerInboardM": 0.075,
+    "armholeOutboardM": 0.045,
+    "armholeDropM": 0.085,
+    "scoopFrontAboveJointM": 0.01,
+    "scoopBackAboveJointM": 0.04,
+    "scoopKneeX": 0.045,
+    "necklineTilt": 0.5,
+    "topBelowNeckRingM": 0.005
+  },
+  "uvFrame": {
+    "x0": -0.21,
+    "x1": 0.21,
+    "z0": 0.78,
+    "z1": 1.44
+  },
+  "bib": {
+    "halfWidthM": 0.07,
+    "z0": 1.16,
+    "z1": 1.3,
+    "imagePx": [2048, 1024],
+    "cornerRadiusPx": 18,
+    "fontPx": 150,
+    "strokePx": 4
+  }
+}

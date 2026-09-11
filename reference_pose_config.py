@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Mapping
 
 
@@ -35,6 +35,82 @@ def _int_tuple(values: Any, size: int, name: str) -> tuple[int, ...]:
     return converted
 
 
+def _optional_str(values: Mapping[str, Any], key: str, name: str) -> str | None:
+    value = values.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value:
+        raise ReferencePoseConfigError(f"{name} must be a non-empty string or absent")
+    return value
+
+
+def _optional_positive_float(values: Mapping[str, Any], key: str, name: str) -> float | None:
+    value = values.get(key)
+    if value is None:
+        return None
+    converted = float(value)
+    if not converted > 0.0:
+        raise ReferencePoseConfigError(f"{name} must be a positive number or absent")
+    return converted
+
+
+# Where the assets this repository authors live. The generator's `asset_path`
+# refuses any file outside the MPFB data tree; this is the same refusal for the
+# repository's own tree, so a config cannot make a receipt hash whatever file
+# happened to be at an arbitrary path.
+KIT_ASSET_DIR = ("assets", "kit")
+
+
+def kit_asset_path(relative: str, repository_root: Path | None = None) -> Path:
+    """The file a `presentation.kit` path names, under `assets/kit/` only.
+
+    A POSIX path relative to the repository root, with no `..`, no drive and
+    no leading slash, naming a file that exists. Everything else is refused
+    with the reason, at load time and not at render time.
+    """
+    root = (repository_root or DEFAULT_CONFIG_PATH.parents[1]).resolve()
+    if not relative or "\\" in relative or ":" in relative or relative.startswith("/"):
+        raise ReferencePoseConfigError(
+            "presentation.kit paths are POSIX and relative to the repository "
+            f"root, got {relative!r}"
+        )
+    parts = PurePosixPath(relative).parts
+    if ".." in parts or parts[: len(KIT_ASSET_DIR)] != KIT_ASSET_DIR:
+        raise ReferencePoseConfigError(
+            f"presentation.kit paths must lie under {'/'.join(KIT_ASSET_DIR)}/, "
+            f"got {relative!r}"
+        )
+    path = root.joinpath(*parts)
+    if not path.is_file():
+        raise ReferencePoseConfigError(
+            f"presentation.kit names a file that is not there: {path}"
+        )
+    return path
+
+
+def mhclo_obj_path(mhclo: Path) -> Path:
+    """The mesh file an `.mhclo` names, beside it.
+
+    A garment is two files: the `.mhclo` holds the fitting and the `.obj` it
+    names holds the geometry. A receipt that hashes only the first has not
+    hashed the shape, so the generator lists both.
+    """
+    for line in mhclo.read_text(encoding="utf-8").splitlines():
+        parts = line.split()
+        if len(parts) == 2 and parts[0] == "obj_file":
+            return mhclo.parent / parts[1]
+    raise ReferencePoseConfigError(f"{mhclo} names no obj_file")
+
+
+def _kit_file(values: Mapping[str, Any], key: str) -> str | None:
+    """An optional kit path, checked at load time so a render never starts
+    for a garment that is not there or not ours."""
+    relative = _optional_str(values, key, f"presentation.kit.{key}")
+    if relative is not None:
+        kit_asset_path(relative)
+    return relative
+
+
 @dataclass(frozen=True)
 class HandTarget:
     finger_direction: tuple[float, float, float]
@@ -54,6 +130,15 @@ class ViewConfig:
 class MaterialPresentation:
     base_color: tuple[float, float, float, float]
     roughness: float
+    # THE KIT IS OPTIONAL. Absent, the generator wears the MPFB casual suit it
+    # has always worn, and every existing config and receipt reads as before.
+    # `garment` and `bib_image` are POSIX paths relative to the repository
+    # root; `kit_asset_path` refuses anything outside `assets/kit/`. The sock
+    # top is a height in metres above the floor at which the shoe asset's
+    # tall sock is cut, because no shoe asset ships with a low one.
+    garment: str | None = None
+    bib_image: str | None = None
+    sock_top_m: float | None = None
 
 
 @dataclass(frozen=True)
@@ -359,6 +444,11 @@ def load_reference_catch_config(path: Path | None = None) -> ReferenceCatchConfi
                         "presentation.kit.baseColor",
                     ),
                     roughness=float(presentation["kit"]["roughness"]),
+                    garment=_kit_file(presentation["kit"], "garment"),
+                    bib_image=_kit_file(presentation["kit"], "bibImage"),
+                    sock_top_m=_optional_positive_float(
+                        presentation["kit"], "sockTopM", "presentation.kit.sockTopM"
+                    ),
                 ),
                 ball=BallPresentation(
                     primary_color=_float_tuple(

@@ -27,7 +27,9 @@ sys.path.insert(0, str(MODULE_DIR))
 from asset_licences import (  # noqa: E402
     CC0,
     FACEUNITS_RULE,
+    KIT_RULE,
     MPFB_RULE,
+    OWN_WORK,
     LicenceUndetermined,
     SELECTED_MPFB_ASSETS,
     asset_path_calls,
@@ -308,3 +310,52 @@ class TheRendererWritesTheNewShape(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TheRepositoryOwnsItsKit(unittest.TestCase):
+    """The third family: assets this repository authors under `assets/kit/`.
+
+    The receipt records ownership, not a licence, because the document says
+    no licence has been chosen for them. The word is the owner's to set, and
+    when it is set, the sentence here and the sentence there change together
+    or the verbatim test fails.
+    """
+
+    def test_a_kit_asset_resolves_to_the_owners_work(self):
+        licence, source = licence_for(Path("assets", "kit", "braven_netball_dress.mhclo"))
+        self.assertEqual(licence, OWN_WORK)
+        self.assertIn("docs/LICENSING.md", source)
+        self.assertIn("Kit assets authored in this repository", source)
+
+    def test_the_family_is_the_directory_pair_on_either_separator(self):
+        windows = "\\".join(
+            ("F:", "Repositories", "braven-movement", "assets", "kit", "bib_GS.png")
+        )
+        for path in (
+            "F:/Repositories/braven-movement/assets/kit/bib_GS.png",
+            windows,
+            "assets/kit/deeper/some_sock.mhclo",
+        ):
+            with self.subTest(path=path):
+                self.assertEqual(licence_for(path)[0], OWN_WORK)
+
+    def test_a_neighbouring_directory_is_not_the_family(self):
+        for path in (
+            Path("assets", "kits", "braven_netball_dress.mhclo"),
+            Path("kit", "braven_netball_dress.mhclo"),
+            Path("assets", "braven_netball_dress.mhclo"),
+        ):
+            with self.subTest(path=str(path)):
+                with self.assertRaises(LicenceUndetermined):
+                    licence_for(path)
+
+    def test_the_kit_sentence_is_quoted_verbatim_from_the_document(self):
+        text = " ".join(LICENSING.read_text(encoding="utf-8").split())
+        self.assertIn(" ".join(KIT_RULE.split()), text)
+
+    def test_the_owners_line_is_not_a_licence_word(self):
+        # The receipt must not claim CC0 for something the document says has
+        # no licence yet.
+        self.assertNotEqual(OWN_WORK, CC0)
+        self.assertNotIn("CC0", OWN_WORK)
+

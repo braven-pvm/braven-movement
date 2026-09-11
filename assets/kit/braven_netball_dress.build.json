@@ -1,0 +1,82 @@
+{
+  "instrument": "author_netball_dress.py",
+  "output": "braven_netball_dress.mhclo",
+  "outputSha256": "d8c681bedea25d7f841a23da3ed4503f3535243b78f9b7089415feb9094d4575",
+  "obj": "braven_netball_dress.obj",
+  "objSha256": "87d7bbbe5c4150960a8a336f70471ba39faf584302824346a1c7b8c21f5394fb",
+  "readsNoSkin": true,
+  "derivedFrom": "MakeHuman hm08 basemesh helper-tights and helper-skirt (CC0), and nothing else",
+  "asset": "braven_netball_dress.mhclo",
+  "kitFile": "config/kit/netball_dress.v1.json",
+  "kitSha256": "37c3f08e5737f0db88da9fa2f3f061fb229e49adfa8e7ed607aea4dafaa91de4",
+  "authoringConfig": "config/reference_catch.v1.json",
+  "authoringConfigSha256": "8c317a6c3d6e52c924f19cb9e1677e8f6794a9c1eb2dc7c612dba27738a20178",
+  "hashNote": "sha256 of the input with CRLF folded to LF",
+  "landmarks": {
+    "shoulderJointM": [
+      0.1506,
+      -0.0176,
+      1.3426
+    ],
+    "strapEdgeX": 0.1306,
+    "shoulderTopAtStrapZ": 1.4134,
+    "neckRingTopZ": 1.4853,
+    "chestFrontYAtScoop": -0.0917,
+    "backYAtScoop": 0.0568,
+    "topCutZ": 1.4803
+  },
+  "parts": [
+    {
+      "part": "bodysuit",
+      "vertices": 1477,
+      "faces": 2800,
+      "faceSizes": [
+        3
+      ],
+      "zMinM": 0.79,
+      "zMaxM": 1.4425,
+      "looseVerticesRemoved": 0,
+      "verticesPrunedToOneGroup": 0,
+      "facesDeletedByClassification": 2076
+    },
+    {
+      "part": "skirt",
+      "vertices": 252,
+      "faces": 432,
+      "faceSizes": [
+        3
+      ],
+      "zMinM": 0.78,
+      "zMaxM": 1.0202,
+      "looseVerticesRemoved": 0,
+      "verticesPrunedToOneGroup": 0,
+      "verticesHung": 246,
+      "axisXY": [
+        0.0,
+        -0.011
+      ],
+      "waistRingZ": 1.0202
+    }
+  ],
+  "nBodysuitVertices": 1477,
+  "nSkirtVertices": 252,
+  "check": {
+    "is_valid_object": true,
+    "has_any_vertices": true,
+    "has_any_vgroups": true,
+    "all_verts_have_max_one_vgroup": true,
+    "all_verts_have_min_one_vgroup": true,
+    "all_verts_belong_to_faces": true,
+    "all_faces_same_type": true,
+    "all_checks_ok": true,
+    "clothes_groups_exist_on_basemesh": true,
+    "objs_same_scale": true
+  },
+  "stagesS": {
+    "athleteS": 4.41,
+    "cutsS": 0.16,
+    "checkMatchWriteS": 1.91,
+    "totalS": 6.48
+  },
+  "blender": "4.5.12 LTS"
+}
