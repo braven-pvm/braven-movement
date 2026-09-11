@@ -23,6 +23,12 @@ from pathlib import Path
 DOCS = Path(__file__).resolve().parents[1] / "docs"
 
 BUILD = re.compile(r"\b[0-9a-f]{7}\b")
+# A LIMIT WORTH KNOWING: this sees only numbers with a DECIMAL POINT. An
+# integer measurement — "7 seconds", "144 views", "46 minutes" — is invisible
+# to it, and several are. Widening it to integers floods the report with every
+# count, index and version in the documents, so the narrow pattern stays and
+# the gap is written down instead of being discovered by someone trusting a
+# clean report. An integer measurement still needs its build named.
 NUMBER = re.compile(r"(?<![\w.])-?\d+\.\d+(?![\w])")
 HEADING = re.compile(r"^#{1,6}\s+(.*)")
 
@@ -60,8 +66,19 @@ REFRESHABLE = {
 # Below the hips nothing may be presented as a graded value, so those rows are
 # marked rather than dropped. A reader who does not know that would refresh one
 # and publish it.
+# The term must start a word, or the flag fires on "shipped" and on "distance".
+# A plain word boundary is not enough on its own, because the terms also appear
+# inside `leftKneeFlexionDegrees` and `double_foot_landing`, which are exactly
+# the rows this must catch. So the text is split at each camel case hump and at
+# each underscore FIRST, and the boundary is applied to the result.
+WORD_START = re.compile(r"(?<=[a-z0-9])(?=[A-Z])|_")
 LOWER_BODY = re.compile(
-    r"knee|ankle|foot|feet|hip|thigh|calf|stance|shin|toe", re.IGNORECASE)
+    r"\b(?:knee|ankle|foot|feet|hip|thigh|calf|stance|shin|toe)", re.IGNORECASE)
+
+
+def below_the_hips(text: str) -> bool:
+    """True when the row names a quantity below the hips, or a drill that is."""
+    return bool(LOWER_BODY.search(WORD_START.sub(" ", text)))
 
 
 def _archives() -> Path:
@@ -146,6 +163,12 @@ def rows_for(path: Path):
             heading = matched.group(1).strip()
         found = BUILD.findall(line)
         if found:
+            # THE FIRST HASH ON THE LINE WINS, and a line naming two builds is
+            # therefore attributed to the earlier-written one. The tool cannot
+            # resolve such a line, so a writer must split the sentence and put
+            # each build's numbers on their own line. `test_docs_number_audit`
+            # pins this, because the choice decides what every table below a
+            # section is attributed to.
             build = found[0]
         if NOISE.search(line):
             continue
@@ -162,7 +185,7 @@ def rows_for(path: Path):
             "build": build,
             "numbers": numbers,
             "text": line.strip(),
-            "lowerBody": bool(LOWER_BODY.search(f"{heading} {line}")),
+            "lowerBody": below_the_hips(f"{heading} {line}"),
         }
 
 
