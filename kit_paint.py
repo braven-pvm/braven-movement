@@ -25,9 +25,9 @@ import time
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageFilter
 
-FONT = Path("C:/Windows/Fonts/arialbd.ttf")
+from kit_font import resolve as resolve_font
 
 
 def linear_to_srgb(value: float) -> float:
@@ -142,6 +142,9 @@ def main() -> None:
     parser.add_argument("--kit-colour", default="0.018,0.024,0.036")
     parser.add_argument("--bib-colour", default="0.94,0.92,0.82")
     parser.add_argument("--letter-colour", default="0.015,0.36,0.42")
+    parser.add_argument("--font", default=None,
+                        help="path to a .ttf or .otf, or 'pillow' for the "
+                             "face Pillow carries; the default is Pillow's")
     parser.add_argument("--edge-pixels", type=float, default=1.6)
     parser.add_argument("--no-bib", action="store_true")
     arguments = parser.parse_args()
@@ -378,7 +381,10 @@ def main() -> None:
     alpha = smooth(garment, arguments.edge_pixels)[:, :, None]
     painted = np.tile(kit[None, None, :], (size, size, 1)).astype(np.float32)
 
+    # NO BIB MEANS NO LETTERS MEANS NO FONT, and the sidecar says so
+    # rather than naming a font that drew nothing.
     bib_used = None
+    font_used = None
     if not arguments.no_bib:
         top = level(arguments.bib_top_fraction)
         bottom = level(arguments.bib_bottom_fraction)
@@ -435,7 +441,7 @@ def main() -> None:
         glyph = 512
         card = Image.new("L", (glyph, glyph), 0)
         draw = ImageDraw.Draw(card)
-        font = ImageFont.truetype(str(FONT), int(glyph * 0.62))
+        font, font_used = resolve_font(arguments.font, int(glyph * 0.62))
         box = draw.textbbox((0, 0), arguments.position, font=font)
         draw.text(
             ((glyph - (box[2] - box[0])) / 2 - box[0],
@@ -491,7 +497,7 @@ def main() -> None:
         "distinctOpaqueColours": int(palette.shape[0]),
         "output": str(arguments.output),
         "outputSha256": sha256(arguments.output),
-        "font": str(FONT),
+        "font": font_used,
         "upAxis": up,
         "depthAxis": depth,
         "acrossAxis": across_axis,
