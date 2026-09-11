@@ -121,9 +121,31 @@ def main() -> None:
     parser.add_argument("--hem-rise", type=float, default=0.0,
                         help="metres the hem climbs from the inner thigh to "
                              "the outer; 0 is a straight cut")
-    # A PANEL DOWN THE FLANK IS WHAT MAKES A WAIST. Cut exactly as the bib is,
-    # by which way the surface faces, on the side of the body instead of the
-    # front.
+    # A COLOUR BREAK AT THE WAIST IS WHAT MAKES A TOP AND SHORTS. Not a seam:
+    # paint cannot put a seam where the body has no edge, and it does not need
+    # to. A top in one colour meeting shorts in another on a clean horizontal
+    # line looks like a top meeting shorts, because that is what that looks
+    # like. It is also the ONE cut that does not suffer the curvature problem
+    # below: a level on the body is a level everywhere round it.
+    parser.add_argument("--waist-fraction", type=float, default=None,
+                        help="where the colour changes, as a fraction of her "
+                             "height; omit for one colour throughout")
+    parser.add_argument("--shorts-colour", default=None,
+                        help="linear RGB below the waist; required with "
+                             "--waist-fraction")
+    # A PANEL DOWN THE FLANK. Cut exactly as the bib is, by which way the
+    # surface faces, on the side of the body instead of the front.
+    #
+    # TRIED, MEASURED AND REJECTED FOR THE NETBALL KIT (2026-09-11). A facing
+    # threshold is an ANGULAR width, so the width in centimetres follows the
+    # body's curvature: at 0.85 (about 32 degrees off sideways) it read as a
+    # cream side-body covering a fifth of the garment, and at 0.96 (about 16
+    # degrees) the stripe VANISHES where the body rounds away, arriving as
+    # three disconnected segments broken at the waist hollow and at the hip. It
+    # reads as a rendering fault rather than a stripe. A panel with a width in
+    # centimetres needs a band measured from the side meridian, which this is
+    # not. Kept because the cut is sound on a flat region; do not reach for it
+    # as a side stripe.
     parser.add_argument("--flank-facing", type=float, default=None,
                         help="how squarely the surface must face sideways for "
                              "the flank panel to reach it; omit for no panel")
@@ -428,6 +450,31 @@ def main() -> None:
 
     # NO BIB MEANS NO LETTERS MEANS NO FONT, and the sidecar says so
     # rather than naming a font that drew nothing.
+    # THE SHORTS, WHICH ARE A COLOUR AND NOT A GARMENT.
+    waist_used = None
+    if arguments.waist_fraction is not None:
+        if arguments.shorts_colour is None:
+            raise SystemExit(
+                "[kit-paint] --waist-fraction needs --shorts-colour. A colour "
+                "break with one colour is not a break."
+            )
+        waist = level(arguments.waist_fraction)
+        lower = garment & (tall < waist)
+        if lower.sum() < 0.001 * covered.sum():
+            raise SystemExit(
+                f"[kit-paint] nothing is below the waist line at "
+                f"{waist:.3f} m: {int(lower.sum())} pixels of "
+                f"{int(covered.sum())} covered. Lower --waist-fraction."
+            )
+        shorts = colour_of(arguments.shorts_colour, "shorts-colour")
+        lower_alpha = smooth(lower, arguments.edge_pixels)[:, :, None]
+        painted = painted * (1 - lower_alpha) + shorts[None, None, :] * lower_alpha
+        waist_used = int(lower.sum())
+        print(
+            f"[kit-paint] shorts {waist_used} pixels below {waist:.3f} m, "
+            f"sRGB {shorts.astype(int).tolist()}"
+        )
+
     # THE FLANK PANEL, CUT THE WAY THE BIB IS. Every reference kit has a panel
     # down the side, and a panel down the side is most of what makes a
     # photograph read as a sports kit rather than a unitard: it gives the figure
@@ -609,6 +656,8 @@ def main() -> None:
         "garmentPixels": int(garment.sum()),
         "bibPixels": bib_used,
         "flankPixels": flank_used,
+        "waistFraction": arguments.waist_fraction,
+        "shortsPixels": waist_used,
         "flankFacing": arguments.flank_facing,
         "hemRiseM": arguments.hem_rise,
         "strapWidthM": arguments.strap_width,
