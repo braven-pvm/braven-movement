@@ -34,7 +34,11 @@ SPIKE_DIR = MODULE_DIR / "spikes"
 if str(SPIKE_DIR) not in sys.path:
     sys.path.insert(0, str(SPIKE_DIR))
 
-from render_receipt import render_outcome  # noqa: E402
+from render_receipt import (  # noqa: E402
+    SOLVE_PARAMETERS,
+    render_outcome,
+    solve_parameters,
+)
 # What the receipt may claim about the assets that drew the figure. It has no
 # Blender in it, so a test can call it; this module's own tests skip.
 from asset_licences import source_asset_records  # noqa: E402
@@ -906,10 +910,38 @@ def render_job(studio: Studio, job: dict, job_path: Path, args,
         # project's own tool because of this line.
         "generatedFrom": stamp,
         "jobSha256": sha256(job_path),
+        # WHAT THE SOLVE WAS SET TO, read from the job and never from a caller.
+        # `render_pair(parameter, value_a, value_b)` could not be verified from a
+        # receipt before this: two parameter values give two different
+        # `jobSha256`, so the receipts differ, and nothing said which hash meant
+        # which value. NULL when the job carries none, rather than absent, so a
+        # receipt that predates the field and one rendered from a job without
+        # parameters do not read the same.
+        #
+        # ON THIS BRANCH IT IS ALWAYS NULL, because no producer here writes the
+        # field: `spikes/export_blender_job.py` has zero mentions of it and real
+        # job files carry no such key. So every receipt this branch produces
+        # records null, and `refuse_unverifiable_pair` raises at its FIRST check.
+        #
+        # A one-entry producer exists on the movement lane's UNMERGED branch, and
+        # REACHABILITY IS A PROPERTY OF THE MERGE RATHER THAN OF EITHER BRANCH.
+        # When the two land together this records that one entry.
+        #
+        # AND IT WILL STILL NOT BE EVERY PARAMETER THE SOLVE USED.
+        # `CONTACT_WEIGHT`, `UPPER_ARM_AIM_OUT`, `TWIST_SEEDS` and the other
+        # solver constants are outside it. The field is plural and a reader of a
+        # receipt never opens `spikes/export_blender_job.py`, so the caution
+        # belongs here too.
+        SOLVE_PARAMETERS: solve_parameters(job),
         # Path, sha256 AND licence per asset, the shape the reference generator
         # already writes. A path alone cannot tell two MPFB installations apart,
         # and `docs/ARCHITECTURE.md` rule 7 asks for the hashes. Resolved once
         # when the athlete was built, so this line cannot fail here.
+        #
+        # BOTH KEYS SURVIVE THIS MERGE DELIBERATELY. They were inserted and
+        # replaced on ADJACENT lines of one dict by two lanes on one day, and a
+        # resolution keeping the old `[str(path) for path in ...]` comprehension
+        # would drop every hash and licence without failing anything.
         "sourceAssets": studio.source_asset_records,
         "animation": animation,
         # The phases that DREW, then the phases that could not, each with its
