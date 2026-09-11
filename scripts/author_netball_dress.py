@@ -247,6 +247,66 @@ def hang_skirt(mesh, body_points, hem: float, skirt: dict) -> dict:
     return {"verticesHung": moved, "axisXY": [round(centre_x, 4), round(centre_y, 4)], "waistRingZ": round(waist, 4)}
 
 
+def measure_boundary(mesh, planes: list[tuple], label: str,
+                     only_below: float | None = None) -> dict:
+    """Every cut edge lies on a plane this script registered.
+
+    THIS IS NOT A TORN-EDGE DETECTOR, and it is worth saying so because it was
+    written as one and disproved. `docs/A_NETBALL_DRESS_FROM_THE_HELPERS.md`
+    says "the clearance number catches the thigh, and nothing yet catches a
+    torn edge", a torn hem reached Marius on 11 Sep, and TWO candidate
+    measurements were tried against the two hems and neither separates them:
+
+    distance to the nearest cutting plane, which is what this function
+        measures: 0.00 mm on the torn flat hem AND on the clean rising hem.
+        `bisect_plane` puts the new edge ON the plane by construction, so a
+        tear is the boundary wandering WITHIN the plane and this quantity
+        cannot see it.
+    the turning angle along the boundary loop: WORSE on the clean hem, 67.6
+        degrees against 38.3, because the four intended corners where a
+        tilted hem meets the inner-thigh apex turn more sharply than a
+        stair-step does.
+
+    So that sentence in the document stands, and it now stands on evidence.
+
+    What this function does catch is DRIFT between the `split` calls and the
+    plane list beside them: a cut whose plane nobody registered leaves a
+    boundary that no plane explains, and the worst distance goes positive. It
+    also caught its own first reference, a skirt waist ring modelled as a
+    plane when it is an original open edge following the hip line, 25.07 mm
+    away from any plane and no fault of the cut.
+
+    It measures straight after the classification and before any shaping,
+    because a deliberate offset moves the boundary too.
+    """
+    boundary = [vertex for vertex in mesh.verts
+                if any(len(edge.link_faces) < 2 for edge in vertex.link_edges)]
+    # AN ORIGINAL OPEN EDGE IS NOT A CUT. The skirt helper arrives with its
+    # waist ring already open, and that ring follows the hip line rather
+    # than any plane: measured against the highest point of it, 32 of its
+    # vertices sit up to 25.07 mm away, which says nothing about the cut.
+    # `only_below` keeps the measurement on the cut edge.
+    if only_below is not None:
+        boundary = [vertex for vertex in boundary if vertex.co.z < only_below]
+    worst = 0.0
+    off = 0
+    for vertex in boundary:
+        nearest = min(abs((vertex.co - point).dot(normal.normalized()))
+                      for point, normal in planes)
+        worst = max(worst, nearest)
+        if nearest > 0.001:
+            off += 1
+    report = {
+        "boundaryVertices": len(boundary),
+        "cuttingPlanes": len(planes),
+        "originalEdgeExcludedAboveZ": only_below,
+        "offEveryPlaneOver1mm": off,
+        "worstDistanceToACutMm": round(worst * 1000, 2),
+    }
+    print(f"[author] {label} edge {report}")
+    return report
+
+
 def skin_surface_modifiers(human) -> list[str]:
     """Switch off what stands between the evaluated mesh and the SKIN, and say
     which. Returns the names, for `restore_modifiers`.
@@ -456,6 +516,10 @@ def main() -> int:
     scoop_front = Vector((0, chest_y - 0.005, scoop_front_z))
     scoop_back = Vector((0, back_y + 0.005, scoop_back_z))
     tests = [lambda c: c.z <= top_z, lambda c: abs(c.x) <= arm_x]
+    # EVERY CUTTING PLANE, BESIDE ITS SPLIT, so the edge can be measured
+    # against the surfaces that made it. A plane that only helps the
+    # bisector subdivide, and bounds nothing, is not in this list.
+    planes = [(Vector((0, 0, top_z)), Vector((0, 0, 1)))]
     # THE HEM. A world-z plane grazes the inner thigh, where the surface is
     # nearly horizontal, and `bisect_plane` cannot cut a face that lies in the
     # plane. The centroid test then keeps or drops whole faces and the edge
@@ -470,6 +534,7 @@ def main() -> int:
             hem_point = Vector((side * hem_span, 0.0, briefs))
             hem_keep = Vector((side * rise, 0.0, hem_span))
             split(mesh, hem_point, hem_keep)
+            planes.append((hem_point, hem_keep))
             hem_test = below(hem_point, hem_keep)
 
             def hem_side(c, side=side, hem_test=hem_test):
@@ -479,13 +544,16 @@ def main() -> int:
     else:
         tests.append(lambda c: c.z >= briefs)
         split(mesh, (0, 0, briefs), (0, 0, 1))
+        planes.append((Vector((0, 0, briefs)), Vector((0, 0, 1))))
     split(mesh, (0, 0, top_z), (0, 0, 1))
     for side in (1, -1):
         split(mesh, (side * arm_x, 0, 0), (1, 0, 0))
+        planes.append((Vector((side * arm_x, 0, 0)), Vector((1, 0, 0))))
         split(mesh, (side * knee_x, 0, 0), (1, 0, 0))
         arm_keep = Vector((side * dz, 0, -dx))
         arm_point = Vector((side * strap_top.x, 0, strap_top.z))
         split(mesh, arm_point, arm_keep)
+        planes.append((arm_point, arm_keep))
         knee = Vector((side * knee_x, chest_y - 0.005, scoop_front.z + 0.02))
         strap_front = Vector((side * (joint_x - vest["strapInnerInboardM"]), joint_y - 0.03, top_at_strap + 0.02))
         strap_back = Vector((side * (joint_x - vest["strapInnerInboardM"]), joint_y + 0.035, top_at_strap + 0.02))
@@ -495,6 +563,8 @@ def main() -> int:
         split(mesh, scoop_front, inner_keep)
         split(mesh, knee, outer_keep)
         split(mesh, scoop_back, back_keep)
+        planes.extend(((scoop_front, inner_keep), (knee, outer_keep),
+                       (scoop_back, back_keep)))
         arm_test = below(arm_point, arm_keep)
         inner_test, outer_test = below(scoop_front, inner_keep), below(knee, outer_keep)
         back_test = below(scoop_back, back_keep)
@@ -508,8 +578,10 @@ def main() -> int:
         tests.append(side_test)
     split(mesh, (0, 0, 0), (1, 0, 0))
     deleted = keep_faces(mesh, lambda c: all(test(c) for test in tests))
+    edge_report = measure_boundary(mesh, planes, "bodysuit")
     shorts_report = shape_shorts(mesh, human, kit["shorts"]) if kit.get("shorts") else None
     body_report = finish(body, mesh, kit["uvFrame"], "bodysuit")
+    body_report["edge"] = edge_report
     body_report["facesDeletedByClassification"] = deleted
     if shorts_report is not None:
         body_report["shorts"] = shorts_report
@@ -525,9 +597,14 @@ def main() -> int:
         mesh.from_mesh(skirt.data)
         split(mesh, (0, 0, heights["skirtHem"]), (0, 0, 1))
         keep_faces(mesh, lambda c: c.z >= heights["skirtHem"])
+        skirt_edge = measure_boundary(
+            mesh,
+            [(Vector((0, 0, heights["skirtHem"])), Vector((0, 0, 1)))],
+            "skirt", only_below=heights["skirtHem"] + 0.05)
         hang = hang_skirt(mesh, body_points, heights["skirtHem"], kit["skirt"])
         skirt_report = finish(skirt, mesh, kit["uvFrame"], "skirt")
         skirt_report.update(hang)
+        skirt_report["edge"] = skirt_edge
         skin_group = kit["helpers"]["skirtMatchesGroup"]
         if skin_group not in human.vertex_groups:
             raise SystemExit(f"the basemesh has no vertex group named {skin_group!r}")
