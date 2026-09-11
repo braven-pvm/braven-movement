@@ -234,39 +234,44 @@ def refuse_unverifiable_pair(parameter: str, receipt_a: dict,
     3. Every OTHER parameter is EQUAL. A pair whose second parameter also moved
        shows a difference the caption attributes to the first one.
 
-       THIS RULE IS CORRECT AND TODAY IT IS UNREACHABLE, and calling it "the
-       rule that carries the weight" was wrong twice over.
+       THIS RULE IS CORRECT AND IT IS DORMANT, and calling it "the rule that
+       carries the weight" was wrong twice over.
 
-       ON THIS BRANCH NO PRODUCER WRITES THE FIELD AT ALL. `spikes/
-       export_blender_job.py` here has zero mentions of it, real job files carry
-       no such key, and `solve_parameters` therefore returns None for every one.
-       So every receipt records `solveParameters: null`, and TWO REAL RECEIPTS
-       REFUSE AT CHECK 1 -- "receipt a has no `solveParameters`". Checks 2, 3 and
-       4 are ALL unreachable on any receipt this branch can produce, not only
-       the third.
+       THE PRODUCER HAS NOW MERGED. `spikes/export_blender_job.py` writes the
+       field, so every receipt this branch produces carries a mapping rather
+       than null, and CHECKS 2 AND 4 ARE LIVE. This note said the opposite
+       until 2026-09-11, and a test in `tests/test_solve_parameters.py` turned
+       the suite red on the merge rather than letting it go quietly stale.
 
-       A ONE-KEY PRODUCER EXISTS ON THE MOVEMENT LANE'S UNMERGED BRANCH. Even
-       after it merges, check 3 stays dormant while one parameter is recorded,
-       because `set(left) | set(right)` then holds one key and `key != parameter`
-       empties it.
+       CHECK 1 IS STILL REACHABLE, and not from anything this branch makes.
+       THIRTY-SEVEN ARCHIVED RECEIPTS under `.assets/archives/` carry no
+       `solveParameters` at all, because they predate the field. Any two of
+       them refuse at check 1. They are also the artefacts a coach-morning
+       comparison would reach for, so THIS MACHINERY CANNOT PAIR ANY PICTURE
+       ERIN HAS ALREADY SEEN -- refusing is correct, and it is the honest
+       limit: the guard protects comparisons not yet made.
 
-       It has no power for the same reason a reproduction test on a square
-       athlete had none: the thing it compares cannot differ. The tests build a
-       two-key pair and prove it CAN fail, which is a different claim from its
-       being able to fail on real data.
+       CHECK 3 STAYS DORMANT WHILE ONE PARAMETER IS RECORDED, because
+       `set(left) | set(right)` then holds one key and `key != parameter`
+       empties it. It has no power for the same reason a reproduction test on a
+       square athlete had none: the thing it compares cannot differ. The tests
+       build a two-key pair and prove it CAN fail, which is a different claim
+       from its being able to fail on real data.
 
-       WHAT MAKES CHECKS 2 TO 4 REACHABLE AT ALL is a producer writing the
-       field on this branch. WHAT MAKES CHECK 3 LIVE is that producer recording
-       a SECOND parameter.
-       `contact_solve.py` holds fifteen module-level constants and the movement
-       lane names four as affecting the solve and unrecorded. Until then, every
-       unrecorded parameter is equal BY CONSTRUCTION rather than by check,
-       because both jobs of a pair are built in one process from one build.
+       WHAT MAKES CHECK 3 LIVE is the producer recording a SECOND parameter.
+       `contact_solve.py` holds fifteen module-level constants, of which TEN
+       are read by the solve path -- measured twice, by a one-hop walk from the
+       eleven names `possession_solve` imports and by a transitive call graph
+       over twelve functions, which agree exactly. ONE OF THE TEN IS RECORDED.
+       Until the rest are, every unrecorded parameter is equal BY CONSTRUCTION
+       rather than by check, because both jobs of a pair are built in one
+       process from one build.
 
-       SO THE HAZARD IS A PAIR SPANNING TWO BUILDS. It could differ in all four
+       SO THE HAZARD IS A PAIR SPANNING TWO BUILDS. It could differ in all nine
        and pass every refusal, and the caption would attribute the whole
        difference to the one recorded parameter. A coach-morning comparison is
-       exactly that case.
+       exactly that case, and `coach-figures-2413f9d` against
+       `coach-figures-aa3f244` is two such archives that already exist.
     4. Both are the same drill. Two drills are not a pair however the parameters
        read.
     """

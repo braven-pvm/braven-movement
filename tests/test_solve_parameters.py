@@ -275,19 +275,25 @@ class OnlyOneTestHereCanSkipTest(unittest.TestCase):
 
 
 class NoProducerOnThisBranchTest(unittest.TestCase):
-    """CHECKS 2, 3 AND 4 CANNOT BE REACHED BY ANY RECEIPT THIS BRANCH PRODUCES.
+    """THE PRODUCER HAS MERGED. CHECKS 2 AND 4 ARE LIVE; CHECK 3 IS DORMANT.
 
-    Found by the content lane on 2026-09-09, one step further back than this
-    lane's own correction had gone.
+    The class keeps its name because what it pins is unchanged: only what THIS
+    branch can see. Its history is the point. Until 2026-09-11 this docstring
+    said checks 2, 3 and 4 could not be reached by any receipt this branch
+    produces -- true when the content lane found it on 2026-09-09, and false the
+    moment the producer landed.
 
-    NO PRODUCER HERE WRITES THE FIELD. `spikes/export_blender_job.py` on this
-    branch has zero mentions of it, real job files carry no such key, and
-    `solve_parameters` therefore returns None for every one. So every receipt
-    records `solveParameters: null` and two real receipts refuse at CHECK 1.
+    THE GUARD BELOW TURNED THE SUITE RED ON THAT MERGE, which is what it is for.
+    IT DID NOT CATCH THIS DOCSTRING, because it reads `render_receipt.py` and
+    nothing reads its own prose. A guard against a stale note carried a stale
+    note of its own, in the same file, for as long as it took a person to look.
 
-    A ONE-KEY PRODUCER EXISTS ON THE MOVEMENT LANE'S UNMERGED BRANCH, and check
-    3 stays dormant even after it lands, because one recorded key leaves nothing
-    to compare.
+    WHAT IS TRUE NOW. `spikes/export_blender_job.py` writes the field with ONE
+    key, so a receipt this branch produces carries a mapping and checks 2 and 4
+    can refuse. CHECK 3 STAYS DORMANT while one parameter is recorded, because
+    one recorded key leaves nothing to compare. And CHECK 1 IS STILL REACHABLE,
+    from the thirty-seven ARCHIVED receipts that predate the field: they carry
+    no mapping at all, and any two of them refuse there.
 
     AND THE TEST THIS REPLACES READ THAT OTHER LANE'S WORKTREE. It parsed
     `../amazing-chatelet-ed2e1c/spikes/export_blender_job.py` and pinned its key
