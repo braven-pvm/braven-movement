@@ -35,38 +35,6 @@ jobs:
       # itself.
       - name: Install what the engine-side tests read
         run: python -m pip install --quiet numpy pillow opencv-python-headless scipy
-      # TEMPORARY (2026-09-11, the painted-kit lane). #117 went red on this
-      # runner with OSError: cannot open resource, from a hard-coded
-      # C:/Windows/Fonts path. This prints what this machine HAS, so the
-      # replacement default is measured here rather than guessed there.
-      # Remove it once that is read.
-      - name: What fonts does this runner have
-        run: |
-          python - <<'PROBE'
-          import sys, PIL
-          from pathlib import Path
-          from PIL import ImageFont
-          print('[font-probe] python', sys.version.split()[0], sys.platform)
-          print('[font-probe] Pillow', PIL.__version__)
-          for root in (Path('/usr/share/fonts'), Path('/usr/local/share/fonts')):
-              if not root.is_dir():
-                  print('[font-probe]', root, ': absent'); continue
-              found = sorted(q for q in root.rglob('*')
-                             if q.suffix.lower() in ('.ttf', '.otf', '.ttc'))
-              print('[font-probe]', root, ':', len(found), 'files')
-              for q in found[:40]:
-                  print('[font-probe]    ', q)
-          for call, label in ((lambda: ImageFont.load_default(size=40),
-                               'load_default(size=40)'),
-                              (ImageFont.load_default, 'load_default()')):
-              try:
-                  font = call()
-                  name = font.getname() if hasattr(font, 'getname') else '?'
-                  print('[font-probe]', label, '->', type(font).__name__, name)
-              except Exception as error:
-                  print('[font-probe]', label, 'FAILED:',
-                        type(error).__name__, error)
-          PROBE
       - name: Run host-side contracts
         run: python -m unittest discover -s tests -v
       # The engine-side suite, which used to run only on a machine with the

@@ -18,9 +18,9 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
-FONT = Path("C:/Windows/Fonts/arialbd.ttf")
+from kit_font import resolve as resolve_font
 
 
 def main() -> None:
@@ -31,6 +31,8 @@ def main() -> None:
     parser.add_argument("--columns", type=int, default=3)
     parser.add_argument("--width", type=int, default=520)
     parser.add_argument("--caption", default="")
+    parser.add_argument("--font", default=None,
+                        help="path to a .ttf or .otf, or 'pillow'")
     parser.add_argument("--crop", default=None,
                         help="left,top,right,bottom as fractions")
     arguments = parser.parse_args()
@@ -79,7 +81,7 @@ def main() -> None:
     full = arguments.width * arguments.columns
     lines: list[str] = []
     if arguments.caption:
-        measure = ImageFont.truetype(str(FONT), 24)
+        measure, _ = resolve_font(arguments.font, 24)
         words, current = arguments.caption.split(), ""
         for word in words:
             trial = f"{current} {word}".strip()
@@ -94,8 +96,8 @@ def main() -> None:
     rows = (len(tiles) + arguments.columns - 1) // arguments.columns
     sheet = Image.new("RGB", (full, rows * (cell + label) + caption), (16, 18, 22))
     draw = ImageDraw.Draw(sheet)
-    font = ImageFont.truetype(str(FONT), 24)
-    small = ImageFont.truetype(str(FONT), 22)
+    font, font_used = resolve_font(arguments.font, 24)
+    small, _ = resolve_font(arguments.font, 22)
     for number, line in enumerate(lines):
         draw.text((14, 8 + 30 * number), line, font=font, fill=(236, 238, 242))
     for index, (number, image) in enumerate(tiles):
@@ -109,6 +111,7 @@ def main() -> None:
 
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     sheet.save(arguments.output)
+    print(f"[kit-clip-sheet] font {font_used}")
     print(f"[kit-clip-sheet] wrote {arguments.output} {sheet.size}")
     print("KIT CLIP SHEET OK", flush=True)
 

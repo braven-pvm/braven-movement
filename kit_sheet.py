@@ -13,9 +13,9 @@ import argparse
 import hashlib
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
-FONT = Path("C:/Windows/Fonts/arialbd.ttf")
+from kit_font import resolve as resolve_font
 
 
 def sha256(path: Path) -> str:
@@ -30,6 +30,8 @@ def main() -> None:
     parser.add_argument("--views", default="front,quarter,side")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--width", type=int, default=560)
+    parser.add_argument("--font", default=None,
+                        help="path to a .ttf or .otf, or 'pillow'")
     parser.add_argument("--crop", default=None,
                         help="left,top,right,bottom as fractions of the image")
     arguments = parser.parse_args()
@@ -70,7 +72,7 @@ def main() -> None:
         (16, 18, 22),
     )
     draw = ImageDraw.Draw(sheet)
-    font = ImageFont.truetype(str(FONT), 26)
+    font, font_used = resolve_font(arguments.font, 26)
     for row, ((label, _), line) in enumerate(zip(rows, tiles)):
         top = row * (cell_height + header)
         draw.text((14, top + 10), f"{label}  ({arguments.phase})", font=font,
@@ -82,6 +84,7 @@ def main() -> None:
 
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     sheet.save(arguments.output)
+    print(f"[kit-sheet] font {font_used}")
     print(f"[kit-sheet] wrote {arguments.output} {sheet.size}")
     print("KIT SHEET OK", flush=True)
 
