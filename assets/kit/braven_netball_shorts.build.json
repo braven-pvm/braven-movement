@@ -1,14 +1,14 @@
 {
   "instrument": "author_netball_dress.py",
-  "output": "braven_netball_dress.mhclo",
-  "outputSha256": "d8c681bedea25d7f841a23da3ed4503f3535243b78f9b7089415feb9094d4575",
-  "obj": "braven_netball_dress.obj",
-  "objSha256": "87d7bbbe5c4150960a8a336f70471ba39faf584302824346a1c7b8c21f5394fb",
+  "output": "braven_netball_shorts.mhclo",
+  "outputSha256": "937d9920fdbbfd89cce1e2ce45bb635d1451d7e2d064fe9d624cb33d21e3477d",
+  "obj": "braven_netball_shorts.obj",
+  "objSha256": "42d05e21ae1496a5dd27266649f4042f3e7fd0919a78c8149d37d309fa8a505e",
   "readsNoSkin": true,
   "derivedFrom": "MakeHuman hm08 basemesh helper-tights and helper-skirt (CC0), and nothing else",
-  "asset": "braven_netball_dress.mhclo",
-  "kitFile": "config/kit/netball_dress.v1.json",
-  "kitSha256": "37c3f08e5737f0db88da9fa2f3f061fb229e49adfa8e7ed607aea4dafaa91de4",
+  "asset": "braven_netball_shorts.mhclo",
+  "kitFile": "config/kit/netball_shorts.v1.json",
+  "kitSha256": "ad4ee3982692a0124d89d0f807ade9831fba54a5f1886f9099206e5c76a21604",
   "authoringConfig": "config/reference_catch.v1.json",
   "authoringConfigSha256": "8c317a6c3d6e52c924f19cb9e1677e8f6794a9c1eb2dc7c612dba27738a20178",
   "hashNote": "sha256 of the input with CRLF folded to LF",
@@ -23,57 +23,42 @@
     "neckRingTopZ": 1.4853,
     "chestFrontYAtScoop": -0.0917,
     "backYAtScoop": 0.0568,
-    "topCutZ": 1.4803
+    "topCutZ": 1.007
   },
   "parts": [
     {
       "part": "bodysuit",
-      "vertices": 1477,
-      "faces": 2800,
+      "vertices": 520,
+      "faces": 948,
       "faceSizes": [
         3
       ],
-      "zMinM": 0.79,
-      "zMaxM": 1.4425,
+      "zMinM": 0.6835,
+      "zMaxM": 1.0078,
       "looseVerticesRemoved": 0,
       "verticesPrunedToOneGroup": 0,
       "edge": {
-        "boundaryVertices": 160,
-        "cuttingPlanes": 12,
+        "boundaryVertices": 94,
+        "cuttingPlanes": 13,
         "originalEdgeExcludedAboveZ": null,
         "offEveryPlaneOver1mm": 0,
         "worstDistanceToACutMm": 0.0
       },
-      "facesDeletedByClassification": 2076
-    },
-    {
-      "part": "skirt",
-      "vertices": 252,
-      "faces": 432,
-      "faceSizes": [
-        3
-      ],
-      "zMinM": 0.78,
-      "zMaxM": 1.0202,
-      "looseVerticesRemoved": 0,
-      "verticesPrunedToOneGroup": 0,
-      "verticesHung": 246,
-      "axisXY": [
-        0.0,
-        -0.011
-      ],
-      "waistRingZ": 1.0202,
-      "edge": {
-        "boundaryVertices": 36,
-        "cuttingPlanes": 1,
-        "originalEdgeExcludedAboveZ": 0.8300000000000001,
-        "offEveryPlaneOver1mm": 0,
-        "worstDistanceToACutMm": 0.0
+      "facesDeletedByClassification": 3088,
+      "shorts": {
+        "easeM": 0.008,
+        "frontSpanM": 0.055,
+        "crotchTopZ": 0.86,
+        "maxForwardM": 0.012,
+        "verticesStoodOff": 520,
+        "verticesInTheFrontPanel": 84,
+        "largestForwardMoveMm": 12.0,
+        "meanForwardMoveMm": 8.5
       }
     }
   ],
-  "nBodysuitVertices": 1477,
-  "nSkirtVertices": 252,
+  "nBodysuitVertices": 520,
+  "nSkirtVertices": 0,
   "check": {
     "is_valid_object": true,
     "has_any_vertices": true,
@@ -89,8 +74,8 @@
   "stagesS": {
     "athleteS": 4.8,
     "cutsS": 0.18,
-    "checkMatchWriteS": 2.41,
-    "totalS": 7.39
+    "checkMatchWriteS": 1.77,
+    "totalS": 6.75
   },
   "blender": "4.5.12 LTS"
 }
