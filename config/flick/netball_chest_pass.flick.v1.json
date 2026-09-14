@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "movementId": "netball_chest_pass",
+  "author": "the character and animation lane",
+  "status": "PROPOSAL. Nothing in the engine or under spikes/movements reads this file.",
+  "shape": "Cosmetic, shape C, as ruled by Marius on 2026-09-11: the ball's speed stays authored and the flick sits on top of the solve.",
+  "measuredAtTip": "0353b76",
+  "measuredAt": "2026-09-14 14:12 SAST",
+  "measuredBy": "scripts/release_hand.py, the paper's own instrument",
+  "engineAsItStands": {
+    "releaseFrame": 76,
+    "wristDegreesOverLast8HeldFrames": [
+      133.79,
+      128.15
+    ],
+    "wristSpanHeldDegrees": 5.64,
+    "wristTravelInThe4FramesAfterReleaseDegrees": 23.11,
+    "fingerDegreesHeld": 119.96,
+    "fingerDegreesAfterRelease": 175.87,
+    "fingerSnapInOneFrameDegrees": 55.92,
+    "note": "The wrist barely moves while she holds the ball and then travels 23 degrees after it has gone. The fingers hold one angle through every contact frame and straighten 55.92 degrees in a single frame. The second of those is what a viewer reads as wrong."
+  },
+  "wristPitchDegrees": 18.0,
+  "wristPitchProvenance": "PROPOSED BY THIS LANE. NOT SOURCED. The paper marks the wrist end angle 'NOT SOURCED. A coach must set it', and this is not a source: it is a defensible starting point. Its MAGNITUDE is taken from the engine's own solve rather than from taste \u2014 the wrist already travels 23.11 degrees in the four frames after release, where a viewer cannot use it, so this brings 18 of those degrees forward into the frames where the ball is still in the hand. It does not exceed a range the engine already visits.",
+  "flickWindowFrames": 8,
+  "flickWindowProvenance": "The last 8 held frames, 68 to 75 inclusive at 60 fps, which is 133 ms. The paper reads the window off 30 fps footage and doubles it for the engine's 60; 8 is the window its own section 1 table uses to report the wrist span, so the flick occupies exactly the frames the paper measures.",
+  "fingerFlexionAddedDegrees": 0.0,
+  "fingerFlexionProvenance": "DELIBERATELY ZERO, and this is the one number with a measured reason. The paper's model flexes the fingers INTO the ball during the window. Measured at this tip, the held frames sit within 0.37 mm of the ball surface (4 vertices at the drive checkpoint), so every degree of added flexion is spent out of a 0.37 mm budget and buys intersection a coach would see. The visible fault is the one-frame snap, not a shortage of grip, so this flick spends nothing here. It does NOT fix the snap either: that half was withdrawn as unreachable from outside the engine, and followThroughProvenance records why. Raise this number only with the intersection table beside it.",
+  "axisNote": "The pitch rotates the frame's own fingerDirection and palmNormal about their cross product, which is the wrist's flexion axis in the hand's own frame. No world axis is chosen, and no axis is guessed: both vectors are read from the job.",
+  "whatItDoesNotDo": [
+    "It does not change the ball's speed, which is authored by the play.",
+    "It does not write to spikes/movements, which is gate 4.",
+    "It does not add a clip channel; the contract lane owns that and it waits on this data existing.",
+    "It does not touch the other three passes."
+  ],
+  "followThroughFrames": 0,
+  "followThroughProvenance": "The paper's own name for this quantity. WITHDRAWN IN THIS VERSION, and set to 0: the follow-through cannot be authored from outside the engine. `pose_articulated_hand` sets every knuckle to zero flexion and returns early when no ball radius is passed, so the one-frame straightening IS that early return. Keeping the grip solve running against the receding ball was built and MEASURED to do the opposite: the fingers claw to 73 degrees against a held 114.71, because a knuckle that cannot reach is left at the furthest the joint permits. Spreading it needs one new optional knuckle argument in an engine file, which is a separate unit.",
+  "wristFromDegrees": 141.53,
+  "wristToDegrees": 118.96,
+  "wristAnglesProvenance": "The paper's own names, and both are MEASURED at 0353b76 rather than chosen: 141.53 is where the engine's own wrist already sits at the window's start, and 118.96 is where it lands once the pitch is applied. Read them as a result, not as a target. NOTE THAT THE PITCH IS NOT THE ANGLE CHANGE: 18 degrees about the flexion axis moves the elbow-wrist-knuckle angle by 22.57, because the rotation is in three dimensions and the angle is a projection of it. Quoting the pitch as if it were the wrist angle would be the same class of error as spending a number in a regime it was not measured in.",
+  "fingerFromDegrees": 116.21,
+  "fingerToDegrees": 87.89,
+  "fingerAnglesProvenance": "The paper's own names, and both MEASURED rather than authored. Nothing in this flick sets a finger angle: `fingerFlexionAddedDegrees` is zero. These are what the grip solve produces once the wrist is pitched, because pushing the palm at the ball makes the fingers close further ONTO its surface. The intersection stays at 0 vertices and 0.00 mm at every frame, which is the paper's section 5 worry answered by measurement.",
+  "theOtherSevenNames": "docs/RELEASE_HAND_PAPER.md names eleven quantities for the release hand and NONE of them exists in code in either repository; the register lane surveyed that on 14 Sep. This file authors four of them and deliberately leaves the rest unwritten, because an unauthored name is honest and a guessed one looks sourced. The paper DESCRIBES a model rather than documenting one, which is why none of its numbers has a source."
+}

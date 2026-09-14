@@ -509,6 +509,64 @@ frame, so a finger that flexes stays on the surface by construction.
 that if the flick is built on option A it must carry a guard on the digit
 intersection, because it will deepen the finding Chuck already recorded.
 
+> **CORRECTED 2026-09-14 BY THE CHARACTER AND ANIMATION LANE, at `0353b76`.**
+> The paragraph above is wrong about WHERE the flick and the encoding meet, and
+> the argument it makes against building a flick on option A does not hold.
+>
+> **What it argued.** That a flick "flexes the fingers into the ball in the
+> frames before release, so under option A the digits are driven further inside
+> at exactly the frames the flick occupies", and therefore that a flick on
+> option A deepens the recorded intersection.
+>
+> **What the measurement shows.** `scripts/wrist_release_options.py` reports
+> option A at the chest pass release frame as 188 vertices inside at
+> −20.25 mm, against the 190 at −20.27 this paper recorded from `1c3d9d7`: two
+> vertices and 0.02 mm apart, so that figure is current and is not drifting.
+> But **that instrument measures only unheld frames** — its loop is
+> `if phase["ball"].get("holding") or index == 0: continue` — and **the frames a
+> flick occupies are HELD frames.** So the 188 was never evidence about them.
+> Measured with the same script's own `pose` and `report` across every phase:
+>
+> | chest pass | frame | holding | vertices inside | deepest |
+> |---|---|---|---|---|
+> | ready | 0 | yes | 0 | 0.00 mm |
+> | step | 32 | yes | 3 | −0.17 mm |
+> | drive | 59 | yes | 4 | −0.37 mm |
+> | release | 76 | **no** | **188** | **−20.25 mm** |
+> | follow through | 95 | no | 0 | 0.00 mm |
+>
+> **During contact the hand is on the surface, not inside it.** The 20.25 mm
+> belongs to ONE frame and to the wrist formula switching from ball-relative to
+> shoulder-relative when `holding` goes false, and it is gone again by
+> follow-through.
+>
+> **So the coupling is one frame wide, not the whole window.** Option A and
+> option B place the wrist identically on every held frame, because both place
+> it relative to the ball while the ball is held. They differ only AT the
+> release frame. The flick therefore touches that decision at one frame and
+> only through `fingerToDegrees`, the finger angle at the release frame itself.
+>
+> **And the constraint that follows is a different one.** Not "do not deepen
+> 20 mm", but **"do not spend the 0.37 mm the held frames hold"** — a budget
+> the flick's own angles control and the table above measures.
+>
+> **Built and measured, it spends none of it.** `scripts/author_wrist_flick.py`
+> with `config/flick/netball_chest_pass.flick.v1.json` pitches the wrist
+> 18 degrees across the last eight held frames and reports 0 vertices inside
+> and 0.00 mm at every one of fifteen frames, shipped and flicked alike. The
+> extra finger flexion the pitch produces, 116.21 to 87.89 degrees, is absorbed
+> by the grip solve closing the fingers ONTO the surface rather than through it.
+>
+> **One more correction, to section 4 rather than this one.** The model's
+> `followThroughFrames` cannot be authored from outside the engine.
+> `pose_articulated_hand` sets every knuckle to zero flexion and returns early
+> when no ball radius is passed, so the one-frame straightening IS that early
+> return. Letting the grip solve run on against the receding ball was built and
+> does the opposite: the fingers claw to 73 degrees against a held 114.71,
+> because a knuckle that cannot reach is left "at the furthest the joint
+> permits rather than straight". Spreading it needs one new optional knuckle
+> argument in an engine file, and that is a separate unit.
+
 ## 6. What the receipt would read, and what a coach would grade
 
 **Two new measures**, both in the units they are measured in, both declared:
