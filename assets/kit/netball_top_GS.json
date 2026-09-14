@@ -1,0 +1,52 @@
+{
+  "instrument": "kit_paint.py",
+  "body": "out/kit/body.npz",
+  "bodySha256": "47aed93d7752b1687d1803cbf40d8ef4b05341157f73b86a3c9cd7204371c1e1",
+  "readsNoSkin": true,
+  "textureSize": 2048,
+  "distinctOpaqueColours": 326,
+  "output": "netball_top_GS.png",
+  "outputSha256": "7539eaef3051c068c3ce5a8873545d00b65c93a3d9c5d0d116f9cd8b6fac05fa",
+  "font": "pillow:Aileron Regular",
+  "upAxis": 2,
+  "depthAxis": 1,
+  "acrossAxis": 0,
+  "frontSign": 1.0,
+  "heightM": 1.6790217116013082,
+  "levelsM": {
+    "neck": 1.3902299817224337,
+    "hem": 0.7470135542250887,
+    "sleeve": 1.2760565053335449
+  },
+  "sleeveRadiusM": 0.17,
+  "boundaryPixels": 4720,
+  "boundaryOverRootArea": 4.752513859694159,
+  "fractions": {
+    "neck": 0.828,
+    "hem": 0.44491,
+    "sleeve": 0.76,
+    "bibTop": 0.79,
+    "bibBottom": 0.64
+  },
+  "bibHalfWidthM": 0.125,
+  "bibFacing": 0.15,
+  "bibCornerPower": 4.0,
+  "bibBorderFraction": 0.1,
+  "coloursLinear": {
+    "kit": "0.000,0.195,0.074",
+    "bib": "0.000,0.195,0.074",
+    "letters": "1.000,0.468,0.006"
+  },
+  "position": "GS",
+  "edgePixels": 1.6,
+  "garmentPixels": 986364,
+  "bibPixels": 272112,
+  "flankPixels": null,
+  "waistFraction": null,
+  "shortsPixels": null,
+  "flankFacing": null,
+  "hemRiseM": -0.0684,
+  "strapWidthM": null,
+  "coveredPixels": 2615773,
+  "secondsToPaint": 2.294846296310425
+}

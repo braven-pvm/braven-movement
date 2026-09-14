@@ -40,6 +40,23 @@ def as_bytes(linear: tuple[float, float, float]) -> tuple[int, int, int]:
     return tuple(int(round(255 * linear_to_srgb(c))) for c in linear)
 
 
+def portable(path: Path, *, basename: bool = False) -> str:
+    r"""A path a sidecar may carry to another machine.
+
+    A committed record naming `C:/Users/...` or `out\kit\body.npz` describes a
+    file ONE MACHINE had. `tests/test_kit_in_the_pipeline.py` refuses a drive
+    letter, a `/home/` prefix and a backslash in any sidecar under `assets/kit/`,
+    and it caught this the moment the layer moved into that folder.
+    """
+    path = Path(path)
+    if basename:
+        return path.name
+    try:
+        return path.resolve().relative_to(Path(__file__).resolve().parent).as_posix()
+    except ValueError:
+        return path.name
+
+
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -618,12 +635,12 @@ def main() -> None:
 
     receipt = {
         "instrument": "kit_paint.py",
-        "body": str(arguments.body),
+        "body": portable(arguments.body),
         "bodySha256": sha256(arguments.body),
         "readsNoSkin": True,
         "textureSize": size,
         "distinctOpaqueColours": int(palette.shape[0]),
-        "output": str(arguments.output),
+        "output": portable(arguments.output, basename=True),
         "outputSha256": sha256(arguments.output),
         "font": font_used,
         "upAxis": up,
