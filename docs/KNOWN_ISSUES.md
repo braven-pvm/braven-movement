@@ -535,6 +535,83 @@ coach-facing fact — the engine may not be able to fail the landing's defining
 cue — so it goes to the content lane's agenda for a coach's view, which the
 orchestrator carries.
 
+### `footHeightGapCm` cannot express flight, and the Blender render has none to show
+
+Measured 2026-09-14 on `320bd01` by the rendering lane. The instrument is
+`scripts/flight_probe.py`, committed with this row.
+
+**THIS IS NOT THE ROW ABOVE RESTATED.** That row is about PRECISION: the span
+sits under the measure's own noise floor, so on a filmed athlete it would be
+lost. This row is about what the quantity CAN SEE, and it holds on a solved
+skeleton where there is no noise at all.
+
+`footHeightGapCm` is the difference BETWEEN the two feet. In a two-foot landing
+both feet rise together, so the gap reads the same whether she is planted or in
+the air. The solve puts her **15.80 cm above the rest ankle at the frame named
+`flight`** (`netball_double_foot_landing`, frame 54, against 0.01 at
+`approach`, 0.01 at `land` and 0.00 at `absorb`), and the three checkpoints read
+`within` at `flight` exactly as they do at the planted phases. **The drill could
+lose its flight entirely and no checkpoint in the library would move.**
+
+That is a PARTIAL answer to the row above, and only a partial one: those three
+checkpoints cannot fail *for want of flight*, under any lever, because no lever
+reaches a quantity they do not carry. Whether they can fail for some other
+reason is still the unrun sweep, and this row does not touch it.
+
+**AND THERE IS NOTHING IN THE PICTURE TO GRADE EITHER.** `pose_stance`
+(`blender_movement_render.py:457`) translates the pelvis on every phase so the
+lower foot sits on the floor the athlete was built standing on. It has no
+condition. Measured out of the render rather than out of the solve — silhouette
+renders, floor hidden, film transparent, lowest opaque pixel:
+
+| phase | solve, above the rest ankle | render, lowest opaque row |
+|---|---|---|
+| approach | 0.01 cm | 79 |
+| flight | **15.80 cm** | 78 |
+| land | 0.01 cm | 78 |
+| absorb | 0.00 cm | 77 |
+
+**Two pixels of span across four phases, where the solve has 15.79 cm of
+travel.** At this view's measured scale that is 0.33 cm against 96 px of rise
+that never arrives.
+
+**THE PROBE WAS SHOWN ABLE TO REPORT A RISE BEFORE ITS FLAT READING WAS
+BELIEVED.** A new instrument that reports "flat" on the day it is written has
+not been tested, because "flat" is what a broken one reports too. `--lift-cm`
+translates the posed rig by a known amount and the probe must read it back:
+10 cm gave 61 px and 20 cm gave 122 px, **6.1 px per cm with zero spread across
+all eight lifted readings**. The camera's own geometry predicts 0.1709 cm per
+pixel against the measured 0.1639; the 4.1 % is the probe's one assumption,
+her depth, and the lift calibration is what retires it.
+
+**WHAT THIS ROW DOES NOT CLAIM.** It does not say the pin is a defect — it is
+correct for every planted phase, which is every graded phase in the library,
+and it exists because the engine has no floor constraint and drives the ball of
+the foot through the court without it. It does not price a fix. And every
+number here is a reading about what the pipeline can CARRY and SHOW; none of
+them is a graded lower-body value and none may be quoted as one.
+
+**Owner: the rendering lane**, which found it and holds the instrument.
+
+**The engine already carries the signal a conditional stance would need, and
+the exporter discards it.** Stated exactly, because the three names are not in
+the same state:
+
+- `MotionTrack.airborne_phases()` (`spikes/motion_track.py:241`), docstring
+  "Return the phases where both feet have left the ground" — **no production
+  consumer.** Its only other reference in the tree is
+  `spikes/test_motion_track.py:296`.
+- `FootPlacement.airborne` (`spikes/motion_track.py:140`), `up > 0.02` — read
+  only by `airborne_phases()` above, so it inherits that state.
+- `PLANTED_CM` (`spikes/movement_engine.py:67`) — **this one IS used**, at
+  `spikes/movement_engine.py:374`, where it decides whether the ball of the
+  foot is pinned flat. It is not idle and must not be described as such.
+
+So the gap is not that the engine cannot tell planted from airborne. It can,
+and it says so in a named predicate. `_stance`
+(`spikes/export_blender_job.py:295`) writes only `(ankle - pelvis) / leg`, so
+no height crosses into the job, and the renderer then re-derives one.
+
 ### Four more sites — all four fixed on 2026-09-07, the fourth twice
 
 **They are kept here rather than deleted**, because the row's value is the
