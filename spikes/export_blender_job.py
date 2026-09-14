@@ -34,6 +34,7 @@ from ball_track import has_ball  # noqa: E402
 from movement_definition import load as load_definition  # noqa: E402
 from athlete import minmax_limits  # noqa: E402
 from movement_engine import (  # noqa: E402
+    PLANTED_CM,
     definition_path,
     joint_positions,
     library,
@@ -278,8 +279,33 @@ def rest_torso(rest_points, index) -> float:
     return float(np.linalg.norm(middle - pelvis))
 
 
-def _stance(points, index) -> dict:
-    """The stance, in leg lengths, measured from the pelvis."""
+def _stance(points, index, rest_points=None) -> dict:
+    """The stance, in leg lengths, measured from the pelvis.
+
+    AND HOW FAR OFF THE GROUND SHE IS, which this did not carry until
+    2026-09-14 and which cost the library its only jump. Every value here is
+    relative to the PELVIS, so it is translation-invariant: lift the whole
+    solved skeleton 40 cm and `ankleFromPelvisInLegs` does not change by a
+    digit. The renderer therefore had nothing to place her height from and
+    invented one, planting her lower foot on the floor on every frame of every
+    drill. `netball_double_foot_landing` has a phase named `flight` and the
+    render could not leave the ground in it.
+
+    `ankleAboveGroundInLegs` is the missing quantity and it is measured from
+    the engine's own datum, `rest_points[index["l_foot"]]`, the rest-pose ANKLE.
+    That is the zero `movement_engine.py:352` places feet against, so a planted
+    foot reads 0.0 here by construction and an old job and a new one agree
+    exactly where she is planted.
+
+    IT IS NOT THE COURT, and the two must not be added. The rest ankle sits
+    7.3886 cm above world y=0, and `docs/KNOWN_ISSUES.md` records that as a
+    deliberate hazard: `ballHeightCm` measures from the court and the foot
+    heights from this ankle. A third zero is what that row exists to prevent.
+
+    `rest_points` is optional ONLY so that a caller written before this field
+    still runs. It returns the old shape then, and a job without the field
+    renders exactly as it did.
+    """
     pelvis = to_blender(points[index["root"]])
     legs = []
     for side in ("l", "r"):
@@ -293,7 +319,28 @@ def _stance(points, index) -> dict:
     for side in ("l", "r"):
         ankle = to_blender(points[index[f"{side}_foot"]])
         ankles[side] = [round(float(v), 6) for v in (ankle - pelvis) / leg]
-    return {"ankleFromPelvisInLegs": ankles}
+    stance = {"ankleFromPelvisInLegs": ankles}
+    if rest_points is None:
+        return stance
+
+    ground = float(to_blender(rest_points[index["l_foot"]])[2])
+    above = {}
+    for side in ("l", "r"):
+        gap = float(to_blender(points[index[f"{side}_foot"]])[2]) - ground
+        # A PLANTED FOOT MUST READ EXACTLY ZERO, and the threshold is the
+        # engine's own, not one chosen here. `PLANTED_CM` is what
+        # `movement_engine.py:374` already grades by: within it, the ball of
+        # the foot is pinned flat and the foot IS planted.
+        #
+        # Without this the solve's planted frames export 0.000086 leg lengths
+        # rather than 0.0 -- 0.007 cm, which is 0.04 of a pixel. That is
+        # physically nothing and it is not visually nothing: a sub-pixel shift
+        # re-antialiases every edge, and it moved about 1000 pixels per view on
+        # all three planted phases of `netball_double_foot_landing`. Snapping
+        # here is what lets a planted figure re-render pixel for pixel.
+        above[side] = 0.0 if gap * 100.0 <= PLANTED_CM else round(gap / leg, 6)
+    stance["ankleAboveGroundInLegs"] = above
+    return stance
 
 
 def _grip(points, index, centre, radius: float, arm: float, sides) -> dict:
@@ -346,7 +393,7 @@ def phase_job(result, index, frame: int, method, rest_points) -> dict:
         "frame": int(frame),
         "arms": {side: _arm(points, index, side) for side in ("l", "r")},
         "hands": {side: _hand(points, index, side) for side in ("l", "r")},
-        "stance": _stance(points, index),
+        "stance": _stance(points, index, rest_points),
         # THE ANCHOR `fromShouldersInArms` IS MEASURED FROM, which this job did
         # not transmit until 2026-09-04. A consumer was told where the ball sits
         # relative to the shoulder midpoint and never told where that midpoint

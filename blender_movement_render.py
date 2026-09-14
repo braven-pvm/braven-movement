@@ -455,13 +455,35 @@ def pose_girdle(rig, phase: dict, rest: dict) -> dict:
 
 
 def pose_stance(rig, stance: dict, foot_baseline: dict) -> dict:
-    """Place the feet from the job, and keep them flat on the floor.
+    """Place the feet from the job, at the height the job gives them.
 
     Flat is not a detail. The engine has no floor constraint and holds the
     ankle 48 to 62 degrees plantarflexed on every drill, which drives the ball
     of the foot through the floor. Restoring the foot's own world matrix after
     the leg is aimed is how the reference generator keeps it flat, and it is
     what stops that defect reaching the page.
+
+    UNTIL 2026-09-14 THIS ALSO PUT HER ON THE FLOOR ON EVERY FRAME, and that
+    was not a detail either. `ankleFromPelvisInLegs` is measured from the
+    pelvis, so it carries no height at all, and this function had nothing to
+    place her from. It planted the lower foot on the rig's rest floor and the
+    athlete could not leave the ground in any render.
+    `netball_double_foot_landing` has a phase named `flight` where the solve
+    puts her 15.80 cm up, and the render's lowest pixel moved TWO PIXELS across
+    the whole arc -- measured with `scripts/flight_probe.py`, whose calibration
+    is 6.1 px per cm, so the missing rise was 96 px.
+
+    `ankleAboveGroundInLegs` is now read when the job carries it. THE SIDE IS
+    CHOSEN THE SAME WAY IT ALWAYS WAS -- the foot lower relative to the pelvis
+    -- so a job without the field reaches the identical arithmetic and every
+    planted figure already on disk re-renders byte for byte. A planted foot
+    reads 0.0 in that field by construction, because the exporter measures it
+    from the same rest ankle this function lands on.
+
+    ONE FOOT DOWN IS STILL ONE FOOT DOWN. Where one foot is lifted and the
+    other is planted, the planted one is the lower one, its height reads 0.0,
+    and she does not rise. Only a frame with BOTH feet off the ground moves
+    her, which is what a jump is.
     """
     leg = sum(
         bone_chain_length(rig, f"thigh_{side}", f"calf_{side}", f"foot_{side}")
@@ -472,14 +494,16 @@ def pose_stance(rig, stance: dict, foot_baseline: dict) -> dict:
         for side in ("l", "r")
     }
 
-    # Put the lower foot on the floor the athlete was built standing on.
+    # The floor the athlete was built standing on, and how far above it the job
+    # puts her lower foot. THE SIDE IS PICKED BEFORE THE HEIGHT IS READ, by the
+    # same `min` this line has always used, so that a job with no height field
+    # computes `floor - min(wanted.z)` exactly as before.
+    lower = min(("l", "r"), key=lambda side: wanted[side].z)
+    above = stance.get("ankleAboveGroundInLegs")
+    lift = above[lower] * leg if above else 0.0
     floor = min(world_head(rig, f"foot_{side}").z for side in ("l", "r"))
     pelvis = world_head(rig, "pelvis")
-    target = Vector((
-        pelvis.x,
-        pelvis.y,
-        floor - min(wanted[side].z for side in ("l", "r")),
-    ))
+    target = Vector((pelvis.x, pelvis.y, floor + lift - wanted[lower].z))
     translate_bone_world(rig, "pelvis", target - pelvis)
 
     pelvis = world_head(rig, "pelvis")
@@ -497,7 +521,25 @@ def pose_stance(rig, stance: dict, foot_baseline: dict) -> dict:
         )
         rotate_bone_toward(rig, thigh, calf, knee)
         rotate_bone_toward(rig, calf, foot, ankle)
-        rig.pose.bones[foot].matrix = foot_baseline[foot]
+        # KEEP THE REST ORIENTATION, NOT THE REST POSITION. This line used to
+        # assign the whole baseline matrix, and a world matrix carries a
+        # TRANSLATION as well as a rotation. So the second thing pinning her to
+        # the floor was here, not in the pelvis: whatever height the leg had
+        # just been aimed at, the foot's head was dragged back to where it sat
+        # at rest, on every frame of every drill.
+        #
+        # IT HID THE FIRST FIX COMPLETELY. With `ankleAboveGroundInLegs` read
+        # and the pelvis correctly raised 9.3 cm at `flight`, the feet still
+        # measured 0.073583 -- the rest height, to six decimals, identical to
+        # `approach`. The pelvis rose and the legs simply stretched.
+        #
+        # The flatness is what the restore was for, and flatness is rotation.
+        # Taking the baseline's rotation and the aimed translation keeps the
+        # defect it was written to fix -- 48 to 62 degrees of plantarflexion
+        # driving the toe through the floor -- and drops the re-pinning.
+        flat = foot_baseline[foot].copy()
+        flat.translation = rig.pose.bones[foot].matrix.translation
+        rig.pose.bones[foot].matrix = flat
         bpy.context.view_layer.update()
         placed[side] = list(world_head(rig, foot))
     return placed
