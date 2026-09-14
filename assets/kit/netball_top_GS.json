@@ -6,7 +6,7 @@
   "textureSize": 2048,
   "distinctOpaqueColours": 326,
   "output": "netball_top_GS.png",
-  "outputSha256": "7539eaef3051c068c3ce5a8873545d00b65c93a3d9c5d0d116f9cd8b6fac05fa",
+  "outputSha256": "ab8cc6585ac810fbfe70ba87af1b5705e80eaef43ae48a845d8ca63fd9d86b56",
   "font": "pillow:Aileron Regular",
   "upAxis": 2,
   "depthAxis": 1,
@@ -42,11 +42,14 @@
   "garmentPixels": 986364,
   "bibPixels": 272112,
   "flankPixels": null,
+  "waistbandFraction": 0.59976,
+  "waistbandHeightM": 0.03,
+  "waistbandPixels": 32426,
   "waistFraction": null,
   "shortsPixels": null,
   "flankFacing": null,
   "hemRiseM": -0.0684,
   "strapWidthM": null,
   "coveredPixels": 2615773,
-  "secondsToPaint": 2.294846296310425
+  "secondsToPaint": 2.326416492462158
 }

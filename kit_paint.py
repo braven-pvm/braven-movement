@@ -150,6 +150,23 @@ def main() -> None:
     parser.add_argument("--shorts-colour", default=None,
                         help="linear RGB below the waist; required with "
                              "--waist-fraction")
+    # A WAISTBAND IS WHAT A COLOUR BREAK BECOMES WHEN BOTH HALVES ARE ONE
+    # COLOUR. The waist break made the kit read as a top and shorts; a single
+    # ruled colour took that back and the figure read as one piece again. A band
+    # restores it without a second body colour, and it is where the break
+    # BELONGS: shorts have a waistband, and that is why the eye reads it as two
+    # garments rather than as a stripe.
+    #
+    # Its height is in METRES because it has to be read at a framing, not at a
+    # fraction: the manual's front view samples 2.04 mm per image pixel, so a
+    # 30 mm band is about 15 pixels against the bib trim's 6.
+    parser.add_argument("--waistband-fraction", type=float, default=None,
+                        help="where the band's BOTTOM sits, as a fraction of "
+                             "her height; omit for no band")
+    parser.add_argument("--waistband-height", type=float, default=0.030,
+                        help="metres, top minus bottom")
+    parser.add_argument("--waistband-colour", default=None,
+                        help="linear RGB; the letter colour when not given")
     # A PANEL DOWN THE FLANK. Cut exactly as the bib is, by which way the
     # surface faces, on the side of the body instead of the front.
     #
@@ -492,6 +509,31 @@ def main() -> None:
             f"sRGB {shorts.astype(int).tolist()}"
         )
 
+    # THE WAISTBAND, a level band and therefore continuous all the way round.
+    waistband_used = None
+    if arguments.waistband_fraction is not None:
+        bottom = level(arguments.waistband_fraction)
+        top = bottom + arguments.waistband_height
+        band = garment & (tall >= bottom) & (tall < top)
+        if band.sum() < 0.001 * covered.sum():
+            raise SystemExit(
+                f"[kit-paint] the waistband is empty: {int(band.sum())} pixels "
+                f"of {int(covered.sum())} covered, between {bottom:.3f} m and "
+                f"{top:.3f} m. Check --waistband-fraction."
+            )
+        band_colour = colour_of(
+            arguments.waistband_colour if arguments.waistband_colour is not None
+            else arguments.letter_colour,
+            "waistband-colour",
+        )
+        band_alpha = smooth(band, arguments.edge_pixels)[:, :, None]
+        painted = painted * (1 - band_alpha) + band_colour[None, None, :] * band_alpha
+        waistband_used = int(band.sum())
+        print(
+            f"[kit-paint] waistband {waistband_used} pixels, {bottom:.3f} m to "
+            f"{top:.3f} m ({arguments.waistband_height * 1000:.0f} mm)"
+        )
+
     # THE FLANK PANEL, CUT THE WAY THE BIB IS. Every reference kit has a panel
     # down the side, and a panel down the side is most of what makes a
     # photograph read as a sports kit rather than a unitard: it gives the figure
@@ -673,6 +715,9 @@ def main() -> None:
         "garmentPixels": int(garment.sum()),
         "bibPixels": bib_used,
         "flankPixels": flank_used,
+        "waistbandFraction": arguments.waistband_fraction,
+        "waistbandHeightM": arguments.waistband_height,
+        "waistbandPixels": waistband_used,
         "waistFraction": arguments.waist_fraction,
         "shortsPixels": waist_used,
         "flankFacing": arguments.flank_facing,

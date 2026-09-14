@@ -339,6 +339,45 @@ class PaintedKit(unittest.TestCase):
         self.assertNotEqual(finished.returncode, 0)
         self.assertIn("needs --shorts-colour", finished.stdout + finished.stderr)
 
+    def test_the_waistband_is_a_band_and_not_a_half_plane(self):
+        """A band has a top as well as a bottom.
+
+        The colour break below paints EVERYTHING under a level. A waistband
+        must not: this asks for one 0.16 m tall on a 1.6 m tube and reads the
+        colour above it, inside it and below it. A rule that forgot its top
+        edge would paint the whole lower body and still produce a band where
+        the band was asked for, so checking inside alone would pass.
+        """
+        pixels, receipt, output = self.layer(
+            "waistband", "--no-bib", "--hem-fraction", "0.20",
+            "--neck-fraction", "0.80", "--waistband-fraction", "0.50",
+            "--waistband-height", "0.16",
+            "--kit-colour", "0.9,0.1,0.1", "--waistband-colour", "0.1,0.1,0.9",
+        )
+        self.assertEqual(receipt["waistbandFraction"], 0.50)
+        self.assertEqual(receipt["waistbandHeightM"], 0.16)
+        self.assertGreater(receipt["waistbandPixels"], 0)
+        self.assertIn("waistband", output)
+
+        def row_of(fraction: float) -> int:
+            return int(round((1.0 - fraction) * (SIZE - 1)))
+
+        column = SIZE // 2
+        # 0.16 m on a 1.6 m tube is 0.10 of its height, so the band runs from
+        # 0.50 to 0.60 and 0.55 is inside it.
+        above = pixels[row_of(0.70), column]
+        inside = pixels[row_of(0.55), column]
+        below = pixels[row_of(0.35), column]
+        for name, sample in (("above", above), ("inside", inside),
+                             ("below", below)):
+            self.assertGreater(sample[3], 200, f"nothing painted {name}")
+        self.assertGreater(int(inside[2]), int(inside[0]), "the band is not blue")
+        self.assertGreater(int(above[0]), int(above[2]), "above the band is not red")
+        self.assertGreater(
+            int(below[0]), int(below[2]),
+            "BELOW the band is not red, so the band has no top edge",
+        )
+
     def test_an_empty_garment_is_refused(self):
         """A hem above the neckline and a sleeve above her head paint nothing.
 
@@ -384,7 +423,8 @@ class PaintedKit(unittest.TestCase):
                 "flankFacing", "flankPixels", "hemRiseM", "position",
                 "readsNoSkin", "secondsToPaint", "shortsPixels",
                 "sleeveRadiusM", "strapWidthM", "textureSize", "upAxis",
-                "waistFraction",
+                "waistFraction", "waistbandFraction", "waistbandHeightM",
+                "waistbandPixels",
             },
         )
         self.assertEqual(
