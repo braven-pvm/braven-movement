@@ -728,6 +728,24 @@ it. The same mistake is available to every proposal below.
 
 ## 4. `generatedFrom`: a clip cannot be traced to the build a coach graded
 
+> **ANSWERED 2026-09-14, AND THE SHAPE PROPOSED BELOW WAS NOT THE SHAPE TAKEN.**
+> The field exists now, and `docs/TACTICS_CLIP_CONTRACT.md` section 4a is the
+> authority on it. The proposal further down this section is kept exactly as it
+> was written, because the reasoning is the reason the field exists at all and
+> the disagreement is only about its shape.
+>
+> **What changed: `commit` and `treeWasClean` rather than `engineCommit`, no
+> inner `movementId`, and no `baseline` path.** The reasons are in section 4a.
+> The short one is that a bare `engineCommit` drops `treeWasClean`, so a clip
+> built from a dirty tree would name a build that never existed.
+>
+> **The lane that wrote this section had no opportunity to answer**: its session
+> closed while the change was being written, and the ruling was made in its
+> absence. Reopen it if the reasoning here was better.
+>
+> **No clip in production carries the field yet.** Movement writes it; the
+> shipped clip predates it and the Tactics allowlist does not copy it.
+
 ### The gap
 
 A clip carries `movementId`, `skill` and `graded`. It carries **no engine

@@ -389,3 +389,53 @@ def moment_frame(clip: dict) -> int:
             f"was built before {field} existed."
         )
     return frame
+
+
+def refuse_unstamped(clip: dict) -> None:
+    """Refuse a clip that cannot say which build made it.
+
+    CALLED BEFORE THE FILE IS WRITTEN, rather than discovered missing by
+    whoever reads the clip months later. `blender_movement_render.py` guards a
+    receipt the same way and for the same stated reason, so this is the
+    established shape here and not a new one.
+
+    WHY A CLIP NEEDS THIS AT ALL. Until 2026-09-14 a clip carried `movementId`,
+    `skill` and `graded` and no build. The last time anybody asked which build
+    the live clips came from, the answer had to be reconstructed from a commit
+    message in the OTHER repository. A commit message is not provenance: it is
+    not on the artefact, it does not survive a copy, and a consumer holding the
+    file cannot read it. Comparability here is per build, so a coach's marks
+    are scored against the build she graded.
+
+    **A DIRTY TREE IS A NOTE AND NOT A REFUSAL**, which is also the receipt's
+    behaviour. Refusing would stop every lane exporting for most of a working
+    day, and the stamp records the fact anyway: `treeWasClean` false, with a
+    digest of the tracked changes and the paths of whatever a digest misses.
+    The caller prints it out loud so it is not only in the file.
+
+    THIS LIVES HERE AND NOT IN THE EXPORTER because `export_tactics_clip`
+    imports `movement_engine`, which imports `pymomentum`. That module cannot
+    be imported on a machine without the solver, which includes the hosted
+    runner, so a guard written there is a guard no runner can execute.
+    """
+    name = clip.get("clipId")
+    stamp = clip.get("generatedFrom")
+    if not isinstance(stamp, dict):
+        raise ValueError(
+            f"REFUSED: {name} carries no `generatedFrom`. A clip that cannot "
+            "name its build cannot be scored against the build a coach graded."
+        )
+    for field in ("commit", "treeWasClean"):
+        if field not in stamp:
+            raise ValueError(
+                f"REFUSED: {name}'s `generatedFrom` has no `{field}`. A commit "
+                "named from a dirty tree names a build that never existed, so "
+                "the PAIR is what makes the stamp worth reading and either one "
+                "alone is not."
+            )
+    if stamp["commit"] is None:
+        raise ValueError(
+            f"REFUSED: {name}'s `generatedFrom.commit` is null. That is what "
+            "`build_stamp` writes when git could not be read, and a provenance "
+            "field that says nothing still reads as provenance."
+        )
