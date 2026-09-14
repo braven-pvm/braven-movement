@@ -589,6 +589,65 @@ is what converts it from a silent drawing error into a red build.
 The truncation fact and the proposal below both stand. The ordering argument
 does not.
 
+### RULED 11 Sep: the chest pass. And it cannot be recorded in the table yet
+
+**Marius's word, put to him with the codebase read first: "chest pass".** So the
+precondition named above is met. `DEFAULT_TECHNIQUE` should gain
+`'pass.netball': 'pass.netball.chest-pass'` at `braven-tactics`
+`src/engine/clips.ts`.
+
+**IT IS NOT THERE, AND ADDING IT TODAY TURNS A GREEN SUITE RED.** Measured on
+`braven-tactics` `origin/main` at `421dbe2`, read 06:33Z on 14 Sep, with the
+whole run redirected to a file and the exit code read from the process:
+
+| | result |
+|---|---|
+| `vitest run src/engine/techniqueSet.test.ts`, unchanged | exit 0, **27 passed** |
+| the same, with the one line added | exit 1, **1 failed, 26 passed** |
+
+The failure, quoted whole from the run with the colour codes stripped and
+nothing else removed, including the describe block it sits in:
+
+    × a class draws one technique, not a lucky dip of six > every named default is a clip that actually ships 4ms
+      → pass.netball names pass.netball.chest-pass, which is not in the shipped set: expected undefined to be defined
+
+**Because no pass clip ships.** `public/figures/clips.json` holds eight authored
+keys and not one of them is a pass:
+
+| class | keys |
+|---|---|
+| `catch` | 6 |
+| `block` | 1 |
+| `land` | 1 |
+| **`pass`** | **0** |
+
+So the ruling is settled and the entry is **blocked on a clip that has never
+been exported**, not on a decision. `spikes/clip_geometry.py:52` maps
+`netball_chest_pass` to `("pass", "chest-pass", "release")`, so the exporter can
+produce it. Nothing has ever been exported and committed: `spikes/poc-output`
+holds one tracked file at depth 1, `shooting_guide.html`, and the only tracked
+clip artefacts in the tree are `spikes/clip-baseline.json` and
+`spikes/clip-baseline-planar-bend.json`. The table entry must wait for the
+splice, which is what the subsection above always said.
+
+**THE THREE RED CONDITIONS ABOVE ARE CONDITIONAL AND WERE READ AS PRESENT
+TENSE.** They are prefixed "Splicing the passes therefore turns it red", and
+they describe a tree in which four pass clips have been spliced into
+`clips.json`. In today's tree the guard at `:117` is not failing for `pass` —
+**it is asleep**, because it filters on classes it reads from the shipped set
+and `pass` is not one. `techniqueSet.test.ts:44` pins that: the classes are
+exactly `['block', 'catch', 'land']`. The guard that does fire on the premature
+entry is a different one, at `:141`, and its own comment says why it exists:
+
+> A table entry pointing at a clip nobody merged is a default that silently does
+> nothing.
+
+**This subsection is correct as written and was still misread.** A lane brief
+built from it sequenced the one-line change first, on the grounds that it would
+turn a red suite green. It does the opposite. **A conditional sentence about a
+tree nobody has built is the easiest kind of true sentence to quote as a fact**,
+and the guard it names is not even the guard that fires.
+
 ### The answer this evidence supports
 
 **A release clip must not be required to carry the full flight, and it must
