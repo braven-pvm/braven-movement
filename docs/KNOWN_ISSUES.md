@@ -591,6 +591,14 @@ the foot through the court without it. It does not price a fix. And every
 number here is a reading about what the pipeline can CARRY and SHOW; none of
 them is a graded lower-body value and none may be quoted as one.
 
+**SUPERSEDED IN PART ON 2026-09-14, AND THE HEIGHT WAS THE SMALL HALF.** Fixing
+this found that `pose_stance` discards the job's stance ENTIRELY — across and
+ahead as well as up — and draws her feet at the rig's rest position on every
+phase of every drill. Two drills, nine phases, one foot position in all three
+axes to four decimals. The table above is still right about what the render
+showed; it is wrong to read it as a problem only about height. Refer to
+[`THE_FEET_WERE_NEVER_PLACED.md`](THE_FEET_WERE_NEVER_PLACED.md).
+
 **Owner: the rendering lane**, which found it and holds the instrument.
 
 **The engine already carries the signal a conditional stance would need, and
