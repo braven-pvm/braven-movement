@@ -22,6 +22,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 RECEIPT = REPO / "render_receipt.py"
 RENDERER = REPO / "blender_movement_render.py"
+PRODUCER = REPO / "spikes" / "export_blender_job.py"
 
 
 def _load():
@@ -33,6 +34,37 @@ def _load():
 
 def receipt_for(movement_id: str, parameters) -> dict:
     return {"movementId": movement_id, "solveParameters": parameters}
+
+
+def producer_keys():
+    """The keys the producer writes, read out of the producer's own source.
+
+    Returns None when no producer function exists in this repository at all,
+    which is a different statement from an empty list and is kept distinct.
+
+    PARSED, AND NEVER COPIED INTO THIS FILE AS A LITERAL. A literal would pin
+    what somebody BELIEVED the producer writes, and the belief is the thing that
+    went stale: from 2026-09-11 to 2026-09-14 this file asserted that a real job
+    yields None while `spikes/export_blender_job.py` was writing the field.
+    Rename the key over there and the callers here go red, rather than passing
+    against a copy of its old name.
+
+    PARSED RATHER THAN CALLED, because `export_blender_job.py` imports
+    `pymomentum`, which is absent on this machine and on the hosted runner. The
+    import fails before any function in it can be reached, so this suite cannot
+    call the producer even with a stub, and source is the only access it has.
+    """
+    source = PRODUCER.read_text(encoding="utf-8")
+    if "def solve_parameters" not in source:
+        return None
+    keys = []
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.FunctionDef) and node.name == "solve_parameters":
+            for sub in ast.walk(node):
+                if isinstance(sub, ast.Dict):
+                    keys = [k.value for k in sub.keys
+                            if isinstance(k, ast.Constant)]
+    return keys
 
 
 class SolveParametersTest(unittest.TestCase):
@@ -307,8 +339,18 @@ class NoProducerOnThisBranchTest(unittest.TestCase):
     first test goes RED, and that red is the field becoming reachable.
 
     ONE TEST IN THIS CLASS DOES SKIP, AND AN EARLIER VERSION OF THIS DOCSTRING
-    SAID NONE DID. `test_a_real_job_on_this_branch_yields_none` reads a job file
-    from `spikes/poc-output/`, which is in `.gitignore` at line 13.
+    SAID NONE DID. `test_a_real_job_on_this_branch_carries_a_mapping` reads a
+    job file from `spikes/poc-output/`, which is in `.gitignore` at line 13.
+    It was called `..._yields_none` until 2026-09-14, after the assertion under
+    that name was corrected: refer to its own docstring for what it asserted and
+    why a stale job made the false version pass.
+
+    THE SKIP IS NO LONGER THE ONLY THING PINNING THE CONTRACT.
+    `test_the_consumer_reads_what_the_producer_writes` builds the producer's job
+    shape from the producer's own parsed source and never skips, so a machine
+    with no job file still checks that the consumer reads what the producer
+    writes. The job-file method now adds only what a synthesised case cannot
+    say: that the artefacts actually on this disk are current.
 
         git ls-files "*.job.json"      0
         git ls-files "*.render.json"   0
@@ -442,13 +484,14 @@ class NoProducerOnThisBranchTest(unittest.TestCase):
         that reads a real artefact AND runs everywhere. Refer to the class
         docstring for the one that does skip.
         """
-        import ast
+        self.assertTrue(PRODUCER.is_file(), PRODUCER)
+        source = PRODUCER.read_text(encoding="utf-8")
 
-        producer = REPO / "spikes" / "export_blender_job.py"
-        self.assertTrue(producer.is_file(), producer)
-        source = producer.read_text(encoding="utf-8")
-
-        if "def solve_parameters" not in source:
+        # THE SAME PARSE THE CONTRACT TEST USES. It was inline here, and a
+        # second copy of it would be a second belief about the producer able to
+        # drift from this one.
+        keys = producer_keys()
+        if keys is None:
             for spelling in ("solveParameters", "solve_parameters"):
                 self.assertNotIn(
                     spelling, source,
@@ -456,13 +499,6 @@ class NoProducerOnThisBranchTest(unittest.TestCase):
                     "read the file before trusting any note about reachability")
             return
 
-        keys = []
-        for node in ast.walk(ast.parse(source)):
-            if isinstance(node, ast.FunctionDef) and node.name == "solve_parameters":
-                for sub in ast.walk(node):
-                    if isinstance(sub, ast.Dict):
-                        keys = [k.value for k in sub.keys
-                                if isinstance(k, ast.Constant)]
         self.assertEqual(
             len(keys), self.EXPECTED_KEYS,
             "A PRODUCER HAS MERGED AND ITS KEY COUNT IS NOT WHAT THE NOTES SAY. "
@@ -482,15 +518,113 @@ class NoProducerOnThisBranchTest(unittest.TestCase):
             "are reachable, and `render_receipt.py` still says they are not. "
             "Correct that note, this docstring and `docs/HANDOFF_RENDERING.md`.")
 
-    def test_a_real_job_on_this_branch_yields_none(self):
-        """Read from an artefact this branch actually has, not from a belief."""
+    def test_the_consumer_reads_what_the_producer_writes(self):
+        """THE CONTRACT, PINNED WITHOUT AN ARTEFACT. This never skips.
+
+        The job-file method below can only run where somebody has exported a
+        job, which is nowhere in a fresh checkout and nowhere on CI. This one
+        builds the case instead of looking for it, so the producer-to-consumer
+        contract is pinned on every machine.
+
+        **THE KEY IS READ FROM THE PRODUCER, NEVER TYPED HERE.** A literal would
+        make this a test of what somebody believed the producer writes, and the
+        belief is the thing that went stale. `producer_keys()` parses the
+        tracked source, so renaming the key in `export_blender_job.py` fails
+        here rather than passing against a copy of its old name.
+        """
+        keys = producer_keys()
+        self.assertIsNotNone(
+            keys,
+            "no `solve_parameters` in `spikes/export_blender_job.py`. The "
+            "producer merged on 2026-09-11; if it has been removed, the notes "
+            "in `render_receipt.py` and `docs/HANDOFF_RENDERING.md` that call "
+            "checks 2 and 4 LIVE are now wrong and must be corrected with it.")
+        self.assertEqual(len(keys), self.EXPECTED_KEYS, keys)
+
+        # AND THE FIELD NAME COMES FROM THE CONSUMER'S OWN CONSTANT, for the
+        # same reason the keys come from the producer's own source. Two spellings
+        # of `solveParameters` in this repository would pass here and fail on a
+        # real job.
+        field = self.module.SOLVE_PARAMETERS
+        job = {field: {name: 31.3 for name in keys}}
+
+        read = self.module.solve_parameters(job)
+        self.assertIsNotNone(
+            read,
+            "the consumer read nothing out of a job shaped the way the "
+            "producer writes one")
+        self.assertEqual(sorted(read), sorted(keys))
+
+        # AND THE CLASS CONSTANT IS TIED TO THE PRODUCER TOO. `self.PARAMETER`
+        # is a typed copy of the key, and the dormancy method below builds its
+        # pair out of it. Untied, a rename in the producer would leave that
+        # method green while testing a name nothing writes.
+        self.assertIn(
+            self.PARAMETER, keys,
+            "`PARAMETER` is not a key the producer writes. It is a literal in "
+            "this file and the producer's source is the authority.")
+
+        # AND THE OTHER SIDE OF IT, so this cannot pass by returning a mapping
+        # for everything. A job with no field is the thirty-seven archived
+        # receipts' state and it must still read as nothing.
+        self.assertIsNone(self.module.solve_parameters({}))
+
+    def test_a_real_job_on_this_branch_carries_a_mapping(self):
+        """Read from an artefact this branch actually has, not from a belief.
+
+        **UNTIL 2026-09-14 THIS ASSERTED THE OPPOSITE, AND A STALE JOB MADE IT
+        PASS.** The producer merged on 11 Sep and the assertion under it was
+        left saying a real job yields None. That is not merely wrong: it is
+        wrong in a way that hides, because this method has THREE outcomes and
+        only one of them is a failure.
+
+            no job file          SKIPS, and says nothing. This is the state of
+                                 every fresh checkout and of CI, which is why
+                                 the false assertion stood green for three days.
+            a job that PREDATES  used to PASS, because an old job carries no
+            the producer         field and `solve_parameters` returned None. A
+                                 pass is worse than a skip: a skip announces
+                                 itself and a pass does not. It now FAILS.
+            a freshly exported   FAILED, correctly, and that is how the
+            job                  rendering lane found it.
+
+        **A JOB CANNOT BE DATED FROM INSIDE ITSELF.** `schemaVersion` is 1 both
+        before and after the field was added, and a job carries no build stamp,
+        no commit and no producer name -- every top-level key is content. So
+        this method cannot tell a stale artefact from a current one by reading
+        it, and the stale case is reported as what it is rather than guessed at.
+        """
         jobs = sorted((REPO / "spikes" / "poc-output").glob("*.job.json"))
         if not jobs:
-            self.skipTest("no job files on this machine; they are build output")
+            self.skipTest(
+                "no job file under spikes/poc-output. They are gitignored "
+                "build output, so this method is unreachable in a fresh "
+                "checkout and on CI. THE CONTRACT IS PINNED WITHOUT ONE by "
+                "test_the_consumer_reads_what_the_producer_writes, which never "
+                "skips.")
+        import datetime
         import json
 
-        job = json.loads(jobs[0].read_text(encoding="utf-8"))
-        self.assertIsNone(self.module.solve_parameters(job))
+        # THE NEWEST FILE, NOT THE FIRST ALPHABETICALLY. The question is what
+        # the producer writes NOW, and the oldest of twelve files answers a
+        # different one. Measured on this machine on 2026-09-14: one checkout
+        # holds twelve jobs whose alphabetically-first is from 7 September, so
+        # `jobs[0]` decided the verdict by a filename. An mtime is not proof of
+        # the producer that wrote a file, but it orders them, which is all the
+        # choice of WHICH file needs.
+        path = max(jobs, key=lambda p: p.stat().st_mtime)
+        job = json.loads(path.read_text(encoding="utf-8"))
+        written = datetime.datetime.fromtimestamp(path.stat().st_mtime)
+        read = self.module.solve_parameters(job)
+        self.assertIsNotNone(
+            read,
+            f"{path.name}, written {written:%Y-%m-%d %H:%M}, carries no "
+            f"`solveParameters`. THE PRODUCER WRITES IT TODAY, so this file "
+            f"PREDATES the producer and is stale build output: re-export it "
+            f"with `pixi run --frozen python export_blender_job.py <movement>`. "
+            f"This is a FAILURE and not a skip on purpose -- a stale job used "
+            f"to make this method pass against an assertion that was false.")
+        self.assertEqual(sorted(read), sorted(producer_keys()))
 
     def test_two_real_receipts_refuse_at_check_one(self):
         """Not at check 3, which is where this lane first said the wall was."""
