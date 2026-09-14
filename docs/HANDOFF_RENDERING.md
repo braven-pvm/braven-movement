@@ -310,9 +310,33 @@ Render the phase stills, three views each.
 ```
 
 `--job` repeats. Give it every job and one session renders the lot, which
-matters because building the athlete costs about two minutes and a phase view
-costs about seventeen seconds. Eight drills are 33 phases and 99 views, so
-about half an hour.
+matters because the athlete is built once per session.
+
+**MEASURED 2026-09-09 on `aa247ad`, on this machine, rather than remembered.**
+The previous figures said two minutes for the build and eight drills, and both
+had gone stale.
+
+    the whole process with --no-stills, which builds the athlete   7 seconds
+    one phase, three views, including that build                  64 seconds
+    so one view                                                   about 19 seconds
+
+**MEASURED TWICE, BY TWO LANES, WITH DIFFERENT METHODS, AND BOTH ARE REPORTED.**
+The character and animation lane timed bare Blender at 1.2 to 1.3 s and the whole
+process with the athlete built at 5.7 to 6.0 s over three runs, so **the build
+alone is about 4.5 s**. It timed three views separately at 16.55, 16.43 and 15.23
+s. The figures above are whole-process and per-view-including-overhead, on this
+machine, and the two sets agree once the method is named.
+
+**The number that matters for batching is the per-session cost, and it is
+SECONDS.** Batching eight drills saves about 40 seconds, not the fourteen minutes
+the old two-minute figure implied.
+
+The library is ELEVEN drills, 48 graded phases and 144 views, so a full session
+is about **46 minutes**. The old sentence said 33 phases and 99 views, which was
+the eight-drill library.
+
+**Time it again rather than trusting this.** It is one command and the number is
+a property of the machine as much as of the code.
 
 Add `--turntable 12` for twelve angles of each phase, `--animate` for the GLB
 and the video, `--no-stills` to skip the phase pictures, and
@@ -740,6 +764,349 @@ Ignoring these will cost hours. Each one already did.
     makes you kill a build goes to the coordinator at the time. Milestones can
     be batched; stoppages cannot, because the other lanes are planning around
     a build you have just abandoned.
+
+## `ahead` means two different things, one on each side of this boundary
+
+**Written 2026-09-09 after this lane published a wrong axis and withdrew it.**
+Nothing in either document said this, and it is a hazard for anyone measuring a
+quantity a coach's cue names.
+
+    UPSTREAM of the job, the engine AUTHORS in the athlete's own frame
+
+      spikes/movements/*.technique.json   `afterContact[].ahead`
+      motion_track.py:426                 chest + rotation @ [across, up, ahead]
+      ball_track.py:368                   chest + rotation @ (offset * arm)
+      possession.py:275                   the inverse, rotation.T @ (p - chest)
+
+    DOWNSTREAM, the JOB transmits WORLD geometry
+
+      ball.fromShouldersInArms            a Blender-frame vector
+      blender_movement_render.py:529      shoulders + Vector(...) * arm, NO rotation
+
+**Both are right where they are**, and the boundary rule in this document already
+explains why: a POSE crosses as GEOMETRY, because a rotation only means something
+against the rest pose it was measured in.
+
+**THE JOB'S VECTOR IS WORLD, AND THAT IS PROVEN RATHER THAN ASSUMED.** Measured
+on `2413f9d`, whose job files are byte-identical to what its receipts recorded.
+On `hooks_outside_hand/facing_away` the athlete is turned 48.22 degrees and the
+ball sits 3.5952 arm lengths out. If that vector were the athlete's frame and the
+renderer applied it as world, the ball would land **154.7 cm** from where it
+belongs. That build's receipt records **20.45 mm**, which is the worst ball anchor
+error in the library.
+
+**SO: a cue, a coach's note or an authored key speaks the athlete's frame. A job
+field speaks the world.** This lane works downstream and reached for the world
+frame to answer a question posed upstream, and every number it published on that
+axis had to be withdrawn.
+
+## The two asset guards are ORDERED, and an invented asset never reaches the second
+
+**Measured 2026-09-09 by mutating the real generator, at the character and
+animation lane's request.** It had proved the licence refusal by removing a table
+entry and the syntax reader on a COPY of the generator. **Nobody had run the real
+test against a real edit to the real generator**, which is what a lane adding a
+kit asset will actually do.
+
+Three variants, each restoring the file from git afterwards with the status
+confirmed clean:
+
+    A  the `asset_path(...)` call ONLY, invented asset
+       syntax test RED. The render is untouched, because `source_assets` is a
+       SEPARATE explicit list, so the asset is DECLARED and never LOADED.
+
+    B  the call AND the `source_assets` entry, INVENTED asset
+       syntax test RED. Blender exits 9 and writes no receipt -- but the cause is
+       `FileNotFoundError` from `asset_path` itself. `source_asset_records`
+       NEVER RUNS.
+
+    C  the call AND the entry, a REAL unlicensed asset
+       syntax test RED. Blender exits 9, no receipt, and the traceback names
+       `source_asset_records` -> `source_asset_record` -> `licence_for` ->
+       `LicenceUndetermined`. BOTH GUARDS FIRE.
+
+**THE ORDER IS THE FINDING AND IT WAS PREDICTED WRONGLY BEFORE THE RUN.** This
+lane wrote down that variant B would exercise the licence refusal. It does not:
+`asset_path` validates existence first, so an invented asset stops there and the
+licence guard is unreachable from it. **B and C produce the same outward signs —
+exit 9, no receipt, the asset named in the console — and different causes.**
+
+**So a probe of the licence guard must use a REAL asset that is absent from the
+table.** `clothes/female_sportsuit01` is one, and it is the kit case.
+
+**AND THE TWO GUARDS COVER DIFFERENT FAULTS**, which variant A shows:
+
+    declared but not loaded    only the syntax reader sees it     variant A
+    loaded but not declared    only `source_asset_records` sees it
+    both                       both fire                          variant C
+
+**The second is the one that matters and it is covered**, because
+`source_asset_records` fires on anything undetermined however it entered the
+list. The first is a false positive that costs a person a look. That is the
+right way round.
+
+**A READER OF VARIANT A WOULD REASONABLY CONCLUDE THE SYNTAX GUARD IS MISSING
+EIGHT ASSETS. IT IS NOT, AND THE REASON IS A DESIGN FACT** raised by the
+character and animation lane on 2026-09-09 and checked here:
+
+    asset_path calls in the generator    7    lines 1102 to 1108
+    names in `SELECTED_MPFB_ASSETS`      7
+    entries the receipt records         15
+
+**The other eight are the `faceunits01.json` manifest and seven face targets, and
+none of them passes through `asset_path` at all.** The manifest is built from
+`ASSET_DATA / "packs" / ...` and the targets come from
+`TargetService.target_full_path`. **They are licensed by a RULE rather than by a
+name in a table** — `FACEUNITS_RULE` and `FACEUNITS_MANIFEST` in
+`asset_licences.py`.
+
+**A rule cannot drift against a list, so there is nothing there for a syntax
+guard to bind.** The seven that ARE named are the only ones that can drift, and
+they are exactly the seven it binds.
+
+**A NOTE FOR WHOEVER MEETS THE RED TEST.** Every installed MPFB asset declares
+CC0 in its own file header, 78 of 78. **That makes it tempting to add a table
+entry and move on.** The refusal exists to force the reading of that header, and
+a guard whose answer you can guess is the one you stop consulting.
+
+## Where a name lives is decided by WEIGHT, not by meaning
+
+**A second hazard of the same shape as the `ahead` one above, and it is worth
+having before somebody is misled rather than after.**
+
+`solveParameters` is the JOB's output. **Its NAME can only live in this lane's
+module**, because of what each side can import:
+
+    render_receipt.py        imports ONLY `from __future__ import annotations`
+    export_blender_job.py    imports numpy, ball_track, movement_definition,
+                             athlete, movement_engine and contact_solve, and
+                             reaches `pymomentum` through `possession_solve`
+
+**So the producer can import the consumer and the consumer can never import the
+producer.** A test in a suite without the engine cannot touch
+`export_blender_job` at all: `python -c "import export_blender_job"` fails with
+`ModuleNotFoundError: No module named 'pymomentum'`.
+
+**THE DIRECTION IS ALREADY THIS REPOSITORY'S PATTERN, twice**, and both times
+importing this same module:
+
+    spikes/archive_receipts.py:51    sys.path.insert(0, str(SPIKE_DIR.parent))
+                              :53    from render_receipt import (...)
+    spikes/export_manual_page.py:48  sys.path.insert(0, str(SPIKE_DIR.parent))
+                                :52  from render_receipt import (...)
+
+**A reader who expects the field's name to live with the thing that writes it
+will not find it there.** That is a fact about the dependency graph and not
+about ownership, and it is the same trap as `ahead`: a reader reasons from what
+a thing IS, and the answer is decided by something structural they cannot see
+from where they stand.
+
+**AND THE IMPORT DOES NOT REMOVE THE NEED FOR A SPANNING TEST.** It makes the
+KEY one spelling, which is strictly better than testing the key. It does not
+touch the VALUE SHAPE, and the shape is where this lane's reader makes
+decisions: a producer emitting `{"ELBOW_POLE_ANGLE_DEGREES": None}`, or nesting
+the value, or returning `{}` for a default solve, would each pass both suites
+and be read wrongly here.
+
+## Which receipt fields REFUSE and which write null
+
+**The distinction was raised by the character and animation lane on 2026-09-09,
+after two fields grew on this receipt in one day from two lanes. The rule is
+theirs; the wording is this lane's.**
+
+    A field the renderer OWNS refuses the run when it cannot be resolved.
+    A field the renderer CARRIES writes null.
+
+**Ownership is the whole rule, and the two fields added that day show both
+sides.**
+
+`sourceAssets` is OWNED. The renderer loaded those bytes and
+`docs/LICENSING.md` is this repository's own determination. Its absence is the
+renderer's failure, so `source_asset_records` RAISES, and a receipt that wrote
+null there would be claiming nothing about something it is responsible for.
+
+`solveParameters` is CARRIED. The name and the value are the producer's fact and
+this lane must not invent them. Its absence is the producer's business, so the
+receipt records null and says so honestly.
+
+**Converging the two shapes would mean refusing on a fact this lane does not own,
+or writing null about one it does.** They are not two conventions. They are one
+rule applied to two kinds of fact.
+
+**A THIRD STATE SITS ON THAT LINE AND IT IS NEITHER.** A job whose
+`solveParameters` is a list or a string has said something UNREADABLE, which is
+not the same as having said nothing. `solve_parameters` raises on it. A broken
+contract is refused rather than guessed at, and refusing there is not a claim of
+ownership: it is a refusal to translate.
+
+## `solveParameters`, for the lane that owns a dial
+
+Written 2026-09-09 by the rendering lane, for the movement lane. **This is the
+producer half of a change whose consumer half is already done**, so nothing here
+waits on this lane.
+
+### Why the field exists
+
+`docs/COACH_REVIEW_SPEC_INTERFACE.md` section 4 gives this lane the artefact form
+`render_pair(parameter, value_a, value_b)`, and a receipt could not verify one.
+Two jobs at two parameter values produce two different `jobSha256`, so the
+receipts ARE distinguishable. **Nothing said which hash meant which value.** A
+picture whose parameter cannot be named is a picture a coach cannot mark against
+a build.
+
+Coach morning item 2 is exactly this: two renders of `deflect_high` at two
+values of `ELBOW_POLE_ANGLE_DEGREES`. On `ac240b2`, which is that item's build,
+those two values are 31.3 and 37.3. **They are quoted here to show the shape and
+this lane does not own them**, so read them from the agenda rather than from
+this page.
+
+### What the job must carry
+
+    "solveParameters": {"ELBOW_POLE_ANGLE_DEGREES": 31.3}
+
+A flat mapping of name to value. The renderer copies it into the receipt under
+the same key, verbatim, and writes `null` when the job carries none.
+
+**THE NAME AND THE VALUE ARE YOURS AND THIS LANE WILL NOT INVENT THEM.** A
+parameter is a fact about the solve, so it crosses the boundary in the producer's
+direction. `docs/FLEXION_AXIS_PAPER.md` refuses to send a euler component index
+the other way for the same reason, and this lane's request for shoulder positions
+in metres was withdrawn on 4 September for it.
+
+**A CALLER CANNOT SUPPLY IT EITHER.** `blender_movement_render.py` already
+refuses a caller-supplied build stamp, because a stamp a caller supplies is a
+claim about a build rather than a reading of one. A parameter is the same shape,
+and `tests/test_solve_parameters.py` matches on the parsed source to pin that the
+value is READ from the job and is not a literal or an argument.
+
+### What this lane's rule then refuses, so you know what a job must satisfy
+
+`render_receipt.refuse_unverifiable_pair` refuses four ways:
+
+    a receipt with no `solveParameters`      the pair is two pictures
+    a receipt that does not name the value   it cannot be half of that pair
+    two receipts at the SAME value           two pictures at one value
+    two DIFFERENT drills                     not a pair however they read
+
+**THE GUARD PROTECTS THE NEXT COMPARISONS, NOT THE ONES ALREADY ON DISK.** All
+**37** archived receipts predate the field and none carries it — 11 in
+`coach-figures-2413f9d`, 10 in `aa3f244`, 16 in the hand-mirror rerender. **So any
+two of them refuse at the FIRST check and cannot be paired at all**, because the
+field did not exist when they were rendered, and those are the artefacts a
+coach-morning comparison would reach for.
+
+Refusing them is correct and better than captioning two old pictures as a pair.
+**But "this guard protects our comparisons" is false and "it will protect our
+next ones" is true.**
+
+**And the fifth: every OTHER parameter must be EQUAL. IT IS CORRECT AND TODAY IT IS
+DORMANT**, because the producer records one parameter, so there is never another to
+compare and it cannot fire against any receipt this repository can produce. It becomes
+live when the producer records a second. Until then every unrecorded parameter is equal
+BY CONSTRUCTION, because both jobs of a pair are built in one process from one build —
+**so a pair spanning two builds could differ in an unrecorded parameter and pass every
+refusal.**
+A pair whose second parameter also moved shows a difference the caption
+attributes to the first one. So the two jobs must differ in that one name and in
+nothing else, and the rule reads the mapping to check it rather than trusting how
+the two jobs were produced.
+
+### Two things that are NOT asked for
+
+**Not the engine's build.** The receipt already carries `generatedFrom` for the
+RENDER, and `jobSha256` pins the job's bytes. If you want the solve's own build
+recorded, that is a separate field and a separate conversation.
+
+**Not every parameter in the engine.** The mapping only has to carry what a
+reader must be able to attribute a difference to. A mapping of one entry works,
+and the rule's "every other parameter must be equal" is then trivially satisfied,
+which is honest as long as nothing else actually moved between the two jobs.
+
+### An empty mapping is not a recorded value
+
+`solve_parameters` treats `{}` as nothing recorded, deliberately, so a job that
+writes the key and fills nothing in does not read as "parameters recorded".
+Pinned by `test_an_empty_mapping_is_not_parameters`.
+
+### Nothing archived is affected
+
+No archived receipt carries the key, and none needs it. The three archives are
+readable as before, and `refuse_unverifiable_pair` correctly refuses to call any
+two of them a pair, because none of them can name a parameter.
+
+## The render receipt, for anyone changing its shape
+
+Written 2026-09-09 by the rendering lane, for the character and animation lane,
+which is adding source-asset hashes and a licence to `sourceAssets`. The finding
+behind that change is correct: `blender_movement_render.py:899` writes
+`[str(path) for path in studio.source_assets]`, while the reference generator at
+`blender_mpfb_reference_catch.py:1686` writes `{"path": ..., "sha256": ...}` for
+the same assets. One of the two paths in a shipped receipt is
+`C:\Users\<name>\AppData\Roaming\...`, so it names a machine as well as a
+file.
+
+### Nothing reads `sourceAssets`, and that is measured
+
+`git grep` over the tracked tree finds ONE occurrence of `sourceAssets`, and it
+is the line that writes it. Searching for `source_assets` as well finds only the
+producer chain: `create_athlete` returns the list, `Studio` holds it,
+`render_job` writes it. No test, no script, no template and no document reads
+the field.
+
+**So this field's shape is free to change.** That is not the usual answer here,
+and it is why it is written down rather than assumed. On 2026-09-07 this lane
+widened a receipt in a way that WAS read: adding `failedPhases` created a
+partial-receipt path, and `export_manual_page.py` walked straight down it and
+built a two-figure page for a three-phase drill without saying so. Before you
+widen any other key, run the same two searches, and treat an empty result as a
+result only after the second one.
+
+### What the other keys are read by, so they are not free
+
+    generatedFrom     `spikes/archive_receipts.py` refuses a directory whose
+                      receipts carry two different stamps. It compares the WHOLE
+                      stamp dict, timestamp included, so two render processes
+                      cannot make one archive.
+    phases            `spikes/export_manual_page.py` builds one figure per entry.
+    failedPhases      both of the above refuse a receipt that carries a non-empty
+                      one, unless `--allow-partial` is passed. The rule is
+                      `render_receipt.refuse_partial_receipt`.
+    views[*].path     `export_manual_page.still_path` resolves the still beside
+                      the receipt when the recorded absolute path is not on this
+                      machine. That fallback exists because the path is absolute,
+                      which is the same defect the hashes are being added to fix.
+
+### Which builds carry `failedPhases`
+
+**None of the archived ones.** The key arrives in `f89eafd`, and every archive in
+`.assets/archives` predates it:
+
+    coach-figures-2413f9d              11 receipts, commit 2413f9d, 0 carry it
+    coach-figures-aa3f244              10 receipts, commit aa3f244, 0 carry it
+    rerender-hand-mirror-2026-09-02    16 receipts, unstamped,     0 carry it
+
+A reader that requires the key must treat its ABSENCE as "every phase drew", not
+as "unknown". `render_receipt.undrawn_phases` does exactly that, and its test
+pins it. Absence is safe here for one reason only: before `f89eafd` a drill that
+could not be fully drawn produced NO receipt at all, because the run raised and
+the stale receipt had already been unlinked. Do not carry that reasoning to a
+key where it does not hold.
+
+### Two things that will fail a run if they are forgotten
+
+1. **The run owns the working tree.** `Studio.__init__` fixes one build stamp for
+   the whole session. Edit a tracked file while a render is going and the receipt
+   records a clean tree that is no longer clean.
+2. **`sha256(path)` costs a read per asset.** There are 15 of them and they
+   include the body mesh, so hash once at `create_athlete` and carry the result,
+   rather than hashing inside the per-drill receipt block, which runs once per
+   job in a multi-job session.
+
+### The licence belongs beside the hash, not in place of it
+
+`docs/LICENSING.md` carries the CC0 determination. A receipt that names a licence
+without naming the bytes it applies to repeats the fault it is fixing, because
+the licence is then paired to a path.
 
 ## Do not grow the rasteriser
 

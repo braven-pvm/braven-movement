@@ -251,9 +251,19 @@ already given.
 
 **So the lob is a variant of the OVERHEAD or the 1 HAND HIGH pass, and neither
 is in the library.** Authoring the lob now requires authoring its parent first.
-Neither parent is in Tactics' `RELEASE_KINDS` either, so the
+
+**HALF OF THIS GATE LIFTED ON 14 Sep, AND THE SENTENCE HERE USED TO CLOSE BOTH
+HALVES.** It read "Neither parent is in Tactics' `RELEASE_KINDS` either, so the
 overhead-versus-vocabulary reconciliation already on the coach agenda becomes
-the lob's gate.
+the lob's gate." **`overhead-pass` is now in `RELEASE_KINDS`**, at
+`braven-tactics` `bdf6a99`, on Marius's ruling of 11 Sep. `one-hand-high-pass`
+is not.
+
+So the vocabulary no longer gates the OVERHEAD route to the lob, and it still
+gates the 1 HAND HIGH route. **Neither route is unblocked**, because the
+remaining gate is the one this brief is really about: the parent technique is
+not in the library and has to be authored. The coach agenda still owns the other
+direction, which is the five manual passes a board cannot name at all.
 
 Nothing is lost by finding out first: no ball file was written, and the finding
 is one measurement plus three lines of the manual.

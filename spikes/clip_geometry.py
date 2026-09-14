@@ -50,15 +50,22 @@ CLASSES = {
     # the possession model derives independently. The exporter prints the
     # difference between the two, as it does for every other clip.
     "netball_chest_pass": ("pass", "chest-pass", "release"),
-    # The second `pass`. `overhead-pass` is NOT in Tactics' RELEASE_KINDS today,
-    # which lists chest-pass, shoulder-pass, lob and bounce-pass, so no board can
-    # select this clip yet. It is exported anyway: the engine may hold a
-    # technique the board cannot ask for, and the reconciliation between the
-    # manual's pass family and that vocabulary is on the coach agenda. Refer to
-    # docs/TACTICS_CLIP_CONTRACT.md section 3 and docs/LOB_AUTHORING_BRIEF.md.
+    # The second `pass`. A BOARD CAN NOW SELECT THIS ONE, and until 14 Sep it
+    # could not. Marius ruled "aadd" on 11 Sep and `overhead-pass` entered
+    # Tactics' RELEASE_KINDS at `bdf6a99`, read from that repository's main and
+    # not from the pull request that merged it. The netball kinds a board can
+    # ask for are now chest-pass, shoulder-pass, lob, bounce-pass and
+    # overhead-pass.
+    #
+    # This comment used to say the opposite, and the clip was exported anyway on
+    # the reasoning that the engine may hold a technique the board cannot ask
+    # for. That reasoning was right and it has been paid off: the clip was ready
+    # on the day the vocabulary caught up. Refer to docs/TACTICS_CLIP_CONTRACT.md
+    # section 3 and docs/LOB_AUTHORING_BRIEF.md.
     "netball_overhead_pass": ("pass", "overhead-pass", "release"),
-    # The third `pass`, and the FIRST whose class name a board can already
-    # select: `bounce-pass` is in Tactics' RELEASE_KINDS, unlike `overhead-pass`.
+    # The third `pass`. `bounce-pass` has been in Tactics' RELEASE_KINDS
+    # throughout; it was the FIRST whose class name a board could select, and
+    # `overhead-pass` joined it on 14 Sep.
     # THE CLIP DOES NOT CONTAIN THE BOUNCE. The engine has no floor, and the
     # release at frame 76 of 96 leaves 19 intervals at 60 fps, frame 76 to
     # frame 95 = 0.3167 s of flight, against the 0.5838 s the ball needs to
@@ -77,9 +84,11 @@ CLASSES = {
     # Refer to docs/BOUNCE_PASS_INSTRUMENT_AUDIT.md.
     "netball_bounce_pass": ("pass", "bounce-pass", "release"),
     # The fourth `pass` and the first ONE-HANDED one. `one-hand-high-pass`
-    # is NOT in Tactics' RELEASE_KINDS, which lists chest-pass,
-    # shoulder-pass, lob and bounce-pass, so no board can select it today.
-    # Exported anyway, for the reason netball_overhead_pass is.
+    # is NOT in Tactics' RELEASE_KINDS, which lists chest-pass, shoulder-pass,
+    # lob, bounce-pass and, since 14 Sep, overhead-pass. So no board can select
+    # this one today. THIS CLAIM IS STILL TRUE AND ITS LIST CHANGED UNDER IT:
+    # the overhead pass was added and this one was not.
+    # Exported anyway, for the reason netball_overhead_pass was.
     #
     # IT IS DELIBERATELY NOT MAPPED ONTO `shoulder-pass`, THE ONE UNCLAIMED
     # SLOT IN THAT VOCABULARY, and the reason is a measurement rather than
@@ -380,3 +389,53 @@ def moment_frame(clip: dict) -> int:
             f"was built before {field} existed."
         )
     return frame
+
+
+def refuse_unstamped(clip: dict) -> None:
+    """Refuse a clip that cannot say which build made it.
+
+    CALLED BEFORE THE FILE IS WRITTEN, rather than discovered missing by
+    whoever reads the clip months later. `blender_movement_render.py` guards a
+    receipt the same way and for the same stated reason, so this is the
+    established shape here and not a new one.
+
+    WHY A CLIP NEEDS THIS AT ALL. Until 2026-09-14 a clip carried `movementId`,
+    `skill` and `graded` and no build. The last time anybody asked which build
+    the live clips came from, the answer had to be reconstructed from a commit
+    message in the OTHER repository. A commit message is not provenance: it is
+    not on the artefact, it does not survive a copy, and a consumer holding the
+    file cannot read it. Comparability here is per build, so a coach's marks
+    are scored against the build she graded.
+
+    **A DIRTY TREE IS A NOTE AND NOT A REFUSAL**, which is also the receipt's
+    behaviour. Refusing would stop every lane exporting for most of a working
+    day, and the stamp records the fact anyway: `treeWasClean` false, with a
+    digest of the tracked changes and the paths of whatever a digest misses.
+    The caller prints it out loud so it is not only in the file.
+
+    THIS LIVES HERE AND NOT IN THE EXPORTER because `export_tactics_clip`
+    imports `movement_engine`, which imports `pymomentum`. That module cannot
+    be imported on a machine without the solver, which includes the hosted
+    runner, so a guard written there is a guard no runner can execute.
+    """
+    name = clip.get("clipId")
+    stamp = clip.get("generatedFrom")
+    if not isinstance(stamp, dict):
+        raise ValueError(
+            f"REFUSED: {name} carries no `generatedFrom`. A clip that cannot "
+            "name its build cannot be scored against the build a coach graded."
+        )
+    for field in ("commit", "treeWasClean"):
+        if field not in stamp:
+            raise ValueError(
+                f"REFUSED: {name}'s `generatedFrom` has no `{field}`. A commit "
+                "named from a dirty tree names a build that never existed, so "
+                "the PAIR is what makes the stamp worth reading and either one "
+                "alone is not."
+            )
+    if stamp["commit"] is None:
+        raise ValueError(
+            f"REFUSED: {name}'s `generatedFrom.commit` is null. That is what "
+            "`build_stamp` writes when git could not be read, and a provenance "
+            "field that says nothing still reads as provenance."
+        )

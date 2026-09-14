@@ -15,6 +15,22 @@ can call it, because the renderer imports `bpy` and its tests skip.
 
 from __future__ import annotations
 
+# EVERY REFUSAL IN THIS MODULE RAISES `SystemExit`, AND THAT CONSTRAINS ANY TEST
+# OF ONE. Raised by the movement lane on 2026-09-09.
+#
+#   catch `SystemExit`, never `Exception`   it inherits from BaseException
+#   NEVER call a refusal from `setUpClass`  `unittest` wraps that in
+#                                           `except Exception`, so the raise
+#                                           ESCAPES the runner and silently kills
+#                                           every later test in the module
+#
+# This repository has already had two mutations exit 1 that way and be read as
+# failures. The type is not being changed: `SystemExit` is this module's
+# convention across all seven refusals, and these are called from scripts that
+# must stop with a message. Changing one would make the module inconsistent and
+# changing all seven is its own unit with its own callers to check.
+
+
 PASS = "PASS"
 NOTHING_RENDERED = "NOTHING RENDERED"
 SOME_PHASES_FAILED = "SOME PHASES FAILED"
@@ -133,3 +149,164 @@ def refuse_partial_receipt(movement_id: str, receipt: dict,
             undrawn_complaint(movement_id, undrawn) + WHY_REFUSED
         )
     return undrawn
+
+
+# WHAT THE SOLVE WAS SET TO, WHICH THE RECEIPT DID NOT RECORD UNTIL 2026-09-09.
+#
+# `docs/COACH_REVIEW_SPEC_INTERFACE.md` section 4 gives this lane the form
+# `render_pair(parameter, value_a, value_b)`, and a receipt could not verify one.
+# Two jobs at two parameter values have two different `jobSha256`, so the
+# receipts are DISTINGUISHABLE. Nothing said which hash meant which value.
+#
+# The name and the value are the PRODUCER's fact, so they belong in the job and
+# this lane copies them through rather than inventing them. That direction
+# matters: `docs/FLEXION_AXIS_PAPER.md` refuses to send a euler component index
+# the other way for the same reason, and this lane's shoulder positions in
+# metres were withdrawn for it on 4 September.
+#
+# A caller cannot supply it. `blender_movement_render.py` already refuses a
+# caller-supplied build stamp, because a stamp a caller supplies is a claim
+# about a build rather than a reading of one, and a parameter is the same shape.
+# A PRODUCER IMPORTS THIS CONSTANT. `spikes/export_blender_job.py` uses it
+# rather than spelling the key, so there is ONE spelling and a rename moves
+# both ends together. That is what closes the rename hole, and it closes it
+# BY CONSTRUCTION rather than by a test.
+#
+# DO NOT MOVE OR RENAME IT THINKING IT IS PRIVATE, and do not remove the
+# import at the other end. `tests/test_solve_parameters.py` deliberately does
+# NOT assert the key, so removing the import opens the hole and leaves the
+# suite green.
+SOLVE_PARAMETERS = "solveParameters"
+
+NO_SOLVE_PARAMETERS = (
+    "the job records no `solveParameters`, so nothing can say which parameter "
+    "value produced this picture"
+)
+
+
+MALFORMED_SOLVE_PARAMETERS = (
+    "the job's `{field}` is a {kind}, not a mapping of name to value. A job that "
+    "says something unreadable is not a job that says nothing, and rendering it "
+    "would write a receipt claiming no parameters were recorded."
+)
+
+
+def solve_parameters(job: dict) -> dict | None:
+    """What the job says the solve was set to. None when it says nothing.
+
+    ABSENCE IS RECORDED, NEVER SILENTLY DROPPED. A receipt with the key missing
+    and a receipt with the key set to null read the same to a careless reader
+    and mean different things: one predates the field and one was rendered from
+    a job that carried no parameters. The renderer writes null for the second.
+
+    AND A THIRD STATE WAS COLLAPSED INTO THE SECOND UNTIL THE CHARACTER AND
+    ANIMATION LANE READ THIS. A job whose `solveParameters` is a list or a
+    string returned None, so the receipt said null, which reads as "this job
+    carried no parameters". It carried some and they were unreadable. That is
+    the same fault this docstring was written to guard, one state further along.
+
+    So a WRONG TYPE now raises. It is not this lane's fact to correct and not
+    this lane's fact to paper over: a broken contract is refused rather than
+    guessed at. An EMPTY mapping still returns None, because `{}` is a
+    well-formed statement that there are none.
+    """
+    if SOLVE_PARAMETERS not in job:
+        return None
+    found = job[SOLVE_PARAMETERS]
+    if found is None:
+        return None
+    if not isinstance(found, dict):
+        raise SystemExit("REFUSED: " + MALFORMED_SOLVE_PARAMETERS.format(
+            field=SOLVE_PARAMETERS, kind=type(found).__name__))
+    return found or None
+
+
+def refuse_unverifiable_pair(parameter: str, receipt_a: dict,
+                             receipt_b: dict) -> tuple[object, object]:
+    """Raise unless these two receipts are a pair differing only in `parameter`.
+
+    FOUR THINGS MUST HOLD, and each one has a way of being wrong that reads as
+    success:
+
+    1. Both receipts name the parameter. Without it the pair is two pictures.
+    2. Their values DIFFER. Two pictures at one value are not a pair, and a
+       caller that fetched the same job twice would otherwise be told they are.
+    3. Every OTHER parameter is EQUAL. A pair whose second parameter also moved
+       shows a difference the caption attributes to the first one.
+
+       THIS RULE IS CORRECT AND IT IS DORMANT, and calling it "the rule that
+       carries the weight" was wrong twice over.
+
+       THE PRODUCER HAS NOW MERGED. `spikes/export_blender_job.py` writes the
+       field, so every receipt this branch produces carries a mapping rather
+       than null, and CHECKS 2 AND 4 ARE LIVE. This note said the opposite
+       until 2026-09-11, and a test in `tests/test_solve_parameters.py` turned
+       the suite red on the merge rather than letting it go quietly stale.
+
+       CHECK 1 IS STILL REACHABLE, and not from anything this branch makes.
+       THIRTY-SEVEN ARCHIVED RECEIPTS under `.assets/archives/` carry no
+       `solveParameters` at all, because they predate the field. Any two of
+       them refuse at check 1. They are also the artefacts a coach-morning
+       comparison would reach for, so THIS MACHINERY CANNOT PAIR ANY PICTURE
+       ERIN HAS ALREADY SEEN -- refusing is correct, and it is the honest
+       limit: the guard protects comparisons not yet made.
+
+       CHECK 3 STAYS DORMANT WHILE ONE PARAMETER IS RECORDED, because
+       `set(left) | set(right)` then holds one key and `key != parameter`
+       empties it. It has no power for the same reason a reproduction test on a
+       square athlete had none: the thing it compares cannot differ. The tests
+       build a two-key pair and prove it CAN fail, which is a different claim
+       from its being able to fail on real data.
+
+       WHAT MAKES CHECK 3 LIVE is the producer recording a SECOND parameter.
+       `contact_solve.py` holds fifteen module-level constants, of which TEN
+       are read by the solve path -- measured twice, by a one-hop walk from the
+       eleven names `possession_solve` imports and by a transitive call graph
+       over twelve functions, which agree exactly. ONE OF THE TEN IS RECORDED.
+       Until the rest are, every unrecorded parameter is equal BY CONSTRUCTION
+       rather than by check, because both jobs of a pair are built in one
+       process from one build.
+
+       SO THE HAZARD IS A PAIR SPANNING TWO BUILDS. It could differ in all nine
+       and pass every refusal, and the caption would attribute the whole
+       difference to the one recorded parameter. A coach-morning comparison is
+       exactly that case, and `coach-figures-2413f9d` against
+       `coach-figures-aa3f244` is two such archives that already exist.
+    4. Both are the same drill. Two drills are not a pair however the parameters
+       read.
+    """
+    for name, receipt in (("a", receipt_a), ("b", receipt_b)):
+        if not isinstance(receipt.get(SOLVE_PARAMETERS), dict):
+            raise SystemExit(
+                f"REFUSED: receipt {name} has no `{SOLVE_PARAMETERS}`. "
+                + NO_SOLVE_PARAMETERS
+            )
+    left = receipt_a[SOLVE_PARAMETERS]
+    right = receipt_b[SOLVE_PARAMETERS]
+    for name, found in (("a", left), ("b", right)):
+        if parameter not in found:
+            raise SystemExit(
+                f"REFUSED: receipt {name} does not name `{parameter}`, so it "
+                "cannot be one half of a pair about it."
+            )
+    if left[parameter] == right[parameter]:
+        raise SystemExit(
+            f"REFUSED: both receipts carry `{parameter}` = {left[parameter]}. "
+            "Two pictures at one value are not a pair."
+        )
+    if receipt_a.get("movementId") != receipt_b.get("movementId"):
+        raise SystemExit(
+            f"REFUSED: {receipt_a.get('movementId')} against "
+            f"{receipt_b.get('movementId')}. Two drills are not a pair."
+        )
+    moved = sorted(
+        key for key in set(left) | set(right)
+        if key != parameter and left.get(key) != right.get(key)
+    )
+    if moved:
+        raise SystemExit(
+            f"REFUSED: {len(moved)} other parameter(s) also differ: "
+            f"{', '.join(moved)}. A difference in the pictures could not be "
+            f"attributed to `{parameter}`."
+        )
+    return left[parameter], right[parameter]

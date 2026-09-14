@@ -23,6 +23,19 @@ called it the cleanest drill in the library.
 # These are the MOVEMENT LANE'S measured values, reported 2026-09-04, from the
 # solved pose at frame round(atPhase * (frames - 1)). They are a snapshot of
 # another lane's instrument, not a reading taken here.
+#
+# STILL TRUE OF b34fd93321ce48eea62cb1c44e67f4e67436d779, tested 2026-09-09.
+# A DATE IS NOT AN IDENTITY, and this table carried only a date, so its
+# staleness could not be tested at all. Rather than stamp it with a hash
+# inferred from its commit date -- which would be inventing provenance in the
+# file whose fault is missing provenance -- every value below was RE-READ on
+# that build by `scripts/check_anchor_snapshot.py`.
+#
+#   144 numbers checked, 0 moved by 0.01 cm or more, worst movement 0.0005 cm.
+#
+# THE CHECK COVERS THIS TABLE ONLY. `BALL_TO_HEAD` below is NOT re-read and
+# carries the same date and no build. Say so rather than let the stamp above
+# imply the whole file was tested.
 ENGINE = {
     "bounce_pass": [
         ("ready", -0.007, 48.823, 2.463),

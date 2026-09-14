@@ -1,0 +1,5 @@
+# THE KIT FILES ARE HASHED INTO EVERY RECEIPT THAT WEARS THEM. Git's line-ending
+# conversion would hand a Windows checkout and the Linux runner different bytes
+# of the same commit, and the same dress would carry two sha256 values. These
+# files are stored and checked out verbatim, so one commit is one hash.
+assets/kit/** -text

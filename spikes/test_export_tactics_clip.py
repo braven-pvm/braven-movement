@@ -239,10 +239,18 @@ class ClassTest(unittest.TestCase):
     # From src/contract/vocabulary.ts in braven-tactics: ACTOR_EVENT_TYPES and
     # RELEASE_KINDS. Copied rather than imported, because the two repositories
     # do not share a build. The clip contract records this as a drift risk.
+    #
+    # AND THE DRIFT HAPPENED, on 14 Sep, exactly as this comment warned.
+    # `overhead-pass` entered RELEASE_KINDS at braven-tactics `bdf6a99` and this
+    # copy did not move with it. NOTHING WENT RED, because the assertion below
+    # reads the CLASS and never the technique: `netball_overhead_pass` is classed
+    # `pass`, which was in the set all along. So the mirror can be wrong about
+    # every technique in it and this test will not say so.
     TACTICS_VOCABULARY = {
         "catch", "shoot", "jump", "land", "pivot", "screen", "tackle", "ruck",
         "block", "feint", "signal", "note",
         "pass", "chest-pass", "bounce-pass", "lob", "shoulder-pass", "offload",
+        "overhead-pass",
         "kick", "punt", "grubber", "chip", "drop-kick", "shot", "torpedo",
         "throw-in", "roll", "drop", "tap",
     }

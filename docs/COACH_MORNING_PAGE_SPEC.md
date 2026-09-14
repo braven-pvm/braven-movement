@@ -4,9 +4,12 @@ Written 2026-09-09 by the content lane, on `13148a7`. **This document specifies.
 It does not build.** The video lane owns Erin's page and is preparing v14.
 
 `docs/COACH_MORNING_RUNNING_ORDER.md` found that the page's eight questions cover
-seven of the agenda's twenty items, and that **ten live items have no home on
-it**. Every one was added since 2 September. This document says what each of the
-ten needs.
+seven of the agenda's twenty-one items, and that **eleven live items have no home
+on it**. This document says what each of them needs.
+
+**An earlier version said ten, and said every one was added since 2 September.**
+Item 19 was added on 9 September, so the count is eleven and the second half of
+that sentence is true of ten of the eleven.
 
 **The ten are still ten after items 17 and 18 were added.** Item 17 is the page's
 own existing first question. Item 18 is a render set that does not exist yet.

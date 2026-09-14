@@ -9,6 +9,11 @@ These are separate licensing decisions and must not be conflated:
 - **Faceunits 01 expression assets:** the official MakeHuman Community pack page declares this
   functional asset pack CC0. The installed pack manifest and used target files are hashed in each
   reference-catch receipt.
+- **Kit assets authored in this repository (`assets/kit/`):** meshes cut from the CC0 MakeHuman
+  basemesh helpers by `scripts/author_netball_dress.py`, and images drawn by
+  `scripts/make_bib_image.py`. They are the work of Braven Performance Lab and no redistribution
+  licence has been selected for them yet, as for the source code. Each one is hashed in every
+  receipt that wears it.
 - **Reference photographs:** the current photograph is not stored in Git. Its configured hash is
   provenance evidence, not a redistribution permission.
 - **Cascadeur samples:** Cascy and UE5 Quinn were used only for internal mechanism/rig evaluation.

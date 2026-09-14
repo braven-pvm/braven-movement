@@ -12,10 +12,14 @@ produces.** Sections 5 and 6 answer those two questions.
 
 ## 1. Every item, and where it came from
 
-**Twenty live items. The arithmetic is stated so a reader can check it:**
-`docs/COACH_MORNING_2026-09.md` carries **18 numbered items**, of which **item 7
-is STRUCK**, which leaves 17. It carries **3 further items** with no engine
-evidence. 17 plus 3 is **20**.
+**Twenty-one live items. The arithmetic is stated so a reader can check it:**
+`docs/COACH_MORNING_2026-09.md` carries **19 numbered items**, of which **item 7
+is STRUCK**, which leaves 18. It carries **3 further items** with no engine
+evidence. 18 plus 3 is **21**.
+
+**Item 19 was added on 2026-09-09**: the general question about which of a
+coach's cues name distances. It goes first in block 3, because the four items
+already there are instances of it.
 
 **A first version of this document said eighteen, and it was right at the time.**
 The gather found two morning items that no agenda document carried. The
@@ -43,6 +47,7 @@ leading it.**
 | 16 | The landing's cue may be ungradeable | agenda `b214bc4`; ledger row at `KNOWN_ISSUES.md:516` |
 | 17 | The hand that was posed wrongly | **found by this gather**; page question 1; fix at `fde5d5a` |
 | 18 | The two angles of the release hand | **found by this gather**; `.remember/ORCHESTRATOR-STATE.md`; paper at `f7af647`, not on main |
+| 19 | Which cues are distances rather than shapes? | the ledger row on two deleted checkpoints; added 2026-09-09 |
 | A | A second grader | agenda, no engine evidence |
 | B | Vocabulary conflicts | agenda, no engine evidence |
 | C | Two manual titles | agenda, no engine evidence |
@@ -75,17 +80,17 @@ her time. The three are:
 - **RULE.** A decision Marius takes after she has spoken. **These must come last
   in the morning, or he rules without her answer.**
 
-**Sorting the twenty.** All twenty are agenda items now, so the two columns a
+**Sorting the twenty-one.** All twenty-one are agenda items now, so the two columns a
 first version of this table needed have collapsed into one.
 
 | kind | items | count |
 |---|---|---|
-| ASK | 3, 5, 11, 12, 13, 15, 16, A, B | 9 |
+| ASK | 3, 5, 11, 12, 13, 15, 16, 19, A, B | 10 |
 | LOOK | 1, 2, 4, 6, 17, 18 | 6 |
 | RULE | 8, 9, 10, 14, C | 5 |
-| **total** | | **20** |
+| **total** | | **21** |
 
-Nine plus six plus five is twenty, which is the agenda's own count from
+Ten plus six plus five is twenty-one, which is the agenda's own count from
 section 1.
 
 Item 14 is a RULE only in a weak sense. It asks her to notice a wrong pose on
@@ -130,17 +135,28 @@ are graded on.** Refer to section 7.
 
 ### Block 3: the questions she answers from coaching, not from a picture (ASK)
 
-9. **Item 3, the ball speeds.** Two numbers, both chosen by software, neither
-   ever set by a coach.
-10. **Item 5, the second hand's 14 cm travel.**
-11. **Item 11, the band floor missed by 0.05 degrees.**
-12. **Item 16, the landing's foot-height gap.**
-13. **Item 12, the bounce pass with no bounce.**
-14. **Item 13, the one hand high pass's ungraded cue.**
-15. **Item 15, every pass clip stopping before the ball arrives.**
-16. **Item A, a second grader.**
+9. **Item 19, which of her cues are distances.** The general question, asked
+   first, because the four items below are instances of it and one answer covers
+   the shape they share.
+10. **Item 3, the ball speeds.** Two numbers, both chosen by software, neither
+    ever set by a coach.
+11. **Item 5, the second hand's 14 cm travel.**
+12. **Item 11, the band floor missed by 0.05 degrees.**
+13. **Item 16, the landing's foot-height gap.**
+14. **Item 12, the bounce pass with no bounce.**
+15. **Item 13, the one hand high pass's ungraded cue.**
+16. **Item 15, every pass clip stopping before the ball arrives.**
+17. **Item A, a second grader.**
 
-**Why third:** none needs a render, so none can be blocked by a missing artefact.
+**Why third: FOUR OF THESE SIX NEED NO RENDER AND ONE DOES.** An earlier version
+of this sentence said none of them did. **Item 13 has no render anywhere**, while
+item 12 has 15 stills and item 16 has 12, so the sentence was disproved by its
+own list.
+
+**A CLAIM ABOUT A BLOCK IS A CLAIM ABOUT EVERY ITEM IN IT, AND IT IS CHECKED BY
+LISTING THEM.** This is the third sentence in this document disproved by the list
+beneath it. The method is recorded here so the next editor inherits it and not
+only the corrected sentence.
 **Items 12, 13, 15 and 16 share one shape** — the engine cannot see a cue the
 manual teaches — and asking them together lets her answer the shape once rather
 than four times.
@@ -149,14 +165,17 @@ than four times.
 
 Four items in three entries. Items 10 and B are asked together.
 
-17. **Item 10, which passes the board needs**, with **item B, the vocabulary
+18. **Item 10, which passes the board needs**, with **item B, the vocabulary
     conflicts**, which is the same question at a larger size.
-18. **Item C, the two manual titles.** A record-keeping decision.
-19. **Item 14**, as a briefing rather than a question: on one-handed drills the
+19. **Item C, the two manual titles.** A record-keeping decision.
+20. **Item 14**, as a briefing rather than a question: on one-handed drills the
     numbers are less able to see a wrong pose, so her eye matters more there.
 
-**Why last:** item 10 needs her answer to item 13 (is the one hand high pass a
-pass a board should be able to select?) and to item 12. **Ruling on the
+**Why last, and it is now a TWO-STEP dependency:** item 10 needs her answer to
+item 13 (is the one hand high pass a pass a board should be able to select?) and
+to item 12. **Item 13 has no render**, so "needs her answer to item 13" now means
+"needs an artefact for item 13 first". **A block 4 question waits on a block 3
+question that has nothing to show.** **Ruling on the
 vocabulary before she has spoken about the drills would settle it by accident.**
 
 ---
@@ -166,12 +185,16 @@ vocabulary before she has spoken about the drills would settle it by accident.**
 **This section is the honest answer to "why is a date hard".** The counts, of the
 twenty agenda items:
 
-- **eleven need nothing that does not exist**: 3, 10, 11, 12, 13, 14, 15, 16, A,
+- **eleven need nothing that does not exist**: 3, 10, 11, 12, 14, 15, 16, 19, A,
   B and C;
 - **one needs nothing until item 1 is answered**: item 9;
-- **eight need an artefact**: 1, 2, 4, 5, 6, 8, 17 and 18.
+- **nine need an artefact**: 1, 2, 4, 5, 6, 8, 13, 17 and 18.
 
-**Of those eight, four have no artefact at all** (items 2, 4, 17 and 18),
+**ITEM 13 MOVED INTO THAT LIST ON 2026-09-09**, and item 19 replaced it in the
+first. Item 13 was counted as needing nothing that does not exist, and it needs a
+render that has never been made.
+
+**Of those nine, five have no artefact at all** (items 2, 4, 13, 17 and 18),
 **three sit on the page that is held** (items 5, 6 and 8), and one is partly
 ready (item 1).
 
@@ -193,7 +216,8 @@ candidates.
 | 5, join travel | the 14 cm figure and a clip | on the page, held |
 | 11, band floor | four numbers on a card | ready |
 | 12, bounce | the clip, which shows the fault itself | ready |
-| 13, one hand high | the drill's own figures | ready |
+| 13, one hand high | **a render. Its own opening line is "What she can see"** | **NO. Authored, jobbed, never drawn** |
+| 19, which cues are distances | nothing. It is a question about her own words | ready |
 | 14, determinacy | the four-drill table | ready |
 | 15, truncation | the four arrival frames | ready |
 | 16, landing | three readings and their bands | ready |
@@ -224,11 +248,15 @@ Marius's and the discussion has already happened.
 |---|---|---|
 | 1, what she looks at first | 5 | **50 min** (10 min each) |
 | 2, the release | 3 | **40 min** (item 1 is the longest single item) |
-| 3, what she answers from coaching | 8 | **55 min** (5 to 10 min each) |
+| 3, what she answers from coaching | 9 | **55 min** (5 to 10 min each) |
 | 4, what Marius rules | 3 | **15 min** |
 | | | |
 | discussion that runs over | | **20 min** |
-| **total** | **20 items in 19 entries** | **3 hours** |
+| **total** | **21 items in 20 entries** | **3 hours** |
+
+**BLOCK 3 GAINED AN ITEM AND ITS ESTIMATE HOLDS AT 55 MINUTES.** Item 19 is the
+general form of items 12, 13, 15 and 16, so it is asked first and those four
+become confirmations of one answer rather than four separate discussions.
 
 **Three hours is one long morning, not two.** But that assumes every artefact is
 in the room. **If the renders are missing, block 1 and part of block 2 cannot
@@ -298,7 +326,7 @@ that is the window her checkpoints measure.
 | **15** | the arrival frames, if the release frame moves |
 | **3** | the return speed, which is derived from the release |
 
-**Seven of twenty.** The four items in block 1 and the four written-list items
+**Seven of twenty-one.** The four items in block 1 and the four written-list items
 do NOT move, which is a second reason to run block 1 first: **those answers keep
 their value whatever the retiming does.**
 
@@ -326,11 +354,11 @@ eight questions.**
 | 7. The elbow dial | item 8 |
 | 8. The pass speed | item 3 |
 
-**The page covers agenda items 1, 2, 3, 4, 5, 6 and 8. Seven of twenty**, and
+**The page covers agenda items 1, 2, 3, 4, 5, 6 and 8. Seven of twenty-one**, and
 its own first question is now item 17.
 
-**TEN LIVE ITEMS HAVE NO HOME ON THE PAGE: 10, 11, 12, 13, 14, 15, 16, A, B and
-C.** Every one of items 10 to 16 was added after 2 September, as the pass family
+**ELEVEN LIVE ITEMS HAVE NO HOME ON THE PAGE: 10, 11, 12, 13, 14, 15, 16, 19, A,
+B and C.** Every one of items 10 to 16 was added after 2 September, as the pass family
 and the landing row were authored. **The page was built before that work existed
 and has not grown with it.**
 
