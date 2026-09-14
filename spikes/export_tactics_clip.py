@@ -49,6 +49,7 @@ SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
 
 from ball_track import has_ball  # noqa: E402
+from build_stamp import generated_from  # noqa: E402
 from clip_geometry import (  # noqa: E402
     CLASSES,
     moment_against,
@@ -60,6 +61,7 @@ from clip_geometry import (  # noqa: E402
     chest_joint,
     read_ball,
     read_frame,
+    refuse_unstamped,
     rest_median,
     unwrap,
 )
@@ -216,6 +218,28 @@ def build(character, movement_id: str) -> dict:
         "movementId": movement_id,
         "skill": definition.skill,
         "source": definition.source if hasattr(definition, "source") else None,
+        # WHICH BUILD MADE THIS CLIP. Until 2026-09-14 a clip carried none, and
+        # the last time anyone asked which build the live clips came from, the
+        # answer had to be reconstructed from a commit message on the OTHER
+        # repository. A commit message is not provenance: it is not on the
+        # artefact, it does not survive a copy, and a consumer holding the file
+        # cannot read it.
+        #
+        # It matters more here than in most places. Comparability is per build,
+        # so a coach's marks are scored against the build she graded. A receipt
+        # can name its build and a clip could not, which left the two halves of
+        # one evidence chain with different traceability, and the half the coach
+        # actually looked at was the weaker one.
+        #
+        # THE REPOSITORY'S OWN STAMP, not a new one. `generated_from` is what
+        # every receipt already carries, and it brings `treeWasClean` with it.
+        # A bare commit would be worse than useless: a clip built from a dirty
+        # tree would name a build that never existed, which is the exact fault
+        # that made an archived set an argument rather than a fact.
+        # `variant` is present and NULL rather than absent, so the shape does
+        # not move when the ball-variant question is answered. A consumer that
+        # learns to read it does not also have to learn that it may be missing.
+        "generatedFrom": {**generated_from(), "variant": None},
         # Whether this technique met every coaching checkpoint it was graded
         # against. A consumer may refuse to draw a technique that did not.
         "graded": bool(assessment.correct),
@@ -287,7 +311,14 @@ def main(argv: list[str]) -> int:
     for movement_id in wanted:
         clip = build(character, movement_id)
         path = OUTPUT / f"{movement_id}.clip.json"
+        refuse_unstamped(clip)
         path.write_text(json.dumps(clip, indent=2), encoding="utf-8")
+        if clip["generatedFrom"]["treeWasClean"] is not True:
+            print(
+                "   NOTE: tree not verified clean "
+                f"({clip['generatedFrom']['commit']}), so this clip cannot be "
+                "reproduced from that commit alone"
+            )
         print(
             f"{clip['clipId']}: {len(clip['frames'])} frames, "
             f"{clip['seconds']:.2f} s, travel {clip['rootTravelM']:.3f} m, "
