@@ -127,7 +127,10 @@ them against the control band above.
 - **It says nothing about the engine.** The solve carries the stance correctly.
   `spikes/export_blender_job.py` exports it correctly. The loss is entirely in
   the Blender render path, and the clip path to Tactics never had it: `bob` in
-  `spikes/clip_geometry.py:258` carries the same drill's flight at 0.1580 m.
+  the `"bob"` key in `spikes/clip_geometry.py` carries the same drill's flight
+  at 0.1580 m. **That line moved from 258 to 267 between `320bd01` and
+  `0353b76` — about six hours, on the day this was written** — which is why the
+  citation names the key and not the number.
 
 ## How to re-measure it
 
