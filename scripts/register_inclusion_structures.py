@@ -90,6 +90,13 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
         {
             ("spikes/smplx_retarget.py", "CORRESPONDENCE"),
             ("spikes/fit_from_photo.py", "LANDMARK_TO_JOINT"),
+            # FILED 2026-09-14. A finger-to-axis table QUOTED rather than
+            # imported, and its comment names the source it was copied from:
+            # "The renderer's own table, quoted rather than imported: importing
+            # it needs bpy. blender_mpfb_reference_catch.py:437." A quoted copy
+            # of a correspondence can drift from the table it quotes, and
+            # nothing compares them.
+            ("scripts/flexion_axis_survey.py", "NAMED_AXIS"),
             # READ 2026-09-09 out of not-yet-read. `CHANNEL` maps a joint name
             # to its POSITION in a clip frame and its own comment says "the
             # order is positional and must not be rearranged". That is the
@@ -108,6 +115,11 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
         {
             ("spikes/finger_wrap.py", "SPREAD"),
             ("spikes/video_measures.py", "LIFT_UP"),
+            # FILED 2026-09-14. THE ONLY DISTANCE THE COACHES MANUAL STATES FOR
+            # A PASSING DRILL, in metres, and its comment says so. A sourced
+            # row, and the counterpart to author_flight.DEFAULT_PASSER_AHEAD,
+            # which places the passer at 2.11 m.
+            ("scripts/launch_provenance.py", "MANUAL_SPANS_M"),
         },
     ),
     (
@@ -132,6 +144,12 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
             # re-fitted to whatever new keys produce.
             ("spikes/test_waiting_hand.py", "STANCE_DEGREES"),
             ("spikes/test_waiting_hand.py", "KNEE_GAP_CEILING_DEGREES"),
+            # FILED 2026-09-14. The coach morning's own item figures,
+            # transcribed, AND THEY NAME THE BUILD: "as the coach morning
+            # states them, read on ac240b2". The stamping this lane asked for
+            # on 9 September has spread.
+            ("scripts/two_bodies_ready_and_join.py", "MORNING_ITEM_5"),
+            ("scripts/two_bodies_ready_and_join.py", "MORNING_ITEM_6"),
         },
     ),
     (
@@ -179,11 +197,18 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
         "positions, and CARRY sounds like authored technique and is a test "
         "default. Filing them here is a deliberate act that keeps them "
         "visible, and it is the honest state until somebody reads each one.",
-        # EMPTY, AND THE RULE STAYS. All nine were read on 2026-09-09 and
+        # FILED 2026-09-14, and the bucket is in use again. Two sweep sets
+        # this lane has not opened: a second-hand ramp's thresholds and a carry
+        # timing sweep's shifts. A shift set moves a movement rather than
+        # describing one, and a name is not enough to say which.
+        # EMPTY BETWEEN 9 AND 14 SEPTEMBER, AND THE RULE STAYED. All nine were read on 2026-09-09 and
         # filed below. The rule remains so a future site can be filed here
         # deliberately rather than guessed, and so an empty bucket is visible
         # as a state rather than absent as an omission.
-        set(),
+        {
+            ("scripts/second_hand_ramp.py", "THRESHOLDS"),
+            ("scripts/sweep_carry_timing.py", "SHIFTS"),
+        },
     ),
     (
         "reporting-bucket", EXCLUDE,
@@ -211,6 +236,7 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
             ("spikes/spike_i_camera_placement.py", "UP"),
             ("spikes/test_export_tactics_clip.py", "UP"),
             ("spikes/test_export_tactics_clip.py", "FORWARD"),
+            ("scripts/two_bodies_angles.py", "DOWN"),
         },
     ),
     (
@@ -236,6 +262,22 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
             ("spikes/render_figure.py", "LIGHT"),
             ("spikes/render_figure.py", "SHEET"),
             ("scripts/compare_lift_against_view.py", "size"),
+            # FILED 2026-09-14. Cloth, kit surfaces, UV dumps and sheet
+            # colours. They change the picture and not the claim.
+            ("blender_cloth_skirt_probe.py", "SKIRT"),
+            ("blender_cloth_skirt_probe.py", "CLOTH"),
+            ("kit_paint_render.py", "KIT_SURFACE"),
+            ("kit_dump_uv.py", "co"),
+            ("kit_dump_uv.py", "uv"),
+            ("kit_dump_uv.py", "low"),
+            ("kit_dump_uv.py", "high"),
+            ("scripts/retiming_pair_sheet.py", "BACK"),
+            ("scripts/retiming_pair_sheet.py", "TITLE"),
+            ("scripts/retiming_pair_sheet.py", "BODY"),
+            ("scripts/retiming_pair_sheet.py", "BLUE"),
+            ("scripts/retiming_pair_sheet.py", "WARN"),
+            ("scripts/retiming_pair_sheet.py", "GOOD"),
+            ("scripts/retiming_pair_sheet.py", "MARK"),
         },
     ),
     (

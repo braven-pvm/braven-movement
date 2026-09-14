@@ -70,6 +70,11 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
             ("spikes/opensim_crosscheck.py", "STYLOID_OFFSET_M"),
             ("spikes/video_hand_speed.py", "ATHLETE_HEIGHT_METRES"),
             ("spikes/video_hand_speed.py", "ATHLETE_ARM_METRES"),
+            # FILED 2026-09-14. THE SAME 0.77 UNDER A SECOND NAME: "the arm
+            # the video lane converted the clip's arm-length channel with".
+            # One authoring seen twice, which register_collapse.py --value 0.77
+            # now reports.
+            ("scripts/release_hand.py", "ATHLETE_ARM_M"),
             ("spikes/video_hand_speed.py", "NOSE_TO_HEEL_FRACTION"),
             ("spikes/test_ball_reach.py", "UPPER_CM"),
             ("spikes/test_ball_reach.py", "FORE_CM"),
@@ -111,6 +116,17 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
         "drill. It is the engine's statement of how the movement is performed.",
         {
             ("spikes/contact_solve.py", "ELBOW_POLE_ANGLE_DEGREES"),
+            # FILED 2026-09-14 after main moved 172 commits. THE CANDIDATE
+            # ANGLE NOW EXISTS IN CODE, TWICE. Its own comment at
+            # elbow_pole_pair.py:52 is a register statement: "The value a coach
+            # is being ASKED about. It is in no file in the library."
+            ("scripts/elbow_pole_pair.py", "CANDIDATE"),
+            ("spikes/test_solve_parameters.py", "A_CANDIDATE"),
+            # The frames the release paper reads as contact and as follow
+            # through. A window that decides which frames COUNT as contact is a
+            # claim about the movement, not a setting.
+            ("scripts/release_hand.py", "CONTACT_FRAMES"),
+            ("scripts/release_hand.py", "FOLLOW_FRAMES"),
             ("spikes/contact_solve.py", "UPPER_ARM_AIM_OUT"),
             ("spikes/contact_solve.py", "UPPER_ARM_AIM_DOWN"),
             ("spikes/author_flight.py", "DEFAULT_SPEED_CM"),
@@ -202,6 +218,18 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
         },
     ),
     (
+        "not-yet-read", CONTESTED,
+        "THIS LANE HAS NOT OPENED THESE. They are not classified and must never "
+        "be counted as decided. Three are retiming or sweep amounts, which move "
+        "a movement rather than describe one, and a name is not enough to say "
+        "which. Filing them here is a deliberate act that keeps them visible.",
+        {
+            ("scripts/retiming_pair.py", "SHIFT"),
+            ("scripts/retiming_verdicts.py", "DEFAULT_SHIFT"),
+            ("scripts/sweep_release_easing.py", "NOISE_DEGREES"),
+        },
+    ),
+    (
         "physical-constant", EXCLUDE,
         "Gravity and unit conversions. Sourced outside this project, identical "
         "for every body, and nothing a coach or a shoot could change.",
@@ -227,6 +255,13 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
             # it. It is a tolerance set from atPhase's four stored decimals.
             ("scripts/register_collapse.py", "UNIFORM_TOLERANCE"),
             ("spikes/isb_angles.py", "_EPSILON"),
+            # FILED 2026-09-14.
+            ("scripts/check_anchor_snapshot.py", "MOVED_CM"),
+            ("scripts/retiming_pair_sheet.py", "EDGE_TOLERANCE_PX"),
+            ("scripts/retiming_pair_sheet.py", "CLEAR_OF_BODY"),
+            # Its own comment says it mirrors finger_curl.MIN_AXIS_SHARE, which
+            # is already filed here. One authoring seen twice.
+            ("scripts/flexion_axis_survey.py", "MIN_AXIS_SHARE"),
             ("spikes/segment_measures.py", "_EPSILON"),
             ("spikes/movement_engine.py", "ZERO_WIDTH_RADIANS"),
             ("girdle_agreement.py", "ROUNDING_M"),
@@ -304,6 +339,14 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
             )
         } | {
             ("spikes/video_keypoints.py", "PTS_TOLERANCE_SECONDS"),
+            # FILED 2026-09-14. video_sync.py PARSES NOW, so its five constants
+            # are read for the first time and the lower-bound caveat this lane
+            # carried since 9 September is gone.
+            ("spikes/video_sync.py", "WORK_RATE"),
+            ("spikes/video_sync.py", "ENVELOPE_RATE"),
+            ("spikes/video_sync.py", "SEARCH_SECONDS"),
+            ("spikes/video_sync.py", "FLUX_HOP"),
+            ("spikes/video_sync.py", "FLUX_WINDOW"),
             ("spikes/video_keypoints.py", "SYNC_UNCERTAINTY_SECONDS"),
             ("spikes/video_keypoints.py", "CONSTANT_RATE_TOLERANCE_SECONDS"),
             ("spikes/video_motion_sync.py", "WIDTH"),
@@ -369,6 +412,15 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
             ("spikes/export_figure_check.py", "VERTEX_SCALE"),
             ("spikes/export_proof_viewer.py", "KEEP_EVERY"),
             ("spikes/render_figure.py", "AMBIENT"),
+            # FILED 2026-09-14.
+            ("scripts/manual_figure_census.py", "WHITE"),
+            ("scripts/manual_figure_census.py", "DIAGRAM_SHARE"),
+            ("scripts/manual_figure_census.py", "STRIDE"),
+            ("scripts/retiming_pair_sheet.py", "PICTURE_HEIGHT"),
+            ("blender_cloth_skirt_probe.py", "PREROLL_FRAMES"),
+            # The condition the launch-provenance study computes under, stated
+            # as the kindest case for the constant. It frames a comparison.
+            ("scripts/launch_provenance.py", "LEVEL_RISE_CM"),
             ("spikes/render_photo_fit.py", "PANEL"),
             ("scripts/keypoint_overlay.py", "JOINT_RADIUS"),
             ("spikes/test_video_anchor_sheets.py", "TILE_HEIGHT_FOR_TESTS"),
@@ -382,6 +434,7 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
         {
             ("spikes/clip_geometry.py", "SCHEMA_VERSION"),
             ("spikes/reference_curves.py", "SCHEMA_VERSION"),
+            ("scripts/tactics_rig_check.py", "CHUNK_JSON"),
             ("movement_contract.py", "JOB_VERSION"),
             ("spikes/movement_engine.py", "LEVEL_OF_DETAIL"),
             ("spikes/poc_engine.py", "LEVEL_OF_DETAIL"),
@@ -418,6 +471,18 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
             ("spikes/test_authored_launch.py", "SECONDS_PER_PHASE"),
             ("spikes/sweep_ball_height.py", "LIFT_FRAME"),
             ("spikes/sweep_ball_height.py", "RELEASE_FRAME"),
+            # FILED 2026-09-14. Synthetic bodies and sheets built to exercise
+            # the kit painter and the clip sheet.
+            ("tests/test_kit_clip_sheet.py", "FRAMES"),
+            ("tests/test_kit_clip_sheet.py", "SIDE"),
+            ("tests/test_kit_clip_sheet.py", "WIDTH"),
+            ("tests/test_kit_clip_sheet.py", "COUNT"),
+            ("tests/test_kit_paint.py", "HEIGHT"),
+            ("tests/test_kit_paint.py", "RADIUS_ACROSS"),
+            ("tests/test_kit_paint.py", "RADIUS_DEEP"),
+            ("tests/test_kit_paint.py", "SEGMENTS"),
+            ("tests/test_kit_paint.py", "RINGS"),
+            ("tests/test_kit_paint.py", "SIZE"),
         },
     ),
 ]
