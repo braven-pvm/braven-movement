@@ -578,52 +578,85 @@ class NoProducerOnThisBranchTest(unittest.TestCase):
         wrong in a way that hides, because this method has THREE outcomes and
         only one of them is a failure.
 
-            no job file          SKIPS, and says nothing. This is the state of
-                                 every fresh checkout and of CI, which is why
-                                 the false assertion stood green for three days.
+            no job file          SKIPS. This is every fresh checkout and it is
+                                 CI, which is why the false assertion stood
+                                 green for three days.
             a job that PREDATES  used to PASS, because an old job carries no
-            the producer         field and `solve_parameters` returned None. A
-                                 pass is worse than a skip: a skip announces
-                                 itself and a pass does not. It now FAILS.
-            a freshly exported   FAILED, correctly, and that is how the
-            job                  rendering lane found it.
+            the producer         field and `solve_parameters` returns None. That
+                                 pass is the defect: a skip announces itself and
+                                 a pass does not. It now SKIPS, LOUDLY, naming
+                                 the file and the date.
+            a CURRENT job        asserts, and fails if the consumer stops
+                                 reading what the producer writes.
 
         **A JOB CANNOT BE DATED FROM INSIDE ITSELF.** `schemaVersion` is 1 both
         before and after the field was added, and a job carries no build stamp,
         no commit and no producer name -- every top-level key is content. So
         this method cannot tell a stale artefact from a current one by reading
-        it, and the stale case is reported as what it is rather than guessed at.
+        it. It reports what it found instead of guessing.
+
+        **WHY THE STALE CASE SKIPS RATHER THAN FAILS.** It failed for one
+        revision of this branch. Measured across the eleven checkouts on this
+        machine, by this method's own glob: five had no job file, five held
+        build output from 27 Aug to 10 Sep, and one held a job exported that
+        morning. **So a failure here would turn five lanes red over files they
+        never made, and the same commit would pass and fail by working
+        directory.** The orchestrator ruled it down to a skip on 2026-09-14 on
+        that measurement, for the reason that a red a reader is told to ignore
+        teaches the reader to ignore reds.
+
+        **THE CONTRACT DOES NOT REST ON THIS METHOD.**
+        `test_the_consumer_reads_what_the_producer_writes` builds the producer's
+        job shape from the producer's own parsed source and NEVER skips. This
+        method adds only what a synthesised case cannot say: that the artefacts
+        on this disk are current. When they are not, that is a fact about the
+        directory, and a skip is the honest way to report it.
+
+        **ONE `skipTest` CALL, TWO REASONS.** `OnlyOneTestHereCanSkipTest`
+        counts the calls in this file and requires exactly one. Two branches
+        calling skip would be two skips to that census and would turn it red, so
+        the reason is built first and the skip is raised once.
         """
-        jobs = sorted((REPO / "spikes" / "poc-output").glob("*.job.json"))
-        if not jobs:
-            self.skipTest(
-                "no job file under spikes/poc-output. They are gitignored "
-                "build output, so this method is unreachable in a fresh "
-                "checkout and on CI. THE CONTRACT IS PINNED WITHOUT ONE by "
-                "test_the_consumer_reads_what_the_producer_writes, which never "
-                "skips.")
         import datetime
         import json
 
-        # THE NEWEST FILE, NOT THE FIRST ALPHABETICALLY. The question is what
-        # the producer writes NOW, and the oldest of twelve files answers a
-        # different one. Measured on this machine on 2026-09-14: one checkout
-        # holds twelve jobs whose alphabetically-first is from 7 September, so
-        # `jobs[0]` decided the verdict by a filename. An mtime is not proof of
-        # the producer that wrote a file, but it orders them, which is all the
-        # choice of WHICH file needs.
-        path = max(jobs, key=lambda p: p.stat().st_mtime)
-        job = json.loads(path.read_text(encoding="utf-8"))
-        written = datetime.datetime.fromtimestamp(path.stat().st_mtime)
-        read = self.module.solve_parameters(job)
-        self.assertIsNotNone(
-            read,
-            f"{path.name}, written {written:%Y-%m-%d %H:%M}, carries no "
-            f"`solveParameters`. THE PRODUCER WRITES IT TODAY, so this file "
-            f"PREDATES the producer and is stale build output: re-export it "
-            f"with `pixi run --frozen python export_blender_job.py <movement>`. "
-            f"This is a FAILURE and not a skip on purpose -- a stale job used "
-            f"to make this method pass against an assertion that was false.")
+        jobs = sorted((REPO / "spikes" / "poc-output").glob("*.job.json"))
+        read = None
+        if not jobs:
+            reason = (
+                "NO JOB FILE under spikes/poc-output. They are gitignored build "
+                "output, so this method is unreachable in a fresh checkout and "
+                "on CI.")
+        else:
+            # THE NEWEST FILE, NOT THE FIRST ALPHABETICALLY. The question is
+            # what the producer writes NOW, and the oldest of twelve files
+            # answers a different one. Measured on this machine on 2026-09-14:
+            # one checkout holds twelve jobs whose alphabetically-first is from
+            # 7 September, so `jobs[0]` decided the verdict by a filename. An
+            # mtime is not proof of the producer that wrote a file, but it
+            # orders them, which is all the choice of WHICH file needs.
+            path = max(jobs, key=lambda p: p.stat().st_mtime)
+            written = datetime.datetime.fromtimestamp(path.stat().st_mtime)
+            job = json.loads(path.read_text(encoding="utf-8"))
+            read = self.module.solve_parameters(job)
+            reason = None if read is not None else (
+                f"STALE BUILD OUTPUT. The newest job here is {path.name}, "
+                f"written {written:%Y-%m-%d %H:%M}, and it carries no "
+                f"`solveParameters`. The producer has written that field since "
+                f"it merged on 2026-09-11, so this file predates it. Nothing "
+                f"about the producer is read from a file this old. Re-export "
+                f"with `pixi run --frozen python export_blender_job.py "
+                f"<movement>` to make this method run.")
+
+        if reason is not None:
+            self.skipTest(
+                reason + " THE CONTRACT IS PINNED WITHOUT AN ARTEFACT by "
+                "test_the_consumer_reads_what_the_producer_writes, which builds "
+                "the producer's job shape from its parsed source and never "
+                "skips. This method only adds whether the files on THIS disk "
+                "are current.")
+
+        # A CURRENT JOB, so the assertion runs and can fail.
         self.assertEqual(sorted(read), sorted(producer_keys()))
 
     def test_two_real_receipts_refuse_at_check_one(self):
