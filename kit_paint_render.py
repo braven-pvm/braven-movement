@@ -46,8 +46,12 @@ KIT_ASSET_STEM = "female_casualsuit02"
 
 # What the kit's own surface is, against the skin's. Read off the shader at run
 # time and printed, never assumed.
+# Sheen 0.08 is NOT a taste. `make_fabric_material` gives every modelled
+# garment that value, and a painted top that meets a modelled short at the waist
+# has to be the same fabric on both sides of the line or the hand-over reads as
+# a seam. Roughness 0.74 is the same number for the same reason.
 KIT_SURFACE = (("Roughness", 0.74), ("Subsurface Weight", 0.0),
-               ("Specular IOR Level", 0.22))
+               ("Specular IOR Level", 0.22), ("Sheen Weight", 0.08))
 
 
 def split_argv():
@@ -336,7 +340,14 @@ def record_painted_kit() -> None:
             "sha256": digest,
             "instrument": "kit_paint.py",
             "parameters": parameters,
+            "alsoInSourceAssets": bool(STRICT),
             "recordedAs": (
+                (
+                    "the instrument and its parameters, so this texture can be "
+                    "REDRAWN and not merely identified. The file is also in "
+                    "sourceAssets with its own determination, because it lives "
+                    "under assets/kit/."
+                ) if STRICT else
                 "provenance, not a licence. docs/LICENSING.md makes no "
                 "determination about a texture this repository generates, and "
                 "its first bullet records that no licence has been chosen for "
@@ -359,6 +370,12 @@ print(f"[kit-paint] kit-layer={KIT_LAYER} modelled-kit={MODELLED} "
       f"remove-modelled-kit={REMOVE_KIT}", flush=True)
 print(f"[kit-paint] passing to movement render: {' '.join(PASSTHROUGH)}", flush=True)
 mr.main()
-if KIT_LAYER is not None and not STRICT:
+# BOTH RECORDS, NOT ONE OR THE OTHER. Under --licence-strict the layer goes
+# through the licence gate and into `sourceAssets` with its determination, which
+# is what a file under `assets/kit/` earns. That says WHO MADE IT. The
+# `paintedKit` block says WHAT DREW IT: the instrument and every parameter, so
+# the texture can be redrawn rather than only identified. An earlier revision
+# made these exclusive, which meant choosing between a licence and a recipe.
+if KIT_LAYER is not None:
     record_painted_kit()
 print("KIT PAINT RENDER OK", flush=True)
