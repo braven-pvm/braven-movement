@@ -367,12 +367,34 @@ No saved board can contain the new kind.
 
 That is a small change. **Its size is not the reason to be careful.** The
 vocabulary and the manual disagree in a way this repository has already
-recorded in `docs/COACH_MORNING_2026-09.md:325`: the manual teaches eight
-passes, the vocabulary names four, the two overlap on `lob` and `bounce-pass`,
-and `shoulder-pass` has zero occurrences in the manual. Adding one member to a list that is already out of step with the
-source of truth corrects one name and leaves the disagreement in place. **The
-vocabulary is a coach question before it is a typing question**, and it belongs
-on the coach agenda rather than in a pull request.
+recorded in `docs/COACH_MORNING_2026-09.md`, under "The manual teaches eight
+passes" — line 504 today, and cited here as line 325 until 14 Sep, which is what
+a line number in prose is worth. The manual teaches eight passes, the vocabulary
+named four, the two overlapped on `lob` and `bounce-pass`, and `shoulder-pass`
+has zero occurrences in the manual. Adding one member to a list that is already
+out of step with the source of truth corrects one name and leaves the
+disagreement in place. **The vocabulary is a coach question before it is a
+typing question**, and it belongs on the coach agenda rather than in a pull
+request.
+
+### RULED 11 Sep: add it. And the paragraph above was right about what it buys
+
+**Marius's word: "aadd".** `overhead-pass` is in `RELEASE_KINDS` at
+`braven-tactics` `bdf6a99`, read from that repository's main. Six places, no
+logic, and the type system refused three of them until they were filled.
+
+**It went to the coach before it went into a pull request**, which is what the
+paragraph above asked for, and it came back as a decision rather than a typing
+job.
+
+**And the paragraph's warning held exactly.** The overlap is three now —
+`lob`, `bounce-pass` and `overhead` — and the disagreement is still there,
+larger on the side nobody has ruled on: **five of the manual's eight passes
+still have no name a board can select**, and `shoulder-pass` still has none in
+the manual. Correcting one name left the rest in place, as this said it would.
+
+The prediction two paragraphs up also held: the change only adds a member, so
+every stored project keeps working and no saved board can contain the new kind.
 
 ---
 

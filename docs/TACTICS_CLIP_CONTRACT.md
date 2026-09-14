@@ -102,19 +102,33 @@ The ten drills in the library map as follows.
 | `netball_chest_pass` | `pass` | `chest-pass` | `release` |
 | `netball_overhead_pass` | `pass` | `overhead-pass` | `release` |
 
-**`overhead-pass` IS NOT IN `RELEASE_KINDS` AND NO BOARD CAN SELECT IT.**
-That vocabulary lists `chest-pass`, `shoulder-pass`, `lob` and `bounce-pass`.
-The clip is exported anyway, deliberately: the engine may hold a technique the
-board cannot ask for, and a clip a person can watch is a better basis for the
-reconciliation than an argument about a list.
+**`overhead-pass` IS IN `RELEASE_KINDS` AND A BOARD CAN SELECT IT, since
+14 Sep.** That vocabulary lists `chest-pass`, `shoulder-pass`, `lob`,
+`bounce-pass` and `overhead-pass`. Marius ruled "aadd" on 11 Sep and the name
+landed at `braven-tactics` `bdf6a99`, read from that repository's main.
+
+**This paragraph said the opposite until 14 Sep, in bold capitals**, and the
+clip was exported anyway on the stated reasoning that the engine may hold a
+technique the board cannot ask for, and that a clip a person can watch is a
+better basis for the reconciliation than an argument about a list. **That
+reasoning was right and it has now been paid off**: the clip was ready on the
+day the vocabulary caught up, and nobody had to go back to the engine for it.
 
 The reconciliation is a coaching decision and a contract decision together, and
 it runs in both directions. The manual's pass family is overhead, 1 hand high,
 1 hand low wide, 1 hand wide, bounce, underarm, lob and fake; `RELEASE_KINDS`
-and the manual overlap on `lob` and `bounce-pass` alone. **`shoulder-pass` has
-ZERO occurrences in the manual**, and `overhead`, which the manual documents
-most fully and puts second in its syllabus, is absent from the vocabulary. It
-is on the coach agenda; refer to `docs/COACH_MORNING_2026-09.md`.
+and the manual now overlap on `lob`, `bounce-pass` and `overhead`, where they
+overlapped on the first two alone until 14 Sep. **`shoulder-pass` still has ZERO
+occurrences in the manual**, so the board can still ask for a pass the manual
+never teaches.
+
+**One of the two halves of that reconciliation is closed and the other is
+not.** `overhead`, which the manual documents most fully and puts second in its
+syllabus, was absent from the vocabulary and is now in it. The remaining gap
+runs the other way, and it is larger: five of the manual's eight passes —
+1 hand high, 1 hand low wide, 1 hand wide, underarm and fake — have no name a
+board can select, and `shoulder-pass` has no place in the manual. That half is
+still on the coach agenda; refer to `docs/COACH_MORNING_2026-09.md`.
 
 ### The clip identifier
 

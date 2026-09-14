@@ -510,15 +510,34 @@ and `bounce-pass`. A board can only ask for a clip whose class is in that list.
 
 **They overlap on two: `lob` and `bounce-pass`.**
 
+> **UPDATE, 14 Sep, and the two paragraphs above are left as they were written.**
+> Marius was asked this question directly on 11 Sep and answered "aadd", so
+> `overhead-pass` is now a fifth name in `RELEASE_KINDS`, at `braven-tactics`
+> `bdf6a99`. **The overlap is three, not two: `lob`, `bounce-pass` and
+> `overhead`.**
+>
+> The paragraphs above are the brief as it was prepared and they are not
+> rewritten, because a coach reads them to see what was put to them and when.
+>
+> **What this does NOT settle, and it is the larger half.** Five of the manual's
+> eight passes still have no name a board can select: 1 hand high, 1 hand low
+> wide, 1 hand wide, underarm and fake. `shoulder-pass` still has zero
+> occurrences in the manual. **That is the reconciliation still on this agenda**,
+> and it now runs mostly in one direction: the vocabulary is short of the
+> manual, rather than the two being short of each other.
+
 - **`shoulder-pass` has ZERO occurrences in the manual.** Searched in full. The
   board can ask for a pass the manual never teaches.
-- **`overhead` is absent from the vocabulary.** It is the manual's most fully
-  documented pass, second in its syllabus, and it is now authored and exported
-  as `pass.netball.overhead-pass`. **No board can select it.**
-- **AND SO IS `1 hand high`, ADDED 2026-09-04.** It is authored and exported as
-  `pass.netball.one-hand-high-pass` and is not in the list either. **Two of the
-  four authored passes can now be watched but not selected**, which is the same
-  question at twice the size.
+- **~~`overhead` is absent from the vocabulary.~~ ANSWERED 11 Sep.** It is the
+  manual's most fully documented pass, second in its syllabus, and it is
+  authored and exported as `pass.netball.overhead-pass`. Marius was asked and
+  said "aadd". **A board can now select it**, at `braven-tactics` `bdf6a99`.
+  The bullet is struck rather than deleted, because this agenda records what was
+  asked as well as what was settled.
+- **`1 hand high` IS STILL ABSENT, ADDED 2026-09-04.** It is authored and
+  exported as `pass.netball.one-hand-high-pass` and is not in the list. **One of
+  the four authored passes can now be watched but not selected, where two could
+  not on 11 Sep.**
 
 **What is asked.** Not a code question. Which passes should the engine author
 next, and should the vocabulary change to name them? The engine can hold a
