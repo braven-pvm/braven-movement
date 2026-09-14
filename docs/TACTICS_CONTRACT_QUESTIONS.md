@@ -367,12 +367,34 @@ No saved board can contain the new kind.
 
 That is a small change. **Its size is not the reason to be careful.** The
 vocabulary and the manual disagree in a way this repository has already
-recorded in `docs/COACH_MORNING_2026-09.md:325`: the manual teaches eight
-passes, the vocabulary names four, the two overlap on `lob` and `bounce-pass`,
-and `shoulder-pass` has zero occurrences in the manual. Adding one member to a list that is already out of step with the
-source of truth corrects one name and leaves the disagreement in place. **The
-vocabulary is a coach question before it is a typing question**, and it belongs
-on the coach agenda rather than in a pull request.
+recorded in `docs/COACH_MORNING_2026-09.md`, under "The manual teaches eight
+passes" — line 504 today, and cited here as line 325 until 14 Sep, which is what
+a line number in prose is worth. The manual teaches eight passes, the vocabulary
+named four, the two overlapped on `lob` and `bounce-pass`, and `shoulder-pass`
+has zero occurrences in the manual. Adding one member to a list that is already
+out of step with the source of truth corrects one name and leaves the
+disagreement in place. **The vocabulary is a coach question before it is a
+typing question**, and it belongs on the coach agenda rather than in a pull
+request.
+
+### RULED 11 Sep: add it. And the paragraph above was right about what it buys
+
+**Marius's word: "aadd".** `overhead-pass` is in `RELEASE_KINDS` at
+`braven-tactics` `bdf6a99`, read from that repository's main. Six places, no
+logic, and the type system refused three of them until they were filled.
+
+**It went to the coach before it went into a pull request**, which is what the
+paragraph above asked for, and it came back as a decision rather than a typing
+job.
+
+**And the paragraph's warning held exactly.** The overlap is three now —
+`lob`, `bounce-pass` and `overhead` — and the disagreement is still there,
+larger on the side nobody has ruled on: **five of the manual's eight passes
+still have no name a board can select**, and `shoulder-pass` still has none in
+the manual. Correcting one name left the rest in place, as this said it would.
+
+The prediction two paragraphs up also held: the change only adds a member, so
+every stored project keeps working and no saved board can contain the new kind.
 
 ---
 
@@ -589,6 +611,65 @@ is what converts it from a silent drawing error into a red build.
 The truncation fact and the proposal below both stand. The ordering argument
 does not.
 
+### RULED 11 Sep: the chest pass. And it cannot be recorded in the table yet
+
+**Marius's word, put to him with the codebase read first: "chest pass".** So the
+precondition named above is met. `DEFAULT_TECHNIQUE` should gain
+`'pass.netball': 'pass.netball.chest-pass'` at `braven-tactics`
+`src/engine/clips.ts`.
+
+**IT IS NOT THERE, AND ADDING IT TODAY TURNS A GREEN SUITE RED.** Measured on
+`braven-tactics` `origin/main` at `421dbe2`, read 06:33Z on 14 Sep, with the
+whole run redirected to a file and the exit code read from the process:
+
+| | result |
+|---|---|
+| `vitest run src/engine/techniqueSet.test.ts`, unchanged | exit 0, **27 passed** |
+| the same, with the one line added | exit 1, **1 failed, 26 passed** |
+
+The failure, quoted whole from the run with the colour codes stripped and
+nothing else removed, including the describe block it sits in:
+
+    × a class draws one technique, not a lucky dip of six > every named default is a clip that actually ships 4ms
+      → pass.netball names pass.netball.chest-pass, which is not in the shipped set: expected undefined to be defined
+
+**Because no pass clip ships.** `public/figures/clips.json` holds eight authored
+keys and not one of them is a pass:
+
+| class | keys |
+|---|---|
+| `catch` | 6 |
+| `block` | 1 |
+| `land` | 1 |
+| **`pass`** | **0** |
+
+So the ruling is settled and the entry is **blocked on a clip that has never
+been exported**, not on a decision. `spikes/clip_geometry.py:52` maps
+`netball_chest_pass` to `("pass", "chest-pass", "release")`, so the exporter can
+produce it. Nothing has ever been exported and committed: `spikes/poc-output`
+holds one tracked file at depth 1, `shooting_guide.html`, and the only tracked
+clip artefacts in the tree are `spikes/clip-baseline.json` and
+`spikes/clip-baseline-planar-bend.json`. The table entry must wait for the
+splice, which is what the subsection above always said.
+
+**THE THREE RED CONDITIONS ABOVE ARE CONDITIONAL AND WERE READ AS PRESENT
+TENSE.** They are prefixed "Splicing the passes therefore turns it red", and
+they describe a tree in which four pass clips have been spliced into
+`clips.json`. In today's tree the guard at `:117` is not failing for `pass` —
+**it is asleep**, because it filters on classes it reads from the shipped set
+and `pass` is not one. `techniqueSet.test.ts:44` pins that: the classes are
+exactly `['block', 'catch', 'land']`. The guard that does fire on the premature
+entry is a different one, at `:141`, and its own comment says why it exists:
+
+> A table entry pointing at a clip nobody merged is a default that silently does
+> nothing.
+
+**This subsection is correct as written and was still misread.** A lane brief
+built from it sequenced the one-line change first, on the grounds that it would
+turn a red suite green. It does the opposite. **A conditional sentence about a
+tree nobody has built is the easiest kind of true sentence to quote as a fact**,
+and the guard it names is not even the guard that fires.
+
 ### The answer this evidence supports
 
 **A release clip must not be required to carry the full flight, and it must
@@ -646,6 +727,24 @@ it. The same mistake is available to every proposal below.
 ---
 
 ## 4. `generatedFrom`: a clip cannot be traced to the build a coach graded
+
+> **ANSWERED 2026-09-14, AND THE SHAPE PROPOSED BELOW WAS NOT THE SHAPE TAKEN.**
+> The field exists now, and `docs/TACTICS_CLIP_CONTRACT.md` section 4a is the
+> authority on it. The proposal further down this section is kept exactly as it
+> was written, because the reasoning is the reason the field exists at all and
+> the disagreement is only about its shape.
+>
+> **What changed: `commit` and `treeWasClean` rather than `engineCommit`, no
+> inner `movementId`, and no `baseline` path.** The reasons are in section 4a.
+> The short one is that a bare `engineCommit` drops `treeWasClean`, so a clip
+> built from a dirty tree would name a build that never existed.
+>
+> **The lane that wrote this section had no opportunity to answer**: its session
+> closed while the change was being written, and the ruling was made in its
+> absence. Reopen it if the reasoning here was better.
+>
+> **No clip in production carries the field yet.** Movement writes it; the
+> shipped clip predates it and the Tactics allowlist does not copy it.
 
 ### The gap
 

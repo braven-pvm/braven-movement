@@ -102,19 +102,33 @@ The ten drills in the library map as follows.
 | `netball_chest_pass` | `pass` | `chest-pass` | `release` |
 | `netball_overhead_pass` | `pass` | `overhead-pass` | `release` |
 
-**`overhead-pass` IS NOT IN `RELEASE_KINDS` AND NO BOARD CAN SELECT IT.**
-That vocabulary lists `chest-pass`, `shoulder-pass`, `lob` and `bounce-pass`.
-The clip is exported anyway, deliberately: the engine may hold a technique the
-board cannot ask for, and a clip a person can watch is a better basis for the
-reconciliation than an argument about a list.
+**`overhead-pass` IS IN `RELEASE_KINDS` AND A BOARD CAN SELECT IT, since
+14 Sep.** That vocabulary lists `chest-pass`, `shoulder-pass`, `lob`,
+`bounce-pass` and `overhead-pass`. Marius ruled "aadd" on 11 Sep and the name
+landed at `braven-tactics` `bdf6a99`, read from that repository's main.
+
+**This paragraph said the opposite until 14 Sep, in bold capitals**, and the
+clip was exported anyway on the stated reasoning that the engine may hold a
+technique the board cannot ask for, and that a clip a person can watch is a
+better basis for the reconciliation than an argument about a list. **That
+reasoning was right and it has now been paid off**: the clip was ready on the
+day the vocabulary caught up, and nobody had to go back to the engine for it.
 
 The reconciliation is a coaching decision and a contract decision together, and
 it runs in both directions. The manual's pass family is overhead, 1 hand high,
 1 hand low wide, 1 hand wide, bounce, underarm, lob and fake; `RELEASE_KINDS`
-and the manual overlap on `lob` and `bounce-pass` alone. **`shoulder-pass` has
-ZERO occurrences in the manual**, and `overhead`, which the manual documents
-most fully and puts second in its syllabus, is absent from the vocabulary. It
-is on the coach agenda; refer to `docs/COACH_MORNING_2026-09.md`.
+and the manual now overlap on `lob`, `bounce-pass` and `overhead`, where they
+overlapped on the first two alone until 14 Sep. **`shoulder-pass` still has ZERO
+occurrences in the manual**, so the board can still ask for a pass the manual
+never teaches.
+
+**One of the two halves of that reconciliation is closed and the other is
+not.** `overhead`, which the manual documents most fully and puts second in its
+syllabus, was absent from the vocabulary and is now in it. The remaining gap
+runs the other way, and it is larger: five of the manual's eight passes —
+1 hand high, 1 hand low wide, 1 hand wide, underarm and fake — have no name a
+board can select, and `shoulder-pass` has no place in the manual. That half is
+still on the coach agenda; refer to `docs/COACH_MORNING_2026-09.md`.
 
 ### The clip identifier
 
@@ -145,6 +159,7 @@ clipId                   "<class>.<sport>.<technique>"
 class, sport, technique  the three parts, separately
 movementId, skill        what produced it, and its coaching name
 source                   the manual, the page, and what is provisional
+generatedFrom            which BUILD made it. Refer to section 4a
 
 stride                   metres of ground one loop covers. Zero for every
                          one-shot action, which is every clip today
@@ -169,6 +184,107 @@ frames[]                 fifteen numbers each. Refer to section 8
 Everything past `frames` is metadata. A consumer that reads only `stride`,
 `seconds`, `hit` and `frames` gets a correct animation, which is deliberate:
 that is exactly the set `engine/clips.ts` reads today.
+
+## 4a. Which build made a clip
+
+```json
+"generatedFrom": {
+  "commit": "718023ed881a549791206e8bc25bb02066b2ebeb",
+  "treeWasClean": true,
+  "utcTimestamp": "2026-09-14T07:50:00+00:00",
+  "variant": null
+}
+```
+
+When the tree was not clean the stamp also carries `uncommittedDiffSha256`, a
+digest of the tracked changes, and `uncommittedPaths`, because a digest of
+tracked changes still misses an untracked file.
+
+**Why a clip needs this.** Until 2026-09-14 a clip carried `movementId`, `skill`
+and `graded`, and no build. The last time anybody asked which build the live
+clips came from, the answer had to be reconstructed from a commit message in the
+other repository: the shipped `clips.json` was byte-matched to a `braven-tactics`
+commit whose message read "Exported fresh from movement main f0172cf". **A commit
+message is not provenance.** It is not on the artefact, it does not survive a
+copy, and a consumer holding the file cannot read it.
+
+It matters more here than in most places. Comparability is per build, so a
+coach's marks are scored against the build she graded. A receipt could name its
+build and a clip could not, which left the two halves of one evidence chain with
+different traceability, and the half the coach actually looked at was the weaker
+one.
+
+**`variant` is present and null** rather than absent, so the shape does not move
+when the ball-variant question is answered. A consumer that learns to read it
+does not also have to learn that it may be missing.
+
+**A producer must refuse to write a clip with no stamp**, and must check before
+the file is written rather than after. A refusal after the write leaves an
+unstamped clip on disk beside a non-zero exit, which is the state somebody then
+ships by hand. `clip_geometry.refuse_unstamped` does this, and
+`spikes/test_clip_provenance.py` holds it by moving the guard below the write and
+requiring that to go red.
+
+**A dirty tree is recorded, not refused.** Refusing would stop every lane
+exporting for most of a working day, and the stamp carries the fact instead. This
+is the behaviour `blender_movement_render.py` already has for a receipt.
+
+### This section replaces the proposal in the questions document, and the lane that wrote that proposal never answered
+
+`docs/TACTICS_CONTRACT_QUESTIONS.md` section 4 proposed a different shape, and it
+is recorded here rather than quietly overwritten:
+
+```json
+"generatedFrom": {
+  "engineCommit": "f0172cf",
+  "baseline": "spikes/clip-baseline.json",
+  "movementId": "netball_two_hand_snatch_pull_in",
+  "variant": null
+}
+```
+
+Three changes, with the reasons:
+
+1. **`commit` and `treeWasClean`, not `engineCommit`.** This repository already
+   has one stamp, `build_stamp.generated_from`, which every receipt carries and
+   which `scripts/before_after_sheet.py` calls "the repository's one stamp". A
+   second name for one concept is what the comment at
+   `blender_movement_render.py:908` exists to prevent. And `engineCommit` alone
+   DROPS `treeWasClean`, which is the only field separating a stamp from a build
+   that reproduces: a clip built from a dirty tree would name a build that never
+   existed. **A provenance field that can quietly lie is worse than the commit
+   message it replaces, because nobody trusted the commit message.** This project
+   has shipped renders with `treeWasClean` false and had to say so afterwards.
+
+2. **No inner `movementId`.** The clip already carries it at the top level, and
+   two copies of one fact in one file is a second place for them to disagree.
+
+3. **No `baseline` path.** `spikes/clip-baseline.json` is tracked, so `commit`
+   determines its content exactly. A path says which file and not which version,
+   which is the same fault as commit-message provenance. If a reader later wants
+   it independent of the commit, record its sha256 rather than its path.
+
+**The lane that wrote the original proposal had no opportunity to answer.** Its
+session closed on 2026-09-14 while this was being written, and the ruling was
+made in its absence by the orchestrator. That is recorded so the next reader can
+reopen it rather than assume it was settled by agreement.
+
+### NO CLIP IN PRODUCTION CARRIES THIS FIELD YET
+
+At the time of writing, `pass.netball.chest-pass` is the one technique clip
+shipped to Tactics and it was exported before this field existed. **Changing what
+Movement writes does not change what Tactics holds.** Four steps are needed and
+only the first is done:
+
+1. Movement writes the field.
+2. The shipped clip is re-exported.
+3. `tools/add-technique-clip.mjs` in `braven-tactics` adds `generatedFrom` to the
+   list of fields it copies, or the field stops at the boundary exactly as
+   `releaseFrame` does.
+4. That script's `check()` refuses a clip with no stamp.
+
+**Step 4 must come after step 2.** A consumer refusal landed first would refuse
+the only clip in production.
 
 ## 5. The sampling rule
 
@@ -574,7 +690,14 @@ Small, and each part is separable.
    it has, and a class with no clip at all keeps the written pose. Both paths
    exist already.
 
-3. **Nothing else.** The sampling, the blending over the stride, the easing at
+3. **Copy `generatedFrom` at the boundary.** `tools/add-technique-clip.mjs`
+   copies an explicit list of fields into `clips.json`, so a field absent from
+   that list never reaches the app however faithfully Movement writes it. Then
+   refuse a clip that has no stamp, in that script's own `check()`. **In that
+   order, and after the shipped clip is re-exported**: a refusal landed first
+   would refuse the only clip in production. Refer to section 4a.
+
+4. **Nothing else.** The sampling, the blending over the stride, the easing at
    both ends of the window and the determinism are all built and tested.
 
 ## 14. Drift risks
