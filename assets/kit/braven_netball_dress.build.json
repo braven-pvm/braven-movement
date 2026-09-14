@@ -37,6 +37,13 @@
       "zMaxM": 1.4425,
       "looseVerticesRemoved": 0,
       "verticesPrunedToOneGroup": 0,
+      "edge": {
+        "boundaryVertices": 160,
+        "cuttingPlanes": 12,
+        "originalEdgeExcludedAboveZ": null,
+        "offEveryPlaneOver1mm": 0,
+        "worstDistanceToACutMm": 0.0
+      },
       "facesDeletedByClassification": 2076
     },
     {
@@ -55,7 +62,14 @@
         0.0,
         -0.011
       ],
-      "waistRingZ": 1.0202
+      "waistRingZ": 1.0202,
+      "edge": {
+        "boundaryVertices": 36,
+        "cuttingPlanes": 1,
+        "originalEdgeExcludedAboveZ": 0.8300000000000001,
+        "offEveryPlaneOver1mm": 0,
+        "worstDistanceToACutMm": 0.0
+      }
     }
   ],
   "nBodysuitVertices": 1477,
@@ -73,10 +87,10 @@
     "objs_same_scale": true
   },
   "stagesS": {
-    "athleteS": 4.82,
+    "athleteS": 4.8,
     "cutsS": 0.18,
-    "checkMatchWriteS": 2.33,
-    "totalS": 7.33
+    "checkMatchWriteS": 2.41,
+    "totalS": 7.39
   },
   "blender": "4.5.12 LTS"
 }

@@ -37,6 +37,13 @@
       "zMaxM": 1.0078,
       "looseVerticesRemoved": 0,
       "verticesPrunedToOneGroup": 0,
+      "edge": {
+        "boundaryVertices": 94,
+        "cuttingPlanes": 13,
+        "originalEdgeExcludedAboveZ": null,
+        "offEveryPlaneOver1mm": 0,
+        "worstDistanceToACutMm": 0.0
+      },
       "facesDeletedByClassification": 3088,
       "shorts": {
         "easeM": 0.008,
@@ -65,10 +72,10 @@
     "objs_same_scale": true
   },
   "stagesS": {
-    "athleteS": 4.95,
-    "cutsS": 0.2,
-    "checkMatchWriteS": 1.79,
-    "totalS": 6.94
+    "athleteS": 4.8,
+    "cutsS": 0.18,
+    "checkMatchWriteS": 1.77,
+    "totalS": 6.75
   },
   "blender": "4.5.12 LTS"
 }
