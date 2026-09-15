@@ -11,6 +11,27 @@ the figure's pixels moved, and by how much. A reader who disagrees with the
 number can look, and a reader who cannot see the change is told whether there is
 one to see.
 
+BEFORE YOU BELIEVE A NUMBER THIS PRINTS, READ `docs/COMPARING_TWO_RENDERS.md`.
+Three things there decide whether the figure means anything, and all three cost
+somebody a day when they were found:
+
+    byte-identity is unachievable here -- two runs of the same code on the same
+    job give twelve PNGs that all differ, by about 15 bytes of METADATA, with
+    identical pixels. `sha256` answers a question you did not ask.
+
+    the renderer's run-to-run band is NOT zero. It reaches 12 px at level 1 and,
+    on one view, 7 px at level 30. Render the same job twice and measure it
+    before you read any comparison as a change.
+
+    a difference above the band is still not automatically yours. Hold the job
+    still and run the OLD code against it, or you will charge your change for
+    something that predates it.
+
+AND THE THRESHOLD BELOW IS FOR "DID THIS FIGURE CHANGE", NOT FOR MEASURING THAT
+BAND. `MOVED = 8` is above the sampling noise and below anything a person would
+call a change, which is right for a sheet and wrong for a control. Compare at
+`> 0` when you are establishing what the renderer does on its own.
+
     changed  the share of pixels differing by more than 8 of 255, which is
              above the renderer's own sampling noise and below anything a
              person would call a change

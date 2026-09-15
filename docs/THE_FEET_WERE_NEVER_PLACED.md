@@ -114,6 +114,12 @@ unachievable: two runs of identical code produce PNGs differing by about 15
 bytes of metadata while the pixels are identical. Compare pixels, and compare
 them against the control band above.
 
+**THAT IS A GENERAL FACT ABOUT THIS RENDERER AND IT HAS ITS OWN DOCUMENT**, with
+the band, how to measure it yourself, and how to attribute a difference to your
+own change: [`COMPARING_TWO_RENDERS.md`](COMPARING_TWO_RENDERS.md). It was
+written here first and moved, because somebody reaching for `sha256` to compare
+two figures is not reading a document about feet.
+
 ## What this document does NOT claim
 
 - **It does not say the new placement is right.** It says the feet now follow
