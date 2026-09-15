@@ -86,6 +86,58 @@ already holds both halves in one sentence and has no word for the distinction.
 
 ---
 
+## Population C has four states, and the default is the loud one
+
+"Absent from the code" is four different facts, because a document records a
+DECISION and not only a specification.
+
+| state | meaning | example |
+|---|---|---|
+| `ASSUMED` | a document treats it as existing | the release hand's angles, put to a coach |
+| `DEFINED` | a specification naming its own fields | `movesWith`, and this schema's own columns |
+| `UNDER_CONSTRUCTION` | named, and a lane is building it | five of the release hand's eleven |
+| `REJECTED` | named, and a decision says do not build it | `engineCommit` |
+
+**A state is DECLARED and never detected.** The check asks "is this name in the
+code". The sentence that matters asks "is this name CLAIMED to be in the code",
+and no text test can tell a name being proposed from a name being buried.
+
+**Every non-default state carries a `file:line`, and the run refuses when one
+does not open ON THE NAME.** An exemption list grows quietly and nobody can
+audit it. A table where every entry points at the sentence that justifies it
+can be checked line by line by somebody who disagrees.
+
+*A first draft of that table used `:1` for thirteen entries and every one
+resolved, because a line 1 always exists. The check now requires the line to
+NAME the thing. And the refusal itself was computed and never acted on for one
+run, so the guard passed a deliberately broken table: it exits 2 now, proven by
+a broken document name and by a line that resolves without naming its token.*
+
+### `REJECTED` exists because a ruling is kept on purpose
+
+The clip contract proposed `engineCommit`. A ruling replaced it with
+`generatedFrom`, which carries `commit`, `treeWasClean`, `utcTimestamp` and
+`variant`. The deciding argument: **`engineCommit` alone drops `treeWasClean`,
+so a clip exported from a dirty tree would name a commit that does not contain
+the code that made it.** A provenance field that can quietly lie is worse than
+the commit message it replaces.
+
+The documents keep the name so the decision can be reopened, and two of its six
+appearances are the rejected shape quoted as JSON. **Its absence from code is
+the correct outcome**, and this register first reported it as a gap.
+
+### A triage signal, which is triage
+
+An `ASSUMED` name whose document also names a term that IS in the code is the
+signature of a replaced proposal. `engineCommit` has 0 code hits;
+`generatedFrom`, named in the same contract, has 24.
+
+**It proves nothing.** It shortens the list a person reads, exactly as the
+keyword pass over the library's 94 `why` fields does. A triage signal that
+drifts into a verdict is the fault this register exists to catch.
+
+---
+
 ## `sourceScope`: a source can prove less than it appears to
 
 Three states a row can be in, and they are independent:
