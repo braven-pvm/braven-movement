@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "description": "Review candidate: independent free ball flight and a small authored catch absorption. Not a biomechanical or coaching approval.",
+  "gravityMPerS2": 9.81,
+  "referenceHeightM": 1.75,
+  "previewDistanceM": 4.5,
+  "bounceAt": 0.6666666666666666,
+  "bounceHorizontalRetention": 0.75,
+  "bounceVerticalRetention": 0.75,
+  "throwSpeedsMPerS": {
+    "netball_chest_pass": 12,
+    "netball_bounce_pass": 12,
+    "netball_one_hand_high_pass": 17,
+    "netball_overhead_pass": 14
+  },
+  "tacticsReference": "src/sports/netball.ts speeds and passSpeed; src/core/evaluate.ts GRAVITY, BOUNCE_AT, BOUNCE_KEEPS, BOUNCE_RISES. Overhead uses the existing passSpeed fallback.",
+  "catchAbsorption": {
+    "peakSeconds": 0.10,
+    "endSeconds": 0.38,
+    "pelvisDropM": 0.028,
+    "handGiveM": 0.035,
+    "clips": ["netball_two_hand_catch_chest", "netball_two_hand_snatch_pull_in", "netball_two_hand_snatch_straight_back", "netball_one_hand_snatch_to_other_hand", "netball_hooks_outside_hand"]
+  }
+}

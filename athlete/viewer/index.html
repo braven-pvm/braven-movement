@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#183538">
+<meta name="description" content="The Braven team's workspace for athlete models, match kits and movement review.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23183538'/%3E%3Ctext x='8' y='24' fill='white' font-size='24' font-family='sans-serif'%3EB%3C/text%3E%3C/svg%3E"><title>Braven Studio</title>
+</head>
+<body>
+<header class="app-header">
+<a class="brand" href="/" aria-label="Braven Studio home"><span class="brand-mark">B</span><span>Braven <strong>Studio</strong></span></a>
+<nav class="library-nav" aria-label="Studio library"><button data-section="animations" class="selected" aria-current="page">Animations</button><button data-section="kits">Kits</button><button data-section="models">Models</button><button data-section="saved">Saved <span id="saved-count">0</span></button></nav>
+<div class="header-actions"><span class="local-label">Local workspace</span><button id="save-setup" class="light-button" disabled>Save setup</button></div>
+</header>
+<main class="workspace">
+<section class="library" aria-label="Asset library">
+<div class="library-heading"><h1 id="library-title">Animations</h1><span id="library-count" class="count">17</span></div>
+<p id="library-description">Explore movement on your athlete.</p>
+<div id="animation-filters"><label for="library-search" class="sr-only">Search animations</label><div class="search-field"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input id="library-search" type="search" placeholder="Search animations" autocomplete="off"></div><label for="category" class="sr-only">Movement category</label><select id="category"><option>All movements</option></select></div>
+<div id="library-results" class="library-results" aria-live="polite"><p class="empty">Loading the library…</p></div>
+<div class="library-footer"><strong>Braven Movement</strong><span id="library-summary">Model, kit and motion in one place.</span><button id="export-workspace">Export workspace</button><button id="import-workspace">Import workspace</button><input id="workspace-file" type="file" accept=".json,application/json" hidden><span class="local-note">Saved on this browser. Export to share or back up.</span></div>
+</section>
+<section class="stage" id="stage" aria-label="Interactive athlete preview">
+<div class="stage-heading"><div><span id="stage-category">Netball / Passing</span><h2 id="stage-title">Chest pass</h2><p id="stage-subtitle">Netball athlete · Skirt and shorts</p></div><button id="capture-frame" title="Download a picture of this pose" disabled>Capture</button></div>
+<div id="viewport"></div><div id="load-message" role="status">Loading the athlete…</div><div id="ball-phase" class="ball-phase" hidden></div>
+<div class="view-tools" aria-label="Camera views"><button id="front">Front</button><button id="side">Side</button><button id="back">Back</button><button id="three-quarter" class="selected">¾ view</button><button id="reset-camera" title="Reset camera">Reset</button></div>
+<div class="stage-foot"><span>Drag to orbit · Scroll to zoom</span><span id="model-stats">Loading model</span></div>
+<div class="transport"><div class="timeline-row"><input id="timeline" aria-label="Animation time" type="range" min="0" max="3" step="0.001" value="0" disabled><output id="time">0.00 / 3.00 s</output></div>
+<div class="playback-row"><div class="transport-buttons"><button id="restart" title="Restart animation" disabled aria-label="Restart animation">↶</button><button id="step-back" title="Previous frame (left arrow)" disabled aria-label="Previous frame">‹</button><button id="play" class="play-button" disabled>Play</button><button id="step-forward" title="Next frame (right arrow)" disabled aria-label="Next frame">›</button></div><div class="playback-meta"><span id="playback-rate">1× speed</span><span class="keyboard-hint">Space to play</span></div></div></div>
+</section>
+<aside class="inspector" aria-label="Preview settings">
+<div class="panel-intro"><span class="section-label">Preview settings</span><h2>Make it your own</h2><p>Adjust, inspect and save a setup.</p></div>
+<div class="tabs" role="tablist" aria-label="Preview settings"><button class="selected" data-tab="animate" role="tab" aria-selected="true" aria-controls="panel-animate">Movement</button><button data-tab="kit" role="tab" aria-selected="false" aria-controls="panel-kit">Kit</button><button data-tab="review" role="tab" aria-selected="false" aria-controls="panel-review">Review</button><button data-tab="pose" role="tab" aria-selected="false" aria-controls="panel-pose">Pose</button></div>
+<section class="panel" id="panel-animate" role="tabpanel">
+<label for="driver">Movement source</label><select id="driver"><option value="clips">Animation library</option><option value="tactics">Braven Tactics</option></select>
+<label for="clip">Animation</label><select id="clip"><option>Ready</option></select><div class="phase-heading" id="phase-heading">Jump to a moment</div><div id="phase-buttons" hidden></div>
+<div id="tactics-options" hidden><label for="scenario">Preview</label><select id="scenario"><option value="gait">Gait and carry</option><option value="receive-pivot">Moving receive, pivot and pass</option></select><div id="gait-controls"><label for="gait">Tactics gait</label><select id="gait"><option value="run">Run</option><option value="walk">Walk</option><option value="sprint">Sprint</option><option value="static">Ready</option></select><label class="check"><input id="carry" type="checkbox">Carry position</label></div><p id="gait-note" class="hint">Live movement from the Tactics pose engine.</p></div>
+<label for="speed">Playback speed <output id="speed-value">1×</output></label><input id="speed" type="range" min="0.25" max="2" step="0.25" value="1">
+<label class="check"><input id="loop" type="checkbox" checked>Repeat animation</label><div class="divider"></div><h3>Inspect the movement</h3><label class="check"><input id="skeleton" type="checkbox">Show skeleton</label><label class="check"><input id="wireframe" type="checkbox">Show mesh</label><p class="hint" id="motion-note">Select an animation to inspect its source.</p>
+</section>
+<section class="panel" id="panel-kit" role="tabpanel" hidden>
+<h3>Match kit</h3><p class="hint">Both kits use the same athlete and rig.</p><div class="kit-options"><button class="selected" data-kit="skirt">Skirt + shorts</button><button data-kit="shorts">Shorts</button></div>
+<div class="colour-row"><label for="primary">Team colour</label><input id="primary" type="color" value="#087e76"></div><div class="colour-row"><label for="accent">Hem colour</label><input id="accent" type="color" value="#ef775e"></div><div class="colour-row"><label for="shorts">Shorts colour</label><input id="shorts" type="color" value="#202b31"></div><button id="reset-colours" class="text-button">Restore Braven colours</button>
+<label for="height">Athlete height <output id="height-value">1.75 m</output></label><input id="height" type="range" min="1.60" max="1.95" step="0.01" value="1.75"><p class="hint">Height scales the model. Body shape and garment fit are editable in the Blender source. The current jersey carries GS lettering.</p>
+</section>
+<section class="panel" id="panel-review" role="tabpanel" hidden>
+<h3 id="review-title">Chest pass</h3><span id="review-status" class="review-badge">Source checked</span><p id="review-description" class="hint">Source checks and coaching approval are separate.</p>
+<label for="review-note">Your review notes</label><textarea id="review-note" rows="6" maxlength="4000" placeholder="What works? What needs another look?"></textarea><p class="hint">Notes are included when you save a setup. They stay local until you export them.</p><button id="save-review" class="wide-button">Save this review</button>
+<details><summary>Model and source details</summary><dl id="asset-details"></dl><a class="source-link" href="/athlete-assets/netball-athlete.blend" download>Download Blender master</a><a class="source-link" href="/athlete-assets/athlete-source.blend" download>Download body source</a></details>
+</section>
+<section class="panel" id="panel-pose" role="tabpanel" hidden>
+<h3>Advanced pose editing</h3><p class="hint">Animation pauses while you edit. Save a setup to keep the pose, or press Play to return to animation.</p>
+<label for="bone">Joint</label><select id="bone"></select>
+<label for="rx">Local X <output id="rx-value">0°</output></label><input id="rx" type="range" min="-180" max="180" step="1" value="0"><label for="ry">Local Y <output id="ry-value">0°</output></label><input id="ry" type="range" min="-180" max="180" step="1" value="0"><label for="rz">Local Z <output id="rz-value">0°</output></label><input id="rz" type="range" min="-180" max="180" step="1" value="0">
+<div class="button-row"><button id="reset-joint">Reset joint</button><button id="reset-pose">Bind pose</button></div>
+<details><summary>Joint position</summary><div class="position-fields"><label>X<input id="px" type="number" step="0.005" value="0"></label><label>Y<input id="py" type="number" step="0.005" value="0"></label><label>Z<input id="pz" type="number" step="0.005" value="0"></label></div><p class="hint">Offsets in local skeleton units. Translation changes joint spacing.</p></details>
+<div class="button-row"><button id="save-pose">Export pose</button><button id="load-pose">Import pose</button><input type="file" id="pose-file" accept="application/json,.json" hidden></div><p id="pose-message" class="hint"></p>
+</section>
+<footer class="panel-footer"><a href="/athlete-assets/netball-athlete.glb" download>Download animated model</a><span id="status">Editable source + portable GLB</span></footer>
+</aside>
+</main>
+<dialog id="save-dialog"><form id="save-form"><div class="dialog-heading"><h2>Save this setup</h2><button type="button" id="close-save" aria-label="Close save dialog">×</button></div><p>Keep the kit, movement, camera and pose together.</p><label for="setup-name">Setup name</label><input id="setup-name" maxlength="80" required placeholder="e.g. Chest pass — wrist review"><label for="setup-note">Review notes <span>(optional)</span></label><textarea id="setup-note" maxlength="4000" rows="4"></textarea><p class="hint">Saved in this browser. You can export it from Saved.</p><p id="save-error" class="error" role="alert" hidden></p><div class="dialog-actions"><button type="button" id="cancel-save">Cancel</button><button type="submit" class="primary-button">Save setup</button></div></form></dialog>
+<div id="notification" class="notification" role="status" hidden><span id="notification-text"></span><button id="undo-delete" hidden>Undo</button><button id="close-notification" aria-label="Dismiss message">×</button></div>
+<script type="module" src="/src/main.js"></script>
+</body></html>
