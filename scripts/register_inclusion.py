@@ -256,6 +256,12 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
             ("scripts/register_collapse.py", "UNIFORM_TOLERANCE"),
             ("spikes/isb_angles.py", "_EPSILON"),
             # FILED 2026-09-14.
+            # FILED 2026-09-15. A sub-pixel edge convention, and its own
+            # comment derives it: alpha is 0 or 1 everywhere except a one-pixel
+            # antialiased rim, so half a pixel of coverage is the rim's
+            # midpoint. It locates a boundary between two representations of
+            # the same edge. It says nothing about a body.
+            ("scripts/flight_probe.py", "OPAQUE"),
             ("scripts/check_anchor_snapshot.py", "MOVED_CM"),
             ("scripts/retiming_pair_sheet.py", "EDGE_TOLERANCE_PX"),
             ("scripts/retiming_pair_sheet.py", "CLEAR_OF_BODY"),
@@ -453,6 +459,9 @@ RULES: list[tuple[str, str, str, set[tuple[str, str]]]] = [
         {
             ("spikes/test_band_floor.py", "SAMPLES"),
             ("spikes/test_band_floor.py", "SEED"),
+            # FILED 2026-09-15. A sample count for a flight probe: it decides
+            # how hard the probe looks, never what it claims to have found.
+            ("scripts/flight_probe.py", "PROBE_SAMPLES"),
             ("spikes/spike_h_roundtrip.py", "SAMPLES"),
             ("spikes/spike_h_roundtrip.py", "SEED"),
             ("spikes/spike_i_camera_placement.py", "SAMPLES"),
