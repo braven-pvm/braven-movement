@@ -48,12 +48,15 @@ sys.path.insert(0, str(SPIKE_DIR))
 sys.path.insert(0, str(SPIKE_DIR.parent))
 
 from manual_source import for_movement, load as load_manual  # noqa: E402
-from movement_definition import load as load_definition  # noqa: E402
+from movement_definition import band_label, load as load_definition  # noqa: E402
 from render_receipt import (  # noqa: E402
     refuse_partial_receipt,
     undrawn_phases,
 )
 from movement_engine import definition_path  # noqa: E402
+# `unit_of` is called in `build` and was never imported. The pack that wrote
+# that call was parked before anything ran it, so the NameError waited here.
+from segment_measures import unit_of  # noqa: E402
 
 OUTPUT = SPIKE_DIR / "poc-output"
 TEMPLATE = SPIKE_DIR / "manual_page_template.html"
@@ -129,11 +132,19 @@ def build(
 ) -> dict:
     definition = load_definition(definition_path(movement_id))
     manual = for_movement(movement_id, drills)
+    # THE PAGE IS FORMATTED HERE, NOT IN THE TEMPLATE, so that the unit
+    # cannot be got wrong by a file with no way to look one up. The template
+    # printed `${m.band[0]}-${m.band[1]}&deg;` with a hardcoded degree sign,
+    # so a centimetre band -- and three shipped checkpoints hold one -- read
+    # as degrees on a page a COACH looks at. `band` is kept beside the label
+    # for any reader that wants the numbers.
     bands = {
         phase.name: [
             {
                 "measure": check.measure,
-                "band": [check.minimum_degrees, check.maximum_degrees],
+                "band": [check.minimum, check.maximum],
+                "unit": unit_of(check.measure),
+                "bandLabel": band_label(check),
             }
             for check in phase.checkpoints
         ]

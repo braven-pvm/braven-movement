@@ -155,7 +155,7 @@ document.getElementById('pages').innerHTML = DATA.pages.map(page => {
       <tr>
         <td class="phase">${i === 0 ? phaseName(f.name) : ''}</td>
         <td>${escape(m.measure)}</td>
-        <td>${m.band[0]}&ndash;${m.band[1]}&deg;</td>
+        <td>${escape(m.bandLabel)}</td>
       </tr>`)).join('');
   const checkpoints = page.figures.reduce((a, f) => a + f.measured.length, 0);
   const measured = checkpoints
