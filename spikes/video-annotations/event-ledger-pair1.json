@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "video-event-ledger-2",
+  "pair": "front 0.1 + side 0.1",
+  "views": {
+    "side": {
+      "videoFile": "side 0.1.mp4",
+      "videoSha256": "6e8f9fb2fe03",
+      "namedBeforeTheRename": "side 0.2.mp4",
+      "frames": 990,
+      "readAtFrameStep": 3,
+      "readingStepNote": "READ BY ME AT A STEP OF THREE FRAMES over 5.0 to 25.3 s, from contact sheets selected by index and never by seeking. TWO ROWS WERE THEN RE-READ AT A STEP OF ONE: index 269 (a gap between ball and fingers at 268, contact at 269) and index 600 (the ball just above the hands at 599, contact at 600). Those two are the anchors and they are 11.03 s apart.\n\n`frameIndex` and `seconds` always hold the FINEST reading; a coarser earlier reading keeps its own fields beside it. Same convention as every other ledger here.",
+      "events": [
+        {
+          "kind": "clap",
+          "what": "hands meet",
+          "frameIndex": 171,
+          "seconds": 5.6978,
+          "readAtFrameStep": 3
+        },
+        {
+          "kind": "catch",
+          "what": "ball into hands",
+          "frameIndex": 269,
+          "seconds": 8.963,
+          "readAtFrameStep": 1,
+          "coarseFrameIndex": 270,
+          "coarseSeconds": 8.9964,
+          "coarseAtFrameStep": 3,
+          "framesFromRefined": 1
+        },
+        {
+          "kind": "catch",
+          "what": "ball into hands",
+          "frameIndex": 330,
+          "seconds": 10.9956,
+          "readAtFrameStep": 3
+        },
+        {
+          "kind": "catch",
+          "what": "ball into hands",
+          "frameIndex": 390,
+          "seconds": 12.9949,
+          "readAtFrameStep": 3
+        },
+        {
+          "kind": "catch",
+          "what": "ball into hands",
+          "frameIndex": 444,
+          "seconds": 14.7942,
+          "readAtFrameStep": 3
+        },
+        {
+          "kind": "catch",
+          "what": "ball into hands",
+          "frameIndex": 501,
+          "seconds": 16.6933,
+          "readAtFrameStep": 3
+        },
+        {
+          "kind": "clap",
+          "what": "hands meet",
+          "frameIndex": 531,
+          "seconds": 17.693,
+          "readAtFrameStep": 3
+        },
+        {
+          "kind": "catch",
+          "what": "ball into hands",
+          "frameIndex": 600,
+          "seconds": 19.992,
+          "readAtFrameStep": 1,
+          "coarseFrameIndex": 600,
+          "coarseSeconds": 19.992,
+          "coarseAtFrameStep": 3,
+          "framesFromRefined": 0
+        },
+        {
+          "kind": "catch",
+          "what": "ball into hands",
+          "frameIndex": 657,
+          "seconds": 21.8913,
+          "readAtFrameStep": 3
+        },
+        {
+          "kind": "catch",
+          "what": "ball into hands",
+          "frameIndex": 720,
+          "seconds": 23.9904,
+          "readAtFrameStep": 3
+        }
+      ]
+    },
+    "front": {
+      "videoFile": "front 0.1.mp4",
+      "videoSha256": "f7faf38b5d42",
+      "readingStepNote": "THIS VIEW'S EVENTS LIVE IN event-ledger-0.1.json, under its `front` view. Read the sha256, not the file name.",
+      "events": []
+    }
+  },
+  "why": "WHY THIS FILE EXISTS AT ALL, and it is the point of it. Pair 1 was established at a frame offset of -5, and until 2026-09-07 NO COMMITTED LEDGER HELD 6e8f9fb2fe03's EVENTS. `git grep 6e8f9fb2` found the hash only in prose, in the pair table and in one test string. The 8-of-8 result that established the pairing had run on rows that were never committed, so the pairing was a hand-typed table and nobody could re-derive it. Commit the instrument with its numbers.\n\nThese rows were read from the frames by me, at the steps each row declares, WITHOUT reading the offset off the pair table first: a catch found where an offset predicted a catch is not evidence in a clip of catches, which is how -0.7295 s was published. The two refined anchors came out at side 269 and side 600 against front 274 and front 605, which is -5 twice, 11.03 s apart.",
+  "identityNote": "Both files are named by sha256. The two side files' names were swapped at source on 2026-09-07: this file was called `side 0.2.mp4` when the pairing was measured. The hash is the identity."
+}

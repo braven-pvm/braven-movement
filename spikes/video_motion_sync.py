@@ -13,9 +13,15 @@ the correlation has many near-equal peaks. That holds whatever the signal is,
 sound or pixels, which is why both automatic routes failed the same way. A
 unique event is not a convenience for this method — it is a requirement.
 
-The audio route failed on session 1.0 and `video_sync.py` records why: there is
-no clap in the material, and four correlation methods returned four different
-answers with no peak worth the name.
+The audio route failed on session 1.0 and `video_sync.py` records why: four
+correlation methods returned four different answers with no peak worth the name.
+
+CORRECTED 2026-09-04, and the correction matters to this module's premise: THE
+MATERIAL DOES CONTAIN A CLAP — two, in the front view, at 5.800 s and 17.835 s.
+An earlier version of this sentence said it did not. The audio route failed
+because no offset reproduces between the two tracks, not because there was
+nothing to find, so a second instrument reading pixels is still the right
+answer and its reason is now the correct one.
 
 This is the second instrument, and it fails differently on purpose. It reads
 pixels rather than sound, so gym reverb, two microphone responses and two
@@ -214,9 +220,15 @@ def main(argv: list[str]) -> int:
 
     print(
         "\nADD this offset to a side-file timestamp to reach the front file's\n"
-        "clock, the same convention as the schema's offsetSecondsToReference.\n"
-        "Worked on set 0.1: the first catch is at 8.25 s in the side file and\n"
-        "9.25 in the front, and 8.25 + 1.000 = 9.25.\n"
+        "clock. That is the sign convention the schema's FORMER\n"
+        "offsetSecondsToReference used; THE FIELD NO LONGER EXISTS and the\n"
+        "schema's sync is a FRAME offset added to a frame INDEX.\n"
+        "Worked on set 0.1, WITHDRAWN 2026-09-07 and kept for the sign\n"
+        "convention alone: the first catch was recorded at 8.25 s in the side\n"
+        "file and 9.25 in the front, and 8.25 + 1.000 = 9.25. THE FILE NAMES\n"
+        "ARE WRONG: front 0.1 pairs with side 0.2, and the sync is a FRAME\n"
+        "offset of -5, not a number of seconds. Refer to PAIRS in\n"
+        "video_keypoints.py.\n"
         "\nA peak/sidelobe near 1 means there is no peak and the number is not\n"
         "a measurement, whatever it says. Every row above is such a number."
     )

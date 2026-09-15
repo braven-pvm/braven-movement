@@ -40,10 +40,21 @@ import argparse
 import hashlib
 import json
 import shutil
+
 import sys
 from pathlib import Path
 
 SPIKE_DIR = Path(__file__).resolve().parent
+# `render_receipt.py` is the repository's bpy-free rule module and it lives at
+# the root, beside the renderer that writes these receipts.
+sys.path.insert(0, str(SPIKE_DIR))
+sys.path.insert(0, str(SPIKE_DIR.parent))
+
+from render_receipt import (  # noqa: E402
+    WHY_REFUSED,
+    undrawn_complaint,
+    undrawn_phases,
+)
 LIBRARY = SPIKE_DIR / "poc-output" / "library"
 # The file this script writes. It is excluded from the digest so that editing
 # it — a retroactive note, a correction — cannot change the digest of the set.
@@ -84,6 +95,34 @@ def stamps(directory: Path) -> dict[str, dict | None]:
         except (json.JSONDecodeError, OSError) as problem:
             raise SystemExit(f"{path.name} cannot be read: {problem}") from None
     return found
+
+
+def whole_drills(directory: Path) -> tuple[bool, str]:
+    """Whether every receipt describes a drill that was fully drawn.
+
+    A SET WITH A HOLE IN IT IS NOT A SET. `one_set` asks whether the receipts
+    came from one build; it cannot see a drill the renderer could not finish,
+    because a partial receipt carries the same stamp as a whole one. The render
+    loop began writing receipts for partly-drawn drills on 2026-09-07, and this
+    reader predates that: it would have copied a library with a missing figure
+    and stamped a digest over it.
+    """
+    import json as _json
+
+    partial = []
+    for path in sorted(directory.glob("*.render.json")):
+        try:
+            receipt = _json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        undrawn = undrawn_phases(receipt)
+        if undrawn:
+            partial.append(
+                undrawn_complaint(receipt.get("movementId", path.stem), undrawn)
+            )
+    if partial:
+        return False, " ".join(partial)
+    return True, "every receipt drew every phase it was asked for"
 
 
 def one_set(found: dict[str, dict | None]) -> tuple[bool, str]:
@@ -196,6 +235,12 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--note", default=None,
                         help="a sentence about why it is being kept")
     parser.add_argument("--source", default=str(LIBRARY))
+    parser.add_argument(
+        "--allow-partial", action="store_true",
+        help="archive a library in which some drill could not be fully drawn. "
+             "The refusal exists because a set with a hole in it is not a set, "
+             "and a partial receipt carries the same build stamp as a whole "
+             "one, so the stamp check cannot see it.")
     arguments = parser.parse_args(argv[1:])
 
     source = Path(arguments.source)
@@ -208,6 +253,13 @@ def main(argv: list[str]) -> int:
     if not whole:
         print(f"REFUSED: {why}")
         return 1
+
+    drawn, reason = whole_drills(source)
+    if not drawn and not arguments.allow_partial:
+        print(f"REFUSED: {reason}{WHY_REFUSED}")
+        return 1
+    if not drawn:
+        print(f"NOTE: archiving a partial library deliberately. {reason}")
 
     destination = source.parent / f"library-{arguments.label}"
     if destination.exists():

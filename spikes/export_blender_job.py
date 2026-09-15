@@ -34,11 +34,13 @@ from ball_track import has_ball  # noqa: E402
 from movement_definition import load as load_definition  # noqa: E402
 from athlete import minmax_limits  # noqa: E402
 from movement_engine import (  # noqa: E402
+    PLANTED_CM,
     definition_path,
     joint_positions,
     library,
     load_character,
 )
+from contact_solve import ELBOW_POLE_ANGLE_DEGREES  # noqa: E402
 from possession_solve import solve_movement  # noqa: E402
 from technique import has_technique, load_technique, technique_path  # noqa: E402
 
@@ -277,8 +279,33 @@ def rest_torso(rest_points, index) -> float:
     return float(np.linalg.norm(middle - pelvis))
 
 
-def _stance(points, index) -> dict:
-    """The stance, in leg lengths, measured from the pelvis."""
+def _stance(points, index, rest_points=None) -> dict:
+    """The stance, in leg lengths, measured from the pelvis.
+
+    AND HOW FAR OFF THE GROUND SHE IS, which this did not carry until
+    2026-09-14 and which cost the library its only jump. Every value here is
+    relative to the PELVIS, so it is translation-invariant: lift the whole
+    solved skeleton 40 cm and `ankleFromPelvisInLegs` does not change by a
+    digit. The renderer therefore had nothing to place her height from and
+    invented one, planting her lower foot on the floor on every frame of every
+    drill. `netball_double_foot_landing` has a phase named `flight` and the
+    render could not leave the ground in it.
+
+    `ankleAboveGroundInLegs` is the missing quantity and it is measured from
+    the engine's own datum, `rest_points[index["l_foot"]]`, the rest-pose ANKLE.
+    That is the zero `movement_engine.py:352` places feet against, so a planted
+    foot reads 0.0 here by construction and an old job and a new one agree
+    exactly where she is planted.
+
+    IT IS NOT THE COURT, and the two must not be added. The rest ankle sits
+    7.3886 cm above world y=0, and `docs/KNOWN_ISSUES.md` records that as a
+    deliberate hazard: `ballHeightCm` measures from the court and the foot
+    heights from this ankle. A third zero is what that row exists to prevent.
+
+    `rest_points` is optional ONLY so that a caller written before this field
+    still runs. It returns the old shape then, and a job without the field
+    renders exactly as it did.
+    """
     pelvis = to_blender(points[index["root"]])
     legs = []
     for side in ("l", "r"):
@@ -292,7 +319,28 @@ def _stance(points, index) -> dict:
     for side in ("l", "r"):
         ankle = to_blender(points[index[f"{side}_foot"]])
         ankles[side] = [round(float(v), 6) for v in (ankle - pelvis) / leg]
-    return {"ankleFromPelvisInLegs": ankles}
+    stance = {"ankleFromPelvisInLegs": ankles}
+    if rest_points is None:
+        return stance
+
+    ground = float(to_blender(rest_points[index["l_foot"]])[2])
+    above = {}
+    for side in ("l", "r"):
+        gap = float(to_blender(points[index[f"{side}_foot"]])[2]) - ground
+        # A PLANTED FOOT MUST READ EXACTLY ZERO, and the threshold is the
+        # engine's own, not one chosen here. `PLANTED_CM` is what
+        # `movement_engine.py:374` already grades by: within it, the ball of
+        # the foot is pinned flat and the foot IS planted.
+        #
+        # Without this the solve's planted frames export 0.000086 leg lengths
+        # rather than 0.0 -- 0.007 cm, which is 0.04 of a pixel. That is
+        # physically nothing and it is not visually nothing: a sub-pixel shift
+        # re-antialiases every edge, and it moved about 1000 pixels per view on
+        # all three planted phases of `netball_double_foot_landing`. Snapping
+        # here is what lets a planted figure re-render pixel for pixel.
+        above[side] = 0.0 if gap * 100.0 <= PLANTED_CM else round(gap / leg, 6)
+    stance["ankleAboveGroundInLegs"] = above
+    return stance
 
 
 def _grip(points, index, centre, radius: float, arm: float, sides) -> dict:
@@ -345,7 +393,7 @@ def phase_job(result, index, frame: int, method, rest_points) -> dict:
         "frame": int(frame),
         "arms": {side: _arm(points, index, side) for side in ("l", "r")},
         "hands": {side: _hand(points, index, side) for side in ("l", "r")},
-        "stance": _stance(points, index),
+        "stance": _stance(points, index, rest_points),
         # THE ANCHOR `fromShouldersInArms` IS MEASURED FROM, which this job did
         # not transmit until 2026-09-04. A consumer was told where the ball sits
         # relative to the shoulder midpoint and never told where that midpoint
@@ -436,6 +484,96 @@ def phase_job(result, index, frame: int, method, rest_points) -> dict:
     return job
 
 
+def solve_parameters(method) -> dict:
+    """ONE solve parameter this job's pose was produced with, name to value.
+
+    **IT RECORDS ONE OF TEN AND THE NAME OVERSTATES IT.** The field is called
+    `solveParameters`, plural, and this returns a single entry. Measured by
+    walking `contact_solve`'s module-level constants and asking which are read
+    by the eleven functions `possession_solve` imports: **ten are, and this
+    records `ELBOW_POLE_ANGLE_DEGREES` alone.**
+
+        recorded     ELBOW_POLE_ANGLE_DEGREES
+        not recorded CONTACT_POLE_WEIGHT, CONTACT_WEIGHT, PINNED_FRACTION,
+                     TWIST_SEEDS, UPPER_ARM_AIM_DOWN, UPPER_ARM_AIM_OUT,
+                     UPPER_ARM_AIM_WEIGHT, UPPER_ARM_FRACTION,
+                     UPPER_ARM_LOCAL_AXIS
+
+    Ten is the total under a one-module call graph over direct calls, so a call
+    through an attribute or an alias would be invisible to it, and constants in
+    OTHER modules are a separate count nobody has taken. `LIMIT_WEIGHT` at
+    `movement_engine.py:90` is the first known member of that uncounted set.
+
+    **WHY THIS MATTERS TO A CONSUMER.** `render_receipt.refuse_unverifiable_pair`
+    refuses a pair whose parameters other than the varied one differ. **It reads
+    THIS mapping**, so at one key that refusal compares an empty set and cannot
+    fire. The nine unrecorded constants are equal between two jobs only because
+    both are built in one process from one build — **a construction that does
+    not hold for a pair drawn from two builds, which this project already makes.**
+
+    Recording all ten is a decision, not a tidy-up: two of them are solver
+    weights rather than quantities a coach could hold, and the checker below
+    compares as a float, which `TWIST_SEEDS` and `UPPER_ARM_LOCAL_AXIS` are not.
+
+    A parameter is a fact about the solve, so it crosses the job boundary in
+    the PRODUCER's direction. The rendering lane refuses to call two pictures a
+    pair unless every other parameter is equal, and it cannot check that
+    against a job that does not say.
+
+    THE VALUE IS WHAT THE SOLVE USED, NEVER WHAT THE FILE SAID. A technique
+    naming no override solved on the engine's default, and this records the
+    DEFAULT rather than nothing. If it recorded nothing, a job that solved on
+    the default and a job that recorded no mapping would be the same artefact,
+    and a consumer comparing two of them could not tell an override from an
+    omission.
+    """
+    return {
+        "ELBOW_POLE_ANGLE_DEGREES": float(
+            ELBOW_POLE_ANGLE_DEGREES
+            if method.elbow_angle_degrees is None
+            else method.elbow_angle_degrees
+        ),
+    }
+
+
+def check_solve_parameters(job: dict, method) -> None:
+    """Refuse a job that disagrees with `solve_parameters` about what it used.
+
+    **NOT "every parameter its solve used", which an earlier version of this
+    docstring claimed.** It compares the job's mapping against the parameters
+    `solve_parameters` knows about, and that is one of the ten the solve path
+    reads. **A job passing this check is complete about that one and silent
+    about the other nine.**
+
+    THE FAILURE THIS EXISTS FOR IS INVISIBLE IN THE ARTEFACT. A job solved with
+    an override and recording the default looks exactly like a job solved with
+    the default. Two such jobs would be captioned as a pair differing in one
+    parameter while differing in none, and the caption is the whole artefact.
+
+    Raised at the end of `build`, so a job cannot leave this module without a
+    correct mapping.
+    """
+    recorded = job.get("solveParameters")
+    if not isinstance(recorded, dict):
+        raise ValueError(
+            "the job records no solveParameters mapping, so nothing can say "
+            "which parameters its pose was solved with"
+        )
+    used = solve_parameters(method)
+    missing = sorted(name for name in used if name not in recorded)
+    if missing:
+        raise ValueError(
+            f"the solve used {missing} and the job does not record them"
+        )
+    wrong = sorted(
+        f"{name}: solved with {value}, recorded {recorded[name]}"
+        for name, value in used.items()
+        if float(recorded[name]) != value
+    )
+    if wrong:
+        raise ValueError(f"the job records the wrong value for {wrong}")
+
+
 def build(character, movement_id: str, every: int = 0) -> dict:
     definition = load_definition(definition_path(movement_id))
     method = load_technique(technique_path(movement_id))
@@ -458,7 +596,7 @@ def build(character, movement_id: str, every: int = 0) -> dict:
         for frame in range(0, frames, every):
             frames_out.append(phase_job(result, index, frame, method, rest_points))
 
-    return {
+    job = {
         "schemaVersion": 1,
         "movementId": movement_id,
         "skill": definition.skill,
@@ -488,9 +626,15 @@ def build(character, movement_id: str, every: int = 0) -> dict:
         },
         "framesPerSecond": float(result["track"].frames_per_second),
         "frameStep": int(every),
+        # WHAT THE POSE WAS SOLVED WITH, not what the file asked for. Refer to
+        # `solve_parameters`. Checked below, so a job cannot leave this module
+        # recording a parameter its solve did not use.
+        "solveParameters": solve_parameters(method),
         "phases": phases,
         "frames": frames_out,
     }
+    check_solve_parameters(job, method)
+    return job
 
 
 def main(argv: list[str]) -> int:

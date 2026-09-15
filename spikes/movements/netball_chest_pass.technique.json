@@ -34,7 +34,7 @@
       "note": "SHE STEPS AND THE BALL DOES NOT MOVE. 0.01 of a torso length, about half a centimetre. This is the manual's 'Keep hands where they were with catch, don't pull ball back' and it is the whole coaching point of the phase. NOTHING GRADES IT: refer to the definition's pullBackMeasureNote, where a checkpoint for it was authored, mutation-tested and deleted."
     },
     {
-      "atPhase": 0.62,
+      "atPhase": 0.71,
       "name": "drive",
       "across": 0.0,
       "up": 0.22375,

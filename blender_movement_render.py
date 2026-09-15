@@ -34,7 +34,14 @@ SPIKE_DIR = MODULE_DIR / "spikes"
 if str(SPIKE_DIR) not in sys.path:
     sys.path.insert(0, str(SPIKE_DIR))
 
-from render_receipt import render_outcome  # noqa: E402
+from render_receipt import (  # noqa: E402
+    SOLVE_PARAMETERS,
+    render_outcome,
+    solve_parameters,
+)
+# What the receipt may claim about the assets that drew the figure. It has no
+# Blender in it, so a test can call it; this module's own tests skip.
+from asset_licences import source_asset_records  # noqa: E402
 # The repository's ONE build stamp, shared with every other receipt this
 # project writes, and the shape `archive_receipts.py` reads. It is cached
 # for the life of the process, so every receipt of one run names one build.
@@ -448,13 +455,35 @@ def pose_girdle(rig, phase: dict, rest: dict) -> dict:
 
 
 def pose_stance(rig, stance: dict, foot_baseline: dict) -> dict:
-    """Place the feet from the job, and keep them flat on the floor.
+    """Place the feet from the job, at the height the job gives them.
 
     Flat is not a detail. The engine has no floor constraint and holds the
     ankle 48 to 62 degrees plantarflexed on every drill, which drives the ball
     of the foot through the floor. Restoring the foot's own world matrix after
     the leg is aimed is how the reference generator keeps it flat, and it is
     what stops that defect reaching the page.
+
+    UNTIL 2026-09-14 THIS ALSO PUT HER ON THE FLOOR ON EVERY FRAME, and that
+    was not a detail either. `ankleFromPelvisInLegs` is measured from the
+    pelvis, so it carries no height at all, and this function had nothing to
+    place her from. It planted the lower foot on the rig's rest floor and the
+    athlete could not leave the ground in any render.
+    `netball_double_foot_landing` has a phase named `flight` where the solve
+    puts her 15.80 cm up, and the render's lowest pixel moved TWO PIXELS across
+    the whole arc -- measured with `scripts/flight_probe.py`, whose calibration
+    is 6.1 px per cm, so the missing rise was 96 px.
+
+    `ankleAboveGroundInLegs` is now read when the job carries it. THE SIDE IS
+    CHOSEN THE SAME WAY IT ALWAYS WAS -- the foot lower relative to the pelvis
+    -- so a job without the field reaches the identical arithmetic and every
+    planted figure already on disk re-renders byte for byte. A planted foot
+    reads 0.0 in that field by construction, because the exporter measures it
+    from the same rest ankle this function lands on.
+
+    ONE FOOT DOWN IS STILL ONE FOOT DOWN. Where one foot is lifted and the
+    other is planted, the planted one is the lower one, its height reads 0.0,
+    and she does not rise. Only a frame with BOTH feet off the ground moves
+    her, which is what a jump is.
     """
     leg = sum(
         bone_chain_length(rig, f"thigh_{side}", f"calf_{side}", f"foot_{side}")
@@ -465,14 +494,16 @@ def pose_stance(rig, stance: dict, foot_baseline: dict) -> dict:
         for side in ("l", "r")
     }
 
-    # Put the lower foot on the floor the athlete was built standing on.
+    # The floor the athlete was built standing on, and how far above it the job
+    # puts her lower foot. THE SIDE IS PICKED BEFORE THE HEIGHT IS READ, by the
+    # same `min` this line has always used, so that a job with no height field
+    # computes `floor - min(wanted.z)` exactly as before.
+    lower = min(("l", "r"), key=lambda side: wanted[side].z)
+    above = stance.get("ankleAboveGroundInLegs")
+    lift = above[lower] * leg if above else 0.0
     floor = min(world_head(rig, f"foot_{side}").z for side in ("l", "r"))
     pelvis = world_head(rig, "pelvis")
-    target = Vector((
-        pelvis.x,
-        pelvis.y,
-        floor - min(wanted[side].z for side in ("l", "r")),
-    ))
+    target = Vector((pelvis.x, pelvis.y, floor + lift - wanted[lower].z))
     translate_bone_world(rig, "pelvis", target - pelvis)
 
     pelvis = world_head(rig, "pelvis")
@@ -490,7 +521,25 @@ def pose_stance(rig, stance: dict, foot_baseline: dict) -> dict:
         )
         rotate_bone_toward(rig, thigh, calf, knee)
         rotate_bone_toward(rig, calf, foot, ankle)
-        rig.pose.bones[foot].matrix = foot_baseline[foot]
+        # KEEP THE REST ORIENTATION, NOT THE REST POSITION. This line used to
+        # assign the whole baseline matrix, and a world matrix carries a
+        # TRANSLATION as well as a rotation. So the second thing pinning her to
+        # the floor was here, not in the pelvis: whatever height the leg had
+        # just been aimed at, the foot's head was dragged back to where it sat
+        # at rest, on every frame of every drill.
+        #
+        # IT HID THE FIRST FIX COMPLETELY. With `ankleAboveGroundInLegs` read
+        # and the pelvis correctly raised 9.3 cm at `flight`, the feet still
+        # measured 0.073583 -- the rest height, to six decimals, identical to
+        # `approach`. The pelvis rose and the legs simply stretched.
+        #
+        # The flatness is what the restore was for, and flatness is rotation.
+        # Taking the baseline's rotation and the aimed translation keeps the
+        # defect it was written to fix -- 48 to 62 degrees of plantarflexion
+        # driving the toe through the floor -- and drops the re-pinning.
+        flat = foot_baseline[foot].copy()
+        flat.translation = rig.pose.bones[foot].matrix.translation
+        rig.pose.bones[foot].matrix = flat
         bpy.context.view_layer.update()
         placed[side] = list(world_head(rig, foot))
     return placed
@@ -636,6 +685,13 @@ class Studio:
             self.assets,
             self.source_assets,
         ) = create_athlete(config.athlete, config.presentation)
+        # THE LICENCE IS CHECKED HERE, BEFORE ANY FIGURE IS DRAWN, and not at
+        # the receipt. An asset this repository has not licensed must not cost
+        # a coach half an hour of rendering before it is refused, and a receipt
+        # written for such a run would claim a licence it does not have.
+        # `docs/LICENSING.md` requires every newly selected MPFB asset to be
+        # reconfirmed before publication; until now nothing enforced it.
+        self.source_asset_records = source_asset_records(self.source_assets, sha256)
         self.basis = {
             bone.name: bone.matrix_basis.copy() for bone in self.rig.pose.bones
         }
@@ -658,7 +714,8 @@ class Studio:
         )
 
 
-def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) -> None:
+def render_job(studio: Studio, job: dict, job_path: Path, args,
+               output: Path) -> list[dict]:
     # Delete any receipt from an earlier run BEFORE rendering. The solve can
     # raise part way through, and `--output` reuses its directory, so a PASS
     # receipt from a previous run would otherwise sit beside the fresh partial
@@ -676,13 +733,33 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
     if not phases:
         raise SystemExit(f"no phase of {job['movementId']} matches {wanted}")
 
-    rendered = []
+    rendered, failed = [], []
     for phase in phases if not args.no_stills else []:
-        centre, receipt = pose_phase(
-            rig, phase, job["anatomyLimitsDegrees"], basis, foot_baseline,
-            config.finger_curl_degrees, job.get("knuckleLimitsDegrees"),
-            studio.human,
-        )
+        # ONE BAD PHASE MUST COST ONE FIGURE AND NOT A LIBRARY. On 2026-09-07
+        # `netball_one_hand_high_pass/ready` raised out of the whole run and
+        # took eleven good drills with it, twice, at forty minutes a time. The
+        # failure is RECORDED rather than swallowed: it goes in the receipt
+        # with its reason, the run's word stops being PASS, and the process
+        # exits non-zero at the end. A loop that carried on quietly would have
+        # traded a loud failure for a silent one.
+        try:
+            centre, receipt = pose_phase(
+                rig, phase, job["anatomyLimitsDegrees"], basis, foot_baseline,
+                config.finger_curl_degrees, job.get("knuckleLimitsDegrees"),
+                studio.human,
+            )
+        except Exception as error:
+            failed.append({
+                "name": phase["name"],
+                "frame": phase["frame"],
+                "failed": True,
+                "error": f"{type(error).__name__}: {error}",
+            })
+            print(
+                f"[movement-render] FAILED {phase['name']} frame "
+                f"{phase['frame']}: {type(error).__name__}: {error}"
+            )
+            continue
         ball.location = centre
         bpy.context.view_layer.update()
 
@@ -726,7 +803,8 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
         rendered.append(receipt)
         print(
             f"[movement-render] {phase['name']} frame {phase['frame']} "
-            f"-> {len(images)} views"
+            f"-> {len(images)} views",
+            flush=True,
         )
 
     animation = None
@@ -764,68 +842,102 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
         bpy.context.scene.render.fps = fps
         # Set the frame before posing. Once keys exist, changing the frame
         # evaluates them and would replace whatever was posed first.
+        # THE SAME RULE AS THE PHASE LOOP, WITH THE OPPOSITE ANSWER. A still
+        # with a hole in it is one missing figure; an ANIMATION with a hole in
+        # it is a movement that plays wrongly and says nothing, because the
+        # frames either side close over the gap. So a failed frame is recorded
+        # and the EXPORT IS REFUSED, while the receipt is still written: the
+        # old behaviour raised out of `render_job` and left no receipt at all,
+        # with the stale one already unlinked.
         for number, frame in enumerate(frames, start=1):
             scene.frame_set(number)
-            centre, _ = pose_phase(
-                rig, frame, job["anatomyLimitsDegrees"], basis, foot_baseline,
-                config.finger_curl_degrees, job.get("knuckleLimitsDegrees"),
-            )
+            try:
+                centre, _ = pose_phase(
+                    rig, frame, job["anatomyLimitsDegrees"], basis,
+                    foot_baseline, config.finger_curl_degrees,
+                    job.get("knuckleLimitsDegrees"),
+                )
+            except Exception as error:
+                failed.append({
+                    "name": f"frame {number}",
+                    "frame": number,
+                    "failed": True,
+                    "error": f"{type(error).__name__}: {error}",
+                })
+                print(
+                    f"[movement-render] FAILED animation frame {number}: "
+                    f"{type(error).__name__}: {error}",
+                    flush=True,
+                )
+                continue
             ball.location = centre
             keyframe(rig, ball, number)
         scene.frame_set(1)
 
-        bake_action(rig, 1, len(frames))
-        # With the masks applied the skin's texture alpha has nothing left to
-        # hide, and all it does is dither: angular patches over the legs, arms
-        # and face wherever it is neither one nor zero. Hair, lashes and brows
-        # keep theirs, because they are cut-out cards. So do the eyes, whose
-        # cornea is transparent over the iris: opaque gives her blank white
-        # discs and no pupil.
-        solid = [human] + [a for a in assets if "casualsuit" in a.name]
-        print(f"[movement-render] alpha: {', '.join(set_alpha(solid, 'OPAQUE'))}")
-        glb = output / f"{job['movementId']}.glb"
-        baked = bake_shape_keys([human, *assets])
-        if baked:
-            print(f"[movement-render] baked shape keys: {', '.join(baked)}")
-        select_only([rig, human, *assets, ball, *ball_seams])
-        bpy.ops.export_scene.gltf(
-            filepath=str(glb),
-            export_format="GLB",
-            use_selection=True,
-            export_animations=True,
-            export_frame_range=True,
-            # MPFB hides the fitting helpers and the body under the clothes
-            # with two mask modifiers. The exporter ignores modifiers unless
-            # it is asked, so both masks were dropped and the athlete arrived
-            # wearing a skirt of helper geometry with her chest through her
-            # shirt. This is what applies them. It also disables shape key
-            # export, which is why they are baked first.
-            export_apply=True,
-        )
-        movie = output / f"{job['movementId']}.mp4"
-        view = job["views"]["quarter"]
-        movie = render_movie(
-            camera,
-            path=movie,
-            resolution=tuple(view["resolutionPx"]),
-            location=Vector(view["locationM"]),
-            target=Vector(view["targetM"]),
-            lens=view["lensMm"],
-            sensor_width=view["sensorWidthMm"],
-            fps=fps,
-        )
-        animation = {
-            "frames": len(frames),
-            "framesPerSecond": fps,
-            "glb": {"path": str(glb), "bytes": glb.stat().st_size,
-                    "sha256": sha256(glb)},
-            "movie": {"path": str(movie),
-                      "bytes": movie.stat().st_size if movie.is_file() else 0},
-        }
-        print(
-            f"[movement-render] animated {len(frames)} frames at {fps} fps "
-            f"-> {glb.name} ({glb.stat().st_size // 1024} KB), {movie.name}"
-        )
+        if failed:
+            print(
+                f"[movement-render] REFUSING the animation export: "
+                f"{len(failed)} frame(s) could not be posed, and an animation "
+                f"with a hole in it plays over the gap without saying so. The "
+                f"receipt is still written.",
+                flush=True,
+            )
+
+        if failed:
+            animation = None
+        else:
+            bake_action(rig, 1, len(frames))
+            # With the masks applied the skin's texture alpha has nothing left to
+            # hide, and all it does is dither: angular patches over the legs, arms
+            # and face wherever it is neither one nor zero. Hair, lashes and brows
+            # keep theirs, because they are cut-out cards. So do the eyes, whose
+            # cornea is transparent over the iris: opaque gives her blank white
+            # discs and no pupil.
+            solid = [human] + [a for a in assets if "casualsuit" in a.name]
+            print(f"[movement-render] alpha: {', '.join(set_alpha(solid, 'OPAQUE'))}")
+            glb = output / f"{job['movementId']}.glb"
+            baked = bake_shape_keys([human, *assets])
+            if baked:
+                print(f"[movement-render] baked shape keys: {', '.join(baked)}")
+            select_only([rig, human, *assets, ball, *ball_seams])
+            bpy.ops.export_scene.gltf(
+                filepath=str(glb),
+                export_format="GLB",
+                use_selection=True,
+                export_animations=True,
+                export_frame_range=True,
+                # MPFB hides the fitting helpers and the body under the clothes
+                # with two mask modifiers. The exporter ignores modifiers unless
+                # it is asked, so both masks were dropped and the athlete arrived
+                # wearing a skirt of helper geometry with her chest through her
+                # shirt. This is what applies them. It also disables shape key
+                # export, which is why they are baked first.
+                export_apply=True,
+            )
+            movie = output / f"{job['movementId']}.mp4"
+            view = job["views"]["quarter"]
+            movie = render_movie(
+                camera,
+                path=movie,
+                resolution=tuple(view["resolutionPx"]),
+                location=Vector(view["locationM"]),
+                target=Vector(view["targetM"]),
+                lens=view["lensMm"],
+                sensor_width=view["sensorWidthMm"],
+                fps=fps,
+            )
+            animation = {
+                "frames": len(frames),
+                "framesPerSecond": fps,
+                "glb": {"path": str(glb), "bytes": glb.stat().st_size,
+                        "sha256": sha256(glb)},
+                "movie": {"path": str(movie),
+                          "bytes": movie.stat().st_size if movie.is_file() else 0},
+            }
+            print(
+                f"[movement-render] animated {len(frames)} frames at {fps} fps "
+                f"-> {glb.name} ({glb.stat().st_size // 1024} KB), {movie.name}"
+            )
 
     receipt_path = output / f"{job['movementId']}.render.json"
     # WHICH BUILD DREW THIS: the session's, fixed when the athlete was built.
@@ -840,9 +952,46 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
         # project's own tool because of this line.
         "generatedFrom": stamp,
         "jobSha256": sha256(job_path),
-        "sourceAssets": [str(path) for path in studio.source_assets],
+        # WHAT THE SOLVE WAS SET TO, read from the job and never from a caller.
+        # `render_pair(parameter, value_a, value_b)` could not be verified from a
+        # receipt before this: two parameter values give two different
+        # `jobSha256`, so the receipts differ, and nothing said which hash meant
+        # which value. NULL when the job carries none, rather than absent, so a
+        # receipt that predates the field and one rendered from a job without
+        # parameters do not read the same.
+        #
+        # ON THIS BRANCH IT IS ALWAYS NULL, because no producer here writes the
+        # field: `spikes/export_blender_job.py` has zero mentions of it and real
+        # job files carry no such key. So every receipt this branch produces
+        # records null, and `refuse_unverifiable_pair` raises at its FIRST check.
+        #
+        # A one-entry producer exists on the movement lane's UNMERGED branch, and
+        # REACHABILITY IS A PROPERTY OF THE MERGE RATHER THAN OF EITHER BRANCH.
+        # When the two land together this records that one entry.
+        #
+        # AND IT WILL STILL NOT BE EVERY PARAMETER THE SOLVE USED.
+        # `CONTACT_WEIGHT`, `UPPER_ARM_AIM_OUT`, `TWIST_SEEDS` and the other
+        # solver constants are outside it. The field is plural and a reader of a
+        # receipt never opens `spikes/export_blender_job.py`, so the caution
+        # belongs here too.
+        SOLVE_PARAMETERS: solve_parameters(job),
+        # Path, sha256 AND licence per asset, the shape the reference generator
+        # already writes. A path alone cannot tell two MPFB installations apart,
+        # and `docs/ARCHITECTURE.md` rule 7 asks for the hashes. Resolved once
+        # when the athlete was built, so this line cannot fail here.
+        #
+        # BOTH KEYS SURVIVE THIS MERGE DELIBERATELY. They were inserted and
+        # replaced on ADJACENT lines of one dict by two lanes on one day, and a
+        # resolution keeping the old `[str(path) for path in ...]` comprehension
+        # would drop every hash and licence without failing anything.
+        "sourceAssets": studio.source_asset_records,
         "animation": animation,
+        # The phases that DREW, then the phases that could not, each with its
+        # reason. A reader counting `phases` alone would see a short list and
+        # no cause; a reader seeing only the failures would not know what was
+        # produced beside them.
         "phases": rendered,
+        "failedPhases": failed,
     }
     # The stamp is the point of the receipt for anyone asking which pictures
     # predate a fix, so it is checked before the file is written rather than
@@ -864,12 +1013,22 @@ def render_job(studio: Studio, job: dict, job_path: Path, args, output: Path) ->
     # and `--no-stills` took exactly that path over eight drills and printed
     # PASS eight times.
     print(
-        f"[movement-render] {render_outcome(len(rendered), animation)} "
+        f"[movement-render] "
+        f"{render_outcome(len(rendered), animation, len(failed))} "
         f"receipt={receipt_path}"
     )
+    return failed
 
 
 def main() -> None:
+    # BLOCK-BUFFERED UNDER REDIRECTION. Blender's stdout is buffered when it is
+    # not a terminal and its stderr is not, so a saved log showed the run's
+    # final SystemExit six lines ABOVE the first drill it described. Nothing
+    # was wrong and the log read as though the raise came first.
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+    except (AttributeError, ValueError):  # pragma: no cover - older streams
+        pass
     args = parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
@@ -882,9 +1041,21 @@ def main() -> None:
     studio = Studio(load_reference_catch_config(args.config))
     studio.add_ball(radii.pop())
 
+    unposable = []
     for number, (job, path) in enumerate(zip(jobs, args.job), start=1):
         print(f"[movement-render] {number}/{len(jobs)} {job['movementId']}")
-        render_job(studio, job, path, args, output)
+        for entry in render_job(studio, job, path, args, output):
+            unposable.append(f"{job['movementId']}/{entry['name']}")
+
+    # AFTER every drill, never during one. Raising here is what keeps the exit
+    # code honest without costing the drills that would have followed.
+    if unposable:
+        raise SystemExit(
+            f"[movement-render] {len(unposable)} phase(s) could not be posed "
+            f"and are missing from the library: {', '.join(unposable)}. Every "
+            f"other phase was rendered and every receipt was written; each "
+            f"failure is in its receipt's `failedPhases` with its reason."
+        )
 
 
 if __name__ == "__main__":

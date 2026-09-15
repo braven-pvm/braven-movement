@@ -1,0 +1,134 @@
+{
+  "_about": [
+    "The judgment half of the movement-parameter register.",
+    "",
+    "The extractors produce the mechanical columns: where a number lives, its",
+    "value, its path inside a structure. NOTHING HERE CAN BE COMPUTED. A source,",
+    "a scope, a frame and a unit's evidence are read by a person and written",
+    "down, and this file is where they are written.",
+    "",
+    "A ROW ABSENT FROM THIS FILE RENDERS AS sourceKind NONE. That is deliberate.",
+    "The register's charter says to say NONE loudly, and an unfilled row is",
+    "indistinguishable from an unsourced one until somebody fills it, so the",
+    "loud reading is the safe default.",
+    "",
+    "AND THIS FILE MUST NOT NAME A ROW NO EXTRACTOR PRODUCED. A sidecar entry",
+    "for a constant that does not exist would be population C inside the",
+    "register itself: a name reasoned about, carrying a source, denoting",
+    "nothing. scripts/register_sidecar_check.py refuses when that happens.",
+    "",
+    "Ids: 'A1 file:NAME', 'A2 file:NAME', 'B drill/phase/measure' or",
+    "'B drill:key', 'C document:name'."
+  ],
+
+  "A1 spikes/author_flight.py:DEFAULT_SPEED_CM": {
+    "claim": "every pass in the library leaves the hand with a horizontal component of 6.00 m/s",
+    "unitDeclared": "centimetres per second, by the name",
+    "unitEvidence": "ball_track.solve_launch takes it as the horizontal component and derives the vertical from the span and the rise; it is NOT the speed the ball leaves the hand at",
+    "sourceKind": "AUTHOR_INTENT",
+    "source": "the comment above it at author_flight.py:39, 'A drill feed. A game pass is faster, and the flight gets shorter with it.' No coach, no measurement, no citation.",
+    "sourceScope": "it states what the number is FOR. It states nothing about what a netball pass does.",
+    "regime": "authored for a drill feed, spent on every pass in the library including a bounce pass, where 600 must still throw the ball upward at the floor",
+    "dependants": "15 ball files. 4 carry it directly and 11 carry launchSpeedMetresPerSecond 6.11 to 6.64 DERIVED from it, so the eleven are one constant seen eleven times and not eleven measurements agreeing.",
+    "whatWouldChangeIt": "a coach stating what a drill feed and a game pass are, or a release speed measured from footage that can see the ball leave the hand",
+    "citedFrom": "movement lane, 2026-09-09, docs/LAUNCH_PROVENANCE.md and scripts/launch_provenance.py"
+  },
+
+  "A1 spikes/author_flight.py:DEFAULT_PASSER_AHEAD": {
+    "claim": "the passer stands 4.0 arm lengths in front of the athlete's chest, which is 2.11 m on this athlete",
+    "unitDeclared": "none. The name says neither arm lengths nor metres.",
+    "unitImplied": "metres, to a reader of the value alone",
+    "unitEvidence": "the multiplication at author_flight.py:123, chest[2] + passer_ahead * arm_cm; and netball_two_hand_catch_chest recording passerAheadCm 210.7 against a 52.68 cm rest arm, which tests the unit through a different quantity",
+    "sourceKind": "NONE",
+    "source": "none. Introduced 2026-08-18 in a commit whose message never mentions the distance.",
+    "regime": "the manual states one distance, 'Area: Court (5-7m)', in 37 places. At 2.11 m the library's 600 is a 16 degree feed rising 15 cm. At 5 m the same constant is a 34 degree lob.",
+    "dependants": "the span, and therefore the launch angle and apex of every authored flight",
+    "whatWouldChangeIt": "a coach's ruling on drill distance, which changes the speed with it: the two are one choice and not two",
+    "citedFrom": "movement lane, 2026-09-09. THE UNIT WAS PUBLISHED AS METRES BY THAT LANE, inside the document tracing that fault class, and the drill file's own note corrected it."
+  },
+
+  "A1 spikes/contact_solve.py:ELBOW_POLE_ANGLE_DEGREES": {
+    "claim": "the elbow sits 31.3 degrees around its circle from the reference direction",
+    "unitDeclared": "degrees, by the name",
+    "sourceKind": "NONE",
+    "source": "none for 31.3, and none for the 37.3 a coach is being asked to move it to",
+    "reachedBy": "used at contact_solve.py:376 inside elbow_poles (defined 327), which possession_solve.py imports at line 35 and CALLS at line 304. It is NOT inside solve_contact, which is a spike entry point called once from that file's own main.",
+    "whatWouldChangeIt": "a coach's ruling. It is on the coach agenda.",
+    "note": "One lane reported that contact_solve.py is not on the library path. That is true of solve_contact and FALSE of this constant. The wider reading would have removed this row from the register, and the number is on the coach agenda."
+  },
+
+  "A2 spikes/isb_angles.py:AAOS_LIMITS": {
+    "claim": "eight joints of a human body have these ranges of motion, in degrees",
+    "unitDeclared": "degrees, in the RangeLimit field names",
+    "sourceKind": "LITERATURE",
+    "source": "the comment at isb_angles.py:238-239: 'Clinical norms from the American Academy of Orthopaedic Surgeons. These are guidance for a healthy adult. An athlete population needs its own bands.'",
+    "sourceScope": "POPULATION STATED, CITATION INCOMPLETE. The organisation is named in full and the population is 'a healthy adult'. An organisation is not a publication: there is no edition, no page and no document, so a reader cannot check the sixteen numbers.",
+    "regime": "measured on a healthy adult population, spent on an elite netball athlete. THE AUTHOR RECORDED THIS: 'An athlete population needs its own bands.'",
+    "dependants": "build_library.py reads AAOS_LIMITS and checks EVERY drill in the library against it",
+    "whatWouldChangeIt": "the document and edition the numbers came from, then a decision about the athlete population the author already flagged",
+    "note": "This lane first reported the row as 'four letters, no edition, no page, no population' to three lanes, and one repeated it. It had read the table and not the two lines above it."
+  },
+
+  "A2 spikes/contact_solve.py:TWIST_SEEDS": {
+    "claim": "the solver tries these four forearm twists from rest, plus the continuity pose, and keeps the best",
+    "unitDeclared": "radians",
+    "sourceKind": "AUTHOR_INTENT",
+    "source": "the comment above it: from rest the hand 'rolled the wrong way round and jammed against the pronation limit with the palm facing away', and several seeds remove that failure at about 20 ms",
+    "sourceScope": "NARROWER THAN ITS USE. It proves a pronation-limit jam is removed. It proves nothing about basin stability, and the movement lane's sweeps on 2026-09-09 measured the library still crossing basins with the seeds in place: the overhead pass's step knee reads 0.00 degrees, then +8.40, then 0.00, then +8.30 as one parameter moves.",
+    "whatWouldChangeIt": "a measurement of basin stability across the library, which is a different experiment from the one the comment reports",
+    "citedFrom": "movement lane, 2026-09-09"
+  },
+
+  "A2 scripts/ball_anchor_verdict.py:ENGINE": {
+    "claim": "144 numbers: the shoulder midpoint minus the pelvis, in centimetres, at named phases of eight drills",
+    "unitDeclared": "centimetres, in the comment, with the axis order across, up, ahead",
+    "sourceKind": "MEASURED",
+    "source": "another lane's solved pose, transcribed. The file says so plainly.",
+    "sourceScope": "STAMPED 2026-09-09. The originating lane RE-READ all 144 values on the current build rather than inferring a hash: 0 moved, worst 0.0005 cm, so the file now says 'still true of b34fd93, tested'. BALL_TO_HEAD is explicitly NOT covered by that stamp.",
+    "regime": "a snapshot of one build, read by a verdict script that runs against whatever build is current",
+    "note": "Registered when it carried a DATE and no build hash, so its staleness could not be tested. An honest snapshot with no build is still untestable. The stamp is what changed that, and it is the model for every other transcribed measurement in the tree."
+  },
+
+  "B netball_chest_pass:in_her_hands": {
+    "claim": "the ball sits 0.55 arm lengths ahead of and 0.12 above her chest anchor for the whole carry",
+    "unitDeclared": "arm lengths",
+    "frame": "THE ATHLETE'S OWN FRAME, from her chest anchor. The offset is constant in her frame and moving in the world, so the ball is pinned to her and travels 0.36 to 1.60 cm per frame from her own motion.",
+    "sourceKind": "DERIVED",
+    "derivedFrom": {
+      "parent": "netball_two_hand_catch_chest.technique.json:19-20, its secured-ball numbers 0.12205 and 0.55938 in torso lengths",
+      "operation": "divided by 1.017053, the reference athlete's arm over her torso. Verified exact: 0.120004 and 0.550001."
+    },
+    "rootSource": "ahead 0.55 roots in a MEASURED elbow-flexion sweep recorded at netball_two_hand_snatch_pull_in.technique.json:29 ('0.40 gives 153 degrees of elbow flexion, 0.50 gives 149, and 0.55 gives 145'), chosen to stay inside the AAOS elbow limit. up 0.12 has NO derivation below the conversion.",
+    "note": "Filed by the contract lane as wholly unsourced. It is half sourced and half not, and neither half is visible without following the chain. The note points at the parent drill's .ball.json, which has no such key and every note in it empty; the values are in its .technique.json.",
+    "citedFrom": "contract lane and movement lane, 2026-09-09; movement measurement at 15d9857, NOT merged into main at the time of writing"
+  },
+
+  "B release@0.80": {
+    "claim": "the ball leaves the hand at phase 0.80 of the movement",
+    "sourceKind": "NONE",
+    "source": "no note in any of the five files derives 0.80. Four describe what the phase MEANS and one has no note at all.",
+    "sourceScope": "THE CHEST PASS'S NOTE LOOKS LIKE A DERIVATION AND IS NOT ONE FOR THIS FIELD. It sources the ball OFFSET from netball_two_hand_catch_chest's send_back, and that parent sits at phase 0.92. The note explains some of the entry's numbers and not this one.",
+    "meaning": "CONTESTED, then SETTLED BY MEASUREMENT. All four passes have 96 frames, so 0.80 * 95 = 76.0 in every one, and the movement lane measured frame 76 as the FIRST RELEASED frame on all four. THREE OF THE FIVE FILES CALL IT THE LAST FRAME THE HANDS ARE ON THE BALL, which is the frame before.",
+    "dependants": "five drills: chest, overhead, bounce and one-hand-high passes, and deflect_high's send_on. deflect_high has 88 frames, so 0.80 * 87 = 69.6 and the phase does not land on a frame boundary at all.",
+    "whatWouldChangeIt": "a coach or a measurement stating when the ball leaves the hand. The meaning is settled; the value is not sourced.",
+    "citedFrom": "movement lane, 2026-09-09"
+  },
+
+  "C COACH_MORNING_2026-09.md:wristToDegrees": {
+    "claim": "a wrist angle at release, one of seven parameters of a flick model",
+    "existsInCode": false,
+    "sourceKind": "NONE",
+    "source": "none. The document says four of the model's seven parameters are sourced and that this one is 'named and not filled'.",
+    "note": "ASSUMED, not defined. The document tells the coach she is 'choosing part of a release the engine will actually perform'. No such model exists in main's code. A coach is being asked to supply a value for a parameter that has no home.",
+    "whatWouldChangeIt": "the model being built, at which point this becomes a code row and not a prose one"
+  },
+
+  "C COACH_MORNING_2026-09.md:fingerToDegrees": {
+    "claim": "a finger angle at release, one of seven parameters of a flick model",
+    "existsInCode": false,
+    "sourceKind": "NONE",
+    "source": "none. Named and not filled, as above.",
+    "note": "ASSUMED, not defined. Refer to wristToDegrees.",
+    "whatWouldChangeIt": "the model being built"
+  }
+}

@@ -7,6 +7,7 @@ a confident picture.
 """
 
 import json
+import pathlib
 import subprocess
 import tempfile
 import sys
@@ -40,7 +41,190 @@ def side_file(offset=1.0, worked=None):
     }
 
 
+def paired_side_file(frame_offset=-5):
+    """A side file IN THE SHAPE THE WRITER ACTUALLY EMITS TODAY.
+
+    Every other fixture in this file builds `offsetSecondsToReference`, and
+    NOTHING WRITES THAT ANY MORE. It was removed on 2026-09-07: the two
+    cameras' frame periods differ by 11 microseconds, so an offset in seconds
+    drifts across the clip, and two such offsets had already been withdrawn
+    from this material. The measurement is an integer frame count plus the name
+    of the file it pairs with, and the pairing CROSSES the labelled sets.
+
+    Those older fixtures are kept, and labelled, because the lesson they hold
+    (the sign convention, found the hard way) is still worth holding. But they
+    describe a path no producer feeds, so they cannot tell anyone whether this
+    tool works on a real artefact. This one can.
+    """
+    return {
+        "source": {"view": "side", "videoFile": "side 0.2.mp4"},
+        "model": {"tool": "mediapipe", "landmarkEdges": EDGES},
+        "sync": {
+            "referenceView": "front",
+            "measured": True,
+            "pairedWith": "front 0.1.mp4",
+            "frameOffsetToReference": frame_offset,
+        },
+        "frames": [],
+    }
+
+
+class AFrameOffsetIsMeasuredAndThisToolCannotUseItYet(unittest.TestCase):
+    """THE REFUSAL THAT USED TO CARRY A FALSE REASON.
+
+    `sync_offset` read the removed field with `.get`, so on the real
+    `side 0.2.mp4` artefact, whose sync IS measured, it got None and the tool
+    refused with "carries no measured offset to the reference clock". That
+    sends a reader looking for a measurement that already exists. A refusal
+    must be true about why.
+    """
+
+    def test_a_measured_frame_offset_yields_no_seconds(self):
+        self.assertIsNone(sync_offset(paired_side_file()))
+
+    def test_the_refusal_names_the_frame_offset_and_the_partner(self):
+        with self.assertRaises(SystemExit) as refusal:
+            reference_to_local(paired_side_file(), 9.0)
+
+        message = str(refusal.exception)
+        self.assertIn("HAS a measured sync", message)
+        self.assertIn("-5", message)
+        self.assertIn("front 0.1.mp4", message)
+        self.assertIn("--local", message)
+
+    def test_it_does_not_claim_nobody_measured_it(self):
+        """The exact false sentence, forbidden by name."""
+        with self.assertRaises(SystemExit) as refusal:
+            reference_to_local(paired_side_file(), 9.0)
+
+        self.assertNotIn("carries no measured offset", str(refusal.exception))
+
+    def test_a_file_carrying_BOTH_offsets_is_refused_on_the_frame_one(self):
+        """THE CASE THE GUARD ACTUALLY EXISTS FOR, and the first version of
+        this class did not test it.
+
+        With only a frame offset present, `sync_offset` returns None whether or
+        not it checks for one, because the seconds field is simply absent: I
+        removed the check and all thirty tests stayed green. The guard is only
+        load-bearing when a file carries BOTH — a legacy artefact re-stamped
+        badly, or one written by a tool that has not caught up. That file must
+        be refused on the frame offset, NOT placed using the withdrawn seconds
+        offset, which is a measurement this lane has retracted twice.
+        """
+        both = paired_side_file()
+        both["sync"]["offsetSecondsToReference"] = -0.1746
+
+        self.assertIsNone(sync_offset(both),
+                          "the withdrawn seconds offset was used")
+
+        with self.assertRaises(SystemExit) as refusal:
+            reference_to_local(both, 9.0)
+
+        self.assertIn("HAS a measured sync", str(refusal.exception))
+
+    def test_a_truly_unmeasured_file_still_gets_the_other_reason(self):
+        """Two situations reach the same None and must not read alike."""
+        with self.assertRaises(SystemExit) as refusal:
+            reference_to_local(
+                {"source": {"view": "side"},
+                 "sync": {"referenceView": "front", "measured": False,
+                          "frameOffsetToReference": None}}, 9.0)
+
+        self.assertIn("carries no measured offset", str(refusal.exception))
+
+
+class TheRealArtefactsRefuseForTheRightReason(unittest.TestCase):
+    """The only test here that reads what the writer actually wrote.
+
+    Every other test in this file is a mock, and a mock that has drifted from
+    its producer is what let this tool refuse with a false reason for a day.
+    """
+
+    OUTPUT = (pathlib.Path(__file__).resolve().parents[1]
+              / "spikes" / "poc-output" / "video")
+
+    def load(self, name):
+        path = self.OUTPUT / name
+        if not path.exists():
+            self.skipTest(f"{name} is not present; the artefacts are ignored")
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def test_no_real_artefact_carries_the_removed_field(self):
+        for name in ("keypoints-front-0.1.json", "keypoints-side-0.2.json",
+                     "keypoints-front-0.2.json", "keypoints-side-0.1.json"):
+            with self.subTest(file=name):
+                self.assertNotIn("offsetSecondsToReference",
+                                 self.load(name).get("sync", {}))
+
+    def side_files(self):
+        """THE TWO SIDE ARTEFACTS, FOUND BY WHAT THEY SAY, NOT BY THEIR NAMES.
+
+        These two tests named `keypoints-side-0.2.json` and
+        `keypoints-side-0.1.json` and both broke on 2026-09-07, when Marius
+        swapped the two side files' names at source and the artefacts followed
+        them. Neither refusal had changed; only the labels had. A test that
+        names a file asserts something about the naming as well as about the
+        behaviour, and only one of those two was under test here."""
+        found = {}
+        for name in ("keypoints-side-0.1.json", "keypoints-side-0.2.json"):
+            document = self.load(name)
+            measured = bool((document.get("sync") or {}).get("measured"))
+            found.setdefault("measured" if measured else "unmeasured",
+                             document)
+        return found
+
+    def test_the_measured_side_file_refuses_naming_its_frame_offset(self):
+        document = self.side_files().get("measured")
+        if document is None:
+            self.skipTest("no side artefact carries a measured sync")
+
+        with self.assertRaises(SystemExit) as refusal:
+            reference_to_local(document, 9.0)
+
+        message = str(refusal.exception)
+        self.assertIn("HAS a measured sync", message)
+        self.assertIn(document["sync"]["pairedWith"], message)
+
+    def test_the_unmeasured_side_file_refuses_for_the_other_reason(self):
+        document = self.side_files().get("unmeasured")
+        if document is None:
+            self.skipTest("both side artefacts carry a measured sync")
+
+        with self.assertRaises(SystemExit) as refusal:
+            reference_to_local(document, 9.0)
+
+        self.assertIn("carries no measured offset", str(refusal.exception))
+
+    def test_every_artefact_agrees_with_the_file_it_names_by_hash(self):
+        """THE CHECK THAT WAS MISSING WHEN THE RENAME HAPPENED. The hash has
+        been in every artefact from the first one and nothing read it."""
+        samples = pathlib.Path("F:/Repositories/braven-movement/.assets/"
+                               "video-samples/session-1.0")
+        if not samples.exists():
+            self.skipTest("the session 1.0 recordings are not on this machine")
+        import hashlib
+        for name in ("keypoints-front-0.1.json", "keypoints-front-0.2.json",
+                     "keypoints-side-0.1.json", "keypoints-side-0.2.json"):
+            with self.subTest(artefact=name):
+                source = self.load(name)["source"]
+                path = samples / source["videoFile"]
+                if not path.exists():
+                    self.skipTest(f"{source['videoFile']} is not present")
+                digest = hashlib.sha256()
+                with path.open("rb") as handle:
+                    for block in iter(lambda: handle.read(1 << 20), b""):
+                        digest.update(block)
+
+                self.assertEqual(digest.hexdigest(), source["videoSha256"],
+                                 f"{name} names a file it was not made from")
+
+
 class SyncDirectionTest(unittest.TestCase):
+    """KEPT, AND NOT CURRENT. These build `offsetSecondsToReference`, which no
+    producer writes since 2026-09-07. The sign lesson they hold is real and
+    they stay for it; they say nothing about a file the writer emits today.
+    Refer to the two classes above for that."""
+
     def test_the_sign_error_from_the_schema_is_refused(self):
         """The exact defect found in the schema this morning, made mechanical.
 

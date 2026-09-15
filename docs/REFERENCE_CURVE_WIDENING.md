@@ -1,7 +1,11 @@
 # Widening the reference curves to what the library actually grades
 
-A design. **Nothing here is executed**, and it cannot be until the shared MHR
-assets are restored, because regenerating the curves needs a solve.
+A design, **AND IT HAS LANDED**. Both passes ran on 2026-09-01; refer to
+"Executed, and what the new columns actually contain" below for what the file
+holds now. This line used to say that nothing here was executed, which stopped
+being true six days before anybody read it again, and a reader who stopped at
+the top would conclude that the old curve shape was still being written. Two
+consumers were left on that old shape and stayed broken until 2026-09-07.
 
 ## The finding
 

@@ -101,12 +101,16 @@ SPIKE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SPIKE_DIR))
 
 from build_stamp import generated_from  # noqa: E402
+from reference_curves import curve_length, curve_values  # noqa: E402
 
 OUTPUT = SPIKE_DIR / "poc-output" / "video"
 SCHEMA_VERSION = "video-phase-alignment-1"
 
 NEAREST_DRILL = "netball_two_hand_snatch_pull_in"
 MEASURE = "leftElbowFlexionDegrees"
+# The unit is CHECKED, not assumed. The export declares one per curve
+# exactly so that a reader cannot take centimetres for degrees.
+MEASURE_UNIT = "degrees"
 
 # A centred moving average over this many samples. NINE, and it is a measured
 # compromise rather than a round number: on session 1.0 the raw elbow curve
@@ -528,10 +532,15 @@ def rank_against_library(
     """
     found = []
     for name, drill in reference["movements"].items():
-        curve = [v for v in drill["curves"].get(measure, []) if v is not None]
-        if len(curve) < 2:
+        # ITERATING THE CURVE IS WHAT BROKE HERE. At schema version 2 a curve
+        # is a mapping, so `for v in curve` yielded the strings "unit" and
+        # "values" — two of them, which PASSED the length guard below and
+        # carried the words into the ranking that guards the whole method.
+        length = curve_length(reference, drill, measure)
+        if length < 2:
             continue
-        phase = np.linspace(0.0, 1.0, len(curve))
+        curve = curve_values(reference, drill, measure, MEASURE_UNIT)
+        phase = np.linspace(0.0, 1.0, length)
         try:
             _, distance, path = warped_phase(video, np.asarray(curve), phase)
         except AlignmentError:
@@ -564,8 +573,8 @@ def align_repetition(
 ) -> dict:
     """One repetition, by both instruments, with their disagreement."""
     drill = reference["movements"][movement]
-    curve = np.asarray(
-        [v for v in drill["curves"][measure] if v is not None], dtype=np.float64)
+    curve = curve_values(reference, drill, measure, MEASURE_UNIT).astype(
+        np.float64)
     reference_phase = np.asarray(drill["phase"][:len(curve)], dtype=np.float64)
     contact_phase = drill["landmarks"]["contactPhase"]
     if contact_phase is None:

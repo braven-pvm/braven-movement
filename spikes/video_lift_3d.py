@@ -26,13 +26,21 @@ needs no anthropometry at all: it is one length, seen twice.
 What this cannot do
 -------------------
 
-The sync is good to about 150 ms, so a hand moving at 2 m/s is displaced about
-30 cm between the views. The lift therefore certifies that the pipeline runs.
-It yields usable numbers only where the athlete is nearly still, and in fast
-phases it is illustrative and never a measurement. The residual reported here
-is dominated by that, not by the camera geometry.
+THE 150 ms SYNC THIS PARAGRAPH ASSUMED IS WITHDRAWN (2026-09-07). The file
+names WERE wrong and Marius corrected them at source on 2026-09-07:
+`front 0.1.mp4` (f7faf38b5d42) pairs with `side 0.1.mp4` (6e8f9fb2fe03), which
+was called `side 0.2.mp4` when this pairing was measured, at a constant FRAME
+offset of -5, and the remaining two files have no established partner. A lift
+runs only for a pair whose sync block carries a frame offset.
 
-    pixi run python video_lift_3d.py --set 0.1
+AND THE RESIDUAL IS NOT DOMINATED BY THE SYNC, which this paragraph also used to
+say. Sweeping the offset from -5.0 to +3.0 s moves the median residual only 14.8
+to 16.0 mm, so it never measured sync quality and cannot bound it. What it does
+measure is not established.
+
+    pixi run python video_lift_3d.py --pair "front 0.1 + side 0.1"
+
+Every --set refuses: no set's two same-named files are a pair.
 """
 
 from __future__ import annotations
@@ -43,6 +51,11 @@ import sys
 from pathlib import Path
 
 import numpy as np
+
+from video_keypoints import (PAIRS, frame_offset_of, load_keypoints,
+                             pair_key_of_set,
+                             source_matches,
+                             pair_slug, refuse_by_set)
 
 SPIKE_DIR = Path(__file__).resolve().parent
 OUTPUT = SPIKE_DIR / "poc-output" / "video"
@@ -61,10 +74,7 @@ VISIBLE_ENOUGH = 0.5
 
 
 def load(view: str, set_id: str) -> dict:
-    path = OUTPUT / f"keypoints-{view}-{set_id}.json"
-    if not path.exists():
-        raise SystemExit(f"{path} is missing; run video_keypoints.py first")
-    return json.loads(path.read_text(encoding="utf-8"))
+    return load_keypoints(f"{view} {set_id}.mp4")
 
 
 def by_name(record: dict) -> dict:
@@ -99,22 +109,62 @@ def span(points: dict, first: str, second: str, axis: str) -> float | None:
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--set", dest="set_id", default="0.1")
+    # --set IS KEPT SO THE REFUSAL IS REACHABLE. No set's two same-named files
+    # are a pair, so every --set now refuses and names the real pairing; the
+    # argument exists to tell a caller that rather than to fail obscurely.
+    parser.add_argument("--set", dest="set_id", default=None)
+    parser.add_argument("--pair", dest="pair_key", default=None,
+                        help="a key from PAIRS in video_keypoints.py, "
+                             "for example 'front 0.1 + side 0.1'")
     arguments = parser.parse_args(argv[1:])
 
-    front = load("front", arguments.set_id)
-    side = load("side", arguments.set_id)
-    if not side["sync"].get("measured"):
-        raise SystemExit(
-            f"set {arguments.set_id} has no measured sync offset, so its two "
-            "views cannot be placed on one clock. Refer to the sync block."
-        )
-    offset = float(side["sync"]["offsetSecondsToReference"])
-    # The assertion the schema tells every consumer to run.
-    worked = side["sync"]["worked"]
-    assert abs(worked["thisViewSeconds"] + offset - worked["referenceViewSeconds"]) < 1e-6, (
-        "the sync block's own worked example does not hold; the sign is wrong"
-    )
+    if arguments.pair_key:
+        pair = PAIRS.get(arguments.pair_key)
+        if pair is None:
+            raise SystemExit(
+                f"no pair named {arguments.pair_key!r}. Known: "
+                + ", ".join(repr(k) for k in PAIRS))
+        label = arguments.pair_key
+        front = load_keypoints(pair["referenceFile"])
+        side = load_keypoints(pair["otherFile"])
+    elif arguments.set_id:
+        # A SET CAN BE A PAIR AGAIN, since the rename of 2026-09-07. When it is,
+        # it resolves to the PAIR KEY, so `--set 0.1` and `--pair "front 0.1 +
+        # side 0.1"` produce one artefact under one name rather than two.
+        key = pair_key_of_set(arguments.set_id)
+        if key is None:
+            raise SystemExit(refuse_by_set(arguments.set_id))
+        label = key
+        front = load_keypoints(PAIRS[key]["referenceFile"])
+        side = load_keypoints(PAIRS[key]["otherFile"])
+    else:
+        raise SystemExit("give --pair (preferred) or --set")
+    # THE GUARD IS "ARE THESE TWO FILES THE PAIR", NOT "IS ONE OF THEM
+    # MEASURED". A first version of this check asked only whether the side file
+    # had a sync, and the measured side file HAS one — it is half of the real
+    # pair. So asking for the other set loaded two files that are not a pair,
+    # passed, and wrote a plausible lift from two files that are not a pair.
+    # That is the same fault as the offsets this pack withdraws, one level up.
+    # THE HASH FIRST, THEN THE PAIRING. An artefact whose stamped source hash
+    # does not match the file it names is describing different footage, and
+    # every check below it would be about the wrong clip. This is the check
+    # that was missing when the two side files' names were swapped and 50
+    # tests stayed green.
+    for document in (front, side):
+        agrees, why = source_matches(document)
+        if agrees is False:
+            raise SystemExit(why)
+
+    if side["sync"].get("pairedWith") != front["source"]["videoFile"]:
+        raise SystemExit(refuse_by_set(arguments.set_id or arguments.pair_key))
+
+    # THE MAPPING IS BY FRAME INDEX. `offsetSecondsToReference` is gone: the two
+    # cameras' frame periods differ by 11 microseconds, so any offset in seconds
+    # drifts across the clip and two such offsets have already been withdrawn
+    # from this material. The index arithmetic cannot drift.
+    # THE CHECK THE SCHEMA TELLS EVERY CONSUMER TO RUN, on integers, and it
+    # lives with the writer so that one mutation can fail both consumers.
+    frame_offset = frame_offset_of(side["sync"], side["frames"])
 
     front_limit = front["source"].get("usableToSeconds")
     side_limit = side["source"].get("usableToSeconds")
@@ -125,7 +175,12 @@ def main(argv: list[str]) -> int:
     for record in front["frames"]:
         if not usable(record, front_limit):
             continue
-        mate = nearest(side["frames"], record["ptsSeconds"] - offset)
+        # EXACT, not nearest. With a frame offset the mate is a subscript,
+        # so no frame is paired with a neighbour because a time landed between
+        # two of them.
+        index = record["frameIndex"] + frame_offset
+        mate = (side["frames"][index]
+                if 0 <= index < len(side["frames"]) else None)
         if mate is None or not usable(mate, side_limit):
             continue
         pairs.append((record, mate))
@@ -149,7 +204,7 @@ def main(argv: list[str]) -> int:
     torso_metres = float(np.median(torso_front)) * front_metres_per_pixel
     side_metres_per_pixel = torso_metres / float(np.median(torso_side))
 
-    print(f"set {arguments.set_id}: {len(pairs)} usable frame pairs\n")
+    print(f"{label}: {len(pairs)} usable frame pairs\n")
     print("SCALE, from the athlete's own measurements")
     print(f"  shoulder width      {SHOULDER_WIDTH_METRES:.3f} m "
           f"(wingspan 1.82 minus twice the 0.77 reach)")
@@ -180,6 +235,13 @@ def main(argv: list[str]) -> int:
             up_front = -(a["yPixel"] - f_zero) * front_metres_per_pixel
             up_side = -(b["yPixel"] - s_zero) * side_metres_per_pixel
             rows.append({
+                # THE FRAME INDEX, so a consumer can re-do the pairing exactly.
+                # Without it a reader has only a time, and a time forces a
+                # nearest-match with a tolerance, which is what the frame
+                # mapping exists to remove. `scripts/compare_lift_against_view.py`
+                # reads this and the sync's frame offset, and subscripts.
+                "frameIndex": record["frameIndex"],
+                "sideFrameIndex": mate["frameIndex"],
                 "ptsSeconds": record["ptsSeconds"],
                 "name": name,
                 "upFrontMetres": round(up_front, 4),
@@ -212,9 +274,9 @@ def main(argv: list[str]) -> int:
     print("  banding, which tests whether this residual is sync-dominated.")
 
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    where = OUTPUT / f"lift-3d-{arguments.set_id}.json"
+    where = OUTPUT / f"lift-3d-{pair_slug(label)}.json"
     where.write_text(json.dumps({
-        "set": arguments.set_id,
+        "pair": label,
         "method": (
             "NOT triangulation. The two cameras are assumed 90 degrees apart "
             "and roughly level, so the front view reads across and up and the "
@@ -231,9 +293,16 @@ def main(argv: list[str]) -> int:
             "torsoNote": "shoulder midpoint to hip midpoint; one length seen by both cameras, which is what ties the side view's scale to the front's without anthropometry",
         },
         "syncApplied": {
-            "offsetSecondsToReference": offset,
+            "frameOffsetToReference": frame_offset,
+            "pairedWith": side["sync"]["pairedWith"],
             "uncertaintySeconds": side["sync"]["offsetUncertaintySeconds"],
-            "note": "The residual below is dominated by this, not by camera geometry.",
+            "note": ("THE RESIDUAL BELOW IS NOT DOMINATED BY THE SYNC, which an "
+                     "earlier version of this line claimed. Sweeping the offset "
+                     "across eight seconds moved the MEDIAN by 1.2 mm. What the "
+                     "sync moves is the TAIL: on the mislabelled pairing the "
+                     "mean was 49.8 mm and the worst 535.7; on the real pair "
+                     "they are 29.4 and 209.2. The median rose, from 15.0 to "
+                     "20.0, because it was never measuring the pairing."),
         },
         "residualMetres": {
             "readings": len(rows),

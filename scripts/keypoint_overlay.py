@@ -100,23 +100,67 @@ def is_reference_view(document: dict) -> bool:
 def sync_offset(document: dict) -> float | None:
     """The measured offset to the reference clock, or None when there is none.
 
-    `measured: false` and a null offset both mean the same thing: nobody has
-    measured how these two cameras line up. Set 0.2 carries exactly that,
-    because only set 0.1 has two matched events.
-
     A DEFAULT OF ZERO IS A CLAIM, not a fallback. It says the cameras started
-    together, which for set 0.2 is unknown and for these files is false. A
-    first version of this used `sync.get(..., 0.0)` and ignored `measured`
-    entirely, so it would have paired two unsynchronised views into a picture
-    that looks matched. It happened not to, only because the movement lane
-    wrote `null` and the arithmetic threw. Their defensiveness covered for this
-    function; nothing here did.
+    together. A first version of this used `sync.get(..., 0.0)` and ignored
+    `measured` entirely, so it would have paired two unsynchronised views into a
+    picture that looks matched. It happened not to, only because the movement
+    lane wrote `null` and the arithmetic threw.
+
+    THE SYNC IS NOW A FRAME COUNT AND THIS FUNCTION CANNOT USE IT YET.
+    `offsetSecondsToReference` was removed from the writer on 2026-09-07,
+    because the two cameras' frame periods differ by 11 microseconds and an
+    offset in seconds therefore drifts across the clip. Two offsets in seconds
+    have already been withdrawn from this material. The measurement is
+    `frameOffsetToReference`, an integer, plus the name of the file it pairs
+    with, and the pairing CROSSES the labelled sets: `front 0.1.mp4` pairs with
+    `side 0.1.mp4` at -5 (6e8f9fb2fe03; that content was called
+    `side 0.2.mp4` until Marius renamed the two side files on 2026-09-07).
+
+    Until this tool takes a frame offset, it returns None for such a file. It
+    returns None NAMING THE REAL REASON, which is the point: this function used
+    to `.get` the removed field, get None from a file whose sync is measured,
+    and refuse with "carries no measured offset". That is a refusal with a false
+    reason, and a false reason sends the reader to look for a measurement that
+    already exists. Refer to `refusal_reason` below.
     """
     sync = document.get("sync") or {}
     if sync.get("measured") is False:
         return None
+    if sync.get("frameOffsetToReference") is not None:
+        # Measured, but in a unit this tool cannot yet apply.
+        return None
     value = sync.get("offsetSecondsToReference")
     return None if value is None else float(value)
+
+
+def refusal_reason(document: dict) -> str:
+    """WHY this view cannot be placed on the reference clock, truthfully.
+
+    Two different situations reach the same None from `sync_offset` and they
+    must not read the same to a person: nobody has measured these two cameras,
+    or somebody has and this tool does not speak the unit.
+    """
+    sync = document.get("sync") or {}
+    view = document["source"].get("view", "this view")
+    frame_offset = sync.get("frameOffsetToReference")
+    if frame_offset is not None:
+        partner = sync.get("pairedWith") or "its partner"
+        return (
+            f"{view} HAS a measured sync: a FRAME offset of {frame_offset} "
+            f"against {partner}. This tool has not been taught to consume a "
+            "frame offset, so it will not guess a time from one. It is an "
+            "integer count of frames, not a duration: the two cameras' frame "
+            "periods differ by 11 microseconds, so any conversion to seconds "
+            "drifts across the clip. Draw it alone with --local, or teach this "
+            "tool the frame mapping. Refer to PAIRS in spikes/video_keypoints.py."
+        )
+    return (
+        f"{view} carries no measured offset to the reference clock, so a "
+        "time on that clock cannot be placed in this file. Draw it alone "
+        "with --local, which reads --at as this view's OWN time and says "
+        "so on the picture, or wait for the offset to be measured. Do not "
+        "pair views that have never been lined up."
+    )
 
 
 def reference_to_local(document: dict, reference_seconds: float) -> float:
@@ -125,14 +169,7 @@ def reference_to_local(document: dict, reference_seconds: float) -> float:
         return reference_seconds
     offset = sync_offset(document)
     if offset is None:
-        view = document["source"].get("view", "this view")
-        raise SystemExit(
-            f"{view} carries no measured offset to the reference clock, so a "
-            "time on that clock cannot be placed in this file. Draw it alone "
-            "with --local, which reads --at as this view's OWN time and says "
-            "so on the picture, or wait for the offset to be measured. Do not "
-            "pair views that have never been lined up."
-        )
+        raise SystemExit(refusal_reason(document))
     return reference_seconds - offset
 
 
