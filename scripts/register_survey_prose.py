@@ -69,44 +69,146 @@ BACKTICKED = re.compile(r"`([^`\n]{1,80})`")
 CAMEL = re.compile(r"[a-z]+[A-Z][A-Za-z0-9]*")
 UPPER = re.compile(r"[A-Z][A-Z0-9_]{2,}")
 
-# A NAME A DOCUMENT DEFINES IS NOT A NAME A DOCUMENT ASSUMES, and only a reader
-# can tell them apart. The check asks "is this name in the code". The sentence
-# that matters asks "is this name CLAIMED to be in the code", and no text test
-# answers that. So this list is HAND-WRITTEN, with the evidence per entry.
+# FOUR DECLARED STATES, AND THE DEFAULT IS THE LOUD ONE.
 #
-# A specification that did not name its own fields would be no specification.
-# `movesWith` sits in COACH_REVIEW_SPEC_INTERFACE.md's field table at line 72
-# and has its own section 7 at line 282, "movesWith, and why a specification
-# needs it", setting out its three resolvable forms. It is being specified.
+# A document records a DECISION, not only a specification, so "absent from the
+# code" splits four ways and no text test can tell them apart. The check asks
+# "is this name in the code". The sentence that matters asks "is this name
+# CLAIMED to be in the code", and only a reader answers that. So a state is
+# DECLARED here, never detected.
 #
-# The register's own schema columns are the same thing: naming `sourceKind` and
-# `unitEvidence` specifies them, it does not claim they exist. They stop being
-# population C when the sidecar and the renderer are built.
+#   ASSUMED             a name a document treats as existing. THE DEFAULT.
+#   DEFINED             a specification naming its own fields.
+#   UNDER_CONSTRUCTION  named, and a lane is building it.
+#   REJECTED            named, and a decision says do not build it.
 #
-# THE DEFAULT IS THE LOUD ONE ON PURPOSE. A name not listed here is reported as
-# ASSUMED, so a new one appears in the dangerous class rather than the safe one.
-DEFINED_NOT_ASSUMED = {
-    "movesWith": "COACH_REVIEW_SPEC_INTERFACE.md field table line 72, and its "
-                 "own section 7 at line 282",
-    "sourceKind": "a column of this register's own schema, not yet built",
-    "unitDeclared": "a column of this register's own schema, not yet built",
-    "unitImplied": "a column of this register's own schema, not yet built",
-    "unitEvidence": "a column of this register's own schema, not yet built",
-    "derivedFrom": "a column of this register's own schema, not yet built",
-    "rootSource": "a column of this register's own schema, not yet built",
-    "reachedBy": "a column of this register's own schema, not yet built",
-    "existsInCode": "a column of this register's own schema, not yet built",
-    "whatWouldChangeIt": "a column of this register's own schema, not yet built",
-    "AUTHOR_INTENT": "a sourceKind of this register's own schema, not yet built",
-    "LITERATURE": "a sourceKind of this register's own schema, not yet built",
+# THE DEFAULT STAYS ASSUMED BECAUSE IT CAUGHT ITS OWN AUTHOR. `sourceScope` was
+# added to this register's schema on 9 September and never filed, and it
+# reported itself in the dangerous class on 14 September. A default that fails
+# toward visibility is right, and it proving itself on the lane that wrote it is
+# the best evidence there is.
+#
+# A LINE NUMBER IS ITSELF A NUMBER THAT GOES STALE, AND THAT IS THE POINT.
+# Adding a section to the schema moved `sourceScope` off line 89 within minutes
+# of this table being written, and the run refused. A vaguer pointer — the
+# document alone — could not decay because it says less. THIS ONE DECAYS AND
+# THE DECAY IS CAUGHT, which is the trade this register makes everywhere: a
+# claim precise enough to be wrong, beside the instrument that finds it wrong.
+#
+# EVERY NON-DEFAULT STATE CARRIES A `file:line` AND THE RUN REFUSES WITHOUT ONE
+# THAT RESOLVES. Not prose: a line a reader can open. An exemption list grows
+# quietly and nobody can audit it. A table where every entry points at the
+# sentence that justifies it can be checked line by line by somebody who
+# disagrees. It is the movement lane's `unitEvidence` rule one level over:
+# carry the evidence, never the belief.
+ASSUMED = "ASSUMED"
+DEFINED = "DEFINED"
+UNDER_CONSTRUCTION = "UNDER_CONSTRUCTION"
+REJECTED = "REJECTED"
+
+DECLARED: dict[str, dict[str, str]] = {
+    DEFINED: {
+        # A specification that did not name its own fields would be no
+        # specification.
+        "movesWith": "COACH_REVIEW_SPEC_INTERFACE.md:72",
+        # This register's own schema columns. Naming them specifies them.
+        "sourceKind": "MOVEMENT_PARAMETER_REGISTER_SCHEMA.md:54",
+        "unitDeclared": "MOVEMENT_PARAMETER_REGISTER_SCHEMA.md:48",
+        "unitImplied": "MOVEMENT_PARAMETER_REGISTER_SCHEMA.md:49",
+        "unitEvidence": "MOVEMENT_PARAMETER_REGISTER_SCHEMA.md:50",
+        "derivedFrom": "MOVEMENT_PARAMETER_REGISTER_SCHEMA.md:55",
+        "rootSource": "MOVEMENT_PARAMETER_REGISTER_SCHEMA.md:56",
+        "reachedBy": "MOVEMENT_PARAMETER_REGISTER_SCHEMA.md:58",
+        "existsInCode": "MOVEMENT_PARAMETER_REGISTER_SCHEMA.md:59",
+        "whatWouldChangeIt": "MOVEMENT_PARAMETER_REGISTER_SCHEMA.md:60",
+        "AUTHOR_INTENT": "MOVEMENT_PARAMETER_REGISTER_SCHEMA.md:75",
+        "LITERATURE": "MOVEMENT_PARAMETER_REGISTER_SCHEMA.md:73",
+        # The register's own STATE vocabulary. Filed for the same reason
+        # AUTHOR_INTENT and LITERATURE are: naming a value of this schema
+        # specifies it. THIS IS THE THIRD TIME TODAY the register's own
+        # vocabulary reported itself in the dangerous class, and each time
+        # the default was right to.
+        "ASSUMED": "MOVEMENT_PARAMETER_REGISTER_SCHEMA.md:96",
+        "DEFINED": "MOVEMENT_PARAMETER_REGISTER_SCHEMA.md:97",
+        "UNDER_CONSTRUCTION": "MOVEMENT_PARAMETER_REGISTER_SCHEMA.md:98",
+        "REJECTED": "MOVEMENT_PARAMETER_REGISTER_SCHEMA.md:99",
+        # FILED 2026-09-15, AND IT CAUGHT ITS AUTHOR BEFORE IT WAS FILED.
+        "sourceScope": "MOVEMENT_PARAMETER_REGISTER_SCHEMA.md:141",
+    },
+    UNDER_CONSTRUCTION: {
+        # docs/RELEASE_HAND_PAPER.md names eleven quantities for the release
+        # hand. On 14 September none existed in either repository. PR #131
+        # landed a flick on the chest pass on 15 September and six of the
+        # eleven now exist, all of them in one proposal file. These five do
+        # not, and a reader finding them as "absent" would start building what
+        # a lane is already building.
+        "wristSpeedCmPerS": "RELEASE_HAND_PAPER.md:581",
+        "leftWristFlexionDegrees": "RELEASE_HAND_PAPER.md:574",
+        "rightWristFlexionDegrees": "RELEASE_HAND_PAPER.md:574",
+        "leftFingerFlexionDegrees": "RELEASE_HAND_PAPER.md:576",
+        "rightFingerFlexionDegrees": "RELEASE_HAND_PAPER.md:576",
+    },
+    REJECTED: {
+        # THE CLIP CONTRACT PROPOSED `engineCommit` AND A RULING REPLACED IT
+        # with `generatedFrom`, carrying commit, treeWasClean, utcTimestamp and
+        # variant. The deciding argument: engineCommit alone drops
+        # treeWasClean, so a clip exported from a dirty tree would name a
+        # commit that does not contain the code that made it. A provenance
+        # field that can quietly lie is worse than the commit message it
+        # replaces. The documents keep the name ON PURPOSE so the decision can
+        # be reopened, so its absence from code is the CORRECT outcome.
+        "engineCommit": "TACTICS_CLIP_CONTRACT.md:248",
+    },
 }
+
+
+def declared_state(token: str) -> tuple[str, str]:
+    """The declared state of a name, and the line that justifies it."""
+    for state, table in DECLARED.items():
+        if token in table:
+            return state, table[token]
+    return ASSUMED, ""
+
+
+def unresolvable_evidence(docs: Path) -> list[tuple[str, str, str, str]]:
+    """Every declared entry whose evidence does not open.
+
+    THE REFUSAL IS THE POINT. A state with evidence nobody can open is an
+    exemption wearing a citation's clothes, which is the same fault this
+    register reports in the library's own numbers.
+    """
+    broken: list[tuple[str, str, str, str]] = []
+    for state, table in DECLARED.items():
+        for token, where in table.items():
+            document, _, line = where.partition(":")
+            if not line.isdigit():
+                broken.append((state, token, where, "not in file:line form"))
+                continue
+            page = docs / document
+            if not page.exists():
+                broken.append((state, token, where, f"{document} is not in docs/"))
+                continue
+            held = page.read_text(encoding="utf-8", errors="replace").splitlines()
+            if int(line) > len(held):
+                broken.append((state, token, where,
+                               f"{document} has {len(held)} lines"))
+            elif token not in held[int(line) - 1]:
+                # THE LINE MUST NAME THE THING. A first draft of this table
+                # used ":1" for thirteen entries, and every one resolved,
+                # because a line 1 always exists. That is an exemption wearing
+                # a citation's clothes, which is the fault this register
+                # reports in the library's own numbers.
+                broken.append((state, token, where,
+                               f"line {line} does not name {token!r}"))
+    return broken
+
 
 # A word that is upper case in prose and is not a parameter.
 NOT_A_PARAMETER = {
     "KNOWN_ISSUES", "README", "MEASURE_UNITS", "TODO", "NOTE", "AND", "NOT",
     "THE", "ALL", "ANY", "CSV", "JSON", "HTML", "GLB", "FPS", "SHA", "URL",
     "CPU", "GPU", "API", "CLI", "PNG", "JPEG", "MP4", "AAOS", "ISB", "SMPL",
-    "MHR", "MPFB", "PR", "CI", "OK",
+    "MHR", "MPFB", "PR", "CI", "OK", "GIT_DIR",
 }
 
 
@@ -214,23 +316,62 @@ def main() -> int:
     print("stronger. Everything below is absent under the most generous reading.")
     print()
 
-    defined = {t_: w for t_, w in absent.items() if t_ in DEFINED_NOT_ASSUMED}
-    assumed = {t_: w for t_, w in absent.items() if t_ not in DEFINED_NOT_ASSUMED}
+    # `docs` in this function is a LIST of pages, not the directory.
+    doc_dir = ROOT / "docs"
+    broken = unresolvable_evidence(doc_dir)
 
-    print(f"  DEFINED, absent by design: {len(defined)}")
-    print(f"  ASSUMED, and absent:       {len(assumed)}")
+    by_state: dict[str, dict[str, set[str]]] = {
+        ASSUMED: {}, DEFINED: {}, UNDER_CONSTRUCTION: {}, REJECTED: {},
+    }
+    for token, where in absent.items():
+        state, _evidence = declared_state(token)
+        by_state[state][token] = where
+
+    for state in (ASSUMED, UNDER_CONSTRUCTION, REJECTED, DEFINED):
+        print(f"  {state:20s} {len(by_state[state]):3d}")
     print()
-    print("**ASSUMED IS THE POPULATION. DEFINED IS ITS MEASUREMENT ARTEFACT.**")
-    print("A specification that did not name its own fields would be no")
-    print("specification. A document that reasons about a parameter, names its")
-    print("unit and puts it in front of a coach, while nothing carries it, is")
-    print("the defect this lane exists to catch.")
+    print("**ASSUMED IS THE POPULATION. THE OTHER THREE ARE ITS MEASUREMENT")
+    print("ARTEFACTS.** A specification naming its own fields, a name a lane is")
+    print("building, and a name a decision rejected are all correctly absent. A")
+    print("document that reasons about a parameter, names its unit and puts it in")
+    print("front of a coach while nothing carries it is the defect this lane")
+    print("exists to catch. A STATE IS DECLARED AND NEVER DETECTED: no text test")
+    print("can tell a name being proposed from a name being buried.")
     print()
-    for token, where in sorted(assumed.items()):
-        print(f"  ASSUMED  {token:22s} {', '.join(sorted(where))}")
+    for state in (ASSUMED, UNDER_CONSTRUCTION, REJECTED, DEFINED):
+        for token, where in sorted(by_state[state].items()):
+            _s, evidence = declared_state(token)
+            tail = evidence if evidence else ", ".join(sorted(where))
+            print(f"  {state:20s} {token:26s} {tail}")
+
+    # THE TRIAGE SIGNAL, AND IT IS TRIAGE. A name absent from all code, in a
+    # document that ALSO names a term which IS in code, is the signature of a
+    # replaced proposal. `engineCommit` has 0 code hits and `generatedFrom`,
+    # named in the same contract, has 24. IT PROVES NOTHING. It shortens the
+    # list a person reads, exactly as the keyword pass over the library's 94
+    # `why` fields does, and a triage signal that drifts into a verdict is the
+    # fault this register exists to catch.
     print()
-    for token, where in sorted(defined.items()):
-        print(f"  defined  {token:22s} {DEFINED_NOT_ASSUMED[token]}")
+    print("TRIAGE, NOT A VERDICT: an ASSUMED name whose document also names a")
+    print("term that IS in the code. That is the signature of a replaced")
+    print("proposal, and it proves nothing. It shortens what a person reads.")
+    flagged = 0
+    for token, where in sorted(by_state[ASSUMED].items()):
+        companions = set()
+        for document in where:
+            page = (doc_dir / document).read_text(encoding="utf-8", errors="replace")
+            for other in BACKTICKED.findall(page):
+                other = other.strip()
+                if other == token or " " in other or "." in other or "/" in other:
+                    continue
+                if (CAMEL.fullmatch(other) or UPPER.fullmatch(other)) and other in body:
+                    companions.add(other)
+        if companions:
+            flagged += 1
+            shown = ", ".join(sorted(companions)[:4])
+            print(f"    {token:26s} shares a document with: {shown}")
+    if not flagged:
+        print("    none")
 
     if elsewhere:
         print()
@@ -239,6 +380,17 @@ def main() -> int:
         print("about the consumer's code, not this engine's:")
         for token, where in sorted(elsewhere.items()):
             print(f"  {token:34s} {', '.join(sorted(where))}")
+
+    if broken:
+        print()
+        print(f"{len(broken)} DECLARED STATE(S) CARRY EVIDENCE THAT DOES NOT OPEN.")
+        print("A state whose line nobody can read is an exemption wearing a")
+        print("citation's clothes, which is the fault this register reports in")
+        print("the library's own numbers. Fix the line, or drop the state:")
+        for state, token, where, why in broken:
+            print(f"    {state} {token}  ->  {where}")
+            print(f"        {why}")
+        return 2
 
     if sibling is None:
         print()

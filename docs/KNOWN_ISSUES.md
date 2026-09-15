@@ -508,10 +508,17 @@ to insist on them. It is withdrawn.
 noise and nothing else. A coach's figure for a meaningful height difference
 replaces it, the way 5 degrees does for angles.
 
-### The landing's own cue may be graded by an instrument that cannot fail
+### The landing's own cue is graded by an instrument that cannot see the jump
 
-Measured 2026-09-07 on `b214bc4`. **An open row with an owner, not a defect in
-anything shipped, and it claims nothing beyond what was measured.**
+**HEADING CORRECTED 2026-09-15.** It read "may be graded by an instrument that
+cannot fail" while this row was open. The sweep below answers that: the three
+checkpoints CAN fail, so the old heading is wrong, and what they cannot do is
+see the flight. The correction is recorded rather than made silently, because
+the old heading was the honest statement of what was known on 2026-09-07.
+
+Measured 2026-09-07 on `b214bc4`, answered 2026-09-15 on `dc50dfc`. **An open
+row with an owner, not a defect in anything shipped, and it claims nothing
+beyond what was measured.**
 
 `footHeightGapCm` spans **0.00 to 1.22 cm across all 110 frames** of
 `netball_double_foot_landing`, against bands of 0-14, 0-6 and 0-6. Its whole
@@ -525,15 +532,58 @@ Two consequences, and they are different:
   noise, because the range the drill produces is smaller than the measurement
   error the noise study propagates.
 
-**WHETHER THOSE THREE CHECKPOINTS CAN FAIL UNDER ANY LEVER IS A SWEEP NOBODY
-HAS RUN.** This row does not claim they cannot. It records that the question
-has never been asked of the library's only length checkpoints, and that the
-reading above is the reason to ask it.
+**ANSWERED 2026-09-15 on `dc50dfc`, in both directions, by
+`scripts/landing_cue_sweep.py`.** The instrument is committed with these
+numbers and re-runs them.
 
-**Owner: the movement lane**, queued after the height measure. It is also a
-coach-facing fact — the engine may not be able to fail the landing's defining
-cue — so it goes to the content lane's agenda for a coach's view, which the
-orchestrator carries.
+**THEY CAN FAIL.** Each of the three fails when an asymmetry is authored at its
+own graded phase, and the solve carries the authored size through faithfully:
+
+    right foot +0.25 arm lengths at flight   gap 20.99 against 0-14   FAILS
+    right foot +0.15 at land                 gap 12.59 against 0-6    FAILS
+    right foot +0.15 at absorb               gap 12.61 against 0-6    FAILS
+
+So they are not guards that cannot fail, and this row's worry is answered
+narrowly. **What replaces it is worse and more specific.**
+
+**THEY CANNOT SEE THE FLIGHT, WHICH IS THE DRILL'S DEFINING FEATURE.** Both
+feet moved TOGETHER leaves a difference where it was:
+
+    the drill as authored          highest foot 15.80 cm   all three within
+    flight halved                  highest foot  7.91 cm   all three within
+    NO FLIGHT AT ALL, feet flat    highest foot  2.01 cm   all three within
+
+**A double-foot landing with no jump in it passes every checkpoint it has.**
+
+**THE CUE HAS TWO CLAUSES AND THE INSTRUMENT READS ONE.** The flight phase asks
+"Both feet leave together and stay level in the air". `footHeightGapCm` is
+`abs(left_up - right_up)`, so it reads *level* and cannot read *leave*. At the
+graded flight frame the feet are at 15.80 and 15.80 cm and the gap is 0.00
+against a ceiling of 14.
+
+**AND THE MISSING HALF IS ALREADY MEASURED.**
+`possession_solve.py:474-475` writes `leftFootHeightCm` and
+`rightFootHeightCm` on the two lines directly above the gap at `476`, every
+frame, and neither is graded. Making *leave* gradeable needs no new
+instrument, only a band — **and what height counts as a jump is a coach's
+number, not this lane's**, so it stays an open question with a narrower shape
+than the one it replaces.
+
+**Why built cases and not a sweep, despite the word this row used.** The lower
+body is discontinuous in its inputs here: equal increments of a planted
+asymmetry measured 4.44, 3.49, 5.85, 2.24, 7.05 and 1.80 cm, so a sweep
+characterises nothing and a single crossing would be a basin change rather than
+a threshold. Refer to the lower-body row. The cases above are built large and
+read once.
+
+**Nothing under `spikes/movements/` was committed to measure this.** The motion
+file is edited in place and restored from the bytes read first, confirmed by
+sha256 and by `git status`, in a `finally`.
+
+**Owner: still the movement lane** for the remaining question, which is now
+"should a foot HEIGHT be graded at flight, and in what band". It is
+coach-facing, so it goes to the content lane's agenda for a coach's view, which
+the orchestrator carries.
 
 ### `footHeightGapCm` cannot express flight, and the Blender render has none to show
 
@@ -1449,11 +1499,24 @@ technique authors its `control` key at 0.62 and its `send_on` key at 0.80. The
 graded frame therefore falls between two authored keys and reads a position
 nobody authored.
 
-This is the same shape as the three checkpoints that cannot fail: a phase
-number chosen in the coaching definition and a phase number chosen in the
-technique are set independently, and nothing checks that they agree. There a
-checkpoint reads a measure that has not moved yet. Here a checkpoint reads a
-position that is a straight line between two authored ones.
+This is the same shape as the landing's three checkpoints: a phase number
+chosen in the coaching definition and a phase number chosen in the technique
+are set independently, and nothing checks that they agree. There a checkpoint
+reads a measure that has not moved yet. Here a checkpoint reads a position that
+is a straight line between two authored ones.
+
+**THE NAME THIS PARAGRAPH USED IS NO LONGER TRUE.** It called them "the three
+checkpoints that cannot fail" until 2026-09-15, when the sweep showed they can:
+refer to "The landing's own cue is graded by an instrument that cannot see the
+jump" above. The SHAPE the paragraph draws is unaffected, and the two phase
+numbers still disagree here.
+
+**And this drill is not alone in that.** Measured 2026-09-14 across the twelve
+drills that have both a definition and a technique file: **seven already
+disagree on at least one shared name and five agree**, and `deflect_high`
+disagrees on both of its. So a shared name is not a correspondence in this
+library and never was, which makes "nothing checks that they agree" a statement
+about the design rather than about a lapse.
 
 Event-anchored phases, already queued for the cannot-fail entry, would fix
 both. Recorded here so the two are fixed together rather than separately.

@@ -349,7 +349,13 @@ class TheJobCarriesItsOwnAnchor(unittest.TestCase):
 
                 self.assertIn(FIELD, job)
                 self.assertEqual(job["frame"], frame)
-                self.assertEqual(job["stance"], _stance(points, index))
+                # `rest_points` is passed because the job's own call passes it.
+                # Omitting it rebuilt the PRE-2026-09-14 shape and then required
+                # the job to match that, so the test failed the moment `_stance`
+                # gained `ankleAboveGroundInLegs` — the field the renderer needs
+                # to place a foot. The block is rebuilt from the helper that owns
+                # it, so the rebuild must be given what the owner was given.
+                self.assertEqual(job["stance"], _stance(points, index, rest_points))
                 for side in ("l", "r"):
                     self.assertEqual(job["arms"][side], _arm(points, index, side))
                     self.assertEqual(job["hands"][side], _hand(points, index, side))
