@@ -12,3 +12,9 @@ __pycache__/
 /spikes/pixi.lock
 /spikes/poc-output/
 /out/
+/athlete/viewer/node_modules/
+/athlete/viewer/dist/
+/athlete/viewer/.vite/
+/athlete/viewer/.local/
+/athlete/viewer/verification/
+/athlete-*.log

@@ -1,6 +1,25 @@
 # Braven Movement
 
 Standalone authoring and verification tools for anatomically credible sports-movement media.
+
+The [Movement–Tactics models and integration lane](docs/lanes/movement-tactics/README.md)
+owns shared characters and kits, and their animation integration into Tactics plays. Its
+charter, current baseline, cross-repo handoff rules and backlog are maintained there.
+
+## Editable netball athlete prototype
+
+The prototype's viewer is now maintained as **[Braven Studio](athlete/viewer/README.md)**,
+the local internal library for models, kits, animations and saved reviews. Run
+`athlete/Open-Braven-Studio.ps1` to open it at `http://127.0.0.1:5397/`.
+
+The independent [`athlete/`](athlete/README.md) prototype supplies a realistic female athlete,
+editable Blender masters, a skinned GLB with 17 animations (including 12 Braven Movement techniques), interchangeable mesh kit, and a
+browser studio with joint controls and the actual Braven Tactics pose engine. See the
+[platform evaluation](docs/NETBALL_ATHLETE_PIPELINE.md) for the Blender, Unity, UE5, Three.js,
+Python and other options considered. Its generated files live outside the source tree.
+
+## Earlier authoring and calibration pipeline
+
 The current vertical slice creates an MPFB athlete in Blender, poses a two-handed netball catch,
 renders reference views, exports FBX/GLB/Blend files, and writes a hash-backed JSON receipt.
 
@@ -22,9 +41,9 @@ Everything required from this project lives in this repository:
 - Local reference images belong in [`references/`](references/) and are intentionally untracked.
 - Generated files must be written to an explicit output directory outside the source tree.
 
-The code does not import the Flutter application, depend on a parent checkout, or contain a
-user-specific path. Copying or cloning this repository is sufficient to move the development
-workspace.
+The earlier pipeline does not import the Flutter application or depend on a parent checkout.
+The athlete studio's build optionally imports a configured companion Tactics checkout; its
+packaged runtime is self-contained. See `athlete/README.md` for that separate setup.
 
 ## Requirements
 
